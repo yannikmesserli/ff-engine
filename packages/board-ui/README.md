@@ -1,0 +1,79 @@
+# @bb/board-ui
+
+React component that plays a complete hot-seat BB2025 Blood Bowl game in the browser: scoreboard, pitch with both
+dugouts, decision panel, last roll with undo, hovered player card and game log. All rules come from `@bb/engine`; this
+package only renders the engine's state and turns clicks into engine actions.
+
+## Usage
+
+```tsx
+import { BloodBowlGame } from "@bb/board-ui";
+
+<BloodBowlGame home={teamJson} away={teamJson} />;
+```
+
+| Prop | Type | |
+|---|---|---|
+| `home`, `away` | `unknown` | Team files in `@bb/data`'s format (see `packages/data/README.md`), validated by `resolveTeam()`. Invalid teams render the error message. |
+| `assetsUrl` | `string` | Base URL of the image folder. Default `"/img"`. |
+| `seed` | `number` | RNG seed, to replay the same dice. Random when omitted. |
+| `onChange` | `(state: GameState) => void` | Called with the new state after every successful action. |
+
+Changing `home`, `away` or `seed` starts a new game. The stylesheet (`styles.css`, all classes prefixed `bb-`) is
+imported by the component.
+
+## How it drives the engine
+
+```
+state ──getAvailableActions──▶ templates ──Board / ActionPanel──▶ dispatch(action) ──step──▶ next state
+```
+
+1. `Game` (in `BloodBowlGame.tsx`) keeps the history of `GameState`s; the current state is the last one, and Undo pops
+   it.
+2. `getAvailableActions(state)` returns the **action templates**: what the current decision maker may do (`MOVE` with
+   its squares and rolls, `BLOCK` with targets and dice, `ROLL` with the dice to roll...). The UI renders only from
+   these and never re-implements rules.
+3. `Board` turns square and player clicks (and setup drags) into actions; `ActionPanel` shows the prompt and the
+   buttons for everything else.
+4. `dispatch(...actions)` applies them with `step` as a single undo entry. An `IllegalActionError` is shown in the
+   error panel instead of crashing. With "Auto-roll dice", a lone `ROLL` template is dispatched after a short delay.
+
+## Files
+
+| File | What |
+|---|---|
+| `src/index.ts` | Public exports: `BloodBowlGame` and `BloodBowlGameProps`. |
+| `src/BloodBowlGame.tsx` | Game creation, state history, `dispatch`, auto-roll; scoreboard, last roll, player card, log. |
+| `src/Board.tsx` | Pitch, dugouts, player tokens, square highlights, setup drag and drop (dnd-kit), player action menu. |
+| `src/ActionPanel.tsx` | Prompt and buttons per template: coin, kick/receive, dice (or physical dice entry), re-rolls, block dice, setup formations, end turn... |
+| `src/describe.ts` | Display names and the game log text of every engine event. |
+| `src/Dice.tsx` | Dice faces and rolls. |
+| `src/icons.ts` | Player sprite and team logo URLs per BB2025 roster and position. |
+| `src/templates.ts` | `findTemplate`: the available template of a type, narrowed. |
+| `src/styles.css` | All styles; `--bb-square` must match `SQUARE_SIZE` in `Board.tsx`. |
+
+## Assets
+
+Graphics are not included. Images are loaded from `assetsUrl` with this layout:
+
+| Path | What |
+|---|---|
+| `arenas/pitch/nice-26x15.jpg` | Pitch background (26 x 15 squares). |
+| `iconssmall/<sprite>1[b][an].gif` | Player sprites: `b` for the home team, `an` when active; names in `icons.ts`. |
+| `teamlogos/<roster>.png` | Team logos, lower-case roster name unless renamed in `icons.ts`. |
+| `dice/<1-6>.png`, `dice/d8-<1-8>.png`, `dice/<block face>.png` | Dice faces (block faces as in `BLOCK_FACES`). |
+| `ball/sball_30x30.png` | The ball. |
+| `player_status/<prone\|stunned>.gif` | Status overlays. |
+
+Unknown sprites fall back to a numbered disc, missing logos are hidden.
+
+## Adding UI for a new action template
+
+1. Find the template and action shapes in `packages/engine/src/types.ts` (`ActionTemplate`, `Action`).
+2. Board interaction (clicking a player or square): read it with `findTemplate(templates, "TYPE")` in `Board`, add
+   its players to `selectable` or its squares to `targets`, and dispatch from `clickPlayer` / `clickSquare`. Mind the
+   order of those `if` chains when several templates are offered at once.
+3. Buttons: add the case to the `.bb-buttons` block in `ActionPanel`.
+4. Add a prompt to `PROMPTS` in `ActionPanel.tsx` (that also makes it a candidate main template), and a log line for
+   any new event in `describeEvent` (`describe.ts`; the `switch` is exhaustive, so typecheck tells you).
+5. Check it in the playground (`pnpm dev`).

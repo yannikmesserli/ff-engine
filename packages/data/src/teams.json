@@ -1,0 +1,869 @@
+{
+  "amazon": {
+    "name": "Amazon Team",
+    "roster": "Amazon",
+    "rerolls": 3,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 1,
+    "dedicatedFans": 3,
+    "players": [
+      {
+        "number": 1,
+        "name": "Alkinoe Orthia",
+        "position": "Python Warrior"
+      },
+      {
+        "number": 2,
+        "name": "Alexiares Orithia",
+        "position": "Jaguar Warrior Blocker"
+      },
+      {
+        "number": 3,
+        "name": "Androdameia Aina",
+        "position": "Jaguar Warrior Blocker"
+      },
+      {
+        "number": 4,
+        "name": "Tesipyle Derinoe",
+        "position": "Piranha Warrior"
+      },
+      {
+        "number": 5,
+        "name": "Okypous Orithia",
+        "position": "Piranha Warrior"
+      },
+      {
+        "number": 6,
+        "name": "Ainippe Evadne",
+        "position": "Eagle Warrior"
+      },
+      {
+        "number": 7,
+        "name": "Zerynthia Dolope",
+        "position": "Eagle Warrior"
+      },
+      {
+        "number": 8,
+        "name": "Bardida Pleiades",
+        "position": "Eagle Warrior"
+      },
+      {
+        "number": 9,
+        "name": "Anymone Antianara",
+        "position": "Eagle Warrior"
+      },
+      {
+        "number": 10,
+        "name": "Alexiares Bright Moon",
+        "position": "Eagle Warrior"
+      },
+      {
+        "number": 11,
+        "name": "Athtar Camilla",
+        "position": "Eagle Warrior"
+      }
+    ]
+  },
+  "chaos-dwarf": {
+    "name": "Chaos Dwarf Team",
+    "roster": "Chaos Dwarf",
+    "rerolls": 2,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 0,
+    "dedicatedFans": 1,
+    "players": [
+      {
+        "number": 1,
+        "name": "Khakbal the Unstoppable",
+        "position": "Bull Centaur Blitzer"
+      },
+      {
+        "number": 2,
+        "name": "Tharheb the Mad",
+        "position": "Bull Centaur Blitzer"
+      },
+      {
+        "number": 3,
+        "name": "Karbrin Furrikson",
+        "position": "Chaos Dwarf Blocker"
+      },
+      {
+        "number": 4,
+        "name": "Fargrakh Mainlord",
+        "position": "Chaos Dwarf Blocker"
+      },
+      {
+        "number": 5,
+        "name": "Thymthang Bronzeside",
+        "position": "Chaos Dwarf Blocker"
+      },
+      {
+        "number": 6,
+        "name": "Gharrg Lazyhair",
+        "position": "Chaos Dwarf Blocker"
+      },
+      {
+        "number": 7,
+        "name": "Marzh Lightwalker",
+        "position": "Hobgoblin Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Zhukh Goldscream",
+        "position": "Hobgoblin Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Oggror Stonebone",
+        "position": "Hobgoblin Lineman"
+      },
+      {
+        "number": 10,
+        "name": "Grullkit Giantclaw",
+        "position": "Hobgoblin Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Surlip Irondrinker",
+        "position": "Hobgoblin Lineman"
+      }
+    ]
+  },
+  "chaos": {
+    "name": "Chaos Team",
+    "roster": "Chaos Chosen",
+    "rerolls": 2,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 0,
+    "dedicatedFans": 1,
+    "players": [
+      {
+        "number": 1,
+        "name": "Pointner Snout",
+        "position": "Beastman Runner Lineman"
+      },
+      {
+        "number": 2,
+        "name": "Shier Goat'forit",
+        "position": "Beastman Runner Lineman"
+      },
+      {
+        "number": 3,
+        "name": "Ungrol Burrow-Gorger",
+        "position": "Beastman Runner Lineman"
+      },
+      {
+        "number": 4,
+        "name": "Magok Stonehorn",
+        "position": "Beastman Runner Lineman"
+      },
+      {
+        "number": 5,
+        "name": "Shagloch",
+        "position": "Beastman Runner Lineman"
+      },
+      {
+        "number": 6,
+        "name": "Khazrak Manripper",
+        "position": "Beastman Runner Lineman"
+      },
+      {
+        "number": 7,
+        "name": "Myly Mantle",
+        "position": "Beastman Runner Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Jurgen Frohlich",
+        "position": "Chaos Chosen"
+      },
+      {
+        "number": 9,
+        "name": "Erasmus Haintz",
+        "position": "Chaos Chosen"
+      },
+      {
+        "number": 10,
+        "name": "Balthasar Oberholtzer",
+        "position": "Chaos Chosen"
+      },
+      {
+        "number": 11,
+        "name": "Roloch",
+        "position": "Minotaur"
+      }
+    ]
+  },
+  "dark-elf": {
+    "name": "Dark Elf Team",
+    "roster": "Dark Elf",
+    "rerolls": 2,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 1,
+    "dedicatedFans": 2,
+    "players": [
+      {
+        "number": 1,
+        "name": "Caloshir Coolstream",
+        "position": "Dark Elf Runner"
+      },
+      {
+        "number": 2,
+        "name": "Endomnir Lightfoot",
+        "position": "Dark Elf Assassin"
+      },
+      {
+        "number": 3,
+        "name": "Glorsemain Fastspear",
+        "position": "Dark Elf Blitzer"
+      },
+      {
+        "number": 4,
+        "name": "Hasudaen Kindheart",
+        "position": "Dark Elf Blitzer"
+      },
+      {
+        "number": 5,
+        "name": "Finannean Whitereed",
+        "position": "Dark Elf Lineman"
+      },
+      {
+        "number": 6,
+        "name": "Gethfinbeth Brightknife",
+        "position": "Dark Elf Lineman"
+      },
+      {
+        "number": 7,
+        "name": "Fandillana Surehand",
+        "position": "Witch Elf"
+      },
+      {
+        "number": 8,
+        "name": "Istrabaire Sharpblade",
+        "position": "Witch Elf"
+      },
+      {
+        "number": 9,
+        "name": "Iysenil Slenderblade",
+        "position": "Dark Elf Assassin"
+      },
+      {
+        "number": 10,
+        "name": "Ulelhil PalemoonIzzi the Frog",
+        "position": "Dark Elf Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Indraril Youngstar",
+        "position": "Dark Elf Lineman"
+      }
+    ]
+  },
+  "elven-union": {
+    "name": "Elven Union Team",
+    "roster": "Elven Union",
+    "rerolls": 3,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 1,
+    "dedicatedFans": 3,
+    "players": [
+      {
+        "number": 1,
+        "name": "Caloshir Coolstream",
+        "position": "Elf Thrower"
+      },
+      {
+        "number": 2,
+        "name": "Endomnir Lightfoot",
+        "position": "Elf Blitzer"
+      },
+      {
+        "number": 3,
+        "name": "Glorsemain Fastspear",
+        "position": "Elf Blitzer"
+      },
+      {
+        "number": 4,
+        "name": "Hasudaen Kindheart",
+        "position": "Elf Catcher"
+      },
+      {
+        "number": 5,
+        "name": "Finannean Whitereed",
+        "position": "Elf Catcher"
+      },
+      {
+        "number": 6,
+        "name": "Gethfinbeth Brightknife",
+        "position": "Elf Lineman"
+      },
+      {
+        "number": 7,
+        "name": "Fandillana Surehand",
+        "position": "Elf Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Istrabaire Sharpblade",
+        "position": "Elf Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Iysenil Slenderblade",
+        "position": "Elf Lineman"
+      },
+      {
+        "number": 10,
+        "name": "Ulelhil PalemoonIzzi the Frog",
+        "position": "Elf Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Indraril Youngstar",
+        "position": "Elf Lineman"
+      }
+    ]
+  },
+  "high-elf": {
+    "name": "High Elf Team",
+    "roster": "High Elf",
+    "rerolls": 3,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 1,
+    "dedicatedFans": 3,
+    "players": [
+      {
+        "number": 1,
+        "name": "Caloshir Coolstream",
+        "position": "Phoenix Warrior"
+      },
+      {
+        "number": 2,
+        "name": "Endomnir Lightfoot",
+        "position": "White Lion"
+      },
+      {
+        "number": 3,
+        "name": "Glorsemain Fastspear",
+        "position": "White Lion"
+      },
+      {
+        "number": 4,
+        "name": "Hasudaen Kindheart",
+        "position": "Dragon Prince"
+      },
+      {
+        "number": 5,
+        "name": "Finannean Whitereed",
+        "position": "Dragon Prince"
+      },
+      {
+        "number": 6,
+        "name": "Gethfinbeth Brightknife",
+        "position": "High Elf Lineman"
+      },
+      {
+        "number": 7,
+        "name": "Fandillana Surehand",
+        "position": "High Elf Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Istrabaire Sharpblade",
+        "position": "High Elf Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Iysenil Slenderblade",
+        "position": "High Elf Lineman"
+      },
+      {
+        "number": 10,
+        "name": "Ulelhil PalemoonIzzi the Frog",
+        "position": "High Elf Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Indraril Youngstar",
+        "position": "High Elf Lineman"
+      }
+    ]
+  },
+  "human": {
+    "name": "Human Team",
+    "roster": "Human",
+    "rerolls": 3,
+    "apothecary": true,
+    "assistantCoaches": 1,
+    "cheerleaders": 2,
+    "dedicatedFans": 3,
+    "players": [
+      {
+        "number": 1,
+        "name": "Ziggi Abschuss",
+        "position": "Human Blitzer"
+      },
+      {
+        "number": 2,
+        "name": "Dieter Blunt",
+        "position": "Human Blitzer"
+      },
+      {
+        "number": 3,
+        "name": "Luigi Di Passella",
+        "position": "Human Thrower"
+      },
+      {
+        "number": 4,
+        "name": "'Fast' Ben Jansen",
+        "position": "Human Catcher"
+      },
+      {
+        "number": 5,
+        "name": "Helmut Headreka",
+        "position": "Human Catcher"
+      },
+      {
+        "number": 6,
+        "name": "Henny Himmelstein",
+        "position": "Human Lineman"
+      },
+      {
+        "number": 7,
+        "name": "Dirk Hero Heldman",
+        "position": "Human Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Erdrich Holstein",
+        "position": "Human Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Gruff Hackson",
+        "position": "Human Lineman"
+      },
+      {
+        "number": 10,
+        "name": "Ivan Kellhoofer",
+        "position": "Human Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Walter Damm Kempft",
+        "position": "Human Lineman"
+      },
+      {
+        "number": 12,
+        "name": "Gerhard Linebreaker",
+        "position": "Human Lineman"
+      }
+    ]
+  },
+  "lizardmen": {
+    "name": "Lizardmen Team",
+    "roster": "Lizardmen",
+    "rerolls": 2,
+    "apothecary": true,
+    "assistantCoaches": 2,
+    "cheerleaders": 1,
+    "dedicatedFans": 5,
+    "players": [
+      {
+        "number": 1,
+        "name": "Ankha-adohi",
+        "position": "Kroxigor"
+      },
+      {
+        "number": 2,
+        "name": "Quetotta",
+        "position": "Saurus Blocker"
+      },
+      {
+        "number": 3,
+        "name": "Loqadohi",
+        "position": "Saurus Blocker"
+      },
+      {
+        "number": 4,
+        "name": "Xlquet of Pahualaxa",
+        "position": "Saurus Blocker"
+      },
+      {
+        "number": 5,
+        "name": "Boqchi of Lake Titicotl",
+        "position": "Saurus Blocker"
+      },
+      {
+        "number": 6,
+        "name": "Kroxzlat",
+        "position": "Saurus Blocker"
+      },
+      {
+        "number": 7,
+        "name": "Itzazlat of Xahutec",
+        "position": "Saurus Blocker"
+      },
+      {
+        "number": 8,
+        "name": "Chicczlat of Chaqua",
+        "position": "Skink Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Loqloq of Lake Incatol",
+        "position": "Skink Lineman"
+      },
+      {
+        "number": 10,
+        "name": "Kai-ec of Lake Titicotl",
+        "position": "Skink Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Chitoc of Xuhua Lake",
+        "position": "Skink Lineman"
+      }
+    ]
+  },
+  "orc": {
+    "name": "Orc Team",
+    "roster": "Orc",
+    "rerolls": 2,
+    "apothecary": true,
+    "assistantCoaches": 2,
+    "cheerleaders": 1,
+    "dedicatedFans": 5,
+    "players": [
+      {
+        "number": 1,
+        "name": "Big Dave",
+        "position": "Troll"
+      },
+      {
+        "number": 2,
+        "name": "Lil' Kev",
+        "position": "Goblin Lineman"
+      },
+      {
+        "number": 3,
+        "name": "Ugly Rackspite",
+        "position": "Orc Blitzer"
+      },
+      {
+        "number": 4,
+        "name": "Osgar Vilechuck",
+        "position": "Orc Blitzer"
+      },
+      {
+        "number": 5,
+        "name": "Da Rock",
+        "position": "Big Un Blocker"
+      },
+      {
+        "number": 6,
+        "name": "Igor Blazetown",
+        "position": "Big Un Blocker"
+      },
+      {
+        "number": 7,
+        "name": "Hak Demoncutter",
+        "position": "Orc Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Trok Elfspliiter",
+        "position": "Orc Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Gurk Halftoad",
+        "position": "Orc Thrower"
+      },
+      {
+        "number": 10,
+        "name": "Izzi the Frog",
+        "position": "Orc Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Urgrain Kneebender",
+        "position": "Orc Lineman"
+      },
+      {
+        "number": 12,
+        "name": "Eruk Ogrehack",
+        "position": "Orc Lineman"
+      }
+    ]
+  },
+  "skaven": {
+    "name": "Skaven Team",
+    "roster": "Skaven",
+    "rerolls": 2,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 1,
+    "dedicatedFans": 3,
+    "players": [
+      {
+        "number": 1,
+        "name": "Skitz",
+        "position": "Skaven Thrower"
+      },
+      {
+        "number": 2,
+        "name": "Skittab",
+        "position": "Blitzer"
+      },
+      {
+        "number": 3,
+        "name": "Shiver",
+        "position": "Blitzer"
+      },
+      {
+        "number": 4,
+        "name": "Garifink",
+        "position": "Gutter Runner"
+      },
+      {
+        "number": 5,
+        "name": "Merifink",
+        "position": "Gutter Runner"
+      },
+      {
+        "number": 6,
+        "name": "Fadereak Chasm",
+        "position": "Rat Ogre"
+      },
+      {
+        "number": 7,
+        "name": "Stiletto",
+        "position": "Skaven Clanrat"
+      },
+      {
+        "number": 8,
+        "name": "Knure",
+        "position": "Skaven Clanrat"
+      },
+      {
+        "number": 9,
+        "name": "Skittythe",
+        "position": "Skaven Clanrat"
+      },
+      {
+        "number": 10,
+        "name": "Sceek",
+        "position": "Skaven Clanrat"
+      },
+      {
+        "number": 11,
+        "name": "Slikch",
+        "position": "Skaven Clanrat"
+      }
+    ]
+  },
+  "undead": {
+    "name": "Undead Team",
+    "roster": "Shambling Undead",
+    "rerolls": 3,
+    "assistantCoaches": 0,
+    "cheerleaders": 0,
+    "dedicatedFans": 3,
+    "players": [
+      {
+        "number": 1,
+        "name": "Harald Neiner",
+        "position": "Ghoul Runner"
+      },
+      {
+        "number": 2,
+        "name": "Willibald Dark",
+        "position": "Ghoul Runner"
+      },
+      {
+        "number": 3,
+        "name": "Hugo Krauser",
+        "position": "Wight Blitzer"
+      },
+      {
+        "number": 4,
+        "name": "Giselher Stattin",
+        "position": "Wight Blitzer"
+      },
+      {
+        "number": 5,
+        "name": "Friedbert Fleiss",
+        "position": "Mummy"
+      },
+      {
+        "number": 6,
+        "name": "Henny Himmelstink",
+        "position": "Mummy"
+      },
+      {
+        "number": 7,
+        "name": "Dietrich Emmerich",
+        "position": "Zombie Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Eldrich Holstein",
+        "position": "Zombie Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Gruff Hackedson",
+        "position": "Zombie Lineman"
+      },
+      {
+        "number": 10,
+        "name": "Ivan Kellhoofed",
+        "position": "Skeleton Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Walter Damp Kempft",
+        "position": "Skeleton Lineman"
+      }
+    ]
+  },
+  "vampire": {
+    "name": "Vampire Team",
+    "roster": "Vampire",
+    "rerolls": 3,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 1,
+    "dedicatedFans": 3,
+    "players": [
+      {
+        "number": 1,
+        "name": "Amber Celeste",
+        "position": "Vampire Blitzer"
+      },
+      {
+        "number": 2,
+        "name": "Victoria Jezebel",
+        "position": "Vampire Blitzer"
+      },
+      {
+        "number": 3,
+        "name": "Vladamir Lazarus",
+        "position": "Vampire Runner"
+      },
+      {
+        "number": 4,
+        "name": "John",
+        "position": "Thrall Lineman"
+      },
+      {
+        "number": 5,
+        "name": "Liam",
+        "position": "Thrall Lineman"
+      },
+      {
+        "number": 6,
+        "name": "Robert",
+        "position": "Thrall Lineman"
+      },
+      {
+        "number": 7,
+        "name": "Merek",
+        "position": "Thrall Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Carac",
+        "position": "Thrall Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Ulric",
+        "position": "Thrall Lineman"
+      },
+      {
+        "number": 10,
+        "name": "Borin",
+        "position": "Thrall Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Rowan",
+        "position": "Thrall Lineman"
+      }
+    ]
+  },
+  "wood-elf": {
+    "name": "Wood Elf Team",
+    "roster": "Wood Elf",
+    "rerolls": 2,
+    "apothecary": true,
+    "assistantCoaches": 0,
+    "cheerleaders": 1,
+    "dedicatedFans": 3,
+    "players": [
+      {
+        "number": 1,
+        "name": "Rootsman HiFi",
+        "position": "Loren Forest Treeman"
+      },
+      {
+        "number": 2,
+        "name": "Endomnir Lightfoot",
+        "position": "Wardancer"
+      },
+      {
+        "number": 3,
+        "name": "Glorsemain Fastspear",
+        "position": "Wardancer"
+      },
+      {
+        "number": 4,
+        "name": "Hasudaen Kindheart",
+        "position": "Wood Elf Catcher"
+      },
+      {
+        "number": 5,
+        "name": "Finannean Whitereed",
+        "position": "Wood Elf Catcher"
+      },
+      {
+        "number": 6,
+        "name": "Gethfinbeth Brightknife",
+        "position": "Wood Elf Thrower"
+      },
+      {
+        "number": 7,
+        "name": "Fandillana Surehand",
+        "position": "Wood Elf Lineman"
+      },
+      {
+        "number": 8,
+        "name": "Istrabaire Sharpblade",
+        "position": "Wood Elf Lineman"
+      },
+      {
+        "number": 9,
+        "name": "Iysenil Slenderblade",
+        "position": "Wood Elf Lineman"
+      },
+      {
+        "number": 10,
+        "name": "Ulelhil PalemoonIzzi the Frog",
+        "position": "Wood Elf Lineman"
+      },
+      {
+        "number": 11,
+        "name": "Indraril Youngstar",
+        "position": "Wood Elf Lineman"
+      }
+    ]
+  }
+}

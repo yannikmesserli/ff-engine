@@ -1,0 +1,57 @@
+# Agent guide: Blood Bowl frontend
+
+A browser-only BB2025 Blood Bowl engine plus a React game component (pnpm workspace). Start with `README.md`, then the
+README of the package you touch:
+
+- `packages/engine` (`@bb/engine`): pure rules engine. Read `packages/engine/README.md` before changing rules.
+- `packages/data` (`@bb/data`): rosters, example teams, formations, zod schemas.
+- `packages/board-ui` (`@bb/board-ui`): the `<BloodBowlGame>` React component.
+- `apps/playground`: Vite app hosting the component.
+
+## Commands (run from `frontend/`)
+
+```
+pnpm test        # vitest: engine unit tests + 40 full random games (data.test.ts)
+pnpm typecheck   # tsc in every package
+pnpm build       # playground production build
+pnpm dev         # playground on http://localhost:5173 (?seed=42 replays the same dice)
+```
+
+Run `pnpm typecheck && pnpm test` before reporting any change as done.
+
+## Rules
+
+- Target ruleset: **BB2025 only**. Older editions (BB2016, BB2020) differ in many details, so don't port rules from
+  them.
+- Describe rules in game terms in comments and docs (what is rolled, modifiers, who chooses). Don't cite other Blood
+  Bowl implementations or their class names.
+- Rosters come from FUMBBL's BB2025 ruleset (`pnpm fetch-rosters`, network).
+
+## Engine conventions
+
+- Rules are a procedure stack: each procedure is plain serializable data on `state.stack`; its handler in
+  `packages/engine/src/procedures/` exposes `step(ctx, proc, action)` (returns `"continue"`, `"wait"` or `"done"`)
+  and `actions(state, proc)` (the action templates offered while it waits).
+- Every die is a `ROLL` action. Tests pass explicit values (`roll(4, 3)`); never call `Math.random`.
+- `step` is pure (Immer). Keep `GameState` JSON-serializable: no classes, Maps or functions.
+- Coordinates: home on the left (scores at x = 25), d8 directions clockwise from north (1 = N).
+- When a rule lands, update the "Implemented so far" / "Not yet" lists in `README.md`.
+
+## Tests
+
+- `packages/engine/src/engine.test.ts` builds positions with helpers (`toFirstTurn()`, `apply(state, ...actions)`,
+  `roll(...)`, `find(state, "TEMPLATE")`, `types(state)`) and mutates a `structuredClone` of the state to place
+  players. Add a `describe` block per rule with fixed dice.
+- `packages/data/src/data.test.ts` plays full games with random legal actions. When you add an action template, teach
+  `randomAction` how to answer it, or those games stall.
+
+## Code style
+
+- Terse one-line JSDoc on every export and non-obvious helper. No `@param` boilerplate. Match the comment density
+  around you.
+- Keep the exports of each package's `src/index.ts` stable; other packages import them.
+
+## Skills
+
+- `.claude/skills/add-rule`: workflow for implementing a BB2025 rule, action or player skill in the engine.
+- `.claude/skills/run-playground`: launch the playground and check a change in the browser.

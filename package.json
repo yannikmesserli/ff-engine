@@ -1,0 +1,17 @@
+{
+  "name": "bloodbowl-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --filter playground dev",
+    "build": "pnpm --filter playground build",
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck",
+    "fetch-rosters": "pnpm --filter @bb/data fetch-rosters"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

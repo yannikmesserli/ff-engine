@@ -1,0 +1,159 @@
+.bb-game {
+  --bb-square: 30px; /* SQUARE_SIZE in Board.tsx */
+  --bb-home: #2f6fd6;
+  --bb-away: #c83a32;
+  --bb-panel: #23262b;
+  --bb-text: #e8e6e1;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--bb-text);
+  background: #16181b;
+  padding: 12px;
+  width: fit-content;
+  border-radius: 8px;
+}
+
+.bb-game button {
+  background: #3a3f47;
+  color: var(--bb-text);
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+.bb-game button:hover:not(:disabled) { background: #4a515b; }
+.bb-game button:disabled { opacity: 0.4; cursor: default; }
+.bb-game button.bb-link { background: none; border: none; text-decoration: underline; }
+.bb-game button.bb-roll, .bb-game button.bb-confirm { background: #2e7d32; border-color: #4caf50; }
+.bb-game button.bb-end-turn { background: #8a5a00; border-color: #c88400; }
+
+/* Scoreboard */
+.bb-scoreboard { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.bb-team { display: flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 6px; border-bottom: 3px solid transparent; }
+.bb-team img { width: 48px; height: 48px; object-fit: contain; }
+.bb-team.bb-side-home { border-color: var(--bb-home); }
+.bb-team.bb-side-away { flex-direction: row-reverse; text-align: right; border-color: var(--bb-away); }
+.bb-team.bb-acting { background: #2b2f35; }
+.bb-team-name { font-weight: 600; font-size: 16px; }
+.bb-team-info { opacity: 0.75; font-size: 12px; }
+.bb-score { text-align: center; font-size: 28px; font-weight: 700; }
+.bb-half { font-size: 12px; font-weight: 400; opacity: 0.7; }
+
+/* Board */
+.bb-board-wrap { position: relative; }
+.bb-board { display: flex; border: 1px solid #555; user-select: none; }
+.bb-pitch {
+  position: relative;
+  width: calc(26 * var(--bb-square));
+  height: calc(15 * var(--bb-square));
+  background-size: 100% 100%;
+}
+.bb-square { position: absolute; width: var(--bb-square); height: var(--bb-square); box-sizing: border-box; }
+.bb-square:hover { background: rgba(255, 255, 255, 0.25); }
+.bb-square.bb-droppable { outline: 1px dashed rgba(255, 255, 255, 0.08); outline-offset: -1px; }
+.bb-square.bb-over { background: rgba(255, 255, 255, 0.45); }
+.bb-square.bb-kick-target { cursor: crosshair; }
+.bb-square.bb-kick-target:hover { background: rgba(255, 235, 59, 0.6); border-radius: 50%; }
+.bb-square.bb-pass-target { cursor: crosshair; }
+.bb-square.bb-pass-quick { background: rgba(76, 175, 80, 0.3); }
+.bb-square.bb-pass-short { background: rgba(255, 235, 59, 0.25); }
+.bb-square.bb-pass-long { background: rgba(255, 152, 0, 0.25); }
+.bb-square.bb-pass-bomb { background: rgba(244, 67, 54, 0.22); }
+.bb-square.bb-pass-target:hover { background: rgba(255, 255, 255, 0.5); }
+.bb-pass-legend { display: inline-flex; gap: 6px; font-size: 12px; }
+.bb-pass-legend span { padding: 2px 6px; border-radius: 3px; color: #111; font-weight: 600; }
+.bb-legend-quick { background: rgb(129, 199, 132); }
+.bb-legend-short { background: rgb(255, 241, 118); }
+.bb-legend-long { background: rgb(255, 183, 77); }
+.bb-legend-bomb { background: rgb(229, 115, 115); }
+.bb-square.bb-target { background: rgba(76, 175, 80, 0.45); cursor: pointer; }
+.bb-square.bb-target-risky { background: rgba(255, 193, 7, 0.45); cursor: pointer; }
+.bb-badge {
+  position: absolute; right: 1px; bottom: 0; font-size: 9px; font-weight: 700; color: #111;
+  text-shadow: 0 0 2px #fff;
+}
+.bb-on-square, .bb-ball { position: absolute; width: var(--bb-square); height: var(--bb-square); pointer-events: none; }
+.bb-on-square > * { pointer-events: auto; }
+.bb-ball { z-index: 3; }
+
+.bb-player {
+  position: relative; width: var(--bb-square); height: var(--bb-square);
+  display: flex; align-items: center; justify-content: center; z-index: 2; touch-action: none;
+}
+.bb-player > img:first-child { width: 28px; height: 28px; }
+.bb-player.bb-draggable { cursor: grab; }
+.bb-player.bb-dragging { z-index: 10; cursor: grabbing; opacity: 0.85; }
+.bb-player.bb-selectable { cursor: pointer; }
+.bb-player.bb-selectable::after {
+  content: ""; position: absolute; inset: 1px; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.8);
+  pointer-events: none;
+}
+.bb-player.bb-active::after {
+  content: ""; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 2px #fff, 0 0 8px 2px #fff;
+  pointer-events: none;
+}
+.bb-player.bb-blitz-target::before {
+  content: ""; position: absolute; inset: -2px; border-radius: 50%; box-shadow: 0 0 0 2px #ff5252; pointer-events: none;
+}
+.bb-dice-badge {
+  position: absolute; top: -6px; right: -8px; z-index: 4; font-size: 9px; font-weight: 700; line-height: 1;
+  padding: 2px 3px; border-radius: 3px; background: #2e7d32; color: #fff; pointer-events: none;
+}
+.bb-dice-badge.bb-defender-picks { background: #c62828; }
+.bb-dice-badge.bb-foul-badge { background: #6a1b9a; }
+.bb-action-menu {
+  position: absolute; z-index: 20; display: flex; flex-direction: column; gap: 3px; padding: 6px;
+  background: #23262b; border: 1px solid #555; border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5); min-width: 130px;
+}
+.bb-action-menu-title { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+.bb-action-menu button { text-align: left; }
+.bb-block-dice { display: inline-flex; gap: 4px; }
+.bb-block-dice button { padding: 2px; }
+.bb-player.bb-used { filter: grayscale(0.8) brightness(0.8); }
+.bb-player.bb-prone > img:first-child, .bb-player.bb-stunned > img:first-child { opacity: 0.6; }
+.bb-status { position: absolute; left: 0; bottom: 0; width: 14px; height: 14px; }
+.bb-held-ball { position: absolute; right: -2px; bottom: -2px; width: 14px; height: 14px; }
+.bb-player-fallback {
+  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.bb-home .bb-player-fallback { background: var(--bb-home); }
+.bb-away .bb-player-fallback { background: var(--bb-away); }
+
+.bb-dugout {
+  width: calc(2 * var(--bb-square) + 4px); display: flex; flex-direction: column;
+  background-color: #2a2d31;
+}
+.bb-dugout-home { border-right: 3px solid var(--bb-home); }
+.bb-dugout-away { border-left: 3px solid var(--bb-away); }
+.bb-dugout.bb-droppable { outline: 2px dashed rgba(255, 255, 255, 0.3); outline-offset: -2px; }
+.bb-dugout.bb-over { background-color: #3d4249; }
+.bb-dugout-box { flex: 1; padding: 2px; border-bottom: 1px solid #444; }
+.bb-dugout-box:first-child { flex: 3; }
+.bb-dugout-label { font-size: 10px; text-transform: uppercase; opacity: 0.6; text-align: center; }
+.bb-dugout-players { display: flex; flex-wrap: wrap; }
+
+/* Panels */
+/* The board sets the component width; the panels below must not (hover cards would make it jump). */
+.bb-bottom { display: flex; gap: 8px; margin-top: 8px; width: 0; min-width: 100%; }
+.bb-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.bb-panel { background: var(--bb-panel); border-radius: 6px; padding: 8px 10px; border-left: 4px solid #555; }
+.bb-panel.bb-side-home { border-left-color: var(--bb-home); }
+.bb-panel.bb-side-away { border-left-color: var(--bb-away); }
+.bb-prompt { margin-bottom: 6px; }
+.bb-buttons { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.bb-auto-roll { display: block; margin-top: 6px; font-size: 12px; opacity: 0.8; }
+.bb-manual-dice { display: flex; gap: 4px; }
+.bb-manual-dice input { width: 44px; }
+.bb-errors { margin: 4px 0 0; padding-left: 18px; color: #ffb74d; font-size: 12px; width: 100%; }
+.bb-error { color: #ff8a80; }
+.bb-last-roll { display: flex; align-items: center; gap: 10px; }
+.bb-last-roll .bb-link { margin-left: auto; }
+.bb-dice { display: inline-flex; gap: 4px; }
+.bb-die { width: 32px; height: 32px; box-sizing: border-box; padding: 2px; background: #f4f1ea; border-radius: 6px; }
+.bb-d3 { display: inline-flex; align-items: center; justify-content: center; color: #222; font-weight: 700; }
+.bb-coin { width: auto; padding: 6px 8px; background: #c9a227; color: #222; border-radius: 16px; font-weight: 700; height: auto; }
+.bb-stats { font-family: ui-monospace, monospace; margin-top: 2px; }
+.bb-skills { font-size: 12px; opacity: 0.8; }
+.bb-casualty { font-size: 12px; color: #e57373; }
+.bb-log { width: 320px; height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.5; }

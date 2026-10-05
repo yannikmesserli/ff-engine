@@ -1,0 +1,146 @@
+import type { Ctx } from "../context";
+import type { Action, ActionTemplate, GameState, PlayerState, Side, Square, Weather } from "../types";
+import { skillName } from "../skills";
+import { inBounds, inHalf, isOnPitch, playerAt, sameSquare, scoringEndZoneX } from "../pitch";
+
+/** The player with this id, or reject the action. */
+export function getPlayer(ctx: Ctx, id: string): PlayerState {
+  return ctx.state.players[id] ?? ctx.reject(`Unknown player ${id}.`);
+}
+
+/** The square of a player on the pitch, or reject the action. */
+export function squareOf(ctx: Ctx, player: PlayerState): Square {
+  return isOnPitch(player) ? player.at : ctx.reject(`${player.name} is not on the pitch.`);
+}
+
+/** How a ball arrives on a square, for `landBall`. */
+export interface Landing {
+  kickoff: boolean;
+  /** Set during the kick-off: leaving the receiving half means a touchback. */
+  receiving: Side | null;
+  /** A kicked or thrown ball bounces when landing on an empty square; a bouncing ball comes to rest. */
+  bounceIfEmpty: boolean;
+  /** The ball bounced or scattered: +1 to the catch roll (not for throw-ins). */
+  scattered: boolean;
+}
+
+/**
+ * The ball arrives on a square after a kick, bounce or throw-in: touchback, throw-in from `from` when it left the
+ * pitch, a catch by a standing player, or a bounce.
+ */
+export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, receiving, bounceIfEmpty, scattered }: Landing) {
+  const { state } = ctx;
+  if (kickoff && receiving && !inHalf(receiving, square)) {
+    state.ball = { square: null, carried: false };
+    ctx.push({ type: "Touchback", side: receiving });
+    return;
+  }
+  if (!inBounds(square)) {
+    state.ball = { square: null, carried: false };
+    ctx.push({ type: "ThrowIn", from });
+    return;
+  }
+  state.ball = { square, carried: false };
+  const player = playerAt(state, square);
+  if (player?.status === "standing") {
+    ctx.push({ type: "Catch", playerId: player.id, kickoff, scattered, stage: "check" });
+  } else if (player || bounceIfEmpty) {
+    ctx.push({ type: "Bounce", from: square, kickoff, receiving });
+  }
+}
+
+/** Score a touchdown if the player stands in the opponents' end zone with the ball (in either team's turn). */
+export function checkTouchdown(ctx: Ctx, player: PlayerState) {
+  const { state } = ctx;
+  if (state.activeSide === null || state.touchdown !== null) return;
+  if (!isOnPitch(player) || player.status !== "standing") return;
+  if (!state.ball.carried || !state.ball.square || !sameSquare(state.ball.square, player.at)) return;
+  if (player.at.x !== scoringEndZoneX(player.side)) return;
+  state.teams[player.side].score += 1;
+  // A touchdown scored in the opponent's turn uses up one of the scoring team's turns.
+  if (player.side !== state.activeSide) state.teams[player.side].turn += 1;
+  state.touchdown = player.side;
+  ctx.emit({ type: "Touchdown", side: player.side, playerId: player.id });
+}
+
+/** End of a drive: drive-long effects expire (exhaustion from the previous drive, Dodgy Snack, kick-off bonuses). */
+export function endDrive(ctx: Ctx) {
+  const { state } = ctx;
+  for (const p of Object.values(state.players)) {
+    p.exhausted = false;
+    if (p.snack) {
+      p.ma = p.snack.ma;
+      p.av = p.snack.av;
+      p.snack = null;
+    }
+  }
+  for (const team of Object.values(state.teams)) {
+    team.driveRerolls = 0;
+    team.extraAssist = false;
+  }
+}
+
+/** BB2025 weather modifier added to a check roll. */
+export function weatherModifier(state: { weather: Weather }, kind: "rush" | "pickup" | "catch"): number {
+  if (kind === "rush") return state.weather === "blizzard" ? -1 : 0;
+  return state.weather === "pouring-rain" ? -1 : 0;
+}
+
+/** Clear the pitch before a kick-off: everyone fit goes back to the reserves. */
+export function resetForKickoff(ctx: Ctx) {
+  const { state } = ctx;
+  for (const p of Object.values(state.players)) {
+    if (isOnPitch(p) || p.at === "reserves") {
+      p.at = "reserves";
+      p.status = "standing";
+    }
+    p.activated = false;
+    p.movesUsed = 0;
+  }
+  state.ball = { square: null, carried: false };
+  state.activeSide = null;
+  state.activePlayerId = null;
+  state.turnover = false;
+  state.touchdown = null;
+}
+
+/** Team re-rolls left for the drive (Brilliant Coaching) and the half. */
+export const rerollsLeft = (state: GameState, side: Side) => state.teams[side].rerolls + state.teams[side].driveRerolls;
+
+/** BB2025: any number of team re-rolls per turn, only in the team's own turn, each roll at most once. */
+export const canTeamReroll = (state: GameState, side: Side, rerolled: boolean) =>
+  !rerolled && state.activeSide === side && rerollsLeft(state, side) > 0;
+
+/** Spend a team re-roll, drive re-rolls first. */
+export function useTeamReroll(ctx: Ctx, side: Side) {
+  const team = ctx.state.teams[side];
+  if (team.driveRerolls > 0) team.driveRerolls -= 1;
+  else team.rerolls -= 1;
+  ctx.emit({ type: "RerollUsed", side });
+}
+
+/** Loner(X): the D6 roll a player needs to use a team re-roll, or null without Loner. */
+export function lonerTarget(player: PlayerState): number | null {
+  const loner = player.skills.find((s) => skillName(s) === "Loner");
+  if (!loner) return null;
+  return Number(/\((\d)\+?\)/.exec(loner)?.[1] ?? 4);
+}
+
+const lonerReason = (player: PlayerState) => `Loner ${lonerTarget(player)}+ (${player.name})`;
+
+/** The ROLL template of a Loner roll. */
+export const lonerRollTemplate = (player: PlayerState): ActionTemplate => ({
+  type: "ROLL",
+  side: player.side,
+  dice: [{ kind: "d6", count: 1 }],
+  reason: lonerReason(player),
+});
+
+/** Roll for Loner after spending a team re-roll: on a failure the re-roll is lost and the first result stands. */
+export function rollLoner(ctx: Ctx, action: Action, player: PlayerState): boolean {
+  const target = lonerTarget(player)!;
+  const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], lonerReason(player));
+  const success = roll! >= target;
+  ctx.emit({ type: "CheckResult", kind: "loner", playerId: player.id, success, roll: roll!, target });
+  return success;
+}

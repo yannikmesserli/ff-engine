@@ -1,0 +1,291 @@
+import type { Ctx, Handler } from "../context";
+import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
+import { adjacent, ballCarrier, inBounds, isOnPitch, playerAt, sameSquare } from "../pitch";
+import { BLOCK_FACES } from "../dice";
+import { injure } from "./injury";
+import { hasSkill } from "../skills";
+import { canTeamReroll, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll, weatherModifier } from "./helpers";
+import { RUSH_TARGET } from "./turn";
+
+type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
+
+/** The eight directions clockwise from north, so that neighbours in the array are neighbouring directions. */
+const COMPASS: Square[] = [
+  { x: 0, y: -1 },
+  { x: 1, y: -1 },
+  { x: 1, y: 0 },
+  { x: 1, y: 1 },
+  { x: 0, y: 1 },
+  { x: -1, y: 1 },
+  { x: -1, y: 0 },
+  { x: -1, y: -1 },
+];
+
+/** The standing player on a square, if any (only standing players exert tackle zones and assist). */
+export const standingAt = (state: GameState, s: Square) => {
+  const p = playerAt(state, s);
+  return p?.status === "standing" ? p : undefined;
+};
+
+/**
+ * Assists for `side` against the opponent standing on `target`: standing team-mates next to it (except
+ * `excludeId`) that are not marked by any other opponent, or that have Guard.
+ */
+function assists(state: GameState, side: Side, target: Square, opponentId: string, excludeId: string): number {
+  return adjacent(target).filter((s) => {
+    const helper = standingAt(state, s);
+    if (!helper || helper.side !== side || helper.id === excludeId) return false;
+    if (hasSkill(helper, "Guard")) return true;
+    return adjacent(s).every((n) => {
+      const marker = standingAt(state, n);
+      return !marker || marker.side === side || marker.id === opponentId;
+    });
+  }).length;
+}
+
+/** Number of block dice: positive when the attacker chooses, negative when the defender does. */
+export function blockDice(state: GameState, attacker: PlayerState, defender: PlayerState): number {
+  if (!isOnPitch(attacker) || !isOnPitch(defender)) return 0;
+  const extra = state.teams[attacker.side].extraAssist ? 1 : 0;
+  const a = attacker.st + assists(state, attacker.side, defender.at, defender.id, attacker.id) + extra;
+  const d = defender.st + assists(state, defender.side, attacker.at, attacker.id, defender.id);
+  if (a > 2 * d) return 3;
+  if (a > d) return 2;
+  if (2 * a < d) return -3;
+  if (a < d) return -2;
+  return 1;
+}
+
+/**
+ * Squares a player on `from` can be pushed to in direction `dir`:
+ * the free ones among the three away from the pusher, else all three for a chain push; empty means into the crowd.
+ */
+export function pushbackSquares(state: GameState, from: Square, dir: Square): Square[] {
+  const i = COMPASS.findIndex((d) => sameSquare(d, dir));
+  const squares = [-1, 0, 1].map((k) => COMPASS[(i + k + 8) % 8]!).map((d) => ({ x: from.x + d.x, y: from.y + d.y }));
+  const onPitch = squares.filter(inBounds);
+  const free = onPitch.filter((s) => !playerAt(state, s));
+  if (free.length > 0) return free;
+  // All three squares occupied: push into one of them (chain push). Otherwise the crowd gets them.
+  return onPitch.length === 3 ? onPitch : [];
+}
+
+/** Only the attacker's team may re-roll the block dice, once. */
+const canReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState) => canTeamReroll(state, attacker.side, proc.rerolled);
+
+/** Spend the team re-roll; a Loner attacker must roll for it first. */
+function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
+  useTeamReroll(ctx, attacker.side);
+  proc.rerolled = true;
+  proc.stage = lonerTarget(attacker) === null ? "roll" : "loner";
+}
+
+/** Move every pushed player, last of the chain first, carrying the ball along; off the pitch means the crowd. */
+function applyPushes(ctx: Ctx, proc: P<"Block">) {
+  const { state } = ctx;
+  const { ball } = state;
+  for (const { playerId, to } of [...proc.chain].reverse()) {
+    const p = state.players[playerId]!;
+    const from = squareOf(ctx, p);
+    const carrying = ball.carried && ball.square !== null && sameSquare(ball.square, from);
+    ctx.emit({ type: "PlayerPushed", playerId, from: { ...from }, to: to && { ...to } });
+    if (to === null) {
+      p.at = "reserves";
+      if (carrying) state.ball = { square: null, carried: false };
+      ctx.push({ type: "Crowd", playerId, from: { ...from }, hadBall: carrying });
+      continue;
+    }
+    p.at = { ...to };
+    if (carrying) ball.square = { ...to };
+  }
+}
+
+/**
+ * One BB2025 block or blitz block: (Rush when blitzing) -> block dice -> re-roll ->
+ * choice of die -> pushback -> follow-up -> knock-downs -> loose ball -> touchdown check.
+ */
+export const Block: Handler<P<"Block">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const attacker = getPlayer(ctx, proc.attackerId);
+    const defender = getPlayer(ctx, proc.defenderId);
+    switch (proc.stage) {
+      case "rush": {
+        // Blocking during a Blitz costs one square of movement, which may be a Rush.
+        const needsRush = attacker.movesUsed >= attacker.ma;
+        attacker.movesUsed += 1;
+        state.lastCheck = null;
+        proc.stage = "rushResult";
+        if (needsRush) {
+          ctx.push({ type: "Check", kind: "rush", playerId: attacker.id, target: RUSH_TARGET, modifier: weatherModifier(state, "rush"), stage: "roll", rerolled: false });
+        }
+        return "continue";
+      }
+      case "rushResult":
+        if (state.lastCheck?.success === false) {
+          ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+          return "done";
+        }
+        proc.stage = "roll";
+        return "continue";
+      case "roll": {
+        if (action === null) return "wait";
+        proc.results = ctx.roll(action, [{ kind: "block", count: Math.abs(proc.dice) }], "Block");
+        // The attacker may re-roll from the choice of die; when the defender chooses, the re-roll is decided first.
+        proc.stage = proc.dice < 0 && canReroll(state, proc, attacker) ? "reroll" : "choose";
+        return "continue";
+      }
+      case "reroll": {
+        if (action === null) return "wait";
+        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
+        if (a.type === "USE_REROLL") useReroll(ctx, proc, attacker);
+        else proc.stage = "choose";
+        return "continue";
+      }
+      case "loner":
+        if (action === null) return "wait";
+        // A failed Loner roll keeps the dice already rolled.
+        proc.stage = rollLoner(ctx, action, attacker) ? "roll" : "choose";
+        return "continue";
+      case "choose": {
+        // A single die without a possible re-roll leaves nothing to decide.
+        if (proc.results!.length === 1 && !canReroll(state, proc, attacker)) proc.face = proc.results![0]!;
+        else {
+          if (action === null) return "wait";
+          const a = ctx.expect(action, "CHOOSE_BLOCK_DIE", "USE_REROLL");
+          if (a.type === "USE_REROLL") {
+            if (proc.dice < 0 || !canReroll(state, proc, attacker)) ctx.reject("No re-roll available.");
+            useReroll(ctx, proc, attacker);
+            return "continue";
+          }
+          proc.face = proc.results![a.index] ?? ctx.reject("Invalid die.");
+        }
+        ctx.emit({ type: "BlockResult", attackerId: attacker.id, defenderId: defender.id, face: proc.face });
+        proc.stage = "resolve";
+        return "continue";
+      }
+      case "resolve": {
+        const result = BLOCK_FACES[proc.face! - 1]!;
+        if (result === "attacker_down") {
+          ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+          proc.stage = "end";
+          return "continue";
+        }
+        if (result === "both_down") {
+          // TODO: Wrestle, Juggernaut.
+          ctx.push(
+            ...(hasSkill(defender, "Block") ? [] : [{ type: "KnockDown" as const, playerId: defender.id, turnover: false, stage: "fall" as const }]),
+            ...(hasSkill(attacker, "Block") ? [] : [{ type: "KnockDown" as const, playerId: attacker.id, turnover: true, stage: "fall" as const }]),
+          );
+          proc.stage = "end";
+          return "continue";
+        }
+        const dodges = result === "defender_stumbles" && hasSkill(defender, "Dodge") && !hasSkill(attacker, "Tackle");
+        proc.knockDefender = result === "defender_down" || (result === "defender_stumbles" && !dodges);
+        const from = squareOf(ctx, defender);
+        const at = squareOf(ctx, attacker);
+        proc.vacated = { ...from };
+        proc.pushing = { playerId: defender.id, from: { ...from }, dir: { x: Math.sign(from.x - at.x), y: Math.sign(from.y - at.y) } };
+        proc.stage = "push";
+        return "continue";
+      }
+      case "push": {
+        const pushing = proc.pushing!;
+        const squares = pushbackSquares(state, pushing.from, pushing.dir);
+        let to: Square | null;
+        if (squares.length === 0) to = null;
+        else if (squares.length === 1) to = squares[0]!;
+        else {
+          if (action === null) return "wait";
+          const { square } = ctx.expect(action, "PUSH");
+          if (!squares.some((s) => sameSquare(s, square))) ctx.reject("Illegal push square.");
+          to = square;
+        }
+        proc.chain.push({ playerId: pushing.playerId, to: to && { ...to } });
+        const occupant = to && playerAt(state, to);
+        if (to && occupant) {
+          proc.pushing = { playerId: occupant.id, from: { ...to }, dir: { x: to.x - pushing.from.x, y: to.y - pushing.from.y } };
+          return "continue";
+        }
+        if (to && !state.ball.carried && state.ball.square && sameSquare(state.ball.square, to)) proc.bounceFrom = { ...to };
+        applyPushes(ctx, proc);
+        proc.stage = "followup";
+        return "continue";
+      }
+      case "followup": {
+        const canFollow = isOnPitch(attacker) && attacker.status === "standing" && !playerAt(state, proc.vacated!);
+        if (canFollow) {
+          if (action === null) return "wait";
+          const { follow } = ctx.expect(action, "FOLLOW_UP");
+          if (follow) {
+            const from = squareOf(ctx, attacker);
+            const { ball } = state;
+            if (ball.carried && ball.square && sameSquare(ball.square, from)) ball.square = { ...proc.vacated! };
+            attacker.at = { ...proc.vacated! };
+            ctx.emit({ type: "FollowedUp", playerId: attacker.id, to: { ...proc.vacated! } });
+          }
+        }
+        const knock = proc.knockDefender && isOnPitch(defender);
+        // A loose ball under a pushed player bounces once the knock-downs are resolved.
+        ctx.push(
+          ...(knock ? [{ type: "KnockDown" as const, playerId: defender.id, turnover: false, stage: "fall" as const }] : []),
+          ...(proc.bounceFrom ? [{ type: "Bounce" as const, from: proc.bounceFrom, kickoff: false, receiving: null }] : []),
+        );
+        proc.stage = "end";
+        return "continue";
+      }
+      case "end": {
+        const carrier = ballCarrier(state);
+        if (carrier) checkTouchdown(ctx, carrier);
+        return "done";
+      }
+    }
+  },
+  actions(state, proc) {
+    const attacker = state.players[proc.attackerId]!;
+    const defender = state.players[proc.defenderId]!;
+    switch (proc.stage) {
+      case "roll":
+        return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: Math.abs(proc.dice) }], reason: `Block (${Math.abs(proc.dice)} ${proc.dice < 0 ? "dice, defender chooses" : Math.abs(proc.dice) > 1 ? "dice" : "die"})` }];
+      case "reroll":
+        return [
+          { type: "USE_REROLL", side: attacker.side, available: rerollsLeft(state, attacker.side) },
+          { type: "DECLINE_REROLL", side: attacker.side },
+        ];
+      case "loner":
+        return [lonerRollTemplate(attacker)];
+      case "choose": {
+        const chooser = proc.dice > 0 ? attacker.side : defender.side;
+        const reroll =
+          proc.dice > 0 && canReroll(state, proc, attacker)
+            ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }]
+            : [];
+        return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll];
+      }
+      case "push": {
+        const pushing = proc.pushing!;
+        return [{ type: "PUSH", side: attacker.side, playerId: pushing.playerId, squares: pushbackSquares(state, pushing.from, pushing.dir) }];
+      }
+      case "followup":
+        return [{ type: "FOLLOW_UP", side: attacker.side, playerId: attacker.id, square: proc.vacated! }];
+      default:
+        return [];
+    }
+  },
+};
+
+/** Pushed into the crowd: injury roll without armour; a stunned result goes to the reserves, then the throw-in. */
+export const Crowd: Handler<P<"Crowd">> = {
+  step(ctx, proc, action) {
+    if (action === null) return "wait";
+    const player = getPlayer(ctx, proc.playerId);
+    const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury (crowd)");
+    // The throw-in waits for the casualty roll and the apothecary.
+    if (proc.hadBall) ctx.push({ type: "ThrowIn", from: proc.from });
+    injure(ctx, player, a! + b!, true);
+    return "done";
+  },
+  actions(state, proc) {
+    return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason: `Injury (${state.players[proc.playerId]!.name} pushed into the crowd)` }];
+  },
+};

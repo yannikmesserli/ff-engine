@@ -1,0 +1,21 @@
+{
+  "name": "@bb/data",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "fetch-rosters": "tsx scripts/fetch-rosters.ts"
+  },
+  "dependencies": {
+    "@bb/engine": "workspace:*",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "fast-xml-parser": "^5.11.2",
+    "tsx": "^4.23.15"
+  }
+}

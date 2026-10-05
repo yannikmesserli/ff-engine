@@ -1,0 +1,5134 @@
+{
+  "source": "https://fumbbl.com/api/ruleset/get/2014",
+  "rosters": [
+    {
+      "id": 8575,
+      "name": "Amazon",
+      "tier": 2,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66160,
+          "title": "Eagle Warrior",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge"
+          ],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66161,
+          "title": "Python Warrior",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 80000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "On the Ball",
+            "Pass",
+            "Safe Pass"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66164,
+          "title": "Piranha Warrior",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 90000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Hit and Run",
+            "Jump Up"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "blitzer",
+            "human"
+          ]
+        },
+        {
+          "id": 66165,
+          "title": "Jaguar Warrior Blocker",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 110000,
+          "ma": 6,
+          "st": 4,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Defensive",
+            "Dodge"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "blocker",
+            "human"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8604,
+      "name": "Black Orc",
+      "tier": 6,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66327,
+          "title": "Goblin Bruiser",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 45000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Stunty",
+            "Thick Skull"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G",
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "goblin",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66328,
+          "title": "Black Orc",
+          "type": "Regular",
+          "quantity": 6,
+          "cost": 90000,
+          "ma": 4,
+          "st": 4,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Brawler",
+            "Grab"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blocker",
+            "orc"
+          ]
+        },
+        {
+          "id": 66329,
+          "title": "Trained Troll",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 115000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Always Hungry",
+            "Mighty Blow(1)",
+            "Projectile Vomit",
+            "Really Stupid",
+            "Regeneration",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "troll"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8642,
+      "name": "Bretonnian",
+      "tier": 6,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66519,
+          "title": "Bretonnian Squire",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Wrestle"
+          ],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66520,
+          "title": "Bretonnian Knight Catcher",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 85000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Catch",
+            "Dauntless",
+            "Nerves of Steel"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "catcher",
+            "human"
+          ]
+        },
+        {
+          "id": 66521,
+          "title": "Bretonnian Knight Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 80000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Dauntless",
+            "Nerves of Steel",
+            "Pass"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66522,
+          "title": "Grail Knight",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 95000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 10,
+          "skills": [
+            "Block",
+            "Dauntless",
+            "Steady Footing"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "blitzer",
+            "human"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8603,
+      "name": "Chaos Chosen",
+      "tier": 5,
+      "rerollCost": 50000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66322,
+          "title": "Beastman Runner Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 55000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Horns",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "S",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "beastman",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66323,
+          "title": "Chaos Chosen",
+          "type": "Regular",
+          "quantity": 4,
+          "cost": 100000,
+          "ma": 5,
+          "st": 4,
+          "ag": 3,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Arm Bar"
+          ],
+          "normal": [
+            "G",
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blocker",
+            "human"
+          ]
+        },
+        {
+          "id": 66324,
+          "title": "Chaos Troll",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 115000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Always Hungry",
+            "Loner(4)",
+            "Mighty Blow",
+            "Projectile Vomit",
+            "Really Stupid",
+            "Regeneration",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "troll"
+          ]
+        },
+        {
+          "id": 66325,
+          "title": "Ogre",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 140000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Bone Head",
+            "Loner(4)",
+            "Mighty Blow",
+            "Thick Skull",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "ogre"
+          ]
+        },
+        {
+          "id": 66326,
+          "title": "Minotaur",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 150000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Frenzy",
+            "Horns",
+            "Loner(4)",
+            "Mighty Blow",
+            "Thick Skull",
+            "Unchannelled Fury"
+          ],
+          "normal": [
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "minotaur"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8602,
+      "name": "Chaos Dwarf",
+      "tier": 5,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66316,
+          "title": "Hobgoblin Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [],
+          "normal": [
+            "D"
+          ],
+          "double": [
+            "G",
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "goblin",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66317,
+          "title": "Chaos Dwarf Blocker",
+          "type": "Regular",
+          "quantity": 4,
+          "cost": 70000,
+          "ma": 4,
+          "st": 3,
+          "ag": 4,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Block",
+            "Iron Hard Skin",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D",
+            "Mutations"
+          ],
+          "keywords": [
+            "blocker",
+            "dwarf"
+          ]
+        },
+        {
+          "id": 66318,
+          "title": "Bull Centaur Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 130000,
+          "ma": 6,
+          "st": 4,
+          "ag": 4,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Sprint",
+            "Sure Feet",
+            "Thick Skull",
+            "Unsteady"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D",
+            "Mutations"
+          ],
+          "keywords": [
+            "blitzer",
+            "dwarf"
+          ]
+        },
+        {
+          "id": 66319,
+          "title": "Minotaur",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 150000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Frenzy",
+            "Horns",
+            "Loner(4)",
+            "Mighty Blow",
+            "Thick Skull",
+            "Unchannelled Fury"
+          ],
+          "normal": [
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "minotaur"
+          ]
+        },
+        {
+          "id": 66320,
+          "title": "Sneaky Stabba",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 60000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 5,
+          "av": 8,
+          "skills": [
+            "Shadowing",
+            "Stab"
+          ],
+          "normal": [
+            "G",
+            "D"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "goblin",
+            "special"
+          ]
+        },
+        {
+          "id": 66321,
+          "title": "Flamesmith",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 80000,
+          "ma": 5,
+          "st": 3,
+          "ag": 4,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Brawler",
+            "Breathe Fire",
+            "Disturbing Presence",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D",
+            "Mutations"
+          ],
+          "keywords": [
+            "dwarf",
+            "special"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8601,
+      "name": "Chaos Renegade",
+      "tier": 6,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 3,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66305,
+          "title": "Renegade Human",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Animosity"
+          ],
+          "normal": [
+            "G",
+            "D",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66306,
+          "title": "Renegade Human Thrower",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 75000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Animosity",
+            "Pass",
+            "Sure Hands"
+          ],
+          "normal": [
+            "G",
+            "P",
+            "D",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66307,
+          "title": "Renegade Goblin",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 40000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Animosity",
+            "Dodge",
+            "Right Stuff",
+            "Stunty"
+          ],
+          "normal": [
+            "A",
+            "D",
+            "Mutations"
+          ],
+          "double": [
+            "G",
+            "P"
+          ],
+          "keywords": [
+            "goblin",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66308,
+          "title": "Renegade Orc",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 50000,
+          "ma": 5,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 10,
+          "skills": [
+            "Animosity"
+          ],
+          "normal": [
+            "G",
+            "D",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "lineman",
+            "orc"
+          ]
+        },
+        {
+          "id": 66309,
+          "title": "Renegade Skaven",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 50000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Animosity"
+          ],
+          "normal": [
+            "G",
+            "D",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "lineman",
+            "skaven"
+          ]
+        },
+        {
+          "id": 66310,
+          "title": "Renegade Dark Elf",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 65000,
+          "ma": 6,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Animosity"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "D",
+            "Mutations"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "elf",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66311,
+          "title": "Troll",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 115000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Always Hungry",
+            "Loner(4)",
+            "Mighty Blow",
+            "Projectile Vomit",
+            "Really Stupid",
+            "Regeneration",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P",
+            "Mutations"
+          ],
+          "keywords": [
+            "big guy",
+            "troll"
+          ]
+        },
+        {
+          "id": 66312,
+          "title": "Ogre",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 140000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Bone Head",
+            "Loner(3)",
+            "Mighty Blow",
+            "Thick Skull",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "Mutations"
+          ],
+          "keywords": [
+            "big guy",
+            "ogre"
+          ]
+        },
+        {
+          "id": 66313,
+          "title": "Minotaur",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 150000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Frenzy",
+            "Horns",
+            "Loner(4)",
+            "Mighty Blow",
+            "Thick Skull",
+            "Unchannelled Fury"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "Mutations"
+          ],
+          "keywords": [
+            "big guy",
+            "minotaur"
+          ]
+        },
+        {
+          "id": 66314,
+          "title": "Rat Ogre",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 150000,
+          "ma": 6,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Animal Savagery",
+            "Frenzy",
+            "Loner(4)",
+            "Mighty Blow",
+            "Prehensile Tail"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "Mutations"
+          ],
+          "keywords": [
+            "big guy",
+            "skaven"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8600,
+      "name": "Dark Elf",
+      "tier": 3,
+      "rerollCost": 50000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66299,
+          "title": "Dark Elf Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 65000,
+          "ma": 6,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 9,
+          "skills": [],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "elf",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66300,
+          "title": "Dark Elf Runner",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 80000,
+          "ma": 7,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Dump-off",
+            "Punt"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "P"
+          ],
+          "double": [
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "elf",
+            "runner"
+          ]
+        },
+        {
+          "id": 66301,
+          "title": "Dark Elf Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 105000,
+          "ma": 7,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Block"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "blitzer",
+            "elf"
+          ]
+        },
+        {
+          "id": 66302,
+          "title": "Dark Elf Assassin",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 90000,
+          "ma": 7,
+          "st": 3,
+          "ag": 2,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Hit and Run",
+            "Shadowing",
+            "Stab"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G",
+            "S"
+          ],
+          "keywords": [
+            "elf",
+            "special"
+          ]
+        },
+        {
+          "id": 66303,
+          "title": "Witch Elf",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 110000,
+          "ma": 7,
+          "st": 3,
+          "ag": 2,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Frenzy",
+            "Jump Up"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "elf",
+            "special"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8506,
+      "name": "Dwarf",
+      "tier": 5,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 65746,
+          "title": "Dwarf Blocker Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 70000,
+          "ma": 4,
+          "st": 3,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Block",
+            "Defensive",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "D"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "dwarf",
+            "lineman"
+          ]
+        },
+        {
+          "id": 65747,
+          "title": "Dwarf Runner",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 80000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Sprint",
+            "Sure Hands",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "S",
+            "A"
+          ],
+          "keywords": [
+            "dwarf",
+            "runner"
+          ]
+        },
+        {
+          "id": 65748,
+          "title": "Dwarf Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 100000,
+          "ma": 5,
+          "st": 3,
+          "ag": 4,
+          "pa": 4,
+          "av": 10,
+          "skills": [
+            "Block",
+            "Diving Tackle",
+            "Tackle",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "P"
+          ],
+          "keywords": [
+            "blitzer",
+            "dwarf"
+          ]
+        },
+        {
+          "id": 65749,
+          "title": "Troll Slayer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 95000,
+          "ma": 5,
+          "st": 3,
+          "ag": 4,
+          "pa": 5,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Dauntless",
+            "Frenzy",
+            "Hatred(troll)",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "D"
+          ],
+          "keywords": [
+            "dwarf",
+            "special"
+          ]
+        },
+        {
+          "id": 65750,
+          "title": "Deathroller",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 170000,
+          "ma": 5,
+          "st": 7,
+          "ag": 5,
+          "pa": 0,
+          "av": 11,
+          "skills": [
+            "Break Tackle",
+            "Dirty Player",
+            "Juggernaut",
+            "Loner(4)",
+            "Mighty Blow",
+            "No Ball",
+            "Secret Weapon",
+            "Stand Firm"
+          ],
+          "normal": [
+            "S",
+            "D"
+          ],
+          "double": [
+            "G"
+          ],
+          "keywords": [
+            "big guy",
+            "dwarf",
+            "special"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8598,
+      "name": "Elven Union",
+      "tier": 5,
+      "rerollCost": 50000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66292,
+          "title": "Elf Lineman",
+          "type": "Regular",
+          "quantity": 12,
+          "cost": 65000,
+          "ma": 6,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Fumblerooski"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "elf",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66293,
+          "title": "Elf Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 75000,
+          "ma": 6,
+          "st": 3,
+          "ag": 2,
+          "pa": 2,
+          "av": 8,
+          "skills": [
+            "Hail Mary Pass",
+            "Pass"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "P"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "elf",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66294,
+          "title": "Elf Catcher",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 100000,
+          "ma": 8,
+          "st": 3,
+          "ag": 2,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Catch",
+            "Diving Catch",
+            "Nerves of Steel"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "catcher",
+            "elf"
+          ]
+        },
+        {
+          "id": 66295,
+          "title": "Elf Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 115000,
+          "ma": 7,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Sidestep"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "blitzer",
+            "elf"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8597,
+      "name": "Gnome",
+      "tier": 6,
+      "rerollCost": 50000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 2,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66287,
+          "title": "Altern Forest Treeman",
+          "type": "Big Guy",
+          "quantity": 2,
+          "cost": 120000,
+          "ma": 2,
+          "st": 6,
+          "ag": 5,
+          "pa": 5,
+          "av": 11,
+          "skills": [
+            "Mighty Blow",
+            "Stand Firm",
+            "Strong Arm",
+            "Take Root",
+            "Thick Skull",
+            "Throw Team-mate",
+            "Timmm-ber!"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "treeman"
+          ]
+        },
+        {
+          "id": 66288,
+          "title": "Gnome Beastmaster",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 55000,
+          "ma": 5,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Guard",
+            "Jump Up",
+            "Stunty",
+            "Wrestle"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "blocker",
+            "gnome"
+          ]
+        },
+        {
+          "id": 66289,
+          "title": "Gnome Illusionist",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 50000,
+          "ma": 5,
+          "st": 2,
+          "ag": 3,
+          "pa": 3,
+          "av": 7,
+          "skills": [
+            "Jump Up",
+            "Stunty",
+            "Trickster",
+            "Wrestle"
+          ],
+          "normal": [
+            "A",
+            "P"
+          ],
+          "double": [
+            "G",
+            "D"
+          ],
+          "keywords": [
+            "gnome",
+            "special"
+          ]
+        },
+        {
+          "id": 66290,
+          "title": "Woodland Fox",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 50000,
+          "ma": 7,
+          "st": 2,
+          "ag": 2,
+          "pa": null,
+          "av": 6,
+          "skills": [
+            "Dodge",
+            "My Ball",
+            "Sidestep",
+            "Stunty"
+          ],
+          "normal": [],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "animal",
+            "runner"
+          ]
+        },
+        {
+          "id": 66291,
+          "title": "Gnome Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 5,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 7,
+          "skills": [
+            "Jump Up",
+            "Right Stuff",
+            "Stunty",
+            "Wrestle"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "gnome",
+            "lineman"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8596,
+      "name": "Goblin",
+      "tier": 6,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 2,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66279,
+          "title": "Goblin Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Stunty"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G",
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "goblin",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66280,
+          "title": "Bomma",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 45000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Bombardier",
+            "Dodge",
+            "Secret Weapon",
+            "Stunty"
+          ],
+          "normal": [
+            "P",
+            "D"
+          ],
+          "double": [
+            "G",
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "goblin",
+            "special"
+          ]
+        },
+        {
+          "id": 66281,
+          "title": "Looney",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 40000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": null,
+          "av": 8,
+          "skills": [
+            "Chainsaw",
+            "No Ball",
+            "Secret Weapon",
+            "Stunty"
+          ],
+          "normal": [
+            "D"
+          ],
+          "double": [
+            "G",
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "goblin",
+            "special"
+          ]
+        },
+        {
+          "id": 66282,
+          "title": "Pogoer",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 75000,
+          "ma": 7,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Pogo",
+            "Stunty"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "goblin",
+            "special"
+          ]
+        },
+        {
+          "id": 66283,
+          "title": "'Ooligan",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 60000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": 5,
+          "av": 8,
+          "skills": [
+            "Dirty Player",
+            "Disturbing Presence",
+            "Dodge",
+            "Right Stuff",
+            "Stunty",
+            "Taunt"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G",
+            "S"
+          ],
+          "keywords": [
+            "goblin",
+            "special"
+          ]
+        },
+        {
+          "id": 66284,
+          "title": "Doom Diver",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 65000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": 6,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Stunty",
+            "Swoop"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "goblin",
+            "special"
+          ]
+        },
+        {
+          "id": 66285,
+          "title": "Trained Troll",
+          "type": "Big Guy",
+          "quantity": 2,
+          "cost": 115000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Always Hungry",
+            "Mighty Blow",
+            "Projectile Vomit",
+            "Really Stupid",
+            "Regeneration",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "troll"
+          ]
+        },
+        {
+          "id": 66286,
+          "title": "Fanatic",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 70000,
+          "ma": 3,
+          "st": 7,
+          "ag": 3,
+          "pa": null,
+          "av": 8,
+          "skills": [
+            "Ball & Chain",
+            "No Ball",
+            "Secret Weapon",
+            "Stunty"
+          ],
+          "normal": [
+            "S",
+            "D"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "goblin",
+            "special"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8595,
+      "name": "Halfling",
+      "tier": 6,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 2,
+      "keywords": [
+        "master chef"
+      ],
+      "positions": [
+        {
+          "id": 66275,
+          "title": "Halfling Hopeful",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 30000,
+          "ma": 5,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 7,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Stunty"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "halfling",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66276,
+          "title": "Halfling Hefty",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 50000,
+          "ma": 5,
+          "st": 2,
+          "ag": 3,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Fend",
+            "Stunty"
+          ],
+          "normal": [
+            "A",
+            "P"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "blocker",
+            "halfling"
+          ]
+        },
+        {
+          "id": 66277,
+          "title": "Halfling Catcher",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 55000,
+          "ma": 5,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 7,
+          "skills": [
+            "Catch",
+            "Dodge",
+            "Right Stuff",
+            "Sprint",
+            "Stunty"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "catcher",
+            "halfling"
+          ]
+        },
+        {
+          "id": 66278,
+          "title": "Altern Forest Treeman",
+          "type": "Big Guy",
+          "quantity": 2,
+          "cost": 120000,
+          "ma": 2,
+          "st": 6,
+          "ag": 5,
+          "pa": 5,
+          "av": 11,
+          "skills": [
+            "Mighty Blow",
+            "Stand Firm",
+            "Strong Arm",
+            "Take Root",
+            "Thick Skull",
+            "Throw Team-mate",
+            "Timmm-ber!"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "treeman"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8594,
+      "name": "High Elf",
+      "tier": 3,
+      "rerollCost": 50000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66271,
+          "title": "High Elf Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 65000,
+          "ma": 6,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 9,
+          "skills": [],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "elf",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66272,
+          "title": "Phoenix Warrior",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 90000,
+          "ma": 6,
+          "st": 3,
+          "ag": 2,
+          "pa": 2,
+          "av": 9,
+          "skills": [
+            "Cloud Burster",
+            "Pass",
+            "Safe Pass"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "P"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "elf",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66273,
+          "title": "White Lion",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 110000,
+          "ma": 7,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Claws",
+            "Wrestle"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "blitzer",
+            "elf"
+          ]
+        },
+        {
+          "id": 66274,
+          "title": "Dragon Prince",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 110000,
+          "ma": 8,
+          "st": 3,
+          "ag": 2,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Block",
+            "My Ball",
+            "Steady Footing"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "blitzer",
+            "elf",
+            "runner"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8593,
+      "name": "Human",
+      "tier": 3,
+      "rerollCost": 50000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66265,
+          "title": "Human Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66266,
+          "title": "Human Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 75000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Pass",
+            "Sure Hands"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "human",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66267,
+          "title": "Human Catcher",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 75000,
+          "ma": 8,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Catch",
+            "Dodge"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "catcher",
+            "human"
+          ]
+        },
+        {
+          "id": 66268,
+          "title": "Human Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 85000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Tackle"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blitzer",
+            "human"
+          ]
+        },
+        {
+          "id": 66269,
+          "title": "Halfling Hopeful",
+          "type": "Regular",
+          "quantity": 3,
+          "cost": 30000,
+          "ma": 5,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 7,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Stunty"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "halfling",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66270,
+          "title": "Ogre",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 140000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Bone Head",
+            "Loner(3)",
+            "Mighty Blow",
+            "Thick Skull",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "ogre"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8592,
+      "name": "Imperial Nobility",
+      "tier": 5,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66260,
+          "title": "Imperial Retainer",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 45000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Fend"
+          ],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66261,
+          "title": "Imperial Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 75000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 2,
+          "av": 9,
+          "skills": [
+            "Give and Go",
+            "Pass",
+            "Pro"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66262,
+          "title": "Noble Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 90000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Catch",
+            "Pro"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "blitzer",
+            "human"
+          ]
+        },
+        {
+          "id": 66263,
+          "title": "Bodyguard",
+          "type": "Regular",
+          "quantity": 4,
+          "cost": 85000,
+          "ma": 5,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Stand Firm",
+            "Wrestle"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "blocker",
+            "human"
+          ]
+        },
+        {
+          "id": 66264,
+          "title": "Ogre",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 140000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Bone Head",
+            "Loner(3)",
+            "Mighty Blow",
+            "Thick Skull",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "ogre"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8591,
+      "name": "Khorne",
+      "tier": 6,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66256,
+          "title": "Bloodborn Marauder",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Frenzy"
+          ],
+          "normal": [
+            "G",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66257,
+          "title": "Khorngor",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 70000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Horns",
+            "Juggernaut",
+            "Jump Up",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "beastman",
+            "runner"
+          ]
+        },
+        {
+          "id": 66258,
+          "title": "Bloodseeker",
+          "type": "Regular",
+          "quantity": 4,
+          "cost": 105000,
+          "ma": 5,
+          "st": 4,
+          "ag": 4,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Frenzy"
+          ],
+          "normal": [
+            "G",
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blocker",
+            "human"
+          ]
+        },
+        {
+          "id": 66259,
+          "title": "Bloodspawn",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 160000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Claws",
+            "Frenzy",
+            "Loner(4)",
+            "Mighty Blow",
+            "Unchannelled Fury"
+          ],
+          "normal": [
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "spawn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8590,
+      "name": "Lizardmen",
+      "tier": 3,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66252,
+          "title": "Skink Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 60000,
+          "ma": 8,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Stunty"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "lineman",
+            "lizardman"
+          ]
+        },
+        {
+          "id": 66253,
+          "title": "Chameleon Skink",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 70000,
+          "ma": 7,
+          "st": 2,
+          "ag": 3,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "On the Ball",
+            "Shadowing",
+            "Stunty"
+          ],
+          "normal": [
+            "A",
+            "P"
+          ],
+          "double": [
+            "G",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "lizardman",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66254,
+          "title": "Saurus Blocker",
+          "type": "Regular",
+          "quantity": 6,
+          "cost": 90000,
+          "ma": 6,
+          "st": 4,
+          "ag": 5,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Juggernaut",
+            "Unsteady"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "blocker",
+            "lizardman"
+          ]
+        },
+        {
+          "id": 66255,
+          "title": "Kroxigor",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 140000,
+          "ma": 6,
+          "st": 5,
+          "ag": 5,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Bone Head",
+            "Loner(4)",
+            "Mighty Blow",
+            "Prehensile Tail",
+            "Thick Skull"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "lizardman"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8589,
+      "name": "Necromantic Horror",
+      "tier": 4,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": false,
+      "undead": true,
+      "necromancer": true,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66247,
+          "title": "Zombie Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 4,
+          "st": 3,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Eye Gouge",
+            "Regeneration",
+            "Unsteady"
+          ],
+          "normal": [
+            "G",
+            "D"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66248,
+          "title": "Ghoul Runner",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 75000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Regeneration"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "ghoul",
+            "runner",
+            "undead"
+          ]
+        },
+        {
+          "id": 66249,
+          "title": "Wraith",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 85000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": null,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Foul Appearance",
+            "No Ball",
+            "Regeneration",
+            "Sidestep"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "blocker",
+            "undead",
+            "wraith"
+          ]
+        },
+        {
+          "id": 66250,
+          "title": "Werewolf",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 120000,
+          "ma": 8,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Claws",
+            "Frenzy",
+            "Regeneration"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "blitzer",
+            "undead",
+            "werewolf"
+          ]
+        },
+        {
+          "id": 66251,
+          "title": "Flesh Golem",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 110000,
+          "ma": 4,
+          "st": 4,
+          "ag": 4,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Regeneration",
+            "Stand Firm",
+            "Thick Skull",
+            "Unsteady"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blocker",
+            "construct",
+            "undead"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8588,
+      "name": "Norse",
+      "tier": 4,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66239,
+          "title": "Norse Raider",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Block",
+            "Drunkard",
+            "Thick Skull",
+            "Unsteady"
+          ],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66242,
+          "title": "Norse Berserker",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 90000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 5,
+          "av": 8,
+          "skills": [
+            "Block",
+            "Frenzy",
+            "Jump Up"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "blitzer",
+            "human"
+          ]
+        },
+        {
+          "id": 66243,
+          "title": "Ulfwerener",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 105000,
+          "ma": 6,
+          "st": 4,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Frenzy",
+            "Unsteady"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "blocker",
+            "human"
+          ]
+        },
+        {
+          "id": 66244,
+          "title": "Yhetee",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 140000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Claws",
+            "Disturbing Presence",
+            "Frenzy",
+            "Loner(4)",
+            "Unchannelled Fury"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "yhetee"
+          ]
+        },
+        {
+          "id": 66245,
+          "title": "Beer Boar",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 20000,
+          "ma": 5,
+          "st": 1,
+          "ag": 3,
+          "pa": null,
+          "av": 6,
+          "skills": [
+            "Dodge",
+            "No Ball",
+            "Pick-me-up",
+            "Stunty",
+            "Titchy"
+          ],
+          "normal": [],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "animal",
+            "special"
+          ]
+        },
+        {
+          "id": 66246,
+          "title": "Valkyrie",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 95000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Catch",
+            "Dauntless",
+            "Pass",
+            "Strip Ball"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "P"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "catcher",
+            "human",
+            "thrower"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8587,
+      "name": "Nurgle",
+      "tier": 4,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": false,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66235,
+          "title": "Rotter Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 5,
+          "st": 3,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Decay",
+            "Plague Ridden"
+          ],
+          "normal": [
+            "G",
+            "Mutations",
+            "D"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66236,
+          "title": "Pestigor",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 70000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Horns",
+            "Plague Ridden",
+            "Regeneration",
+            "Steady Footing",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "beastman",
+            "runner"
+          ]
+        },
+        {
+          "id": 66237,
+          "title": "Bloater",
+          "type": "Regular",
+          "quantity": 4,
+          "cost": 110000,
+          "ma": 4,
+          "st": 4,
+          "ag": 4,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Disturbing Presence",
+            "Foul Appearance",
+            "Plague Ridden",
+            "Regeneration",
+            "Stand Firm",
+            "Unsteady"
+          ],
+          "normal": [
+            "G",
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blocker",
+            "human"
+          ]
+        },
+        {
+          "id": 66238,
+          "title": "Rotspawn",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 140000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Disturbing Presence",
+            "Foul Appearance",
+            "Loner(4)",
+            "Mighty Blow",
+            "Pick-me-up",
+            "Plague Ridden",
+            "Really Stupid",
+            "Regeneration",
+            "Tentacles"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "Mutations",
+            "D"
+          ],
+          "keywords": [
+            "big guy",
+            "spawn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8586,
+      "name": "Ogre",
+      "tier": 7,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 6,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66232,
+          "title": "Gnoblar Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 15000,
+          "ma": 5,
+          "st": 1,
+          "ag": 3,
+          "pa": 4,
+          "av": 6,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Sidestep",
+            "Stunty",
+            "Titchy"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G"
+          ],
+          "keywords": [
+            "gnoblar",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66233,
+          "title": "Ogre Runt Punter",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 145000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 4,
+          "av": 10,
+          "skills": [
+            "Bone Head",
+            "Kick Team-mate",
+            "Mighty Blow",
+            "Thick Skull"
+          ],
+          "normal": [
+            "S",
+            "P"
+          ],
+          "double": [
+            "G",
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "big guy",
+            "ogre",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66234,
+          "title": "Ogre Blocker",
+          "type": "Big Guy",
+          "quantity": 5,
+          "cost": 140000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Bone Head",
+            "Mighty Blow",
+            "Thick Skull",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "big guy",
+            "blocker",
+            "ogre"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8585,
+      "name": "Old World Alliance",
+      "tier": 1,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66221,
+          "title": "Human Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66222,
+          "title": "Human Thrower",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 75000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Pass",
+            "Sure Hands"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66223,
+          "title": "Human Catcher",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 75000,
+          "ma": 8,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Catch",
+            "Dodge"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "catcher",
+            "human"
+          ]
+        },
+        {
+          "id": 66224,
+          "title": "Human Blitzer",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 85000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Tackle"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "blitzer",
+            "human"
+          ]
+        },
+        {
+          "id": 66225,
+          "title": "Dwarf Lineman",
+          "type": "Regular",
+          "quantity": 3,
+          "cost": 70000,
+          "ma": 4,
+          "st": 3,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Block",
+            "Defensive",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "D"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "dwarf",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66226,
+          "title": "Dwarf Runner",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 80000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Sprint",
+            "Sure Hands",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "dwarf",
+            "runner"
+          ]
+        },
+        {
+          "id": 66227,
+          "title": "Dwarf Blitzer",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 100000,
+          "ma": 5,
+          "st": 3,
+          "ag": 4,
+          "pa": 4,
+          "av": 10,
+          "skills": [
+            "Block",
+            "Diving Tackle",
+            "Tackle",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "P"
+          ],
+          "keywords": [
+            "blitzer",
+            "dwarf"
+          ]
+        },
+        {
+          "id": 66228,
+          "title": "Troll Slayer",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 95000,
+          "ma": 5,
+          "st": 3,
+          "ag": 4,
+          "pa": 5,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Dauntless",
+            "Frenzy",
+            "Hatred(troll)",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A"
+          ],
+          "keywords": [
+            "dwarf",
+            "special"
+          ]
+        },
+        {
+          "id": 66229,
+          "title": "Halfling Hopeful",
+          "type": "Regular",
+          "quantity": 3,
+          "cost": 30000,
+          "ma": 5,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 7,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Stunty"
+          ],
+          "normal": [
+            "A"
+          ],
+          "double": [
+            "G",
+            "S"
+          ],
+          "keywords": [
+            "halfling",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66230,
+          "title": "Ogre",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 140000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Bone Head",
+            "Loner(3)",
+            "Mighty Blow",
+            "Thick Skull",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "ogre"
+          ]
+        },
+        {
+          "id": 66231,
+          "title": "Altern Forest Treeman",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 120000,
+          "ma": 2,
+          "st": 6,
+          "ag": 5,
+          "pa": 5,
+          "av": 11,
+          "skills": [
+            "Loner(4)",
+            "Mighty Blow",
+            "Stand Firm",
+            "Strong Arm",
+            "Take Root",
+            "Thick Skull",
+            "Throw Team-mate",
+            "Timmm-ber!"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "treeman"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8584,
+      "name": "Orc",
+      "tier": 1,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66215,
+          "title": "Orc Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 5,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 10,
+          "skills": [],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "lineman",
+            "orc"
+          ]
+        },
+        {
+          "id": 66216,
+          "title": "Orc Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 75000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Pass",
+            "Sure Hands"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "orc",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66217,
+          "title": "Orc Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 85000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 10,
+          "skills": [
+            "Block",
+            "Break Tackle"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blitzer",
+            "orc"
+          ]
+        },
+        {
+          "id": 66218,
+          "title": "Big Un Blocker",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 95000,
+          "ma": 5,
+          "st": 4,
+          "ag": 4,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Mighty Blow",
+            "Taunt",
+            "Thick Skull",
+            "Unsteady"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blocker",
+            "orc"
+          ]
+        },
+        {
+          "id": 66219,
+          "title": "Goblin Lineman",
+          "type": "Regular",
+          "quantity": 4,
+          "cost": 40000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Stunty"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G",
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "goblin",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66220,
+          "title": "Troll",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 115000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Always Hungry",
+            "Loner(4)",
+            "Mighty Blow",
+            "Projectile Vomit",
+            "Really Stupid",
+            "Regeneration",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "troll"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8583,
+      "name": "Shambling Undead",
+      "tier": 3,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": false,
+      "undead": true,
+      "necromancer": true,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66210,
+          "title": "Skeleton Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 5,
+          "st": 3,
+          "ag": 4,
+          "pa": 6,
+          "av": 8,
+          "skills": [
+            "Regeneration",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "human",
+            "lineman",
+            "skeleton",
+            "undead"
+          ]
+        },
+        {
+          "id": 66211,
+          "title": "Zombie Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 4,
+          "st": 3,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Eye Gouge",
+            "Regeneration",
+            "Unsteady"
+          ],
+          "normal": [
+            "G",
+            "D"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman",
+            "undead",
+            "zombie"
+          ]
+        },
+        {
+          "id": 66212,
+          "title": "Ghoul Runner",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 75000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Regeneration"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P",
+            "D"
+          ],
+          "keywords": [
+            "ghoul",
+            "runner",
+            "undead"
+          ]
+        },
+        {
+          "id": 66213,
+          "title": "Wight Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 95000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 5,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Regeneration",
+            "Tackle",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blitzer",
+            "human",
+            "skeleton",
+            "undead"
+          ]
+        },
+        {
+          "id": 66214,
+          "title": "Mummy",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 125000,
+          "ma": 3,
+          "st": 5,
+          "ag": 5,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Mighty Blow",
+            "Regeneration"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "blocker",
+            "human",
+            "undead"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8582,
+      "name": "Skaven",
+      "tier": 2,
+      "rerollCost": 50000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66205,
+          "title": "Skaven Clanrat",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 50000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [],
+          "normal": [
+            "G",
+            "D"
+          ],
+          "double": [
+            "A",
+            "S",
+            "Mutations"
+          ],
+          "keywords": [
+            "lineman",
+            "skaven"
+          ]
+        },
+        {
+          "id": 66206,
+          "title": "Skaven Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 80000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 2,
+          "av": 8,
+          "skills": [
+            "Pass",
+            "Sure Hands"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S",
+            "Mutations",
+            "D"
+          ],
+          "keywords": [
+            "skaven",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66207,
+          "title": "Gutter Runner",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 85000,
+          "ma": 9,
+          "st": 2,
+          "ag": 2,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Stab"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "D"
+          ],
+          "double": [
+            "S",
+            "Mutations"
+          ],
+          "keywords": [
+            "runner",
+            "skaven"
+          ]
+        },
+        {
+          "id": 66208,
+          "title": "Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 90000,
+          "ma": 8,
+          "st": 3,
+          "ag": 3,
+          "pa": 5,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Strip Ball"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "Mutations",
+            "D"
+          ],
+          "keywords": [
+            "blitzer",
+            "skaven"
+          ]
+        },
+        {
+          "id": 66209,
+          "title": "Rat Ogre",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 150000,
+          "ma": 6,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Animal Savagery",
+            "Frenzy",
+            "Loner(4)",
+            "Mighty Blow",
+            "Prehensile Tail"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "Mutations"
+          ],
+          "keywords": [
+            "big guy",
+            "skaven"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8581,
+      "name": "Snotling",
+      "tier": 5,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 4,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66199,
+          "title": "Snotling Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 15000,
+          "ma": 5,
+          "st": 1,
+          "ag": 3,
+          "pa": 4,
+          "av": 6,
+          "skills": [
+            "Dodge",
+            "Insignificant",
+            "Right Stuff",
+            "Sidestep",
+            "Stunty",
+            "Titchy"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G"
+          ],
+          "keywords": [
+            "lineman",
+            "snotling"
+          ]
+        },
+        {
+          "id": 66200,
+          "title": "Fungus Flinga",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 30000,
+          "ma": 5,
+          "st": 1,
+          "ag": 3,
+          "pa": 4,
+          "av": 6,
+          "skills": [
+            "Bombardier",
+            "Dodge",
+            "Right Stuff",
+            "Secret Weapon",
+            "Sidestep",
+            "Stunty",
+            "Titchy"
+          ],
+          "normal": [
+            "A",
+            "P",
+            "D"
+          ],
+          "double": [
+            "G"
+          ],
+          "keywords": [
+            "snotling",
+            "special"
+          ]
+        },
+        {
+          "id": 66201,
+          "title": "Fun-hoppa",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 20000,
+          "ma": 6,
+          "st": 1,
+          "ag": 3,
+          "pa": 4,
+          "av": 6,
+          "skills": [
+            "Dodge",
+            "Pogo",
+            "Right Stuff",
+            "Sidestep",
+            "Stunty"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G"
+          ],
+          "keywords": [
+            "snotling",
+            "special"
+          ]
+        },
+        {
+          "id": 66202,
+          "title": "Stilty Runna",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 20000,
+          "ma": 6,
+          "st": 1,
+          "ag": 3,
+          "pa": 4,
+          "av": 6,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Sidestep",
+            "Sprint",
+            "Stunty"
+          ],
+          "normal": [
+            "A",
+            "D"
+          ],
+          "double": [
+            "G"
+          ],
+          "keywords": [
+            "runner",
+            "snotling"
+          ]
+        },
+        {
+          "id": 66203,
+          "title": "Pump Wagon",
+          "type": "Big Guy",
+          "quantity": 2,
+          "cost": 100000,
+          "ma": 5,
+          "st": 5,
+          "ag": 5,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Dirty Player",
+            "Juggernaut",
+            "Mighty Blow",
+            "Really Stupid",
+            "Stand Firm"
+          ],
+          "normal": [
+            "S",
+            "D"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "snotling",
+            "special"
+          ]
+        },
+        {
+          "id": 66204,
+          "title": "Trained Troll",
+          "type": "Big Guy",
+          "quantity": 2,
+          "cost": 115000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Always Hungry",
+            "Mighty Blow",
+            "Projectile Vomit",
+            "Really Stupid",
+            "Regeneration",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "troll"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8580,
+      "name": "Tomb Kings",
+      "tier": 4,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": false,
+      "undead": true,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66195,
+          "title": "Skeleton Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 5,
+          "st": 3,
+          "ag": 4,
+          "pa": 6,
+          "av": 8,
+          "skills": [
+            "Regeneration",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "human",
+            "lineman",
+            "skeleton",
+            "undead"
+          ]
+        },
+        {
+          "id": 66196,
+          "title": "Tomb Kings Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 65000,
+          "ma": 6,
+          "st": 3,
+          "ag": 4,
+          "pa": 3,
+          "av": 9,
+          "skills": [
+            "Pass",
+            "Regeneration",
+            "Sure Hands",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "P"
+          ],
+          "double": [
+            "A",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "human",
+            "skeleton",
+            "thrower",
+            "undead"
+          ]
+        },
+        {
+          "id": 66197,
+          "title": "Tomb Kings Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 85000,
+          "ma": 6,
+          "st": 3,
+          "ag": 4,
+          "pa": 5,
+          "av": 9,
+          "skills": [
+            "Block",
+            "Regeneration",
+            "Thick Skull"
+          ],
+          "normal": [
+            "G",
+            "S"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blitzer",
+            "human",
+            "skeleton",
+            "undead"
+          ]
+        },
+        {
+          "id": 66198,
+          "title": "Tomb Guardian",
+          "type": "Regular",
+          "quantity": 4,
+          "cost": 115000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Brawler",
+            "Decay",
+            "Regeneration"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "blocker",
+            "human",
+            "undead"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8579,
+      "name": "Underworld Denizens",
+      "tier": 2,
+      "rerollCost": 70000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66187,
+          "title": "Goblin Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 6,
+          "st": 2,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Dodge",
+            "Right Stuff",
+            "Stunty"
+          ],
+          "normal": [
+            "A",
+            "Mutations",
+            "D"
+          ],
+          "double": [
+            "G",
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "goblin",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66188,
+          "title": "Snotling Lineman",
+          "type": "Regular",
+          "quantity": 6,
+          "cost": 15000,
+          "ma": 5,
+          "st": 1,
+          "ag": 3,
+          "pa": 4,
+          "av": 6,
+          "skills": [
+            "Dodge",
+            "Insignificant",
+            "Right Stuff",
+            "Sidestep",
+            "Stunty",
+            "Titchy"
+          ],
+          "normal": [
+            "A",
+            "Mutations",
+            "D"
+          ],
+          "double": [
+            "G"
+          ],
+          "keywords": [
+            "lineman",
+            "snotling"
+          ]
+        },
+        {
+          "id": 66189,
+          "title": "Skaven Clanrat",
+          "type": "Regular",
+          "quantity": 3,
+          "cost": 50000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Animosity(goblin)"
+          ],
+          "normal": [
+            "G",
+            "Mutations",
+            "D"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "lineman",
+            "skaven"
+          ]
+        },
+        {
+          "id": 66190,
+          "title": "Skaven Thrower",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 80000,
+          "ma": 7,
+          "st": 3,
+          "ag": 3,
+          "pa": 2,
+          "av": 8,
+          "skills": [
+            "Animosity(goblin)",
+            "Pass",
+            "Sure Hands"
+          ],
+          "normal": [
+            "G",
+            "P",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "S",
+            "D"
+          ],
+          "keywords": [
+            "skaven",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66191,
+          "title": "Gutter Runner",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 85000,
+          "ma": 9,
+          "st": 2,
+          "ag": 2,
+          "pa": 4,
+          "av": 8,
+          "skills": [
+            "Animosity(goblin)",
+            "Dodge",
+            "Stab"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "Mutations",
+            "D"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "runner",
+            "skaven"
+          ]
+        },
+        {
+          "id": 66192,
+          "title": "Skaven Blitzer",
+          "type": "Regular",
+          "quantity": 1,
+          "cost": 90000,
+          "ma": 8,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Animosity(goblin)",
+            "Block",
+            "Strip Ball"
+          ],
+          "normal": [
+            "G",
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "A",
+            "D"
+          ],
+          "keywords": [
+            "blitzer",
+            "skaven"
+          ]
+        },
+        {
+          "id": 66193,
+          "title": "Troll",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 115000,
+          "ma": 4,
+          "st": 5,
+          "ag": 5,
+          "pa": 5,
+          "av": 10,
+          "skills": [
+            "Always Hungry",
+            "Loner(4)",
+            "Mighty Blow",
+            "Projectile Vomit",
+            "Really Stupid",
+            "Regeneration",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "troll"
+          ]
+        },
+        {
+          "id": 66194,
+          "title": "Rat Ogre",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 150000,
+          "ma": 6,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 9,
+          "skills": [
+            "Animal Savagery",
+            "Frenzy",
+            "Loner(4)",
+            "Mighty Blow",
+            "Prehensile Tail"
+          ],
+          "normal": [
+            "S",
+            "Mutations"
+          ],
+          "double": [
+            "G",
+            "A"
+          ],
+          "keywords": [
+            "big guy",
+            "skaven"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8578,
+      "name": "Vampire",
+      "tier": 3,
+      "rerollCost": 60000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": true,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [
+        "vampire lord"
+      ],
+      "positions": [
+        {
+          "id": 66181,
+          "title": "Thrall Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 40000,
+          "ma": 6,
+          "st": 3,
+          "ag": 3,
+          "pa": 4,
+          "av": 8,
+          "skills": [],
+          "normal": [
+            "G"
+          ],
+          "double": [
+            "A",
+            "S"
+          ],
+          "keywords": [
+            "human",
+            "lineman",
+            "thrall"
+          ]
+        },
+        {
+          "id": 66183,
+          "title": "Vampire Runner",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 100000,
+          "ma": 8,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Bloodlust(2)",
+            "Hypnotic Gaze",
+            "Regeneration"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "P",
+            "S"
+          ],
+          "keywords": [
+            "runner",
+            "undead",
+            "vampire"
+          ]
+        },
+        {
+          "id": 66184,
+          "title": "Vampire Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 110000,
+          "ma": 6,
+          "st": 4,
+          "ag": 2,
+          "pa": 2,
+          "av": 9,
+          "skills": [
+            "Bloodlust(2)",
+            "Hypnotic Gaze",
+            "Pass",
+            "Regeneration"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "P"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "thrower",
+            "undead",
+            "vampire"
+          ]
+        },
+        {
+          "id": 66185,
+          "title": "Vampire Blitzer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 110000,
+          "ma": 6,
+          "st": 4,
+          "ag": 2,
+          "pa": 4,
+          "av": 9,
+          "skills": [
+            "Bloodlust(3)",
+            "Hypnotic Gaze",
+            "Juggernaut",
+            "Regeneration"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "S"
+          ],
+          "double": [],
+          "keywords": [
+            "blitzer",
+            "undead",
+            "vampire"
+          ]
+        },
+        {
+          "id": 66186,
+          "title": "Vargheist",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 150000,
+          "ma": 5,
+          "st": 5,
+          "ag": 4,
+          "pa": 6,
+          "av": 10,
+          "skills": [
+            "Bloodlust(3)",
+            "Claws",
+            "Frenzy",
+            "Loner(4)",
+            "Regeneration"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "A",
+            "G"
+          ],
+          "keywords": [
+            "big guy",
+            "undead",
+            "vampire"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8577,
+      "name": "Wood Elf",
+      "tier": 1,
+      "rerollCost": 50000,
+      "maxRerolls": 8,
+      "apothecary": true,
+      "undead": false,
+      "necromancer": false,
+      "maxBigGuys": 1,
+      "keywords": [],
+      "positions": [
+        {
+          "id": 66176,
+          "title": "Wood Elf Lineman",
+          "type": "Regular",
+          "quantity": 16,
+          "cost": 65000,
+          "ma": 7,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 8,
+          "skills": [],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "elf",
+            "lineman"
+          ]
+        },
+        {
+          "id": 66177,
+          "title": "Wood Elf Thrower",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 85000,
+          "ma": 7,
+          "st": 3,
+          "ag": 2,
+          "pa": 2,
+          "av": 8,
+          "skills": [
+            "Pass",
+            "Safe Pair of Hands"
+          ],
+          "normal": [
+            "G",
+            "A",
+            "P"
+          ],
+          "double": [
+            "S"
+          ],
+          "keywords": [
+            "elf",
+            "thrower"
+          ]
+        },
+        {
+          "id": 66178,
+          "title": "Wood Elf Catcher",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 90000,
+          "ma": 8,
+          "st": 2,
+          "ag": 2,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Catch",
+            "Dodge",
+            "Sprint"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "catcher",
+            "elf"
+          ]
+        },
+        {
+          "id": 66179,
+          "title": "Wardancer",
+          "type": "Regular",
+          "quantity": 2,
+          "cost": 130000,
+          "ma": 8,
+          "st": 3,
+          "ag": 2,
+          "pa": 3,
+          "av": 8,
+          "skills": [
+            "Block",
+            "Dodge",
+            "Leap"
+          ],
+          "normal": [
+            "G",
+            "A"
+          ],
+          "double": [
+            "S",
+            "P"
+          ],
+          "keywords": [
+            "blitzer",
+            "elf"
+          ]
+        },
+        {
+          "id": 66180,
+          "title": "Loren Forest Treeman",
+          "type": "Big Guy",
+          "quantity": 1,
+          "cost": 120000,
+          "ma": 2,
+          "st": 6,
+          "ag": 5,
+          "pa": 5,
+          "av": 11,
+          "skills": [
+            "Loner(4)",
+            "Mighty Blow",
+            "Stand Firm",
+            "Strong Arm",
+            "Take Root",
+            "Thick Skull",
+            "Throw Team-mate"
+          ],
+          "normal": [
+            "S"
+          ],
+          "double": [
+            "G",
+            "A",
+            "P"
+          ],
+          "keywords": [
+            "big guy",
+            "treeman"
+          ]
+        }
+      ]
+    }
+  ]
+}
