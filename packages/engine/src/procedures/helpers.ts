@@ -80,13 +80,21 @@ export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, rece
   }
 }
 
-/** Score a touchdown if the player stands in the opponents' end zone with the ball (in either team's turn). */
+/** The player stands in the opponents' end zone holding the ball. */
+export function inScoringPosition(state: GameState, player: PlayerState): boolean {
+  if (!isOnPitch(player) || player.status !== "standing") return false;
+  if (!state.ball.carried || !state.ball.square || !sameSquare(state.ball.square, player.at)) return false;
+  return player.at.x === scoringEndZoneX(player.side);
+}
+
+/**
+ * Score a touchdown if the player stands in the opponents' end zone with the ball (in either team's turn). Bloodlust:
+ * a thirsty player scores only once they have fed.
+ */
 export function checkTouchdown(ctx: Ctx, player: PlayerState) {
   const { state } = ctx;
-  if (state.activeSide === null || state.touchdown !== null) return;
-  if (!isOnPitch(player) || player.status !== "standing") return;
-  if (!state.ball.carried || !state.ball.square || !sameSquare(state.ball.square, player.at)) return;
-  if (player.at.x !== scoringEndZoneX(player.side)) return;
+  if (state.activeSide === null || state.touchdown !== null || !inScoringPosition(state, player)) return;
+  if (state.stack.some((p) => p.type === "MoveAction" && p.playerId === player.id && p.thirsty)) return;
   state.teams[player.side].score += 1;
   // A touchdown scored in the opponent's turn uses up one of the scoring team's turns.
   if (player.side !== state.activeSide) state.teams[player.side].turn += 1;

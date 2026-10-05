@@ -70,12 +70,20 @@ export const REGENERATION_TARGET = 4;
 
 const afterCasualty = (player: PlayerState) => (hasSkill(player, "Regeneration") ? "regeneration" : "apothecary");
 
-/**
- * Resolve an injury roll total on `player`: emits the table result and pushes the casualty / apothecary follow-up.
- * `attackerId`: the opponent whose block caused it (Plague Ridden).
- */
-export function injure(ctx: Ctx, player: PlayerState, total: number, crowd = false, attackerId?: string) {
-  const outcome = injuryOutcome(player, total);
+/** How an injury happened, for `injure`. */
+export interface InjuryCause {
+  /** Pushed into the crowd. */
+  crowd?: boolean;
+  /** The opponent whose block caused it (Plague Ridden). */
+  attackerId?: string;
+  /** Bitten by a Bloodlust player: a casualty is only Badly Hurt. */
+  bitten?: boolean;
+}
+
+/** Resolve an injury roll total on `player`: emits the table result and pushes the casualty / apothecary follow-up. */
+export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = false, attackerId, bitten = false }: InjuryCause = {}) {
+  const rolled = injuryOutcome(player, total);
+  const outcome = bitten && rolled === "casualty" ? "badly-hurt" : rolled;
   ctx.emit({ type: "PlayerInjured", playerId: player.id, result: outcome === "stunned" ? "stunned" : outcome === "ko" ? "ko" : "cas" });
   ctx.push({
     type: "Injury",

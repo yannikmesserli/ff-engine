@@ -947,6 +947,71 @@ describe("engine", () => {
       });
     });
 
+    describe("Bloodlust", () => {
+      /** home-2 has Bloodlust(X); home-1, next to them, is a Thrall. */
+      const vampire = (skill = "Bloodlust(2)", s = toFirstTurn()) =>
+        edit(withSkills(s, { "home-2": [skill] }), (c) => void (c.players["home-1"]!.keywords = ["thrall"]));
+      const thirsty = (s: GameState, action: PlayerActionType = "move") => apply(s, declare("home-2", action, action === "blitz" ? "away-2" : undefined), roll(1), { type: "DECLINE_REROLL" });
+
+      it("rolls X+ after the declaration, 1 easier for a Block or Blitz (at least 2+)", () => {
+        expect(find(apply(vampire("Bloodlust(3)"), startMove("home-2")), "ROLL")?.reason).toBe("Bloodlust 3+ (Home 2)");
+        expect(find(apply(vampire("Bloodlust(3)"), declare("home-2", "block")), "ROLL")?.reason).toBe("Bloodlust 2+ (Home 2)");
+        expect(find(apply(vampire("Bloodlust(2)"), declare("home-2", "block")), "ROLL")?.reason).toBe("Bloodlust 2+ (Home 2)");
+      });
+
+      it("a failure keeps the action, then the player bites an adjacent Thrall at the end: injury, no turnover", () => {
+        let s = thirsty(vampire());
+        expect(s.log).toContainEqual({ type: "PlayerThirsty", playerId: "home-2" });
+        s = apply(s, { type: "END_PLAYER_ACTION" });
+        expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-1"], max: 1 });
+        s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-1"] });
+        expect(find(s, "ROLL")?.reason).toBe("Injury (Home 1, bitten)");
+        s = apply(s, roll(2, 3));
+        expect(s.players["home-1"]!.status).toBe("stunned");
+        expect([s.activeSide, s.activePlayerId, top(s).type]).toEqual(["home", null, "Turn"]);
+      });
+
+      it("a bitten Thrall's casualty is only Badly Hurt", () => {
+        const s = apply(thirsty(vampire()), { type: "END_PLAYER_ACTION" }, { type: "SELECT_PLAYERS", playerIds: ["home-1"] }, roll(6, 6));
+        expect(s.players["home-1"]).toMatchObject({ at: "cas", casualty: { result: "badly-hurt" } });
+      });
+
+      it("biting nobody is a turnover, and the player loses their tackle zone", () => {
+        const s = apply(thirsty(vampire()), { type: "END_PLAYER_ACTION" }, { type: "SELECT_PLAYERS", playerIds: [] });
+        expect(s.log).toContainEqual({ type: "FeedingFailed", playerId: "home-2" });
+        expect(s.players["home-2"]!.distracted).toBe(true);
+        expect(s.activeSide).toBe("away");
+        const noThrall = apply(thirsty(withSkills(toFirstTurn(), { "home-2": ["Bloodlust(2)"] })), { type: "END_PLAYER_ACTION" });
+        expect(noThrall.activeSide).toBe("away");
+      });
+
+      it("a declared Block may become a Move action", () => {
+        let s = thirsty(vampire(), "block");
+        expect(types(s)).toEqual(["MOVE_INSTEAD"]);
+        expect(find(apply(s, { type: "MOVE_INSTEAD", move: false }), "BLOCK")).toBeDefined();
+        s = apply(s, { type: "MOVE_INSTEAD", move: true });
+        expect(find(s, "BLOCK")).toBeUndefined();
+        expect(find(s, "MOVE")).toBeDefined();
+      });
+
+      it("feeds before passing", () => {
+        let s = edit(vampire(), (c) => (c.ball = { square: { x: 12, y: 7 }, carried: true }));
+        s = apply(thirsty(s, "pass"), { type: "THROW", square: { x: 10, y: 4 } });
+        expect(find(s, "SELECT_PLAYERS")?.playerIds).toEqual(["home-1"]);
+        s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-1"] }, roll(2, 3));
+        expect(find(s, "ROLL")?.reason).toMatch(/^Pass/);
+      });
+
+      it("scores only after feeding", () => {
+        let s = vampire("Bloodlust(2)", place(toFirstTurn(), { "home-2": { x: 24, y: 3 }, "home-1": { x: 25, y: 4 } }));
+        s = edit(s, (c) => (c.ball = { square: { x: 24, y: 3 }, carried: true }));
+        s = apply(thirsty(s), ...move({ x: 25, y: 3 }));
+        expect(s.teams.home.score).toBe(0);
+        s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-1"] }, roll(2, 3));
+        expect(s.teams.home.score).toBe(1);
+      });
+    });
+
     describe("Take Root", () => {
       const rooted = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Take Root"] });
 

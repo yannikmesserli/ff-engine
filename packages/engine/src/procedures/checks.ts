@@ -22,6 +22,7 @@ const CHECK_NAMES = {
   reallystupid: "Really Stupid",
   fury: "Unchannelled Fury",
   takeroot: "Take Root",
+  bloodlust: "Bloodlust",
   dauntless: "Dauntless",
   vomit: "Projectile Vomit",
   animosity: "Animosity",
@@ -186,7 +187,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Injury${mightyBlowNote(bonus)}`);
         if (bonus > 0) ctx.emit({ type: "SkillUsed", playerId: proc.mightyBlow!.playerId, skill: "Mighty Blow" });
         // The casualty roll and the apothecary run before the ball bounces.
-        injure(ctx, player, a! + b! + bonus, false, proc.blockerId);
+        injure(ctx, player, a! + b! + bonus, { attackerId: proc.blockerId });
         proc.stage = "bounce";
         return "continue";
       }

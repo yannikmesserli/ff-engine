@@ -157,6 +157,8 @@ export const Pass: Handler<P<"Pass">> = {
     const modifiers = passModifiers(state, { ...thrower, at }, proc.range);
     switch (proc.stage) {
       case "animosity":
+        // A failed Bloodlust feeding before the throw ends the action.
+        if (state.turnover) return "done";
         rollAnimosity(ctx, thrower, playerAt(state, proc.target));
         proc.stage = "animosityResult";
         return "continue";
@@ -331,6 +333,7 @@ export const HandOff: Handler<P<"HandOff">> = {
   step(ctx, proc) {
     const thrower = getPlayer(ctx, proc.throwerId);
     if (proc.stage === "animosity") {
+      if (ctx.state.turnover) return "done";
       rollAnimosity(ctx, thrower, getPlayer(ctx, proc.catcherId));
       proc.stage = "animosityResult";
       return "continue";
@@ -344,7 +347,9 @@ export const HandOff: Handler<P<"HandOff">> = {
       const catcher = getPlayer(ctx, proc.catcherId);
       ctx.state.ball = { square: { ...squareOf(ctx, catcher) }, carried: false };
       ctx.emit({ type: "HandedOff", playerId: thrower.id, targetId: catcher.id });
-      ctx.push({ type: "Catch", playerId: catcher.id, kickoff: false, scattered: false, stage: "check" });
+      // The receiver may have been bitten (Bloodlust) and be down: the ball bounces.
+      if (catcher.status === "standing") ctx.push({ type: "Catch", playerId: catcher.id, kickoff: false, scattered: false, stage: "check" });
+      else ctx.push({ type: "Bounce", from: { ...squareOf(ctx, catcher) }, kickoff: false, receiving: null });
       proc.stage = "end";
       return "continue";
     }

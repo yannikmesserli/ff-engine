@@ -154,6 +154,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "FOLLOW_UP", follow: random() < 0.5 };
     case "USE_SKILL":
       return { type: "USE_SKILL", use: random() < 0.7 };
+    case "MOVE_INSTEAD":
+      return { type: "MOVE_INSTEAD", move: random() < 0.5 };
     case "MOVE":
       return t.squares.length > 0 && random() < 0.9 ? { type: "MOVE", square: pick(t.squares) } : { type: "END_PLAYER_ACTION" };
     case "SELECT_PLAYERS": {

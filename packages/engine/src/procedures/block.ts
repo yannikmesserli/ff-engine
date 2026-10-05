@@ -484,7 +484,7 @@ export const Crowd: Handler<P<"Crowd">> = {
     const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury (crowd)");
     // The throw-in waits for the casualty roll and the apothecary.
     if (proc.hadBall) ctx.push({ type: "ThrowIn", from: proc.from });
-    injure(ctx, player, a! + b!, true);
+    injure(ctx, player, a! + b!, { crowd: true });
     return "done";
   },
   actions(state, proc) {

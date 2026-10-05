@@ -207,6 +207,7 @@ export type CheckKind =
   | "reallystupid"
   | "fury"
   | "takeroot"
+  | "bloodlust"
   | "dauntless"
   | "vomit"
   | "animosity"
@@ -264,8 +265,11 @@ export type Procedure =
   | {
       type: "MoveAction";
       playerId: string;
-      /** "confusion": after the Bone Head / Really Stupid / Unchannelled Fury roll; "root": after the Take Root roll. */
-      stage: "start" | "confusion" | "root" | "standup" | "main";
+      /**
+       * "confusion": after the Bone Head / Really Stupid / Unchannelled Fury / Bloodlust roll; "thirst": a thirsty player
+       * may take a Move action instead; "root": after the Take Root roll.
+       */
+      stage: "start" | "confusion" | "thirst" | "root" | "standup" | "main";
       /** "block" only allows a single block; "blitz" a move with one block of `targetId` on the way. */
       action: PlayerActionType;
       targetId?: string;
@@ -274,6 +278,10 @@ export type Procedure =
       finished?: boolean;
       /** The player was stalling when activated (see isStalling): the crowd may throw a rock at the end. */
       stalling?: boolean;
+      /** Failed the Bloodlust roll: must bite a Thrall before the action ends (or before passing or scoring). */
+      thirsty?: boolean;
+      /** The Bloodlust feeding has been resolved (or is under way). */
+      fed?: boolean;
     }
   | {
       type: "Pass";
@@ -367,6 +375,8 @@ export type Procedure =
    * the coach may argue the call, then use bribes.
    */
   | { type: "SecretWeapon"; playerIds: string[]; stage: "argue" | "argueRoll" | "bribe" | "bribeRoll" }
+  /** Bloodlust: the thirsty player bites an adjacent Thrall team-mate, or fails to feed. */
+  | { type: "Feed"; playerId: string; stage: "select" | "injury"; victimId?: string; dropped?: boolean }
   /** The crowd throws a rock at a stalling ball carrier. */
   | { type: "Stalling"; playerId: string }
   | {
@@ -494,6 +504,8 @@ export type Action =
   /** After the apothecary's casualty re-roll: keep the first or the second result. */
   | { type: "APOTHECARY_CHOICE"; keep: "first" | "second" }
   | { type: "MOVE"; square: Square }
+  /** Bloodlust: take a Move action instead of the declared Block or Secure the Ball? */
+  | { type: "MOVE_INSTEAD"; move: boolean }
   /** Use an optional skill offered by a USE_SKILL template (Stand Firm)? */
   | { type: "USE_SKILL"; use: boolean }
   | { type: "END_PLAYER_ACTION" }
@@ -540,6 +552,7 @@ export type ActionTemplate =
   | { type: "APOTHECARY_CHOICE"; side: Side; playerId: string; first: Casualty; second: Casualty }
   | { type: "MOVE"; side: Side; playerId: string; squares: Array<Square & { rolls: CheckKind[] }> }
   | { type: "USE_SKILL"; side: Side; playerId: string; skill: string }
+  | { type: "MOVE_INSTEAD"; side: Side; playerId: string }
   | { type: "END_PLAYER_ACTION"; side: Side }
   | { type: "END_TURN"; side: Side }
   | { type: "SELECT_PLAYERS"; side: Side; playerIds: string[]; max: number; reason: string }
@@ -617,6 +630,12 @@ export type GameEvent =
   | { type: "SkillUsed"; playerId: string; skill: string }
   /** Failed a Bone Head or Really Stupid roll: the action is lost and the player is distracted. */
   | { type: "PlayerDistracted"; playerId: string; skill: string }
+  /** Failed a Bloodlust roll: the player must feed on a Thrall before the action ends. */
+  | { type: "PlayerThirsty"; playerId: string }
+  /** Bloodlust: `playerId` bites the Thrall `victimId`. */
+  | { type: "PlayerBitten"; playerId: string; victimId: string }
+  /** Bloodlust: no Thrall was bitten; a turnover, and the player loses their tackle zone. */
+  | { type: "FeedingFailed"; playerId: string }
   /** Failed a Take Root roll: the player cannot move until knocked down or the drive ends. */
   | { type: "PlayerRooted"; playerId: string }
   /** Failed an Unchannelled Fury roll: the action is lost, but the player keeps their tackle zone. */

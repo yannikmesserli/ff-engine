@@ -14,6 +14,7 @@ const CHECK_NAMES = {
   reallystupid: "Really Stupid roll",
   fury: "Unchannelled Fury roll",
   takeroot: "Take Root roll",
+  bloodlust: "Bloodlust roll (a failure means feeding on a Thrall)",
   dauntless: "Dauntless roll",
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
   animosity: "Animosity roll (a failure keeps the ball and ends the action)",
@@ -246,6 +247,12 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} uses ${e.skill}${SKILL_USES[e.skill] ? ` ${SKILL_USES[e.skill]}` : ""}.`;
     case "PlayerDistracted":
       return `${who(state, e.playerId)} fails the ${e.skill} roll: the action is lost, and they are distracted (no tackle zone) until their next action.`;
+    case "PlayerThirsty":
+      return `${who(state, e.playerId)} is thirsty: they must bite a Thrall before the action ends, or before passing or scoring.`;
+    case "PlayerBitten":
+      return `${who(state, e.playerId)} bites ${who(state, e.victimId)}.`;
+    case "FeedingFailed":
+      return `${who(state, e.playerId)} finds nobody to bite: turnover, and they lose their tackle zone.`;
     case "PlayerRooted":
       return `${who(state, e.playerId)} takes root: they cannot move until knocked down or the drive ends.`;
     case "ActionLost":

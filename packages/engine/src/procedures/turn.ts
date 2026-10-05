@@ -4,8 +4,8 @@ import { adjacent, ballCarrier, inBounds, isOnPitch, isRooted, other, playerAt, 
 import { blockDice } from "./block";
 import { handOffTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
-import { hasSkill } from "../skills";
-import { checkTouchdown, getPlayer, squareOf, weatherModifier } from "./helpers";
+import { hasSkill, skillValue } from "../skills";
+import { checkTouchdown, getPlayer, inScoringPosition, squareOf, weatherModifier } from "./helpers";
 import { isStalling } from "./stalling";
 import { teamMateTargets, throwableTeamMates } from "./ttm";
 
@@ -266,12 +266,16 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   return actions;
 }
 
-/** The Bone Head, Really Stupid or Unchannelled Fury roll a player makes when activated, if any. */
+/** The Bone Head, Really Stupid, Unchannelled Fury or Bloodlust roll a player makes when activated, if any. */
 function confusionCheck(state: GameState, player: PlayerState & { at: Square }, action: PlayerActionType): P<"Check"> | null {
-  const check = (kind: "bonehead" | "reallystupid" | "fury", target: number): P<"Check"> =>
+  const check = (kind: "bonehead" | "reallystupid" | "fury" | "bloodlust", target: number): P<"Check"> =>
     ({ type: "Check", kind, playerId: player.id, target, modifier: 0, stage: "roll", rerolled: false });
   if (hasSkill(player, "Bone Head")) return check("bonehead", BONE_HEAD_TARGET);
-  if (hasSkill(player, "Unchannelled Fury")) return check("fury", action === "block" || action === "blitz" ? FURY_BLOCK_TARGET : FURY_TARGET);
+  const blocking = action === "block" || action === "blitz";
+  if (hasSkill(player, "Unchannelled Fury")) return check("fury", blocking ? FURY_BLOCK_TARGET : FURY_TARGET);
+  // Bloodlust(X): X+, 1 easier (but at least 2+) for a Block or Blitz.
+  const bloodlust = skillValue(player, "Bloodlust", 2);
+  if (bloodlust !== null) return check("bloodlust", Math.max(2, bloodlust - (blocking ? 1 : 0)));
   if (!hasSkill(player, "Really Stupid")) return null;
   const helped = adjacent(player.at).some((s) => {
     const p = playerAt(state, s);
@@ -311,7 +315,10 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       return "continue";
     }
     if (proc.stage === "confusion") {
-      if (failed(ctx)) {
+      if (failed(ctx) && state.lastCheck!.kind === "bloodlust") {
+        proc.thirsty = true;
+        ctx.emit({ type: "PlayerThirsty", playerId: player.id });
+      } else if (failed(ctx)) {
         const { kind } = state.lastCheck!;
         if (kind === "fury") ctx.emit({ type: "ActionLost", playerId: player.id, skill: "Unchannelled Fury" });
         else {
@@ -321,6 +328,14 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         if (proc.stalling && player.status === "standing" && holdsBall(state, player)) ctx.push({ type: "Stalling", playerId: player.id });
         state.activePlayerId = null;
         return "done";
+      }
+      proc.stage = "thirst";
+      return "continue";
+    }
+    if (proc.stage === "thirst") {
+      if (proc.thirsty && (proc.action === "block" || proc.action === "secure")) {
+        if (action === null) return "wait";
+        if (ctx.expect(action, "MOVE_INSTEAD").move) proc.action = "move";
       }
       proc.stage = "root";
       state.lastCheck = null;
@@ -363,6 +378,9 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     }
     const finished =
       proc.finished ||
+      proc.fed ||
+      // Bloodlust: a thirsty ball carrier in the end zone stops to feed before scoring.
+      (proc.thirsty && inScoringPosition(state, player)) ||
       state.turnover ||
       state.touchdown !== null ||
       !isOnPitch(player) ||
@@ -379,7 +397,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (a.type === "THROW") {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
       proc.finished = true;
-      ctx.push({ type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, stage: "animosity", rerolled: false });
+      ctx.push(...feedFirst(proc), { type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, stage: "animosity", rerolled: false });
       return "continue";
     }
     if (a.type === "THROW_TEAM_MATE") {
@@ -400,7 +418,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (a.type === "HAND_OFF") {
       if (!handOffOptions(state, proc).some((p) => p.id === a.targetId)) ctx.reject("Cannot hand off to this player.");
       proc.finished = true;
-      ctx.push({ type: "HandOff", throwerId: player.id, catcherId: a.targetId, stage: "animosity" });
+      ctx.push(...feedFirst(proc), { type: "HandOff", throwerId: player.id, catcherId: a.targetId, stage: "animosity" });
       return "continue";
     }
     if (a.type === "VOMIT" || a.type === "STAB") {
@@ -439,6 +457,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
+    if (proc.stage === "thirst") return [{ type: "MOVE_INSTEAD", side: player.side, playerId: player.id }];
     const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
     const vomits = specialTargets(state, proc, "Projectile Vomit").map((t) => t.id);
     const stabs = specialTargets(state, proc, "Stab").map((t) => t.id);
@@ -464,9 +483,25 @@ export const MoveAction: Handler<P<"MoveAction">> = {
 
 const holdsBall = (state: GameState, player: PlayerState) => ballCarrier(state)?.id === player.id;
 
-/** End the activation; Secure the Ball is a turnover when the player does not end up holding the ball. */
+/** Bloodlust: a thirsty player feeds before passing or handing off the ball. */
+function feedFirst(proc: P<"MoveAction">): Procedure[] {
+  if (!proc.thirsty || proc.fed) return [];
+  proc.fed = true;
+  return [{ type: "Feed", playerId: proc.playerId, stage: "select" }];
+}
+
+/**
+ * End the activation: a thirsty player feeds first (and may then score). Secure the Ball is a turnover when the
+ * player does not end up holding the ball.
+ */
 function endActivation(ctx: Ctx, proc: P<"MoveAction">, player: PlayerState) {
   const { state } = ctx;
+  const feed = feedFirst(proc);
+  if (feed.length > 0) {
+    ctx.push(...feed);
+    return "continue" as const;
+  }
+  if (proc.fed) checkTouchdown(ctx, player);
   if (proc.action === "secure" && !state.turnover && state.touchdown === null && !holdsBall(state, player)) {
     state.turnover = true;
   }

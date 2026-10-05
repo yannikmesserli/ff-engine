@@ -50,6 +50,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   MOVE: "click a highlighted square to move (D: dodge, R: rush, J: jump over a prone player, P: pick-up)",
   USE_REROLL: "use a team re-roll?",
   USE_SKILL: "use a skill?",
+  MOVE_INSTEAD: "Bloodlust: take a Move action instead of the declared action?",
   SNAP: "Quick Snap: click an open player, then an adjacent square",
 };
 
@@ -189,6 +190,12 @@ export function ActionPanel(props: ActionPanelProps) {
           <>
             <button onClick={() => dispatch({ type: "USE_REROLL" })}>{main.skill ? `Re-roll (${main.skill})` : `Re-roll (${main.available} left)`}</button>
             <button onClick={() => dispatch({ type: "DECLINE_REROLL" })}>Accept failure</button>
+          </>
+        )}
+        {main.type === "MOVE_INSTEAD" && (
+          <>
+            <button onClick={() => dispatch({ type: "MOVE_INSTEAD", move: true })}>Move instead</button>
+            <button onClick={() => dispatch({ type: "MOVE_INSTEAD", move: false })}>Keep the action</button>
           </>
         )}
         {main.type === "USE_SKILL" && (

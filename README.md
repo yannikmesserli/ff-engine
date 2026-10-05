@@ -143,6 +143,11 @@ const { state: next, events } = step(state, { type: "ROLL" });
   and are never pushed (nobody in the chain moves), and cannot be thrown.
 - Plague Ridden: once per game, an opponent killed by the player's block (not a Big Guy, and without Stunty,
   Regeneration or Decay) joins the team's reserves as a new player of its lineman position (Rotter for Nurgle).
+- Bloodlust(X): rolled when the player is activated, X+ (1 easier for a Block or Blitz, at least 2+; team re-roll
+  allowed). On a failure the action goes on (a Block or Secure the Ball may become a Move), but before it ends, and
+  before passing, handing off or scoring, the player bites an adjacent Thrall team-mate: placed prone, injury roll
+  without armour, a casualty is only Badly Hurt. Biting nobody is a turnover, and the player loses their tackle zone and
+  drops the ball.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 
