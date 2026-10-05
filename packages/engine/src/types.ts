@@ -167,7 +167,7 @@ export interface DiceRoll {
 }
 
 /** Actions a player can declare when activated. */
-export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure";
+export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm";
 
 /** BB2025 range bands: Quick, Short, Long, Long Bomb. */
 export type PassRange = "quick" | "short" | "long" | "bomb";
@@ -188,7 +188,8 @@ export type CheckKind =
   | "reallystupid"
   | "dauntless"
   | "vomit"
-  | "animosity";
+  | "animosity"
+  | "landing";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -265,6 +266,24 @@ export type Procedure =
       /** The scatter left the pitch: throw-in from this square. */
       throwInFrom?: Square;
       interceptorId?: string;
+    }
+  /** Throw Team-mate: a team-mate with Right Stuff is thrown to a square in Quick or Short range. */
+  | {
+      type: "ThrowTeamMate";
+      throwerId: string;
+      thrownId: string;
+      target: Square;
+      range: PassRange;
+      stage: "roll" | "reroll" | "loner" | "scatter" | "land" | "bounce" | "landed";
+      rerolled: boolean;
+      /** "accurate" is a superb throw, "inaccurate" a subpar one. */
+      result?: PassResult;
+      /** Where the thrown player comes down. */
+      at?: Square;
+      /** The thrown player left the pitch from this square: the crowd gets them. */
+      crowdFrom?: Square;
+      /** The landing fails without a roll: the player landed on someone, or was down or distracted before the throw. */
+      autoFail?: boolean;
     }
   | { type: "HandOff"; throwerId: string; catcherId: string; stage: "animosity" | "animosityResult" | "catch" | "end" }
   | {
@@ -427,6 +446,8 @@ export type Action =
   | { type: "FOLLOW_UP"; follow: boolean }
   | { type: "THROW"; square: Square }
   | { type: "HAND_OFF"; targetId: string }
+  /** Throw Team-mate: throw the adjacent team-mate `targetId` to `square`. */
+  | { type: "THROW_TEAM_MATE"; targetId: string; square: Square }
   | { type: "FOUL"; targetId: string }
   /** The referee spotted the foul: argue the call (6: the fouler stays, but it is still a turnover)? */
   | { type: "ARGUE_THE_CALL"; argue: boolean }
@@ -472,6 +493,8 @@ export type ActionTemplate =
   /** Squares in range, with the range band and the D6 roll needed for an accurate pass. */
   | { type: "THROW"; side: Side; playerId: string; squares: Array<Square & { range: PassRange; needed: number }> }
   | { type: "HAND_OFF"; side: Side; playerId: string; playerIds: string[] }
+  /** Team-mates that can be thrown, and the target squares with their range and the roll needed for a superb throw. */
+  | { type: "THROW_TEAM_MATE"; side: Side; playerId: string; playerIds: string[]; squares: Array<Square & { range: PassRange; needed: number }> }
   /** Prone or stunned opponents next to the fouler, with the armour roll modifier from foul assists. */
   | { type: "FOUL"; side: Side; playerId: string; targets: Array<{ playerId: string; assists: number }> }
   | { type: "ARGUE_THE_CALL"; side: Side; playerId: string }
@@ -525,6 +548,8 @@ export type GameEvent =
   | { type: "FollowedUp"; playerId: string; to: Square }
   | { type: "PassThrown"; playerId: string; target: Square; range: PassRange }
   | { type: "PassResult"; playerId: string; result: PassResult }
+  /** `result`: "accurate" is a superb throw, "inaccurate" a subpar one. */
+  | { type: "TeamMateThrown"; playerId: string; thrownId: string; result: PassResult }
   | { type: "Intercepted"; playerId: string }
   | { type: "InterceptionFailed"; playerId: string }
   | { type: "HandedOff"; playerId: string; targetId: string }

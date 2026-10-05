@@ -15,6 +15,7 @@ const CHECK_NAMES = {
   dauntless: "Dauntless roll",
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
   animosity: "Animosity roll (a failure keeps the ball and ends the action)",
+  landing: "landing",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -66,6 +67,7 @@ export const ACTION_NAMES: Record<PlayerActionType, string> = {
   handoff: "Hand-off",
   foul: "Foul",
   secure: "Secure the Ball",
+  ttm: "Throw Team-mate",
 };
 
 /** Display names of the pass ranges, shortest first. */
@@ -175,6 +177,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} throws a ${PASS_RANGE_NAMES[e.range].toLowerCase()}.`;
     case "PassResult":
       return `The pass is ${e.result === "fumble" ? "fumbled!" : e.result}.`;
+    case "TeamMateThrown":
+      return `${who(state, e.playerId)} throws ${who(state, e.thrownId)}: ${{ accurate: "a superb throw", inaccurate: "a subpar throw", fumble: "fumbled!" }[e.result]}`;
     case "Intercepted":
       return `${who(state, e.playerId)} intercepts the ball!`;
     case "InterceptionFailed":

@@ -39,6 +39,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   CHOOSE_BLOCK_DIE: "pick a block die",
   THROW: "move, or aim a pass",
   HAND_OFF: "move, or click an adjacent team-mate to hand the ball to",
+  THROW_TEAM_MATE: "move, or click an adjacent team-mate with Right Stuff, then a square to throw them to",
   FOUL: "move, or click a prone or stunned opponent next to you to foul (badge: armour modifier)",
   ARGUE_THE_CALL: "the referee saw the foul! Argue the call (6: the player stays, still a turnover; 1: coach banned)?",
   BRIBE: "use a bribe to keep the player (2+: no turnover)?",

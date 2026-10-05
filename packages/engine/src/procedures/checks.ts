@@ -23,6 +23,7 @@ const CHECK_NAMES = {
   dauntless: "Dauntless",
   vomit: "Projectile Vomit",
   animosity: "Animosity",
+  landing: "Landing",
 } as const;
 
 /** The natural d6 result needed, for display ("4+"). */

@@ -972,6 +972,82 @@ describe("engine", () => {
         expect(find(s, "ROLL")?.reason).toBe("Animosity 2+ (Home 5)");
       });
     });
+
+    describe("Throw Team-mate and Right Stuff", () => {
+      /** home-4 at (10,4) can throw home-5, who has Right Stuff, from (10,5). */
+      const ttmTeam = (s = toFirstTurn()) => withSkills(place(s, { "home-5": { x: 10, y: 5 } }), { "home-4": ["Throw Team-mate"], "home-5": ["Right Stuff"] });
+      const throwTo = (square: Square) => ({ type: "THROW_TEAM_MATE", targetId: "home-5", square }) as const;
+      const declared = (s = ttmTeam()) => apply(s, declare("home-4", "ttm"));
+
+      it("is a once-per-turn action for a thrower with a Right Stuff team-mate, to Quick or Short range", () => {
+        expect(actionsOf(ttmTeam(), "home-4")).toContain("ttm");
+        expect(actionsOf(toFirstTurn(), "home-4")).not.toContain("ttm");
+        const t = find(declared(), "THROW_TEAM_MATE")!;
+        expect(t.playerIds).toEqual(["home-5"]);
+        expect(t.squares).toContainEqual({ x: 7, y: 4, range: "quick", needed: 4 });
+        expect(t.squares.some((s) => s.range === "long" || s.range === "bomb")).toBe(false);
+      });
+
+      it("superb throw: three scatters from the target, then a landing roll on AG; the thrown player may still act", () => {
+        let s = apply(declared(), throwTo({ x: 7, y: 4 }));
+        expect(find(s, "ROLL")?.reason).toBe("Throw team-mate 4+ (quick)");
+        s = apply(s, roll(4));
+        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 3 }] });
+        // North, south, east: from (7,4) to (8,4).
+        s = apply(s, roll(1, 5, 3));
+        expect(find(s, "ROLL")?.reason).toMatch(/^Landing 3\+ \(Home 5\)/);
+        s = apply(s, roll(3));
+        expect(s.players["home-5"]).toMatchObject({ at: { x: 8, y: 4 }, status: "standing", activated: false });
+        expect([s.activeSide, s.activePlayerId]).toEqual(["home", null]);
+        expect(actionsOf(s, "home-5")).toContain("move");
+        expect(actionsOf(s, "home-6")).not.toContain("ttm");
+      });
+
+      it("a subpar throw or a fumble makes the landing 1 harder; a fumble scatters once from the thrown player", () => {
+        const subpar = apply(declared(), throwTo({ x: 7, y: 4 }), roll(2), { type: "DECLINE_REROLL" }, roll(1, 5, 3));
+        expect(find(subpar, "ROLL")?.reason).toMatch(/^Landing 4\+/);
+        let fumble = apply(declared(), throwTo({ x: 7, y: 4 }), roll(1), { type: "DECLINE_REROLL" });
+        expect(find(fumble, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }] });
+        fumble = apply(fumble, roll(3));
+        expect(fumble.players["home-5"]!.at).toEqual({ x: 11, y: 5 });
+        expect(find(fumble, "ROLL")?.reason).toMatch(/^Landing 4\+/);
+      });
+
+      it("landing on a team-mate knocks them down (turnover), scatters on and fails the landing", () => {
+        // East, north, south from (9,6) ends on home-6 at (10,6).
+        let s = apply(declared(), throwTo({ x: 9, y: 6 }), roll(5), roll(3, 1, 5));
+        expect(s.players["home-6"]!.status).toBe("prone");
+        s = apply(s, roll(2, 2));
+        expect(find(s, "ROLL")?.reason).toBe("Thrown player bounces");
+        s = apply(s, roll(3));
+        expect(s.players["home-5"]).toMatchObject({ at: { x: 11, y: 6 }, status: "prone" });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour/);
+        s = apply(s, roll(2, 2));
+        expect(s.activeSide).toBe("away");
+      });
+
+      it("leaving the pitch means the crowd and a turnover", () => {
+        const s = apply(ttmTeam(place(toFirstTurn(), { "home-4": { x: 10, y: 1 } })), declare("home-4", "ttm"));
+        const after = apply(edit(s, (c) => void (c.players["home-5"]!.at = { x: 10, y: 0 })), throwTo({ x: 8, y: 0 }), roll(4), roll(1, 1, 1));
+        expect(find(after, "ROLL")?.reason).toMatch(/pushed into the crowd/);
+        expect(apply(after, roll(2, 2)).activeSide).toBe("away");
+      });
+
+      it("a failed landing is a knock-down, a turnover only with the ball", () => {
+        const landing = (s: GameState) => apply(s, declare("home-4", "ttm"), throwTo({ x: 7, y: 4 }), roll(4), roll(1, 5, 3), roll(1), { type: "DECLINE_REROLL" });
+        expect(apply(landing(ttmTeam()), roll(2, 2)).activeSide).toBe("home");
+        const carrying = edit(ttmTeam(), (c) => (c.ball = { square: { x: 10, y: 5 }, carried: true }));
+        const s = apply(landing(carrying), roll(2, 2));
+        expect(find(s, "ROLL")?.reason).toBe("Bounce");
+        expect(apply(s, roll(3)).activeSide).toBe("away");
+      });
+
+      it("a prone team-mate can be thrown, but does not land on their feet", () => {
+        const prone = edit(ttmTeam(), (c) => void (c.players["home-5"]!.status = "prone"));
+        const s = apply(prone, declare("home-4", "ttm"), throwTo({ x: 7, y: 4 }), roll(4), roll(1, 5, 3));
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour/);
+      });
+    });
   });
 
   describe("standing up and stunned players", () => {

@@ -114,9 +114,14 @@ const { state: next, events } = step(state, { type: "ROLL" });
   turnover unless the moving team's ball carrier drops the ball.
 - Animosity(X): before a pass or hand-off to a team-mate with keyword X (plain Animosity: any team-mate), 2+ (team
   re-roll allowed); a failure keeps the ball and ends the action, without a turnover.
+- Throw Team-mate / Right Stuff: a once-per-turn action; the thrower may move, then throws an adjacent team-mate with
+  Right Stuff to a Quick or Short square (PA roll like a pass, team re-roll, no interception). A superb or subpar
+  throw scatters three times from the target, a fumble once from the thrown player. Landing on a player knocks them
+  down (a turnover if they are a team-mate) and scatters on; off the pitch means the crowd and a turnover. Landing
+  roll on AG (-1 subpar or fumble, -1 per tackle zone), failing after hitting someone or for a prone or distracted
+  player; a failed landing is a turnover only with the ball. The thrown player may still act.
 
-Not yet: most other skills (Kick, Throw Team-mate / Right Stuff,
-Always Hungry...), inducements, overtime.
+Not yet: most other skills (Kick, Always Hungry, Unchannelled Fury, Claws...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.
 

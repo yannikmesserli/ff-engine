@@ -7,6 +7,7 @@ import { foulTargets } from "./foul";
 import { hasSkill } from "../skills";
 import { checkTouchdown, getPlayer, squareOf, weatherModifier } from "./helpers";
 import { isStalling } from "./stalling";
+import { teamMateTargets, throwableTeamMates } from "./ttm";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -30,7 +31,7 @@ export const REALLY_STUPID_TARGET = 4;
 export const REALLY_STUPID_HELPED_TARGET = 2;
 
 /** Team actions that can only be declared once per turn. */
-const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure"];
+const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure", "ttm"];
 
 /** The innermost player activation on the stack. */
 const activation = (state: GameState) => state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction");
@@ -230,6 +231,9 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   if (free("pass") && ballAvailable(state, player)) actions.push("pass");
   if (free("handoff") && ballAvailable(state, player)) actions.push("handoff");
   if (free("secure") && canSecure(state, player)) actions.push("secure");
+  // Throw Team-mate: a standing thrower, with a team-mate with Right Stuff on the pitch to throw.
+  const throwable = teamPlayers(state, player.side).some((p) => p.id !== player.id && isOnPitch(p) && hasSkill(p, "Right Stuff"));
+  if (free("ttm") && player.status === "standing" && hasSkill(player, "Throw Team-mate") && throwable) actions.push("ttm");
   // A Foul can be declared as long as an opponent is prone or stunned somewhere on the pitch.
   const foulable = teamPlayers(state, other(player.side)).some((o) => isOnPitch(o) && o.status !== "standing");
   if (free("foul") && foulable) actions.push("foul");
@@ -320,15 +324,24 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         activationTargets(state, proc).length === 0 &&
         throwOptions(state, proc).length === 0 &&
         handOffOptions(state, proc).length === 0 &&
-        foulOptions(state, proc).length === 0);
+        foulOptions(state, proc).length === 0 &&
+        ttmOptions(state, proc).length === 0);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "THROW", "HAND_OFF", "FOUL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "THROW", "HAND_OFF", "FOUL", "THROW_TEAM_MATE", "END_PLAYER_ACTION");
     if (a.type === "END_PLAYER_ACTION") return endActivation(ctx, proc, player);
     if (a.type === "THROW") {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
       proc.finished = true;
       ctx.push({ type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, stage: "animosity", rerolled: false });
+      return "continue";
+    }
+    if (a.type === "THROW_TEAM_MATE") {
+      if (!ttmOptions(state, proc).some((p) => p.id === a.targetId)) ctx.reject("Cannot throw this player.");
+      const square = teamMateTargets(state, player).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
+      // The thrower's action ends with the throw.
+      proc.finished = true;
+      ctx.push({ type: "ThrowTeamMate", throwerId: player.id, thrownId: a.targetId, target: { x: square.x, y: square.y }, range: square.range, stage: "roll", rerolled: false });
       return "continue";
     }
     if (a.type === "FOUL") {
@@ -384,6 +397,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const throws = throwOptions(state, proc);
     const handOffs = handOffOptions(state, proc).map((p) => p.id);
     const fouls = foulOptions(state, proc);
+    const throwable = ttmOptions(state, proc).map((p) => p.id);
     return [
       ...(proc.action === "block" ? [] : [{ type: "MOVE" as const, side: player.side, playerId: player.id, squares: legalMoves(state, player) }]),
       ...(targets.length > 0 ? [{ type: "BLOCK" as const, side: player.side, playerId: player.id, targets }] : []),
@@ -391,6 +405,9 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(throws.length > 0 ? [{ type: "THROW" as const, side: player.side, playerId: player.id, squares: throws }] : []),
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
       ...(fouls.length > 0 ? [{ type: "FOUL" as const, side: player.side, playerId: player.id, targets: fouls }] : []),
+      ...(throwable.length > 0
+        ? [{ type: "THROW_TEAM_MATE" as const, side: player.side, playerId: player.id, playerIds: throwable, squares: teamMateTargets(state, player) }]
+        : []),
       { type: "END_PLAYER_ACTION", side: player.side },
     ];
   },
@@ -411,6 +428,12 @@ function endActivation(ctx: Ctx, proc: P<"MoveAction">, player: PlayerState) {
   state.activePlayerId = null;
   return "done" as const;
 }
+
+/** Team-mates the active player may throw now (a Throw Team-mate action, standing, not thrown yet). */
+const ttmOptions = (state: GameState, proc: P<"MoveAction">) => {
+  const player = state.players[proc.playerId]!;
+  return proc.action === "ttm" && !proc.finished && player.status === "standing" ? throwableTeamMates(state, player) : [];
+};
 
 const foulOptions = (state: GameState, proc: P<"MoveAction">) =>
   proc.action === "foul" && !proc.finished ? foulTargets(state, state.players[proc.playerId]!) : [];

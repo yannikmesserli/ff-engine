@@ -79,6 +79,10 @@ export function Board({ state, templates, assets, dispatch, onHover, picked, set
   const followUp = findTemplate(templates, "FOLLOW_UP");
   const throwTo = aiming ? findTemplate(templates, "THROW") : undefined;
   const handOff = findTemplate(templates, "HAND_OFF");
+  const ttm = findTemplate(templates, "THROW_TEAM_MATE");
+  // Throw Team-mate: once a team-mate is picked, the target squares replace the moves.
+  const thrown = ttm?.playerIds.includes(picked[0] ?? "") ? picked[0] : undefined;
+  const ttmSquares = thrown ? ttm!.squares : undefined;
   const foul = findTemplate(templates, "FOUL");
   const giveBall = findTemplate(templates, "GIVE_BALL");
   const select = findTemplate(templates, "SELECT_PLAYERS");
@@ -95,6 +99,7 @@ export function Board({ state, templates, assets, dispatch, onHover, picked, set
     ...(pickingBlitzTarget ? (startAction?.blitzTargets ?? []) : (startAction?.choices.map((c) => c.playerId) ?? [])),
     ...(block?.targets.map((t) => t.playerId) ?? []),
     ...(handOff?.playerIds ?? []),
+    ...(ttm?.playerIds ?? []),
     ...(foul?.targets.map((t) => t.playerId) ?? []),
     ...(giveBall?.playerIds ?? []),
     ...(select?.playerIds ?? []),
@@ -120,6 +125,9 @@ export function Board({ state, templates, assets, dispatch, onHover, picked, set
     if (snapMove?.squares.some((t) => sameSquare(t, s))) {
       dispatch({ type: "SNAP", playerId: snapMove.playerId, square: s });
       setPicked([]);
+    } else if (thrown && ttmSquares?.some((t) => sameSquare(t, s))) {
+      dispatch({ type: "THROW_TEAM_MATE", targetId: thrown, square: s });
+      setPicked([]);
     } else if (push?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "PUSH", square: s });
     else if (throwTo?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "THROW", square: s });
     else if (followUp && sameSquare(followUp.square, s)) dispatch({ type: "FOLLOW_UP", follow: true });
@@ -141,6 +149,7 @@ export function Board({ state, templates, assets, dispatch, onHover, picked, set
       }
     } else if (block?.targets.some((t) => t.playerId === p.id)) dispatch({ type: "BLOCK", targetId: p.id });
     else if (handOff?.playerIds.includes(p.id)) dispatch({ type: "HAND_OFF", targetId: p.id });
+    else if (ttm?.playerIds.includes(p.id) && !thrown) setPicked([p.id]);
     else if (foul?.targets.some((t) => t.playerId === p.id)) dispatch({ type: "FOUL", targetId: p.id });
     else if (choiceFor(p.id)) setMenu(menu?.playerId === p.id ? null : { playerId: p.id, mode: "actions" });
     // Otherwise the click is about the square under the player (kick or pass target, push square...).
@@ -184,7 +193,7 @@ export function Board({ state, templates, assets, dispatch, onHover, picked, set
             {ALL_SQUARES.map((s) => {
               const target = targets.find((t) => sameSquare(t, s));
               const rolls = target?.rolls ?? [];
-              const pass = throwTo?.squares.find((t) => sameSquare(t, s));
+              const pass = (throwTo ?? (ttmSquares ? { squares: ttmSquares } : undefined))?.squares.find((t) => sameSquare(t, s));
               return (
                 <PitchSquare
                   key={squareId(s)}

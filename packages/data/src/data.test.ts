@@ -118,6 +118,10 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
     }
     case "BLOCK":
       return { type: "BLOCK", targetId: pick(t.targets).playerId };
+    case "THROW_TEAM_MATE":
+      return t.squares.length > 0 && random() < 0.8
+        ? { type: "THROW_TEAM_MATE", targetId: pick(t.playerIds), square: pick(t.squares) }
+        : { type: "END_PLAYER_ACTION" };
     case "VOMIT":
       return { type: "VOMIT", targetId: pick(t.targetIds) };
     case "CHOOSE_BLOCK_DIE":
@@ -199,6 +203,7 @@ describe("random games", () => {
       if (e.type === "CheckResult" && (e.kind === "jump" || e.kind === "loner")) ballEvents.add(e.kind);
       if (e.type === "RockThrown") ballEvents.add(`rock ${e.hit ? "hit" : "missed"}`);
       if (e.type === "SkillUsed") ballEvents.add(`skill ${e.skill}`);
+      if (e.type === "TeamMateThrown") ballEvents.add(`team-mate throw ${e.result}`);
       if (e.type === "PlayerDistracted") ballEvents.add(`distracted (${e.skill})`);
     }
   }, GAME_TIMEOUT_MS);

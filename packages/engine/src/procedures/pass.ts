@@ -50,7 +50,7 @@ export const neededForPass = (thrower: PlayerState, modifiers: number) =>
   thrower.pa === null ? null : Math.max(2, thrower.pa + modifiers);
 
 /** The needed roll as shown to the coach: a natural 6 is always accurate, and a player without PA needs one too. */
-const shownNeeded = (thrower: PlayerState, modifiers: number) => Math.min(6, neededForPass(thrower, modifiers) ?? 6);
+export const shownNeeded = (thrower: PlayerState, modifiers: number) => Math.min(6, neededForPass(thrower, modifiers) ?? 6);
 
 /** BB2025 pass result: there is no "wildly inaccurate" result any more. */
 export function evaluatePass(thrower: PlayerState, roll: number, modifiers: number): PassResult {
