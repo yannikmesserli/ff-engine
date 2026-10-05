@@ -75,6 +75,9 @@ export const teamPlayers = (state: GameState, side: Side) =>
 /** Standing players exert a tackle zone, unless they are distracted (failed Bone Head or Really Stupid). */
 export const hasTackleZone = (p: PlayerState) => p.status === "standing" && !p.distracted;
 
+/** A standing player who failed a Take Root roll: cannot move, rush or be pushed. */
+export const isRooted = (p: PlayerState) => p.rooted && p.status === "standing";
+
 /** The player on a square if they exert a tackle zone (only those mark opponents and assist). */
 export function tackleZoneAt(state: GameState, s: Square): PlayerState | undefined {
   const p = playerAt(state, s);

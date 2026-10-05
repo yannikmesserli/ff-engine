@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
-import { adjacent, ballCarrier, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
+import { adjacent, ballCarrier, inBounds, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice } from "./block";
 import { handOffTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
@@ -29,6 +29,8 @@ export const BONE_HEAD_TARGET = 2;
 /** Really Stupid fails on 1-3, or only on a 1 with a team-mate (without Really Stupid) standing next to the player. */
 export const REALLY_STUPID_TARGET = 4;
 export const REALLY_STUPID_HELPED_TARGET = 2;
+/** Take Root fails on a 1. */
+export const TAKE_ROOT_TARGET = 2;
 /** Unchannelled Fury fails on 1-3, or only on a 1 for a Block or Blitz action (+2 to the roll). */
 export const FURY_TARGET = 4;
 export const FURY_BLOCK_TARGET = 2;
@@ -97,7 +99,7 @@ export function dodgeModifier(state: GameState, player: PlayerState, from: Squar
 
 /** Squares a player in a Move action may step (or jump) to, with the rolls each move requires. */
 export function legalMoves(state: GameState, player: PlayerState): Array<Square & { rolls: CheckKind[]; jump?: boolean }> {
-  if (!isOnPitch(player) || player.status !== "standing") return [];
+  if (!isOnPitch(player) || player.status !== "standing" || isRooted(player)) return [];
   const left = maxMoves(player) - player.movesUsed;
   if (left <= 0) return [];
   const { ball } = state;
@@ -284,6 +286,7 @@ function confusionCheck(state: GameState, player: PlayerState & { at: Square }, 
  * A failed Bone Head, Really Stupid or Unchannelled Fury roll ends the action (the declared action still counts as used
  * this turn, no turnover): the player stays where they are, prone if they were; Bone Head and Really Stupid also
  * distract them until their next activation.
+ * Take Root (standing players only, 2+): a failure roots the player, who keeps their action but cannot move.
  * Jump Up: stand up for free (no movement spent, no roll); a prone player declaring a Block stands up on an AG roll
  * with +1 instead (a failure ends the action, without a turnover).
  */
@@ -295,6 +298,8 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       player.activated = true;
       player.movesUsed = 0;
       player.distracted = false;
+      // Take Root ends when the player is knocked down or placed prone.
+      if (player.status !== "standing") player.rooted = false;
       if (isStalling(state, player)) {
         proc.stalling = true;
         ctx.emit({ type: "StallingDetected", playerId: player.id });
@@ -316,6 +321,18 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         if (proc.stalling && player.status === "standing" && holdsBall(state, player)) ctx.push({ type: "Stalling", playerId: player.id });
         state.activePlayerId = null;
         return "done";
+      }
+      proc.stage = "root";
+      state.lastCheck = null;
+      if (player.status === "standing" && !player.rooted && hasSkill(player, "Take Root")) {
+        ctx.push({ type: "Check", kind: "takeroot", playerId: player.id, target: TAKE_ROOT_TARGET, modifier: 0, stage: "roll", rerolled: false });
+      }
+      return "continue";
+    }
+    if (proc.stage === "root") {
+      if (failed(ctx)) {
+        player.rooted = true;
+        ctx.emit({ type: "PlayerRooted", playerId: player.id });
       }
       proc.stage = "standup";
       state.lastCheck = null;

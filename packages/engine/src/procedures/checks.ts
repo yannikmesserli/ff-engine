@@ -21,6 +21,7 @@ const CHECK_NAMES = {
   bonehead: "Bone Head",
   reallystupid: "Really Stupid",
   fury: "Unchannelled Fury",
+  takeroot: "Take Root",
   dauntless: "Dauntless",
   vomit: "Projectile Vomit",
   animosity: "Animosity",

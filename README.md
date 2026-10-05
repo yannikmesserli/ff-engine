@@ -138,6 +138,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).
 - Strong Arm: +1 to the Throw Team-mate roll.
+- Take Root: a standing player rolls 2+ when activated (team re-roll allowed); on a failure they are rooted until
+  knocked down or placed prone, or the drive ends: the action goes on, but they cannot move or rush, cannot follow up
+  and are never pushed (nobody in the chain moves), and cannot be thrown.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

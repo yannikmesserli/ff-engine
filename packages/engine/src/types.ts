@@ -89,6 +89,11 @@ export interface PlayerState {
    * next activation or the end of the drive.
    */
   distracted: boolean;
+  /**
+   * Failed a Take Root roll: cannot move, rush or be pushed until knocked down or placed prone (cleared at the next
+   * activation once down) or the end of the drive. See `isRooted`.
+   */
+  rooted: boolean;
   /** Was on the pitch for the current drive's kick-off (Secret Weapon players are sent off when the drive ends). */
   played: boolean;
 }
@@ -189,6 +194,7 @@ export type CheckKind =
   | "bonehead"
   | "reallystupid"
   | "fury"
+  | "takeroot"
   | "dauntless"
   | "vomit"
   | "animosity"
@@ -246,8 +252,8 @@ export type Procedure =
   | {
       type: "MoveAction";
       playerId: string;
-      /** "confusion": after the Bone Head / Really Stupid / Unchannelled Fury roll, before standing up. */
-      stage: "start" | "confusion" | "standup" | "main";
+      /** "confusion": after the Bone Head / Really Stupid / Unchannelled Fury roll; "root": after the Take Root roll. */
+      stage: "start" | "confusion" | "root" | "standup" | "main";
       /** "block" only allows a single block; "blitz" a move with one block of `targetId` on the way. */
       action: PlayerActionType;
       targetId?: string;
@@ -315,7 +321,7 @@ export type Procedure =
       dauntless?: boolean;
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
-      stage: "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "push" | "followup" | "end";
+      stage: "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
@@ -597,6 +603,8 @@ export type GameEvent =
   | { type: "SkillUsed"; playerId: string; skill: string }
   /** Failed a Bone Head or Really Stupid roll: the action is lost and the player is distracted. */
   | { type: "PlayerDistracted"; playerId: string; skill: string }
+  /** Failed a Take Root roll: the player cannot move until knocked down or the drive ends. */
+  | { type: "PlayerRooted"; playerId: string }
   /** Failed an Unchannelled Fury roll: the action is lost, but the player keeps their tackle zone. */
   | { type: "ActionLost"; playerId: string; skill: string }
   /** Regeneration worked: the casualty heals and the player goes to the reserves. */

@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
-import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, playerAt, sameSquare, tackleZoneAt } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { hasSkill, skillValue } from "../skills";
@@ -104,11 +104,12 @@ const juggernaut = (proc: P<"Block">, attacker: PlayerState) => proc.blitz && ha
 
 /**
  * Stand Firm: the player being pushed (defender or chain-pushed) may refuse, if they exert a tackle zone. A blitzing
- * Juggernaut cancels it for opponents.
+ * Juggernaut cancels it for opponents. A rooted player (Take Root) is never pushed.
  */
 const pushStage = (state: GameState, proc: P<"Block">) => {
   const player = state.players[proc.pushing!.playerId]!;
   const attacker = state.players[proc.attackerId]!;
+  if (isRooted(player)) return "rooted";
   if (juggernaut(proc, attacker) && player.side !== attacker.side) return "push";
   return hasSkill(player, "Stand Firm") && hasTackleZone(player) ? "standFirm" : "push";
 };
@@ -353,14 +354,17 @@ export const Block: Handler<P<"Block">> = {
         proc.stage = "end";
         return "continue";
       }
-      case "standFirm": {
-        if (action === null) return "wait";
-        if (!ctx.expect(action, "USE_SKILL").use) {
-          proc.stage = "push";
-          return "continue";
+      case "standFirm":
+      case "rooted": {
+        if (proc.stage === "standFirm") {
+          if (action === null) return "wait";
+          if (!ctx.expect(action, "USE_SKILL").use) {
+            proc.stage = "push";
+            return "continue";
+          }
         }
         // Nobody in the chain moves, and there is no square to follow up into; a knock-down happens where they stand.
-        ctx.emit({ type: "SkillUsed", playerId: proc.pushing!.playerId, skill: "Stand Firm" });
+        ctx.emit({ type: "SkillUsed", playerId: proc.pushing!.playerId, skill: proc.stage === "standFirm" ? "Stand Firm" : "Take Root" });
         proc.chain = [];
         delete proc.vacated;
         proc.stage = "followup";
@@ -392,7 +396,8 @@ export const Block: Handler<P<"Block">> = {
         return "continue";
       }
       case "followup": {
-        const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !playerAt(state, proc.vacated);
+        // A rooted attacker cannot follow up.
+        const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !isRooted(attacker) && !playerAt(state, proc.vacated);
         // Frenzy: the attacker must follow up.
         const frenzy = canFollow && hasSkill(attacker, "Frenzy");
         if (canFollow && !frenzy && action === null) return "wait";

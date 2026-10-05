@@ -46,6 +46,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number): GameState
         usedSkills: [],
         distracted: false,
         played: false,
+        rooted: false,
       };
     }
   }

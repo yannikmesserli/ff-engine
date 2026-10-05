@@ -1,19 +1,19 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PassRange, PlayerState, Procedure, Square } from "../types";
 import { SCATTER } from "../dice";
-import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, offset, playerAt, sameSquare, tackleZones } from "../pitch";
+import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, offset, playerAt, sameSquare, tackleZones } from "../pitch";
 import { hasSkill } from "../skills";
 import { canTeamReroll, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
 import { evaluatePass, passModifiers, passRange, shownNeeded } from "./pass";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
-/** Team-mates with Right Stuff next to the thrower, who can be thrown (even prone). */
+/** Team-mates with Right Stuff next to the thrower, who can be thrown (even prone, but not rooted). */
 export function throwableTeamMates(state: GameState, thrower: PlayerState): PlayerState[] {
   if (!isOnPitch(thrower) || !hasSkill(thrower, "Throw Team-mate")) return [];
   return adjacent(thrower.at)
     .map((s) => playerAt(state, s))
-    .filter((p): p is PlayerState => p !== undefined && p.side === thrower.side && hasSkill(p, "Right Stuff"));
+    .filter((p): p is PlayerState => p !== undefined && p.side === thrower.side && hasSkill(p, "Right Stuff") && !isRooted(p));
 }
 
 /** Added to the thrower's PA for a team-mate throw: the pass modifiers, and Strong Arm's +1 to the roll. */

@@ -13,6 +13,7 @@ const CHECK_NAMES = {
   bonehead: "Bone Head roll",
   reallystupid: "Really Stupid roll",
   fury: "Unchannelled Fury roll",
+  takeroot: "Take Root roll",
   dauntless: "Dauntless roll",
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
   animosity: "Animosity roll (a failure keeps the ball and ends the action)",
@@ -38,6 +39,7 @@ const SKILL_USES: Record<string, string> = {
   Juggernaut: "to turn Both Down into a Push",
   "Projectile Vomit": "",
   Stab: "",
+  "Take Root": "and cannot be pushed",
 };
 
 /** Display names of the weather conditions. */
@@ -244,6 +246,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} uses ${e.skill}${SKILL_USES[e.skill] ? ` ${SKILL_USES[e.skill]}` : ""}.`;
     case "PlayerDistracted":
       return `${who(state, e.playerId)} fails the ${e.skill} roll: the action is lost, and they are distracted (no tackle zone) until their next action.`;
+    case "PlayerRooted":
+      return `${who(state, e.playerId)} takes root: they cannot move until knocked down or the drive ends.`;
     case "ActionLost":
       return `${who(state, e.playerId)} fails the ${e.skill} roll and roars in rage: the action is lost.`;
     case "PlayerEaten":

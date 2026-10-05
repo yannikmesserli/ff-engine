@@ -923,6 +923,38 @@ describe("engine", () => {
       });
     });
 
+    describe("Take Root", () => {
+      const rooted = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Take Root"] });
+
+      it("a 1 roots the player: no moves, but they may still block, without following up", () => {
+        let s = apply(rooted(), declare("home-2", "blitz", "away-2"));
+        expect(find(s, "ROLL")?.reason).toBe("Take Root 2+ (Home 2)");
+        s = apply(s, roll(1), { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "PlayerRooted", playerId: "home-2" });
+        expect(find(s, "MOVE")?.squares).toEqual([]);
+        s = apply(s, { type: "BLOCK", targetId: "away-2" }, roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } });
+        expect(types(s)).not.toContain("FOLLOW_UP");
+        expect(s.players["home-2"]!.at).toEqual({ x: 12, y: 7 });
+        // Still rooted in the next turn, without a new roll: a Move action ends straight away.
+        s = apply(s, { type: "END_TURN" }, { type: "END_TURN" }, startMove("home-2"));
+        expect([s.players["home-2"]!.activated, s.activePlayerId, top(s).type]).toEqual([true, null, "Turn"]);
+      });
+
+      it("a rooted player cannot be pushed", () => {
+        const s = apply(blockAway2(edit(toFirstTurn(), (c) => void (c.players["away-2"]!.rooted = true))), roll(3), pick);
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "away-2", skill: "Take Root" });
+        expect(s.players["away-2"]!.at).toEqual({ x: 13, y: 7 });
+        expect(top(s).type).toBe("Turn");
+      });
+
+      it("ends once the player has been knocked down; a prone player does not roll", () => {
+        const down = edit(rooted(), (c) => Object.assign(c.players["home-2"]!, { rooted: true, status: "prone" }));
+        const s = apply(down, startMove("home-2"));
+        expect(s.players["home-2"]).toMatchObject({ status: "standing", rooted: false });
+        expect(find(s, "MOVE")?.squares.length).toBeGreaterThan(0);
+      });
+    });
+
     describe("Jump Up", () => {
       const prone = (s: GameState, skills: string[] = ["Jump Up"]) =>
         edit(withSkills(s, { "home-1": skills }), (c) => void (c.players["home-1"]!.status = "prone"));
