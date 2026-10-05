@@ -348,7 +348,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (a.type === "BLOCK") {
       const target = activationTargets(state, proc).find((t) => t.id === a.targetId) ?? ctx.reject("Illegal block target.");
       proc.blocked = true;
-      const dice = blockDice(state, player, target);
+      const dice = blockDice(state, player, target, { blitz: proc.action === "blitz" });
       // Cheering Fans: the extra assist is used up by the team's first block.
       state.teams[player.side].extraAssist = false;
       ctx.emit({ type: "BlockDeclared", attackerId: player.id, defenderId: target.id, dice });
@@ -371,7 +371,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
-    const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t) }));
+    const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
     const throws = throwOptions(state, proc);
     const handOffs = handOffOptions(state, proc).map((p) => p.id);
     const fouls = foulOptions(state, proc);

@@ -807,6 +807,13 @@ describe("engine", () => {
       expect(find(rushes([]), "MOVE")).toBeUndefined();
       expect(find(rushes(["Sprint"]), "MOVE")?.squares).toContainEqual({ x: 0, y: 13, rolls: ["rush"] });
     });
+
+    it("Horns: +1 ST when blocking during a Blitz, not in a Block action", () => {
+      const s = withSkills(toFirstTurn(), { "home-2": ["Horns"] });
+      // ST 4 against 3: two dice.
+      expect(find(apply(s, declare("home-2", "blitz", "away-2")), "BLOCK")?.targets).toEqual([{ playerId: "away-2", dice: 2 }]);
+      expect(find(apply(s, declare("home-2", "block")), "BLOCK")?.targets.find((t) => t.playerId === "away-2")?.dice).toBe(1);
+    });
   });
 
   describe("standing up and stunned players", () => {

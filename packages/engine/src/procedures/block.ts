@@ -37,11 +37,21 @@ function assists(state: GameState, side: Side, target: Square, opponentId: strin
   }).length;
 }
 
+/** How a block is made, for its strength: during a Blitz (Horns). */
+export interface BlockContext {
+  blitz?: boolean;
+}
+
+/** The attacker's strength before assists: Horns +1 during a Blitz. */
+function attackerStrength(attacker: PlayerState, { blitz = false }: BlockContext) {
+  return attacker.st + (blitz && hasSkill(attacker, "Horns") ? 1 : 0);
+}
+
 /** Number of block dice: positive when the attacker chooses, negative when the defender does. */
-export function blockDice(state: GameState, attacker: PlayerState, defender: PlayerState): number {
+export function blockDice(state: GameState, attacker: PlayerState, defender: PlayerState, context: BlockContext = {}): number {
   if (!isOnPitch(attacker) || !isOnPitch(defender)) return 0;
   const extra = state.teams[attacker.side].extraAssist ? 1 : 0;
-  const a = attacker.st + assists(state, attacker.side, defender.at, defender.id, attacker.id) + extra;
+  const a = attackerStrength(attacker, context) + assists(state, attacker.side, defender.at, defender.id, attacker.id) + extra;
   const d = defender.st + assists(state, defender.side, attacker.at, attacker.id, defender.id);
   if (a > 2 * d) return 3;
   if (a > d) return 2;
@@ -107,7 +117,7 @@ function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, 
   if (!isOnPitch(attacker) || !hasTackleZone(attacker) || !isOnPitch(defender) || defender.status !== "standing") return null;
   if (!adjacent(attacker.at).some((s) => sameSquare(s, defender.at))) return null;
   if (proc.blitz && attacker.movesUsed >= maxMoves(attacker)) return null;
-  const dice = blockDice(state, attacker, defender);
+  const dice = blockDice(state, attacker, defender, { blitz: proc.blitz });
   return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: proc.blitz ? "rush" : "roll", dice, rerolled: false, chain: [] };
 }
 
