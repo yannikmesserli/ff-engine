@@ -75,12 +75,20 @@ export const ThrowIn: Handler<P<"ThrowIn">> = {
   },
 };
 
-/** A standing player tries to catch the ball on their square (AG, tackle zones, weather); a failure bounces it. */
+/**
+ * A standing player tries to catch the ball on their square (AG, tackle zones, weather); a failure bounces it.
+ * A distracted player cannot catch: the ball bounces straight away.
+ */
 export const Catch: Handler<P<"Catch">> = {
   step(ctx, proc) {
     const { state } = ctx;
     const player = getPlayer(ctx, proc.playerId);
     const square = squareOf(ctx, player);
+    if (proc.stage === "check" && player.distracted) {
+      state.lastCheck = null;
+      proc.stage = "resolve";
+      return "continue";
+    }
     if (proc.stage === "check") {
       state.lastCheck = null;
       proc.stage = "resolve";

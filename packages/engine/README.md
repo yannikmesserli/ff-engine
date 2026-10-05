@@ -108,11 +108,15 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
   `GameOptions`, `StepResult`.
 - Pitch (`pitch.ts`): constants (`PITCH_WIDTH`, `PITCH_HEIGHT`, line of scrimmage, wide zones) and helpers
   (`other`, `sameSquare`, `offset`, `inBounds`, `inHalf`, `adjacent`, `playerAt`, `teamPlayers`, `tackleZones`,
-  `ballCarrier`...).
+  `hasTackleZone` (standing and not distracted), `ballCarrier`...).
 - Dice: `DIE_FACES`, `BLOCK_FACES`, `SCATTER`, `isCorner`, `throwInDirection`.
 - Rules helpers for the UI: `setupErrors`, `KICKOFF_TABLE`, `openPlayers`, `weatherFor`, `declarableActions`,
   `legalMoves`, `adjacentTargets`, `blockDice`, `pushbackSquares`, `foulAssists`, `foulTargets`,
   `RANGE_MODIFIER`, `evaluatePass`, `passRange`, `throwTargets`, `handOffTargets`, `interceptors`, `underRuler`,
-  `neededRoll`, `injuryOutcome`, `casualtyFor`, `CASUALTY_DICE`, `hasSkill`, `skillName`.
+  `neededRoll`, `injuryOutcome`, `casualtyFor`, `CASUALTY_DICE`, `hasSkill`, `skillName`, `skillValue`.
+- Skills: automatic skill re-rolls (Dodge, Sure Hands, Catch) live in `skillReroll` (`procedures/checks.ts`). An
+  optional skill the coach decides on is a `USE_SKILL` template (`{ skill, playerId }`) answered by
+  `{ type: "USE_SKILL", use }` (Stand Firm); a skill re-roll offered instead of a team re-roll is a `USE_REROLL`
+  template with `skill` set (Pass).
 - Injuries: anything that rolls on the injury table calls `injure(ctx, player, total)` (`procedures/injury.ts`),
   which pushes the `Injury` procedure: casualty roll, apothecary, then the player is placed.

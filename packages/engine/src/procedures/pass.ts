@@ -1,7 +1,7 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PassRange, PassResult, PlayerState, Procedure, Square } from "../types";
 import { SCATTER, passes } from "../dice";
-import { adjacent, allSquares, ballCarrier, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
+import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill } from "../skills";
 import { canTeamReroll, checkTouchdown, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
 
@@ -87,11 +87,11 @@ export function underRuler(thrower: Square, target: Square, player: Square): boo
   return c > a && c > b && 1.74 > (2 * d) / Math.sqrt(c);
 }
 
-/** Standing opponents under the ruler who may try to intercept. */
+/** Opponents under the ruler exerting a tackle zone (standing, not distracted) who may try to intercept. */
 export function interceptors(state: GameState, thrower: PlayerState, target: Square) {
   if (!isOnPitch(thrower)) return [];
   return teamPlayers(state, other(thrower.side)).filter(
-    (p): p is PlayerState & { at: Square } => isOnPitch(p) && p.status === "standing" && !hasSkill(p, "No Ball") && underRuler(thrower.at, target, p.at),
+    (p): p is PlayerState & { at: Square } => isOnPitch(p) && hasTackleZone(p) && !hasSkill(p, "No Ball") && underRuler(thrower.at, target, p.at),
   );
 }
 
@@ -107,6 +107,9 @@ export const interceptionTarget = (state: GameState, interceptor: PlayerState & 
       tackleZones(state, interceptor.side, interceptor.at) +
       (state.weather === "pouring-rain" ? 1 : 0),
   );
+
+/** Pass: the thrower may re-roll an inaccurate pass or a fumble with the skill instead of a team re-roll. */
+const passSkillReroll = (thrower: PlayerState, proc: P<"Pass">) => !proc.rerolled && hasSkill(thrower, "Pass");
 
 /** After a pass or hand-off: a turnover unless a team-mate of the thrower holds the ball. */
 function endBallAction(ctx: Ctx, thrower: PlayerState) {
@@ -137,13 +140,19 @@ export const Pass: Handler<P<"Pass">> = {
         const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Pass ${shownNeeded(thrower, modifiers)}+`);
         proc.result = evaluatePass(thrower, roll!, modifiers);
         ctx.emit({ type: "PassResult", playerId: thrower.id, result: proc.result });
-        proc.stage = proc.result !== "accurate" && canTeamReroll(state, thrower.side, proc.rerolled) ? "reroll" : "outcome";
+        const canReroll = passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled);
+        proc.stage = proc.result !== "accurate" && canReroll ? "reroll" : "outcome";
         return "continue";
       }
       case "reroll": {
         if (action === null) return "wait";
         const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
-        if (a.type === "USE_REROLL") {
+        if (a.type === "USE_REROLL" && passSkillReroll(thrower, proc)) {
+          // A skill re-roll: no team re-roll is spent, so Loner does not apply.
+          ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Pass" });
+          proc.rerolled = true;
+          proc.stage = "roll";
+        } else if (a.type === "USE_REROLL") {
           useTeamReroll(ctx, thrower.side);
           proc.rerolled = true;
           proc.stage = lonerTarget(thrower) === null ? "roll" : "loner";
@@ -245,7 +254,7 @@ export const Pass: Handler<P<"Pass">> = {
       }
       case "reroll":
         return [
-          { type: "USE_REROLL", side: thrower.side, available: rerollsLeft(state, thrower.side) },
+          { type: "USE_REROLL", side: thrower.side, available: rerollsLeft(state, thrower.side), ...(passSkillReroll(thrower, proc) ? { skill: "Pass" } : {}) },
           { type: "DECLINE_REROLL", side: thrower.side },
         ];
       case "loner":

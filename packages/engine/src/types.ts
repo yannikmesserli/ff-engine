@@ -84,6 +84,11 @@ export interface PlayerState {
   casualty: Casualty | null;
   /** Once-per-turn skills used this team turn, e.g. "Dodge". */
   usedSkills: string[];
+  /**
+   * Failed a Bone Head or Really Stupid roll: no tackle zone, cannot catch, intercept or assist, until the player's
+   * next activation or the end of the drive.
+   */
+  distracted: boolean;
 }
 
 /** A team's game-long and drive-long resources. */
@@ -168,9 +173,19 @@ export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" |
 export type PassRange = "quick" | "short" | "long" | "bomb";
 export type PassResult = "accurate" | "inaccurate" | "fumble";
 
-/** Single D6 rolls run by the Check procedure. */
-/** Single-D6 rolls; "loner" is the Loner(X) roll to use a team re-roll. */
-export type CheckKind = "dodge" | "rush" | "jump" | "pickup" | "catch" | "standup" | "regeneration" | "loner";
+/** Single-D6 rolls run by the Check procedure; "loner" is the Loner(X) roll to use a team re-roll. */
+export type CheckKind =
+  | "dodge"
+  | "rush"
+  | "jump"
+  | "pickup"
+  | "catch"
+  | "standup"
+  | "regeneration"
+  | "loner"
+  | "jumpup"
+  | "bonehead"
+  | "reallystupid";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -222,7 +237,8 @@ export type Procedure =
   | {
       type: "MoveAction";
       playerId: string;
-      stage: "start" | "standup" | "main";
+      /** "confusion": after the Bone Head / Really Stupid roll, before standing up. */
+      stage: "start" | "confusion" | "standup" | "main";
       /** "block" only allows a single block; "blitz" a move with one block of `targetId` on the way. */
       action: PlayerActionType;
       targetId?: string;
@@ -264,13 +280,15 @@ export type Procedure =
       attackerId: string;
       defenderId: string;
       blitz: boolean;
-      stage: "rush" | "rushResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "push" | "followup" | "end";
+      /** Frenzy's second block against the same defender: there is no third one. */
+      second?: boolean;
+      stage: "rush" | "rushResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "standFirm" | "push" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
       rerolled: boolean;
       face?: number;
-      /** Square the defender was pushed from, available for the follow-up. */
+      /** Square the defender was pushed from, available for the follow-up (none after Stand Firm). */
       vacated?: Square;
       /** Pushback chain being resolved: the player being pushed now and the push direction. */
       pushing?: { playerId: string; from: Square; dir: Square };
@@ -323,6 +341,10 @@ export type Procedure =
       type: "KnockDown";
       playerId: string;
       turnover: boolean;
+      /** Mighty Blow of the blocker who knocked the player down: added to the armour or the injury roll. */
+      mightyBlow?: { playerId: string; bonus: number };
+      /** Mighty Blow broke the armour, so it does not apply to the injury roll. */
+      mightyBlowOnArmour?: boolean;
       stage: "fall" | "armour" | "injury" | "bounce";
       square?: Square;
       hadBall?: boolean;
@@ -393,6 +415,8 @@ export type Action =
   /** After the apothecary's casualty re-roll: keep the first or the second result. */
   | { type: "APOTHECARY_CHOICE"; keep: "first" | "second" }
   | { type: "MOVE"; square: Square }
+  /** Use an optional skill offered by a USE_SKILL template (Stand Firm)? */
+  | { type: "USE_SKILL"; use: boolean }
   | { type: "END_PLAYER_ACTION" }
   | { type: "END_TURN" }
   /** Choose players for a kick-off event (Solid Defence, High Kick, Charge). May be empty. */
@@ -409,7 +433,8 @@ export type ActionTemplate =
   | { type: "CALL_COIN"; side: Side }
   | { type: "CHOOSE_KICK"; side: Side }
   | { type: "ROLL"; side: Side | null; dice: DiceSpec[]; reason: string }
-  | { type: "USE_REROLL"; side: Side; available: number }
+  /** `skill`: the re-roll comes from this skill of the player (Pass), not from the team. */
+  | { type: "USE_REROLL"; side: Side; available: number; skill?: string }
   | { type: "DECLINE_REROLL"; side: Side }
   | { type: "PLACE_PLAYER"; side: Side; playerIds: string[]; squares: Square[] }
   | { type: "END_SETUP"; side: Side; errors: string[] }
@@ -431,6 +456,7 @@ export type ActionTemplate =
   | { type: "USE_APOTHECARY"; side: Side; playerId: string; outcome: InjuryOutcome; casualty: Casualty | null }
   | { type: "APOTHECARY_CHOICE"; side: Side; playerId: string; first: Casualty; second: Casualty }
   | { type: "MOVE"; side: Side; playerId: string; squares: Array<Square & { rolls: CheckKind[] }> }
+  | { type: "USE_SKILL"; side: Side; playerId: string; skill: string }
   | { type: "END_PLAYER_ACTION"; side: Side }
   | { type: "END_TURN"; side: Side }
   | { type: "SELECT_PLAYERS"; side: Side; playerIds: string[]; max: number; reason: string }
@@ -499,6 +525,8 @@ export type GameEvent =
   | { type: "ApothecaryUsed"; playerId: string }
   /** A skill was used, e.g. Dodge to re-roll a failed Dodge roll. */
   | { type: "SkillUsed"; playerId: string; skill: string }
+  /** Failed a Bone Head or Really Stupid roll: the action is lost and the player is distracted. */
+  | { type: "PlayerDistracted"; playerId: string; skill: string }
   /** Regeneration worked: the casualty heals and the player goes to the reserves. */
   | { type: "Regenerated"; playerId: string }
   /** The apothecary's work is done: the player is stunned, back in the reserves, or keeps `casualty`. */

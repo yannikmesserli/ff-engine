@@ -72,11 +72,20 @@ export function playerAt(state: GameState, s: Square): PlayerState | undefined {
 export const teamPlayers = (state: GameState, side: Side) =>
   Object.values(state.players).filter((p) => p.side === side);
 
-/** Number of opposing standing players exerting a tackle zone on the square. */
+/** Standing players exert a tackle zone, unless they are distracted (failed Bone Head or Really Stupid). */
+export const hasTackleZone = (p: PlayerState) => p.status === "standing" && !p.distracted;
+
+/** The player on a square if they exert a tackle zone (only those mark opponents and assist). */
+export function tackleZoneAt(state: GameState, s: Square): PlayerState | undefined {
+  const p = playerAt(state, s);
+  return p && hasTackleZone(p) ? p : undefined;
+}
+
+/** Number of opposing players exerting a tackle zone on the square. */
 export function tackleZones(state: GameState, side: Side, s: Square): number {
   return adjacent(s).filter((n) => {
-    const p = playerAt(state, n);
-    return p !== undefined && p.side !== side && p.status === "standing";
+    const p = tackleZoneAt(state, n);
+    return p !== undefined && p.side !== side;
   }).length;
 }
 

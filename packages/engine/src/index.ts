@@ -9,7 +9,7 @@ export { setupErrors } from "./procedures/setup";
 export { KICKOFF_TABLE, openPlayers, weatherFor } from "./procedures/kickoff";
 export { adjacentTargets, declarableActions, legalMoves } from "./procedures/turn";
 export { blockDice, pushbackSquares } from "./procedures/block";
-export { hasSkill, skillName } from "./skills";
+export { hasSkill, skillName, skillValue } from "./skills";
 export { foulAssists, foulTargets } from "./procedures/foul";
 export { RANGE_MODIFIER, evaluatePass, handOffTargets, interceptors, passRange, throwTargets, underRuler } from "./procedures/pass";
 export { neededRoll } from "./procedures/checks";

@@ -46,6 +46,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   APOTHECARY_CHOICE: "the apothecary re-rolled the casualty: keep which result?",
   MOVE: "click a highlighted square to move (D: dodge, R: rush, J: jump over a prone player, P: pick-up)",
   USE_REROLL: "use a team re-roll?",
+  USE_SKILL: "use a skill?",
   SNAP: "Quick Snap: click an open player, then an adjacent square",
 };
 
@@ -62,6 +63,8 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   if (roll) return `roll for ${roll.reason}`;
   if (select) return `${select.reason} (click players)`;
   if (snap) return `${PROMPTS.SNAP} (${snap.remaining} left)`;
+  if (main.type === "USE_REROLL" && main.skill) return `use ${main.skill} to re-roll?`;
+  if (main.type === "USE_SKILL") return `use ${main.skill} (${state.players[main.playerId]!.name})?`;
   return PROMPTS[main.type];
 }
 
@@ -172,8 +175,14 @@ export function ActionPanel(props: ActionPanelProps) {
         )}
         {main.type === "USE_REROLL" && (
           <>
-            <button onClick={() => dispatch({ type: "USE_REROLL" })}>Re-roll ({main.available} left)</button>
+            <button onClick={() => dispatch({ type: "USE_REROLL" })}>{main.skill ? `Re-roll (${main.skill})` : `Re-roll (${main.available} left)`}</button>
             <button onClick={() => dispatch({ type: "DECLINE_REROLL" })}>Accept failure</button>
+          </>
+        )}
+        {main.type === "USE_SKILL" && (
+          <>
+            <button onClick={() => dispatch({ type: "USE_SKILL", use: true })}>Use {main.skill}</button>
+            <button onClick={() => dispatch({ type: "USE_SKILL", use: false })}>Don't use</button>
           </>
         )}
         {main.type === "PLACE_PLAYER" && (

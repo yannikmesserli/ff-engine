@@ -1,11 +1,11 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
-import { adjacent, ballCarrier, inBounds, isOnPitch, playerAt, sameSquare } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
-import { hasSkill } from "../skills";
+import { hasSkill, skillValue } from "../skills";
 import { canTeamReroll, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll, weatherModifier } from "./helpers";
-import { RUSH_TARGET } from "./turn";
+import { RUSH_SQUARES, RUSH_TARGET } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -21,23 +21,17 @@ const COMPASS: Square[] = [
   { x: -1, y: -1 },
 ];
 
-/** The standing player on a square, if any (only standing players exert tackle zones and assist). */
-export const standingAt = (state: GameState, s: Square) => {
-  const p = playerAt(state, s);
-  return p?.status === "standing" ? p : undefined;
-};
-
 /**
- * Assists for `side` against the opponent standing on `target`: standing team-mates next to it (except
+ * Assists for `side` against the opponent standing on `target`: team-mates next to it exerting a tackle zone (except
  * `excludeId`) that are not marked by any other opponent, or that have Guard.
  */
 function assists(state: GameState, side: Side, target: Square, opponentId: string, excludeId: string): number {
   return adjacent(target).filter((s) => {
-    const helper = standingAt(state, s);
+    const helper = tackleZoneAt(state, s);
     if (!helper || helper.side !== side || helper.id === excludeId) return false;
     if (hasSkill(helper, "Guard")) return true;
     return adjacent(s).every((n) => {
-      const marker = standingAt(state, n);
+      const marker = tackleZoneAt(state, n);
       return !marker || marker.side === side || marker.id === opponentId;
     });
   }).length;
@@ -68,6 +62,53 @@ export function pushbackSquares(state: GameState, from: Square, dir: Square): Sq
   if (free.length > 0) return free;
   // All three squares occupied: push into one of them (chain push). Otherwise the crowd gets them.
   return onPitch.length === 3 ? onPitch : [];
+}
+
+/**
+ * Where the player being pushed can go, and which side chooses. Sidestep: the pushed player's coach picks any free
+ * adjacent square (if there is one) instead of the usual three; a player without a tackle zone cannot use it.
+ */
+export function pushChoice(state: GameState, proc: P<"Block">): { side: Side; squares: Square[]; sidestep: boolean } {
+  const pushing = proc.pushing!;
+  const player = state.players[pushing.playerId]!;
+  if (hasSkill(player, "Sidestep") && hasTackleZone(player)) {
+    const free = adjacent(pushing.from).filter((s) => !playerAt(state, s));
+    if (free.length > 0) return { side: player.side, squares: free, sidestep: true };
+  }
+  return { side: state.players[proc.attackerId]!.side, squares: pushbackSquares(state, pushing.from, pushing.dir), sidestep: false };
+}
+
+/** Stand Firm: the player being pushed (defender or chain-pushed) may refuse, if they exert a tackle zone. */
+const pushStage = (state: GameState, proc: P<"Block">) => {
+  const player = state.players[proc.pushing!.playerId]!;
+  return hasSkill(player, "Stand Firm") && hasTackleZone(player) ? "standFirm" : "push";
+};
+
+/** Mighty Blow of the attacker, for a knock-down of an opponent caused by the block. */
+function knockDownDefender(attacker: PlayerState, defender: PlayerState): P<"KnockDown"> {
+  const bonus = attacker.side !== defender.side ? skillValue(attacker, "Mighty Blow", 1) : null;
+  return {
+    type: "KnockDown",
+    playerId: defender.id,
+    turnover: false,
+    stage: "fall",
+    ...(bonus ? { mightyBlow: { playerId: attacker.id, bonus } } : {}),
+  };
+}
+
+/**
+ * Frenzy: after a Push or a dodged Stumble, a second block against the same defender if both still stand next to each
+ * other; during a Blitz it costs another square of movement (a Rush if needed) and needs movement left.
+ */
+function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState): P<"Block"> | null {
+  if (proc.second || !hasSkill(attacker, "Frenzy") || state.turnover || state.touchdown !== null) return null;
+  const face = BLOCK_FACES[proc.face! - 1];
+  if (face !== "push" && face !== "defender_stumbles") return null;
+  if (!isOnPitch(attacker) || !hasTackleZone(attacker) || !isOnPitch(defender) || defender.status !== "standing") return null;
+  if (!adjacent(attacker.at).some((s) => sameSquare(s, defender.at))) return null;
+  if (proc.blitz && attacker.movesUsed >= attacker.ma + RUSH_SQUARES) return null;
+  const dice = blockDice(state, attacker, defender);
+  return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: proc.blitz ? "rush" : "roll", dice, rerolled: false, chain: [] };
 }
 
 /** Only the attacker's team may re-roll the block dice, once. */
@@ -174,7 +215,7 @@ export const Block: Handler<P<"Block">> = {
         if (result === "both_down") {
           // TODO: Wrestle, Juggernaut.
           ctx.push(
-            ...(hasSkill(defender, "Block") ? [] : [{ type: "KnockDown" as const, playerId: defender.id, turnover: false, stage: "fall" as const }]),
+            ...(hasSkill(defender, "Block") ? [] : [knockDownDefender(attacker, defender)]),
             ...(hasSkill(attacker, "Block") ? [] : [{ type: "KnockDown" as const, playerId: attacker.id, turnover: true, stage: "fall" as const }]),
           );
           proc.stage = "end";
@@ -186,12 +227,25 @@ export const Block: Handler<P<"Block">> = {
         const at = squareOf(ctx, attacker);
         proc.vacated = { ...from };
         proc.pushing = { playerId: defender.id, from: { ...from }, dir: { x: Math.sign(from.x - at.x), y: Math.sign(from.y - at.y) } };
-        proc.stage = "push";
+        proc.stage = pushStage(state, proc);
+        return "continue";
+      }
+      case "standFirm": {
+        if (action === null) return "wait";
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "push";
+          return "continue";
+        }
+        // Nobody in the chain moves, and there is no square to follow up into; a knock-down happens where they stand.
+        ctx.emit({ type: "SkillUsed", playerId: proc.pushing!.playerId, skill: "Stand Firm" });
+        proc.chain = [];
+        delete proc.vacated;
+        proc.stage = "followup";
         return "continue";
       }
       case "push": {
         const pushing = proc.pushing!;
-        const squares = pushbackSquares(state, pushing.from, pushing.dir);
+        const { squares, sidestep } = pushChoice(state, proc);
         let to: Square | null;
         if (squares.length === 0) to = null;
         else if (squares.length === 1) to = squares[0]!;
@@ -201,10 +255,12 @@ export const Block: Handler<P<"Block">> = {
           if (!squares.some((s) => sameSquare(s, square))) ctx.reject("Illegal push square.");
           to = square;
         }
+        if (sidestep) ctx.emit({ type: "SkillUsed", playerId: pushing.playerId, skill: "Sidestep" });
         proc.chain.push({ playerId: pushing.playerId, to: to && { ...to } });
         const occupant = to && playerAt(state, to);
         if (to && occupant) {
           proc.pushing = { playerId: occupant.id, from: { ...to }, dir: { x: to.x - pushing.from.x, y: to.y - pushing.from.y } };
+          proc.stage = pushStage(state, proc);
           return "continue";
         }
         if (to && !state.ball.carried && state.ball.square && sameSquare(state.ball.square, to)) proc.bounceFrom = { ...to };
@@ -213,10 +269,12 @@ export const Block: Handler<P<"Block">> = {
         return "continue";
       }
       case "followup": {
-        const canFollow = isOnPitch(attacker) && attacker.status === "standing" && !playerAt(state, proc.vacated!);
+        const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !playerAt(state, proc.vacated);
+        // Frenzy: the attacker must follow up.
+        const frenzy = canFollow && hasSkill(attacker, "Frenzy");
+        if (canFollow && !frenzy && action === null) return "wait";
         if (canFollow) {
-          if (action === null) return "wait";
-          const { follow } = ctx.expect(action, "FOLLOW_UP");
+          const follow = frenzy || ctx.expect(action, "FOLLOW_UP").follow;
           if (follow) {
             const from = squareOf(ctx, attacker);
             const { ball } = state;
@@ -228,7 +286,7 @@ export const Block: Handler<P<"Block">> = {
         const knock = proc.knockDefender && isOnPitch(defender);
         // A loose ball under a pushed player bounces once the knock-downs are resolved.
         ctx.push(
-          ...(knock ? [{ type: "KnockDown" as const, playerId: defender.id, turnover: false, stage: "fall" as const }] : []),
+          ...(knock ? [knockDownDefender(attacker, defender)] : []),
           ...(proc.bounceFrom ? [{ type: "Bounce" as const, from: proc.bounceFrom, kickoff: false, receiving: null }] : []),
         );
         proc.stage = "end";
@@ -237,6 +295,12 @@ export const Block: Handler<P<"Block">> = {
       case "end": {
         const carrier = ballCarrier(state);
         if (carrier) checkTouchdown(ctx, carrier);
+        const second = frenzyBlock(state, proc, attacker, defender);
+        if (second) {
+          ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Frenzy" });
+          ctx.emit({ type: "BlockDeclared", attackerId: attacker.id, defenderId: defender.id, dice: second.dice });
+          ctx.push(second);
+        }
         return "done";
       }
     }
@@ -262,9 +326,13 @@ export const Block: Handler<P<"Block">> = {
             : [];
         return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll];
       }
+      case "standFirm": {
+        const pushed = state.players[proc.pushing!.playerId]!;
+        return [{ type: "USE_SKILL", side: pushed.side, playerId: pushed.id, skill: "Stand Firm" }];
+      }
       case "push": {
-        const pushing = proc.pushing!;
-        return [{ type: "PUSH", side: attacker.side, playerId: pushing.playerId, squares: pushbackSquares(state, pushing.from, pushing.dir) }];
+        const { side, squares } = pushChoice(state, proc);
+        return [{ type: "PUSH", side, playerId: proc.pushing!.playerId, squares }];
       }
       case "followup":
         return [{ type: "FOLLOW_UP", side: attacker.side, playerId: attacker.id, square: proc.vacated! }];

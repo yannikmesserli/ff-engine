@@ -44,6 +44,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number): GameState
         nigglingInjuries: p.nigglingInjuries ?? 0,
         casualty: null,
         usedSkills: [],
+        distracted: false,
       };
     }
   }

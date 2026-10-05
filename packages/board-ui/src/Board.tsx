@@ -305,6 +305,7 @@ function PlayerToken(props: {
   if (props.selectable) classes.push("bb-selectable");
   if (props.draggable) classes.push("bb-draggable");
   if (player.activated && !props.active) classes.push("bb-used");
+  if (player.distracted) classes.push("bb-distracted");
   if (isDragging) classes.push("bb-dragging");
   if (props.blitzTarget) classes.push("bb-blitz-target");
   return (
@@ -312,7 +313,7 @@ function PlayerToken(props: {
       ref={setNodeRef}
       className={classes.join(" ")}
       style={transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined}
-      title={`#${player.nr} ${player.name} (${player.position})`}
+      title={`#${player.nr} ${player.name} (${player.position})${player.distracted ? ", distracted: no tackle zone" : ""}`}
       onClick={props.onClick}
       onMouseEnter={() => props.onHover(player.id)}
       onMouseLeave={() => props.onHover(null)}

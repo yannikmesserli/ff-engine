@@ -9,6 +9,7 @@ import {
   injuryOutcome,
   isStalling,
   step,
+  tackleZones,
   throwInDirection,
   type Action,
   type ActionTemplate,
@@ -587,6 +588,217 @@ describe("engine", () => {
       const pass = apply(holding, { type: "THROW", square: { x: 10, y: 3 } }, roll(3), { type: "USE_REROLL" });
       expect(find(pass, "ROLL")?.reason).toBe("Loner 4+ (Home 5)");
       expect(find(apply(pass, roll(1)), "ROLL")?.reason).not.toMatch(/^Pass/);
+    });
+  });
+
+  describe("skills", () => {
+    /** Give players skills (replacing theirs) in a copy of the state. */
+    const withSkills = (s: GameState, skills: Record<string, string[]>) =>
+      edit(s, (c) => {
+        for (const [id, list] of Object.entries(skills)) c.players[id]!.skills = list;
+      });
+    const blockAway2 = (s: GameState) => apply(s, declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" });
+    /** A single die with a team re-roll left still has to be picked. */
+    const pick = { type: "CHOOSE_BLOCK_DIE", index: 0 } as const;
+    const TO_BALL = move({ x: 7, y: 4 }, { x: 6, y: 3 }, { x: 5, y: 2 }, { x: 4, y: 2 });
+
+    describe("Mighty Blow", () => {
+      const pow = (s: GameState) => apply(blockAway2(withSkills(s, { "home-2": ["Mighty Blow"] })), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+
+      it("adds +1 to the armour roll when that breaks the armour, and then not to the injury roll", () => {
+        let s = pow(toFirstTurn());
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 2) (+1 Mighty Blow)");
+        s = apply(s, roll(4, 3));
+        expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: "away-2", roll: 8 });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Mighty Blow" });
+        expect(find(s, "ROLL")?.reason).toBe("Injury");
+        s = apply(s, roll(4, 4));
+        expect(s.players["away-2"]!.at).toBe("ko");
+      });
+
+      it("adds +1 to the injury roll when the armour breaks without it", () => {
+        let s = apply(pow(toFirstTurn()), roll(5, 4));
+        expect(find(s, "ROLL")?.reason).toBe("Injury (+1 Mighty Blow)");
+        // 3+4 is Stunned, +1 makes it KO'd.
+        s = apply(s, roll(3, 4));
+        expect(s.players["away-2"]!.at).toBe("ko");
+      });
+
+      it("uses the skill's value, and does not help when the attacker falls", () => {
+        const s = apply(blockAway2(withSkills(toFirstTurn(), { "home-2": ["Mighty Blow(+2)"] })), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+        expect(find(s, "ROLL")?.reason).toMatch(/\(\+2 Mighty Blow\)$/);
+        const down = apply(blockAway2(withSkills(toFirstTurn(), { "away-2": ["Mighty Blow"] })), roll(1), pick);
+        expect(find(down, "ROLL")?.reason).toBe("Armour 8+ (Home 2)");
+      });
+    });
+
+    describe("Frenzy", () => {
+      const frenzy = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Frenzy"] });
+
+      it("must follow up, then blocks the same defender again after a push", () => {
+        let s = apply(blockAway2(frenzy()), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } });
+        expect(types(s)).not.toContain("FOLLOW_UP");
+        expect(s.players["home-2"]!.at).toEqual({ x: 13, y: 7 });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Frenzy" });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Block/);
+        // The second push (to the only free square, (15,7)) is the last block: no third one.
+        s = apply(s, roll(4), pick);
+        expect(s.log.filter((e) => e.type === "BlockDeclared")).toHaveLength(2);
+        expect(s.players["home-2"]!.at).toEqual({ x: 14, y: 7 });
+        expect(top(s).type).toBe("Turn");
+      });
+
+      it("makes no second block when the defender went down", () => {
+        const s = apply(blockAway2(frenzy()), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, roll(2, 2));
+        expect(s.log.filter((e) => e.type === "BlockDeclared")).toHaveLength(1);
+      });
+
+      it("pays another square for the second block of a Blitz", () => {
+        let s = frenzy(withSkills(toFirstTurn(), { "home-4": ["Frenzy"] }));
+        s = apply(s, declare("home-4", "blitz", "away-4"), ...move({ x: 11, y: 4 }, { x: 12, y: 4 }, { x: 13, y: 4 }, { x: 14, y: 4 }));
+        s = apply(s, { type: "BLOCK", targetId: "away-4" }, roll(3), pick, { type: "PUSH", square: { x: 16, y: 4 } });
+        // 4 squares, the first block, the follow-up is free, the second block: 6.
+        expect(s.players["home-4"]!.movesUsed).toBe(6);
+        expect(find(s, "ROLL")?.reason).toMatch(/^Block/);
+      });
+    });
+
+    describe("Stand Firm", () => {
+      const firm = (s = toFirstTurn()) => withSkills(s, { "away-2": ["Stand Firm"] });
+
+      it("lets the defending coach refuse the push: nobody moves and there is no follow-up", () => {
+        let s = apply(blockAway2(firm()), roll(3), pick);
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Stand Firm" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(s.players["away-2"]).toMatchObject({ at: { x: 13, y: 7 }, status: "standing" });
+        expect(types(s)).not.toContain("FOLLOW_UP");
+        expect(top(s).type).toBe("Turn");
+      });
+
+      it("knocks the player down where they stand, or is pushed as usual when not used", () => {
+        const down = apply(blockAway2(firm()), roll(6), pick, { type: "USE_SKILL", use: true });
+        expect(down.players["away-2"]).toMatchObject({ at: { x: 13, y: 7 }, status: "prone" });
+        expect(find(apply(blockAway2(firm()), roll(3), pick, { type: "USE_SKILL", use: false }), "PUSH")).toBeDefined();
+      });
+
+      it("stops a chain push: neither player moves", () => {
+        let s = place(toFirstTurn(), { "away-6": { x: 14, y: 6 }, "away-7": { x: 14, y: 7 }, "away-8": { x: 14, y: 8 } });
+        s = apply(blockAway2(withSkills(s, { "away-7": ["Stand Firm"] })), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } });
+        expect(find(s, "USE_SKILL")?.playerId).toBe("away-7");
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect([s.players["away-2"]!.at, s.players["away-7"]!.at]).toEqual([
+          { x: 13, y: 7 },
+          { x: 14, y: 7 },
+        ]);
+      });
+    });
+
+    it("Sidestep: the pushed player's coach picks any free adjacent square", () => {
+      // With away-3 gone, home-3 assists: 2 dice.
+      const s = apply(blockAway2(withSkills(place(toFirstTurn(), { "away-3": { x: 20, y: 10 } }), { "away-2": ["Sidestep"] })), roll(3, 3), pick);
+      expect(find(s, "PUSH")).toEqual({
+        type: "PUSH",
+        side: "away",
+        playerId: "away-2",
+        squares: [
+          { x: 14, y: 6 },
+          { x: 14, y: 7 },
+          { x: 13, y: 8 },
+          { x: 14, y: 8 },
+        ],
+      });
+      const after = apply(s, { type: "PUSH", square: { x: 13, y: 8 } });
+      expect(after.players["away-2"]!.at).toEqual({ x: 13, y: 8 });
+      expect(after.log).toContainEqual({ type: "SkillUsed", playerId: "away-2", skill: "Sidestep" });
+    });
+
+    it("Sure Hands re-rolls a failed pick-up, without a team re-roll", () => {
+      const s = apply(withSkills(toFirstTurn(), { "home-5": ["Sure Hands"] }), startMove("home-5"), ...TO_BALL, roll(2));
+      expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-5", skill: "Sure Hands" });
+      const after = apply(s, roll(3));
+      expect(after.ball).toEqual({ square: { x: 4, y: 2 }, carried: true });
+      expect(after.teams.home.rerolls).toBe(1);
+    });
+
+    it("Catch re-rolls a failed catch", () => {
+      let s = withSkills(place(toFirstTurn(), { "home-4": { x: 5, y: 3 } }), { "home-4": ["Catch"] });
+      s = apply(s, declare("home-5", "handoff"), ...TO_BALL, roll(3), { type: "HAND_OFF", targetId: "home-4" }, roll(1));
+      expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-4", skill: "Catch" });
+      s = apply(s, roll(3));
+      expect(s.ball).toEqual({ square: { x: 5, y: 3 }, carried: true });
+    });
+
+    it("Pass offers a skill re-roll of an inaccurate pass instead of a team re-roll", () => {
+      let s = apply(withSkills(toFirstTurn(), { "home-5": ["Pass", "Loner(4)"] }), declare("home-5", "pass"), ...TO_BALL, roll(3));
+      s = apply(s, { type: "THROW", square: { x: 10, y: 4 } }, roll(3));
+      expect(find(s, "USE_REROLL")).toMatchObject({ skill: "Pass" });
+      // No Loner roll: the team re-roll is not used.
+      s = apply(s, { type: "USE_REROLL" });
+      expect(s.teams.home.rerolls).toBe(1);
+      expect(find(s, "ROLL")?.reason).toMatch(/^Pass 5\+/);
+      s = apply(s, roll(5));
+      expect(s.log).toContainEqual({ type: "PassResult", playerId: "home-5", result: "accurate" });
+    });
+
+    describe("Bone Head and Really Stupid", () => {
+      it("Bone Head: a 1 loses the declared action and distracts the player, without a turnover", () => {
+        let s = apply(withSkills(toFirstTurn(), { "home-1": ["Bone Head"] }), declare("home-1", "blitz", "away-1"));
+        expect(find(s, "ROLL")?.reason).toBe("Bone Head 2+ (Home 1)");
+        expect(tackleZones(s, "away", { x: 13, y: 6 })).toBe(2);
+        s = apply(s, roll(1));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        s = apply(s, { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "PlayerDistracted", playerId: "home-1", skill: "Bone Head" });
+        expect(s.players["home-1"]).toMatchObject({ at: { x: 12, y: 6 }, activated: true, distracted: true });
+        expect([s.activeSide, s.activePlayerId]).toEqual(["home", null]);
+        // No tackle zone while distracted, and the Blitz is used up for the turn.
+        expect(tackleZones(s, "away", { x: 13, y: 6 })).toBe(1);
+        expect(actionsOf(s, "home-4")).not.toContain("blitz");
+        // The next activation clears it before rolling again.
+        s = apply(s, { type: "END_TURN" }, { type: "END_TURN" }, startMove("home-1"));
+        expect(s.players["home-1"]!.distracted).toBe(false);
+        expect(find(s, "ROLL")?.reason).toBe("Bone Head 2+ (Home 1)");
+      });
+
+      it("a distracted player cannot assist a block, even with Guard", () => {
+        // home-6 at (14,6) is next to away-2; with Guard its assist gives a second die.
+        const s = withSkills(place(toFirstTurn(), { "home-6": { x: 14, y: 6 } }), { "home-6": ["Guard"] });
+        const dice = (state: GameState) => find(apply(state, declare("home-2", "block")), "BLOCK")?.targets.find((t) => t.playerId === "away-2")?.dice;
+        expect(dice(s)).toBe(2);
+        expect(dice(edit(s, (c) => void (c.players["home-6"]!.distracted = true)))).toBe(1);
+      });
+
+      it("Really Stupid: 4+ alone, 2+ next to a standing team-mate without Really Stupid", () => {
+        const s = withSkills(toFirstTurn(), { "home-4": ["Really Stupid"], "home-1": ["Really Stupid"] });
+        expect(find(apply(s, startMove("home-4")), "ROLL")?.reason).toBe("Really Stupid 4+ (Home 4)");
+        expect(find(apply(s, startMove("home-1")), "ROLL")?.reason).toBe("Really Stupid 2+ (Home 1)");
+        const both = withSkills(s, { "home-2": ["Really Stupid"] });
+        expect(find(apply(both, startMove("home-1")), "ROLL")?.reason).toBe("Really Stupid 4+ (Home 1)");
+        expect(apply(s, startMove("home-4"), roll(4)).players["home-4"]!.distracted).toBe(false);
+      });
+    });
+
+    describe("Jump Up", () => {
+      const prone = (s: GameState, skills: string[] = ["Jump Up"]) =>
+        edit(withSkills(s, { "home-1": skills }), (c) => void (c.players["home-1"]!.status = "prone"));
+
+      it("stands up for free, without a roll even with MA below 3", () => {
+        const s = apply(prone(toFirstTurn(team("Home", { ma: 2 }))), startMove("home-1"));
+        expect(s.players["home-1"]).toMatchObject({ status: "standing", movesUsed: 0 });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-1", skill: "Jump Up" });
+      });
+
+      it("lets a prone player declare a Block: AG roll with +1, a failure stays prone without a turnover", () => {
+        expect(actionsOf(prone(toFirstTurn(), []), "home-1")).not.toContain("block");
+        let s = apply(prone(toFirstTurn()), declare("home-1", "block"));
+        expect(find(s, "ROLL")?.reason).toBe("Jump Up 2+ (Home 1)");
+        const failed = apply(s, roll(1), { type: "DECLINE_REROLL" });
+        expect(failed.players["home-1"]).toMatchObject({ status: "prone", activated: true });
+        expect([failed.activeSide, failed.activePlayerId]).toEqual(["home", null]);
+        s = apply(s, roll(2));
+        expect(s.players["home-1"]!.status).toBe("standing");
+        expect(find(s, "BLOCK")?.targets.map((t) => t.playerId)).toEqual(["away-1", "away-2"]);
+      });
     });
   });
 

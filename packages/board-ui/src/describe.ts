@@ -9,7 +9,23 @@ const CHECK_NAMES = {
   standup: "stand-up roll",
   regeneration: "regeneration roll",
   loner: "Loner roll (the team re-roll is lost on a failure)",
+  jumpup: "Jump Up roll",
+  bonehead: "Bone Head roll",
+  reallystupid: "Really Stupid roll",
 } as const;
+
+/** What a skill did, for the log line of a SkillUsed event. */
+const SKILL_USES: Record<string, string> = {
+  Dodge: "to re-roll the dodge",
+  "Sure Hands": "to re-roll the pick-up",
+  Catch: "to re-roll the catch",
+  Pass: "to re-roll the pass",
+  "Mighty Blow": "",
+  Frenzy: "and blocks again",
+  "Stand Firm": "and is not pushed back",
+  Sidestep: "to choose where to be pushed",
+  "Jump Up": "to stand up for free",
+};
 
 /** Display names of the weather conditions. */
 export const WEATHER_NAMES = {
@@ -205,7 +221,9 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
         ? `The crowd throws a rock at ${who(state, e.playerId)}, but it is too late in the half: it misses.`
         : `The crowd throws a rock at ${who(state, e.playerId)} (${e.roll}): ${e.hit ? "hit!" : "missed."}`;
     case "SkillUsed":
-      return `${who(state, e.playerId)} uses ${e.skill}${e.skill === "Dodge" ? " to re-roll the dodge" : ""}.`;
+      return `${who(state, e.playerId)} uses ${e.skill}${SKILL_USES[e.skill] ? ` ${SKILL_USES[e.skill]}` : ""}.`;
+    case "PlayerDistracted":
+      return `${who(state, e.playerId)} fails the ${e.skill} roll: the action is lost, and they are distracted (no tackle zone) until their next action.`;
     case "Regenerated":
       return `${who(state, e.playerId)} regenerates and goes to the reserves.`;
     case "ApothecaryUsed":

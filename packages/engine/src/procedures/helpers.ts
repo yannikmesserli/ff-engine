@@ -96,6 +96,7 @@ export function resetForKickoff(ctx: Ctx) {
     }
     p.activated = false;
     p.movesUsed = 0;
+    p.distracted = false;
   }
   state.ball = { square: null, carried: false };
   state.activeSide = null;

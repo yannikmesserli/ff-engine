@@ -86,9 +86,24 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Skills: Block, Dodge (Stumble, and an automatic re-roll of a failed Dodge roll once per turn, cancelled by an
   opponent with Tackle marking the starting square), Tackle, Guard, No Ball, Dirty Player, Sneaky Git, Thick Skull, Stunty (injury table, and
   tackle zones on the destination ignored when dodging), Regeneration, Loner.
+- Mighty Blow (+X): when the blocker knocks an opponent down, +X to the armour roll if that breaks it, otherwise to the
+  injury roll (not both).
+- Frenzy: must follow up; after a Push or a dodged Stumble, a second block against the same defender if both are still
+  standing next to each other (during a Blitz it costs another square, a Rush if needed).
+- Stand Firm: the pushed player's coach may refuse the push (also when chain-pushed: then nobody in the chain moves);
+  no follow-up, and a knock-down happens in place.
+- Sidestep: the pushed player's coach picks any free adjacent square instead of the usual three (when one is free).
+- Sure Hands, Catch: automatic re-roll of a failed pick-up or catch (hand-offs too). Pass: the coach may re-roll an
+  inaccurate pass or a fumble with the skill instead of a team re-roll.
+- Bone Head (2+) and Really Stupid (4+, or 2+ next to a standing team-mate without Really Stupid): rolled when the
+  player is activated, team re-roll allowed. A failure ends the action (the declared action still counts as used, no
+  turnover) and the player is distracted until their next activation or the end of the drive: no tackle zone, cannot
+  catch, intercept, assist, or use Stand Firm / Sidestep.
+- Jump Up: stand up for free (no movement, no 4+ roll); a prone player may declare a Block, standing up on an AG roll
+  with +1 (a failure ends the action, no turnover).
 
-Not yet: most skills (Kick, Mighty Blow, Wrestle, Frenzy, Juggernaut, Stand Firm, Side Step...), inducements,
-overtime.
+Not yet: most other skills (Kick, Wrestle, Juggernaut, Horns, Dauntless, Sprint, Throw Team-mate / Right Stuff,
+Always Hungry...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.
 

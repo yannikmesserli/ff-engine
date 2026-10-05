@@ -19,6 +19,13 @@ export const RUSH_TARGET = 2;
 export const STAND_UP_COST = 3;
 /** Players with MA below the stand-up cost need this roll to stand up. */
 export const STAND_UP_TARGET = 4;
+/** Jump Up: +1 to the AG roll to stand up and block. */
+const JUMP_UP_MODIFIER = 1;
+/** Bone Head fails on a 1. */
+export const BONE_HEAD_TARGET = 2;
+/** Really Stupid fails on 1-3, or only on a 1 with a team-mate (without Really Stupid) standing next to the player. */
+export const REALLY_STUPID_TARGET = 4;
+export const REALLY_STUPID_HELPED_TARGET = 2;
 
 /** Team actions that can only be declared once per turn. */
 const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure"];
@@ -213,7 +220,9 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   if (!canAct(player)) return [];
   const actions: PlayerActionType[] = ["move"];
   const free = (a: PlayerActionType) => !proc.used.includes(a);
-  if (!proc.charge && player.status === "standing" && adjacentTargets(state, player).length > 0) actions.push("block");
+  // Jump Up: a prone player may declare a Block, standing up with an AG roll.
+  const canBlock = player.status === "standing" || hasSkill(player, "Jump Up");
+  if (!proc.charge && canBlock && adjacentTargets(state, player).length > 0) actions.push("block");
   if (free("blitz") && blitzTargets(state, player.side).length > 0) actions.push("blitz");
   if (proc.charge) return actions;
   if (free("pass") && ballAvailable(state, player)) actions.push("pass");
@@ -225,9 +234,26 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   return actions;
 }
 
+/** The Bone Head or Really Stupid roll a player makes when activated, if any. */
+function confusionCheck(state: GameState, player: PlayerState & { at: Square }): P<"Check"> | null {
+  const check = (kind: "bonehead" | "reallystupid", target: number): P<"Check"> =>
+    ({ type: "Check", kind, playerId: player.id, target, modifier: 0, stage: "roll", rerolled: false });
+  if (hasSkill(player, "Bone Head")) return check("bonehead", BONE_HEAD_TARGET);
+  if (!hasSkill(player, "Really Stupid")) return null;
+  const helped = adjacent(player.at).some((s) => {
+    const p = playerAt(state, s);
+    return p !== undefined && p.side === player.side && p.status === "standing" && !hasSkill(p, "Really Stupid");
+  });
+  return check("reallystupid", helped ? REALLY_STUPID_HELPED_TARGET : REALLY_STUPID_TARGET);
+}
+
 /**
- * One player activation: stand up if prone, then step, block, throw, hand off or
+ * One player activation: Bone Head / Really Stupid roll, stand up if prone, then step, block, throw, hand off or
  * foul according to the declared action, until the player ends it or nothing is left to do.
+ * A failed Bone Head or Really Stupid roll ends the action (the declared action still counts as used this turn, no
+ * turnover): the player stays where they are, prone if they were, and is distracted until their next activation.
+ * Jump Up: stand up for free (no movement spent, no roll); a prone player declaring a Block stands up on an AG roll
+ * with +1 instead (a failure ends the action, without a turnover).
  */
 export const MoveAction: Handler<P<"MoveAction">> = {
   step(ctx, proc, action) {
@@ -236,26 +262,48 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (proc.stage === "start") {
       player.activated = true;
       player.movesUsed = 0;
+      player.distracted = false;
       if (isStalling(state, player)) {
         proc.stalling = true;
         ctx.emit({ type: "StallingDetected", playerId: player.id });
       }
+      proc.stage = "confusion";
+      state.lastCheck = null;
+      const check = confusionCheck(state, { ...player, at: squareOf(ctx, player) });
+      if (check) ctx.push(check);
+      return "continue";
+    }
+    if (proc.stage === "confusion") {
+      if (failed(ctx)) {
+        const skill = state.lastCheck!.kind === "bonehead" ? "Bone Head" : "Really Stupid";
+        player.distracted = true;
+        ctx.emit({ type: "PlayerDistracted", playerId: player.id, skill });
+        if (proc.stalling && player.status === "standing" && holdsBall(state, player)) ctx.push({ type: "Stalling", playerId: player.id });
+        state.activePlayerId = null;
+        return "done";
+      }
       proc.stage = "standup";
       state.lastCheck = null;
-      if (player.status === "prone" && player.ma < STAND_UP_COST) {
+      if (player.status === "prone" && hasSkill(player, "Jump Up")) {
+        if (proc.action === "block") {
+          ctx.push({ type: "Check", kind: "jumpup", playerId: player.id, target: player.ag, modifier: JUMP_UP_MODIFIER, stage: "roll", rerolled: false });
+        }
+      } else if (player.status === "prone" && player.ma < STAND_UP_COST) {
         ctx.push({ type: "Check", kind: "standup", playerId: player.id, target: STAND_UP_TARGET, modifier: 0, stage: "roll", rerolled: false });
       }
       return "continue";
     }
     if (proc.stage === "standup") {
       if (player.status === "prone") {
-        // A failed stand-up roll ends the action, but is not a turnover.
+        // A failed stand-up (or Jump Up) roll ends the action, but is not a turnover.
         if (failed(ctx)) {
           state.activePlayerId = null;
           return "done";
         }
+        const jumpUp = hasSkill(player, "Jump Up");
         player.status = "standing";
-        player.movesUsed = Math.min(STAND_UP_COST, player.ma);
+        player.movesUsed = jumpUp ? 0 : Math.min(STAND_UP_COST, player.ma);
+        if (jumpUp) ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Jump Up" });
         ctx.emit({ type: "PlayerStoodUp", playerId: player.id });
       }
       proc.stage = "main";

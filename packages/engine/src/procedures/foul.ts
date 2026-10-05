@@ -1,7 +1,6 @@
 import type { Handler } from "../context";
 import type { GameState, PlayerState, Procedure, Square } from "../types";
-import { adjacent, ballCarrier, isOnPitch, playerAt } from "../pitch";
-import { standingAt } from "./block";
+import { adjacent, ballCarrier, isOnPitch, playerAt, tackleZoneAt } from "../pitch";
 import { ARMOUR_DICE } from "./checks";
 import { injure } from "./injury";
 import { hasSkill } from "../skills";
@@ -16,18 +15,19 @@ export const BRIBE_TARGET = 2;
 
 /**
  * Foul assists: +1 per team-mate next to the victim who is not marked by any
- * opponent, -1 per victim team-mate next to the fouler who is not marked by anyone but the fouler.
+ * opponent, -1 per victim team-mate next to the fouler who is not marked by anyone but the fouler. Only players
+ * exerting a tackle zone assist or mark.
  */
 export function foulAssists(state: GameState, fouler: PlayerState & { at: Square }, victim: PlayerState & { at: Square }): number {
   const offensive = adjacent(victim.at).filter((s) => {
-    const helper = standingAt(state, s);
+    const helper = tackleZoneAt(state, s);
     if (!helper || helper.side !== fouler.side || helper.id === fouler.id) return false;
-    return adjacent(s).every((n) => standingAt(state, n)?.side !== victim.side);
+    return adjacent(s).every((n) => tackleZoneAt(state, n)?.side !== victim.side);
   }).length;
   const defensive = adjacent(fouler.at).filter((s) => {
-    const helper = standingAt(state, s);
+    const helper = tackleZoneAt(state, s);
     if (!helper || helper.side !== victim.side) return false;
-    return adjacent(s).filter((n) => standingAt(state, n)?.side === fouler.side).length < 2;
+    return adjacent(s).filter((n) => tackleZoneAt(state, n)?.side === fouler.side).length < 2;
   }).length;
   return offensive - defensive;
 }

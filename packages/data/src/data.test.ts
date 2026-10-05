@@ -138,6 +138,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "APOTHECARY_CHOICE", keep: pick(["first", "second"] as const) };
     case "FOLLOW_UP":
       return { type: "FOLLOW_UP", follow: random() < 0.5 };
+    case "USE_SKILL":
+      return { type: "USE_SKILL", use: random() < 0.7 };
     case "MOVE":
       return t.squares.length > 0 && random() < 0.9 ? { type: "MOVE", square: pick(t.squares) } : { type: "END_PLAYER_ACTION" };
     case "SELECT_PLAYERS": {
@@ -194,6 +196,8 @@ describe("random games", () => {
       if (e.type === "ApothecaryResult") ballEvents.add(`apothecary ${e.result}`);
       if (e.type === "CheckResult" && (e.kind === "jump" || e.kind === "loner")) ballEvents.add(e.kind);
       if (e.type === "RockThrown") ballEvents.add(`rock ${e.hit ? "hit" : "missed"}`);
+      if (e.type === "SkillUsed") ballEvents.add(`skill ${e.skill}`);
+      if (e.type === "PlayerDistracted") ballEvents.add(`distracted (${e.skill})`);
     }
   }, GAME_TIMEOUT_MS);
 });
