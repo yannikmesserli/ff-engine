@@ -39,6 +39,25 @@ function setDown(ctx: Ctx, player: PlayerState, at: Square) {
 const fall = (ctx: Ctx, player: PlayerState) =>
   ctx.push({ type: "KnockDown", playerId: player.id, turnover: ballCarrier(ctx.state)?.id === player.id, stage: "fall" });
 
+/** Always Hungry: the thrower throws on 2+; otherwise the team-mate escapes (thrown as a fumble) on 2+, or is eaten. */
+export const HUNGER_TARGET = 2;
+export const ESCAPE_TARGET = 2;
+
+/** Eaten by an Always Hungry thrower: dead, without apothecary or Regeneration; the ball bounces from their square. */
+function eat(ctx: Ctx, thrower: PlayerState, thrown: PlayerState) {
+  const { state } = ctx;
+  const square = squareOf(ctx, thrown);
+  const carrying = ballCarrier(state)?.id === thrown.id;
+  thrown.at = "cas";
+  thrown.status = "standing";
+  thrown.casualty = { result: "dead" };
+  ctx.emit({ type: "PlayerEaten", playerId: thrown.id, byId: thrower.id });
+  if (!carrying) return;
+  state.ball = { square: { ...square }, carried: false };
+  state.turnover = true;
+  ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+}
+
 /** The d8 scatters of the thrown player: three from the target, or one from their own square after a fumble. */
 const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count: proc.result === "fumble" ? 1 : 3 }];
 
@@ -49,16 +68,45 @@ const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count:
  * the thrown player scatters on; leaving the pitch means the crowd (always a turnover). The landing roll is on AG,
  * -1 for a subpar throw, -1 for a fumble and -1 per tackle zone; it fails without a roll after landing on someone,
  * or for a player who was down or distracted. A failed landing is a knock-down, a turnover only with the ball.
+ * Always Hungry is rolled first (see HUNGER_TARGET); eating the team-mate is a turnover only if they held the ball.
  */
 export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
   step(ctx, proc, action) {
     const { state } = ctx;
     const thrower = getPlayer(ctx, proc.throwerId);
     const thrown = getPlayer(ctx, proc.thrownId);
+    // Decided before the throw: a player who was not standing, or was distracted, cannot land on their feet.
+    if (proc.autoFail === undefined) proc.autoFail = !hasTackleZone(thrown);
+    const check = (kind: "hunger" | "escape", player: PlayerState, target: number) => {
+      state.lastCheck = null;
+      ctx.push({ type: "Check", kind, playerId: player.id, target, modifier: 0, stage: "roll", rerolled: false });
+    };
     switch (proc.stage) {
+      case "hunger":
+        proc.stage = "roll";
+        if (hasSkill(thrower, "Always Hungry")) {
+          check("hunger", thrower, HUNGER_TARGET);
+          proc.stage = "hungerResult";
+        }
+        return "continue";
+      case "hungerResult":
+        if (state.lastCheck?.success) proc.stage = "roll";
+        else {
+          check("escape", thrown, ESCAPE_TARGET);
+          proc.stage = "escapeResult";
+        }
+        return "continue";
+      case "escapeResult":
+        if (!state.lastCheck?.success) {
+          eat(ctx, thrower, thrown);
+          return "done";
+        }
+        // The team-mate wriggles free: it is thrown as a fumble.
+        proc.result = "fumble";
+        ctx.emit({ type: "TeamMateThrown", playerId: thrower.id, thrownId: thrown.id, result: "fumble" });
+        proc.stage = "scatter";
+        return "continue";
       case "roll": {
-        // Decided before the throw: a player who was not standing, or was distracted, cannot land on their feet.
-        if (proc.autoFail === undefined) proc.autoFail = !hasTackleZone(thrown);
         const modifiers = passModifiers(state, { ...thrower, at: squareOf(ctx, thrower) }, proc.range);
         if (thrower.pa === null) proc.result = "fumble";
         else {

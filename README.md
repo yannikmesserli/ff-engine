@@ -121,7 +121,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   roll on AG (-1 subpar or fumble, -1 per tackle zone), failing after hitting someone or for a prone or distracted
   player; a failed landing is a turnover only with the ball. The thrown player may still act.
 
-Not yet: most other skills (Kick, Always Hungry, Unchannelled Fury, Claws...), inducements, overtime.
+- Always Hungry: before throwing a team-mate, 2+ (team re-roll allowed) or the team-mate must escape on 2+ (then
+  thrown as a fumble) or be eaten: dead without apothecary or Regeneration, a turnover only with the ball.
+
+Not yet: most other skills (Kick, Unchannelled Fury, Claws, Disturbing Presence...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.
 

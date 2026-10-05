@@ -341,7 +341,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const square = teamMateTargets(state, player).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
       // The thrower's action ends with the throw.
       proc.finished = true;
-      ctx.push({ type: "ThrowTeamMate", throwerId: player.id, thrownId: a.targetId, target: { x: square.x, y: square.y }, range: square.range, stage: "roll", rerolled: false });
+      ctx.push({ type: "ThrowTeamMate", throwerId: player.id, thrownId: a.targetId, target: { x: square.x, y: square.y }, range: square.range, stage: "hunger", rerolled: false });
       return "continue";
     }
     if (a.type === "FOUL") {

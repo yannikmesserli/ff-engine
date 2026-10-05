@@ -189,7 +189,9 @@ export type CheckKind =
   | "dauntless"
   | "vomit"
   | "animosity"
-  | "landing";
+  | "landing"
+  | "hunger"
+  | "escape";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -274,7 +276,8 @@ export type Procedure =
       thrownId: string;
       target: Square;
       range: PassRange;
-      stage: "roll" | "reroll" | "loner" | "scatter" | "land" | "bounce" | "landed";
+      /** "hunger": Always Hungry, rolled before the throw. */
+      stage: "hunger" | "hungerResult" | "escapeResult" | "roll" | "reroll" | "loner" | "scatter" | "land" | "bounce" | "landed";
       rerolled: boolean;
       /** "accurate" is a superb throw, "inaccurate" a subpar one. */
       result?: PassResult;
@@ -579,6 +582,8 @@ export type GameEvent =
   | { type: "PlayerDistracted"; playerId: string; skill: string }
   /** Regeneration worked: the casualty heals and the player goes to the reserves. */
   | { type: "Regenerated"; playerId: string }
+  /** Always Hungry: the thrown player did not escape and is eaten (dead). */
+  | { type: "PlayerEaten"; playerId: string; byId: string }
   /** The apothecary's work is done: the player is stunned, back in the reserves, or keeps `casualty`. */
   | { type: "ApothecaryResult"; playerId: string; result: "stunned" | "reserves" | "casualty"; casualty: Casualty | null }
   | { type: "Touchdown"; side: Side; playerId: string }

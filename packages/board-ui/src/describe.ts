@@ -16,6 +16,8 @@ const CHECK_NAMES = {
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
   animosity: "Animosity roll (a failure keeps the ball and ends the action)",
   landing: "landing",
+  hunger: "Always Hungry roll",
+  escape: "escape roll",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -237,6 +239,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} uses ${e.skill}${SKILL_USES[e.skill] ? ` ${SKILL_USES[e.skill]}` : ""}.`;
     case "PlayerDistracted":
       return `${who(state, e.playerId)} fails the ${e.skill} roll: the action is lost, and they are distracted (no tackle zone) until their next action.`;
+    case "PlayerEaten":
+      return `${who(state, e.byId)} eats ${who(state, e.playerId)}!`;
     case "Regenerated":
       return `${who(state, e.playerId)} regenerates and goes to the reserves.`;
     case "ApothecaryUsed":

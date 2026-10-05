@@ -1048,6 +1048,38 @@ describe("engine", () => {
         expect(find(s, "ROLL")?.reason).toMatch(/^Armour/);
       });
     });
+
+    describe("Always Hungry", () => {
+      const hungry = (s = toFirstTurn()) =>
+        withSkills(place(s, { "home-5": { x: 10, y: 5 } }), { "home-4": ["Throw Team-mate", "Always Hungry"], "home-5": ["Right Stuff"] });
+      const hunger = (s = hungry()) => apply(s, declare("home-4", "ttm"), { type: "THROW_TEAM_MATE", targetId: "home-5", square: { x: 7, y: 4 } });
+
+      it("rolls before the throw: 2+ throws as usual", () => {
+        const s = hunger();
+        expect(find(s, "ROLL")?.reason).toBe("Always Hungry 2+ (Home 4)");
+        expect(find(apply(s, roll(2)), "ROLL")?.reason).toBe("Throw team-mate 4+ (quick)");
+      });
+
+      it("on a 1 the team-mate escapes on 2+ and is thrown as a fumble", () => {
+        let s = apply(hunger(), roll(1), { type: "DECLINE_REROLL" });
+        expect(find(s, "ROLL")?.reason).toBe("Escape 2+ (Home 5)");
+        s = apply(s, roll(2));
+        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }] });
+        s = apply(s, roll(3));
+        expect(find(s, "ROLL")?.reason).toMatch(/^Landing 4\+/);
+      });
+
+      it("otherwise the team-mate is eaten: dead, a turnover only with the ball", () => {
+        const s = apply(hunger(), roll(1), { type: "DECLINE_REROLL" }, roll(1), { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "PlayerEaten", playerId: "home-5", byId: "home-4" });
+        expect(s.players["home-5"]).toMatchObject({ at: "cas", casualty: { result: "dead" } });
+        expect(s.activeSide).toBe("home");
+        const carrying = edit(hungry(), (c) => (c.ball = { square: { x: 10, y: 5 }, carried: true }));
+        const eaten = apply(hunger(carrying), roll(1), { type: "DECLINE_REROLL" }, roll(1), { type: "DECLINE_REROLL" });
+        expect(find(eaten, "ROLL")?.reason).toBe("Bounce");
+        expect(apply(eaten, roll(7)).activeSide).toBe("away");
+      });
+    });
   });
 
   describe("standing up and stunned players", () => {
