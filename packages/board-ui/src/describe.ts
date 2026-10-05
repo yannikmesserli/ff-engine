@@ -15,6 +15,7 @@ const CHECK_NAMES = {
   fury: "Unchannelled Fury roll",
   takeroot: "Take Root roll",
   bloodlust: "Bloodlust roll (a failure means feeding on a Thrall)",
+  steadyfooting: "Steady Footing roll",
   dauntless: "Dauntless roll",
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
   animosity: "Animosity roll (a failure keeps the ball and ends the action)",
@@ -42,6 +43,7 @@ const SKILL_USES: Record<string, string> = {
   Stab: "",
   "Take Root": "and cannot be pushed",
   Brawler: "to re-roll a Both Down",
+  "Steady Footing": "and stays on their feet",
 };
 
 /** Display names of the weather conditions. */

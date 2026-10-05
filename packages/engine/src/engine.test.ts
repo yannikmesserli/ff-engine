@@ -1067,6 +1067,40 @@ describe("engine", () => {
       expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(6);
     });
 
+    describe("Steady Footing", () => {
+      const steady = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Steady Footing"] });
+
+      it("a 6 avoids being knocked down: no turnover, the action goes on", () => {
+        let s = apply(blockAway2(steady()), roll(1), pick);
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Steady Footing" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(find(s, "ROLL")?.reason).toBe("Steady Footing 6+ (Home 2)");
+        s = apply(s, roll(6));
+        expect(s.players["home-2"]!.status).toBe("standing");
+        expect([s.activeSide, top(s).type]).toEqual(["home", "Turn"]);
+      });
+
+      it("otherwise (or when declined) the player falls as usual", () => {
+        const failed = apply(blockAway2(steady()), roll(1), pick, { type: "USE_SKILL", use: true }, roll(5), { type: "DECLINE_REROLL" });
+        expect(find(failed, "ROLL")?.reason).toMatch(/^Armour/);
+        const declined = apply(blockAway2(steady()), roll(1), pick, { type: "USE_SKILL", use: false });
+        expect(declined.players["home-2"]!.status).toBe("prone");
+      });
+
+      it("after a failed dodge, the player stands in the square they moved to and may go on", () => {
+        let s = withSkills(toFirstTurn(), { "home-1": ["Steady Footing"] });
+        s = apply(s, startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: true }, roll(6));
+        expect(s.players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing" });
+        expect(find(s, "MOVE")).toBeDefined();
+      });
+
+      it("works for the defender, who stays up in the square they were pushed to", () => {
+        const s = apply(blockAway2(withSkills(toFirstTurn(), { "away-2": ["Steady Footing"] })), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+        expect(find(s, "USE_SKILL")).toMatchObject({ side: "away", playerId: "away-2" });
+        expect(apply(s, { type: "USE_SKILL", use: true }, roll(6)).players["away-2"]).toMatchObject({ at: { x: 14, y: 7 }, status: "standing" });
+      });
+    });
+
     describe("Take Root", () => {
       const rooted = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Take Root"] });
 

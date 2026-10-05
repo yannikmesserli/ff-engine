@@ -580,6 +580,22 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     const fall = (inStartSquare = false) => {
       if (!inStartSquare) movePlayer(ctx, player, proc.to, squares);
       ctx.push({ type: "KnockDown", playerId: player.id, turnover: true, stage: "fall" });
+      proc.stage = "fell";
+      proc.fellInPlace = inStartSquare;
+      return "continue" as const;
+    };
+    /** On the target square: pick up a loose ball there, or score. */
+    const arrive = () => {
+      const { ball } = state;
+      if (ball.square && !ball.carried && sameSquare(ball.square, proc.to)) {
+        state.lastCheck = null;
+        proc.stage = "pickup";
+        // Secure the Ball picks up on a 2+ instead of the player's AG.
+        const target = securing(state, player) ? SECURE_TARGET : player.ag;
+        check("pickup", target, -tackleZones(state, player.side, proc.to) + weatherModifier(state, "pickup"));
+        return "continue" as const;
+      }
+      checkTouchdown(ctx, player);
       return "done" as const;
     };
 
@@ -608,18 +624,12 @@ export const MoveStep: Handler<P<"MoveStep">> = {
       case "move": {
         if (failed(ctx)) return fall(proc.jump && state.lastCheck?.roll === 1);
         movePlayer(ctx, player, proc.to, squares);
-        const { ball } = state;
-        if (ball.square && !ball.carried && sameSquare(ball.square, proc.to)) {
-          state.lastCheck = null;
-          proc.stage = "pickup";
-          // Secure the Ball picks up on a 2+ instead of the player's AG.
-          const target = securing(state, player) ? SECURE_TARGET : player.ag;
-          check("pickup", target, -tackleZones(state, player.side, proc.to) + weatherModifier(state, "pickup"));
-          return "continue";
-        }
-        checkTouchdown(ctx, player);
-        return "done";
+        return arrive();
       }
+      case "fell":
+        // Steady Footing kept the player up: the move goes on from where they are.
+        if (player.status !== "standing" || proc.fellInPlace) return "done";
+        return arrive();
       case "pickup":
         if (failed(ctx)) {
           state.turnover = true;

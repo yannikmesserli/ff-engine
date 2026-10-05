@@ -23,6 +23,7 @@ const CHECK_NAMES = {
   fury: "Unchannelled Fury",
   takeroot: "Take Root",
   bloodlust: "Bloodlust",
+  steadyfooting: "Steady Footing",
   dauntless: "Dauntless",
   vomit: "Projectile Vomit",
   animosity: "Animosity",
@@ -133,8 +134,13 @@ const clawsApply = (state: GameState, proc: P<"KnockDown">, player: PlayerState)
 const clawsNote = (state: GameState, proc: P<"KnockDown">, player: PlayerState) =>
   clawsApply(state, proc, player) ? ` (Claws: ${CLAWS_ARMOUR}+)` : "";
 
+/** Steady Footing avoids a knock-down on a 6. */
+export const STEADY_FOOTING_TARGET = 6;
+
 /**
- * Player goes prone (a turnover if `turnover`), then armour, injury and finally a bounce if they held the ball.
+ * Steady Footing first: a standing, undistracted player with the skill may roll a D6 (team re-roll allowed in their own
+ * turn); on a 6 they stay on their feet, holding the ball, and there is no turnover.
+ * Then the player goes prone (a turnover if `turnover`), armour, injury and finally a bounce if they held the ball.
  * Claws (from the blocker): a natural 8+ on the armour roll breaks it, whatever the AV. Otherwise Mighty Blow (+X, from
  * the blocker) goes to the armour roll when it breaks the armour, and to the injury roll if not (they do not stack).
  */
@@ -144,6 +150,10 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     const player = getPlayer(ctx, proc.playerId);
     switch (proc.stage) {
       case "fall": {
+        if (!proc.steadied && hasSkill(player, "Steady Footing") && player.status === "standing" && !player.distracted) {
+          proc.stage = "steady";
+          return "continue";
+        }
         const square = squareOf(ctx, player);
         const { ball } = state;
         proc.square = { ...square };
@@ -155,6 +165,25 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         proc.stage = "armour";
         return "continue";
       }
+      case "steady": {
+        if (action === null) return "wait";
+        proc.steadied = true;
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "fall";
+          return "continue";
+        }
+        state.lastCheck = null;
+        ctx.push({ type: "Check", kind: "steadyfooting", playerId: player.id, target: STEADY_FOOTING_TARGET, modifier: 0, stage: "roll", rerolled: false });
+        proc.stage = "steadyResult";
+        return "continue";
+      }
+      case "steadyResult":
+        if (state.lastCheck?.success) {
+          ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Steady Footing" });
+          return "done";
+        }
+        proc.stage = "fall";
+        return "continue";
       case "armour": {
         if (action === null) return "wait";
         const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Armour ${player.av}+${mightyBlowNote(proc.mightyBlow?.bonus ?? 0)}${clawsNote(state, proc, player)}`);
@@ -198,6 +227,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
+    if (proc.stage === "steady") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Steady Footing" }];
     const reason =
       proc.stage === "injury"
         ? `Injury${mightyBlowNote(injuryBonus(proc))}`

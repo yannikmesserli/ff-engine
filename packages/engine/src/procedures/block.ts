@@ -287,13 +287,12 @@ export const Block: Handler<P<"Block">> = {
         return "continue";
       }
       case "rushResult":
-        if (state.lastCheck?.success === false) {
-          ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
-          return "done";
-        }
+        // The block goes on after the fall only if Steady Footing kept the attacker on their feet.
+        if (state.lastCheck?.success === false) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
         proc.stage = "dauntless";
         return "continue";
       case "dauntless": {
+        if (attacker.status !== "standing") return "done";
         const target = dauntlessTarget(attacker, defender);
         state.lastCheck = null;
         proc.stage = "dauntlessResult";
@@ -576,13 +575,11 @@ export const Vomit: Handler<P<"Vomit">> = {
         return "continue";
       }
       case "rushResult":
-        if (state.lastCheck?.success === false) {
-          ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
-          return "done";
-        }
+        if (state.lastCheck?.success === false) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
         proc.stage = "roll";
         return "continue";
       case "roll":
+        if (attacker.status !== "standing") return "done";
         if (proc.skill === "Stab") {
           ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Stab" });
           proc.victimId = proc.defenderId;

@@ -208,6 +208,7 @@ export type CheckKind =
   | "fury"
   | "takeroot"
   | "bloodlust"
+  | "steadyfooting"
   | "dauntless"
   | "vomit"
   | "animosity"
@@ -403,7 +404,10 @@ export type Procedure =
       to: Square;
       /** Jumping over a prone or stunned player: two squares, a Jump roll instead of a Dodge. */
       jump?: boolean;
-      stage: "rush" | "rush2" | "dodge" | "move" | "pickup";
+      /** "fell": after the knock-down of a failed roll, which Steady Footing may have avoided. */
+      stage: "rush" | "rush2" | "dodge" | "move" | "fell" | "pickup";
+      /** The failed roll left the player in the starting square. */
+      fellInPlace?: boolean;
     }
   | {
       type: "Check";
@@ -428,7 +432,9 @@ export type Procedure =
       blockerId?: string;
       /** Mighty Blow broke the armour, so it does not apply to the injury roll. */
       mightyBlowOnArmour?: boolean;
-      stage: "fall" | "armour" | "injury" | "bounce";
+      /** Steady Footing was offered (and failed or declined). */
+      steadied?: boolean;
+      stage: "fall" | "steady" | "steadyResult" | "armour" | "injury" | "bounce";
       square?: Square;
       hadBall?: boolean;
     };

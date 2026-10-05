@@ -153,6 +153,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   block re-roll (no team re-roll is spent).
 - Nerves of Steel: tackle zones do not count for the player's passes (team-mate throws excepted), catches and
   interceptions.
+- Steady Footing: whenever the player (standing and not distracted) would be knocked down or fall over, their coach may
+  roll a D6 (team re-roll allowed in their own turn): on a 6 they stay on their feet with the ball, without a turnover,
+  and the action goes on (a failed Rush before a Blitz block still leads to the block).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 
