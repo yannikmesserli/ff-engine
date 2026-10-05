@@ -3,11 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter playground dev",
+    "dev": "pnpm --parallel --filter playground --filter relay dev",
     "build": "pnpm --filter playground build",
     "test": "vitest run",
     "typecheck": "pnpm -r typecheck",
-    "fetch-rosters": "pnpm --filter @bb/data fetch-rosters"
+    "fetch-rosters": "pnpm --filter @bb/data fetch-rosters",
+    "relay": "pnpm --filter relay start"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

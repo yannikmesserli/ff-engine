@@ -6,7 +6,8 @@ README of the package you touch:
 - `packages/engine` (`@bb/engine`): pure rules engine. Read `packages/engine/README.md` before changing rules.
 - `packages/data` (`@bb/data`): rosters, example teams, formations, zod schemas.
 - `packages/board-ui` (`@bb/board-ui`): the `<BloodBowlGame>` React component.
-- `apps/playground`: Vite app hosting the component.
+- `apps/playground`: Vite app hosting the component (online games and hot-seat).
+- `apps/relay`: WebSocket relay for online games (Node, `ws`), no storage.
 
 ## Commands (run from `frontend/`)
 
@@ -14,7 +15,7 @@ README of the package you touch:
 pnpm test        # vitest: engine unit tests + 40 full random games (data.test.ts)
 pnpm typecheck   # tsc in every package
 pnpm build       # playground production build
-pnpm dev         # playground on http://localhost:5173 (?seed=42 replays the same dice)
+pnpm dev         # playground on http://localhost:5173 (?seed=42 replays the same dice) + relay on :8787
 ```
 
 Run `pnpm typecheck && pnpm test` before reporting any change as done.

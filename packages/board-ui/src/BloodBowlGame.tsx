@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IllegalActionError,
   createGame,
   getAvailableActions,
   step,
   type Action,
+  type ActionTemplate,
   type GameEvent,
   type GameState,
   type PlayerState,
@@ -29,12 +30,28 @@ export interface BloodBowlGameProps {
   seed?: number;
   /** Called with the new state after every successful action. */
   onChange?(state: GameState): void;
+  /** Play online against another browser instead of hot-seat (see {@link OnlineControl}). */
+  online?: OnlineControl;
 }
+
+/**
+ * Online play: this browser only takes `side`'s decisions. Actions are not applied locally but sent with `send`;
+ * the game is the replay of `actions`, every batch both players sent, in one order shared by both browsers. With the
+ * same teams, seed and actions, both browsers compute the same game. There is no undo.
+ */
+export interface OnlineControl {
+  side: Side;
+  actions: Action[][];
+  send(actions: Action[]): void;
+}
+
+/** Who takes a decision: its side, or for rolls anyone could make, the team whose turn it is (home before kick-off). */
+export const decider = (state: GameState, template: ActionTemplate): Side => template.side ?? state.activeSide ?? "home";
 
 const AUTO_ROLL_DELAY_MS = 350;
 
 /** A complete hot-seat Blood Bowl game between two teams; restarts when `home`, `away` or `seed` change. */
-export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, onChange }: BloodBowlGameProps) {
+export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, onChange, online }: BloodBowlGameProps) {
   const initial = useMemo(() => {
     try {
       return { state: createGame(resolveTeam(home), resolveTeam(away), { seed }) };
@@ -43,11 +60,35 @@ export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, onChange }
     }
   }, [home, away, seed]);
   if ("error" in initial) return <div className="bb-game bb-error">{initial.error}</div>;
-  return <Game key={JSON.stringify([home, away, seed])} initial={initial.state} assets={assetsUrl} onChange={onChange} />;
+  return <Game key={JSON.stringify([home, away, seed])} initial={initial.state} assets={assetsUrl} onChange={onChange} online={online} />;
+}
+
+/** The state after applying the batches of actions in order; a batch that is not legal is skipped as a whole. */
+function replay(from: GameState, batches: Action[][]): GameState {
+  return batches.reduce((state, batch) => {
+    try {
+      return batch.reduce((s, a) => step(s, a).state, state);
+    } catch (e) {
+      if (e instanceof IllegalActionError) return state;
+      throw e;
+    }
+  }, from);
+}
+
+/** The online game state, replaying only the batches received since the last render. */
+function useReplay(initial: GameState, batches: Action[][] | undefined): GameState {
+  const cache = useRef({ applied: 0, state: initial });
+  if (!batches) return initial;
+  if (batches.length < cache.current.applied) cache.current = { applied: 0, state: initial };
+  if (batches.length > cache.current.applied) {
+    cache.current = { applied: batches.length, state: replay(cache.current.state, batches.slice(cache.current.applied)) };
+  }
+  return cache.current.state;
 }
 
 /** The game screen: owns the state history (for undo) and the board's interaction state. */
-function Game({ initial, assets, onChange }: { initial: GameState; assets: string; onChange?(s: GameState): void }) {
+function Game(props: { initial: GameState; assets: string; onChange?(s: GameState): void; online?: OnlineControl }) {
+  const { initial, assets, onChange, online } = props;
   const [history, setHistory] = useState<GameState[]>([initial]);
   const [error, setError] = useState<string | null>(null);
   const [autoRoll, setAutoRoll] = useState(false);
@@ -55,16 +96,33 @@ function Game({ initial, assets, onChange }: { initial: GameState; assets: strin
   const [picked, setPicked] = useState<string[]>([]);
   const [menu, setMenu] = useState<ActionMenuState | null>(null);
   const [aiming, setAiming] = useState(false);
-  const state = history.at(-1)!;
-  const templates = useMemo(() => getAvailableActions(state), [state]);
+  const onlineState = useReplay(initial, online?.actions);
+  const state = online ? onlineState : history.at(-1)!;
+  // Online, the board only offers this browser's decisions.
+  const templates = useMemo(() => {
+    const all = getAvailableActions(state);
+    return online ? all.filter((t) => decider(state, t) === online.side) : all;
+  }, [state, online?.side]);
+  const waitingFor = online && templates.length === 0 && !state.finished ? state.teams[online.side === "home" ? "away" : "home"].name : null;
 
-  /** Applies the actions in order as one undo step; an illegal action is shown instead of applied. */
+  useEffect(() => {
+    if (online) onChange?.(state);
+  }, [state]);
+
+  /**
+   * Applies the actions in order as one undo step; an illegal action is shown instead of applied.
+   * Online, legal actions are sent instead, and applied when they come back.
+   */
   const dispatch = (...actions: Action[]) => {
     try {
       const next = actions.reduce((s, a) => step(s, a).state, state);
-      setHistory((h) => [...h, next]);
       setError(null);
       setAiming(false);
+      if (online) {
+        online.send(actions);
+        return;
+      }
+      setHistory((h) => [...h, next]);
       onChange?.(next);
     } catch (e) {
       if (!(e instanceof IllegalActionError)) throw e;
@@ -124,9 +182,10 @@ function Game({ initial, assets, onChange }: { initial: GameState; assets: strin
             setPicked={setPicked}
             aiming={aiming}
             setAiming={setAiming}
+            waitingFor={waitingFor}
           />
           {error && <div className="bb-panel bb-error">{error}</div>}
-          <LastRoll state={state} assets={assets} canUndo={history.length > 1} onUndo={undo} />
+          <LastRoll state={state} assets={assets} canUndo={!online && history.length > 1} onUndo={undo} />
           {player && <PlayerCard player={player} />}
         </div>
         <GameLog state={state} />

@@ -1,2 +1,2 @@
-export { BloodBowlGame } from "./BloodBowlGame";
-export type { BloodBowlGameProps } from "./BloodBowlGame";
+export { BloodBowlGame, decider } from "./BloodBowlGame";
+export type { BloodBowlGameProps, OnlineControl } from "./BloodBowlGame";

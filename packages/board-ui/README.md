@@ -18,6 +18,7 @@ import { BloodBowlGame } from "@bb/board-ui";
 | `assetsUrl` | `string` | Base URL of the image folder. Default `"/img"`. |
 | `seed` | `number` | RNG seed, to replay the same dice. Random when omitted. |
 | `onChange` | `(state: GameState) => void` | Called with the new state after every successful action. |
+| `online` | `OnlineControl` | Online play: `{ side, actions, send }`. The component only offers `side`'s decisions (`decider()`), sends actions with `send` instead of applying them, and plays the batches in `actions` (both players', in the relay's order). No undo. |
 
 Changing `home`, `away` or `seed` starts a new game. The stylesheet (`styles.css`, all classes prefixed `bb-`) is
 imported by the component.
@@ -42,7 +43,7 @@ state ──getAvailableActions──▶ templates ──Board / ActionPanel─�
 
 | File | What |
 |---|---|
-| `src/index.ts` | Public exports: `BloodBowlGame` and `BloodBowlGameProps`. |
+| `src/index.ts` | Public exports: `BloodBowlGame`, `decider`, `BloodBowlGameProps` and `OnlineControl`. |
 | `src/BloodBowlGame.tsx` | Game creation, state history, `dispatch`, auto-roll; scoreboard, last roll, player card, log. |
 | `src/Board.tsx` | Pitch, dugouts, player tokens, square highlights, setup drag and drop (dnd-kit), player action menu. |
 | `src/ActionPanel.tsx` | Prompt and buttons per template: coin, kick/receive, dice (or physical dice entry), re-rolls, block dice, setup formations, end turn... |

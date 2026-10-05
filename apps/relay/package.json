@@ -1,0 +1,20 @@
+{
+  "name": "relay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/ws": "^8.18.2"
+  },
+  "exports": {
+    "./protocol": "./src/protocol.ts"
+  }
+}

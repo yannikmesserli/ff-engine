@@ -2,52 +2,53 @@ import { useState } from "react";
 import { BloodBowlGame } from "@bb/board-ui";
 import type { GameState } from "@bb/engine";
 import { exampleTeams } from "@bb/data";
+import { GAME_ID } from "relay/protocol";
+import { OnlineGame, newGameId } from "./Online";
+import { TeamPicker } from "./TeamPicker";
 
-const TEAM_KEYS = Object.keys(exampleTeams);
+const PARAMS = new URLSearchParams(location.search);
 
 /** `?seed=42` replays the same dice for the first game (handy to reproduce a bug); anything non-numeric is ignored. */
-const SEED = parseSeed(new URLSearchParams(location.search).get("seed"));
+const SEED = parseSeed(PARAMS.get("seed"));
 
 function parseSeed(param: string | null): number | undefined {
   const seed = param?.trim() ? Number(param) : NaN;
   return Number.isFinite(seed) ? seed : undefined;
 }
 
-/** Pick an example team, or load any team JSON file (format in packages/data/README.md). */
-function TeamPicker(props: { label: string; value: unknown; disabled: boolean; onChange(team: unknown): void }) {
-  const key = TEAM_KEYS.find((k) => exampleTeams[k] === props.value) ?? "";
-  return (
-    <label>
-      {props.label}{" "}
-      <select value={key} disabled={props.disabled} onChange={(e) => props.onChange(exampleTeams[e.target.value])}>
-        {!key && <option value="">(custom file)</option>}
-        {TEAM_KEYS.map((k) => (
-          <option key={k} value={k}>
-            {exampleTeams[k]!.name}
-          </option>
-        ))}
-      </select>{" "}
-      <input
-        type="file"
-        accept="application/json"
-        disabled={props.disabled}
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (file) props.onChange(JSON.parse(await file.text()));
-        }}
-      />
-    </label>
-  );
-}
-
 /** The game has started (the first roll, the fan factor, is made) and is not over yet. */
 const inProgress = (state: GameState) => !state.finished && state.log.some((e) => e.type === "DiceRolled");
 
 /**
- * Two team pickers and a "New game" button above the game; each new game gets fresh random dice. They are disabled
- * while a game is in progress (undoing back to the first roll enables them again).
+ * `?game=<id>`: an online game through the relay; `?local`: hot-seat on this computer; otherwise a page to choose.
  */
 export function App() {
+  const game = PARAMS.get("game");
+  if (game !== null) {
+    return (
+      <main>
+        {GAME_ID.test(game) ? <OnlineGame gameId={game} /> : <p>Invalid game link. <a href="?">Start a new game</a></p>}
+      </main>
+    );
+  }
+  if (PARAMS.has("local") || PARAMS.has("seed")) return <LocalGame />;
+  return (
+    <main className="pg-home">
+      <h1>Blood Bowl</h1>
+      <button className="pg-primary" onClick={() => (location.search = `?game=${newGameId()}`)}>
+        Create an online game
+      </button>
+      <p>You get a link to send to your opponent; each of you then picks a team.</p>
+      <a href="?local">Or play hot-seat on this computer</a>
+    </main>
+  );
+}
+
+/**
+ * Hot-seat: two team pickers and a "New game" button above the game; each new game gets fresh random dice. They are
+ * disabled while a game is in progress (undoing back to the first roll enables them again).
+ */
+function LocalGame() {
   const [home, setHome] = useState<unknown>(exampleTeams["human"]);
   const [away, setAway] = useState<unknown>(exampleTeams["orc"]);
   const [gameId, setGameId] = useState(0);

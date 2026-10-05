@@ -23,6 +23,8 @@ interface ActionPanelProps {
   /** Showing the pass range overlay. */
   aiming: boolean;
   setAiming(aiming: boolean): void;
+  /** Online: the opponent's team name while it is their decision. */
+  waitingFor?: string | null;
 }
 
 /** What the coach is asked to do, per main template. */
@@ -74,7 +76,10 @@ export function ActionPanel(props: ActionPanelProps) {
   const { state, assets, templates, dispatch, autoRoll, setAutoRoll, picked, setPicked } = props;
   // The block die choice may belong to the defending coach even if the attacker can still re-roll.
   const main = templates.find((t) => t.type === "CHOOSE_BLOCK_DIE") ?? templates.find((t) => t.type in PROMPTS) ?? templates[0];
-  if (!main) return <div className="bb-panel bb-actions">{state.finished ? "The game is over." : "Waiting..."}</div>;
+  if (!main) {
+    const waiting = props.waitingFor ? `Waiting for ${props.waitingFor}...` : "Waiting...";
+    return <div className="bb-panel bb-actions">{state.finished ? "The game is over." : waiting}</div>;
+  }
   const side: Side | null = "side" in main ? main.side : null;
   const has = (type: ActionTemplate["type"]) => templates.some((t) => t.type === type);
   const roll = findTemplate(templates, "ROLL");

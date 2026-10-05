@@ -181,12 +181,18 @@ describe("random games", () => {
     let rng = seed;
     // Linear congruential generator: reproducible per seed, independent of the engine's RNG.
     const random = () => ((rng = (rng * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
-    let s = createGame(resolveTeam(exampleTeams["orc"]), resolveTeam(exampleTeams["wood-elf"]), { seed });
+    const start = createGame(resolveTeam(exampleTeams["orc"]), resolveTeam(exampleTeams["wood-elf"]), { seed });
+    let s = start;
+    const taken: Action[] = [];
     let steps = 0;
     while (!s.finished) {
       if (++steps > 50_000) throw new Error("game did not finish");
-      s = randomActions(s, getAvailableActions(s), random).reduce((st, a) => step(st, a).state, s);
+      const actions = randomActions(s, getAvailableActions(s), random);
+      taken.push(...actions);
+      s = actions.reduce((st, a) => step(st, a).state, s);
     }
+    // Online play relies on this: the same seed and actions give the same game (dice rolled by the seeded RNG).
+    if (seed <= 3) expect(taken.reduce((st, a) => step(st, a).state, start)).toEqual(s);
     // Time-out kick-offs can shift the turn counters, so the number of turns varies.
     expect(s.log.filter((e) => e.type === "HalfEnded")).toHaveLength(2);
     expect(s.log.filter((e) => e.type === "TurnStarted").length).toBeGreaterThan(24);

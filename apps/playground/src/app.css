@@ -1,3 +1,14 @@
 body { margin: 0; background: #0e0f11; color: #e8e6e1; font-family: system-ui, sans-serif; }
 main { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px; }
 header { display: flex; gap: 24px; align-items: center; font-size: 14px; }
+a { color: #8ab4f8; }
+.pg-home { gap: 16px; padding-top: 80px; text-align: center; }
+.pg-home h1 { margin: 0; }
+.pg-primary { font-size: 16px; padding: 8px 20px; }
+.pg-picker { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pg-paste { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.pg-paste textarea { width: 480px; font-family: ui-monospace, monospace; font-size: 12px; }
+.pg-link { background: none; border: none; color: #8ab4f8; text-decoration: underline; cursor: pointer; padding: 0; }
+.pg-error { color: #ffb74d; font-size: 13px; max-width: 600px; }
+.pg-lobby { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; max-width: 720px; padding-top: 40px; }
+.pg-invite code { background: #1c1e22; padding: 2px 6px; border-radius: 4px; }
