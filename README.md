@@ -131,8 +131,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Secret Weapon: when a drive ends (touchdown or half time), each player with the skill who was on the pitch for its
   kick-off and is not a casualty is sent off, even from the reserves or the KO box. The coach may argue the call (6:
   the player stays; 1: coach banned), then use bribes (2+).
+- Claws: when the blocker knocks an opponent down, a natural armour roll of 8+ breaks armour above 8+; it does not
+  stack with Mighty Blow, which then goes to the injury roll.
 
-Not yet: most other skills (Kick, Claws...), inducements, overtime.
+Not yet: most other skills (Kick...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.
 

@@ -393,6 +393,8 @@ export type Procedure =
       turnover: boolean;
       /** Mighty Blow of the blocker who knocked the player down: added to the armour or the injury roll. */
       mightyBlow?: { playerId: string; bonus: number };
+      /** The blocker who knocked the player down has Claws: an armour roll of 8+ breaks the armour. */
+      clawsId?: string;
       /** Mighty Blow broke the armour, so it does not apply to the injury roll. */
       mightyBlowOnArmour?: boolean;
       stage: "fall" | "armour" | "injury" | "bounce";

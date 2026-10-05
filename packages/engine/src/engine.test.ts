@@ -632,6 +632,31 @@ describe("engine", () => {
       });
     });
 
+    describe("Claws", () => {
+      /** home-2 knocks away-2 (AV 10+) down. */
+      const claw = (skills: string[], av = 10) => {
+        const s = edit(withSkills(toFirstTurn(), { "home-2": skills }), (c) => void (c.players["away-2"]!.av = av));
+        return apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      };
+
+      it("an armour roll of 8+ breaks the armour, whatever the AV", () => {
+        let s = claw(["Claws"]);
+        expect(find(s, "ROLL")?.reason).toBe("Armour 10+ (Away 2) (Claws: 8+)");
+        s = apply(s, roll(4, 4));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Claws" });
+        expect(find(s, "ROLL")?.reason).toBe("Injury");
+      });
+
+      it("does not stack with Mighty Blow, which then goes to the injury roll", () => {
+        expect(apply(claw(["Claws", "Mighty Blow"]), roll(4, 3)).log).toContainEqual({ type: "ArmourHeld", playerId: "away-2", roll: 7 });
+        expect(find(apply(claw(["Claws", "Mighty Blow"]), roll(4, 4)), "ROLL")?.reason).toBe("Injury (+1 Mighty Blow)");
+      });
+
+      it("does nothing against AV 8+ or less", () => {
+        expect(find(claw(["Claws"], 8), "ROLL")?.reason).toBe("Armour 8+ (Away 2)");
+      });
+    });
+
     describe("Frenzy", () => {
       const frenzy = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Frenzy"] });
 

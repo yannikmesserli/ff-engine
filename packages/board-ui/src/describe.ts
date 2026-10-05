@@ -28,6 +28,7 @@ const SKILL_USES: Record<string, string> = {
   Catch: "to re-roll the catch",
   Pass: "to re-roll the pass",
   "Mighty Blow": "",
+  Claws: "to break the armour",
   Frenzy: "and blocks again",
   "Stand Firm": "and is not pushed back",
   Sidestep: "to choose where to be pushed",
