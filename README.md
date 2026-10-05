@@ -105,8 +105,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Horns: +1 ST when blocking during a Blitz (Frenzy's second block too).
 - Dauntless: blocking a stronger player, D6 + ST must beat the defender's ST (team re-roll allowed) to match its
   strength for the block; Horns and assists come on top.
+- Wrestle: on Both Down, the attacker's coach (then the defender's) may place both players prone instead: no armour
+  rolls and no turnover unless the moving team's ball carrier goes down; the attacker's action ends.
 
-Not yet: most other skills (Kick, Wrestle, Juggernaut, Throw Team-mate / Right Stuff,
+Not yet: most other skills (Kick, Juggernaut, Throw Team-mate / Right Stuff,
 Always Hungry...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.

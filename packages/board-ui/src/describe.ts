@@ -27,6 +27,7 @@ const SKILL_USES: Record<string, string> = {
   Sidestep: "to choose where to be pushed",
   "Jump Up": "to stand up for free",
   Dauntless: "and matches the defender's strength",
+  Wrestle: "and takes both players down",
 };
 
 /** Display names of the weather conditions. */
@@ -206,6 +207,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} catches the ball.`;
     case "BallPickedUp":
       return `${who(state, e.playerId)} picks up the ball.`;
+    case "PlayerPlacedProne":
+      return `${who(state, e.playerId)} is placed prone.`;
     case "PlayerKnockedDown":
       return `${who(state, e.playerId)} goes down!`;
     case "ArmourBroken":

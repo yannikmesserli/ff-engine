@@ -285,7 +285,9 @@ export type Procedure =
       second?: boolean;
       /** Dauntless worked: the attacker's ST matches the defender's for this block. */
       dauntless?: boolean;
-      stage: "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "standFirm" | "push" | "followup" | "end";
+      /** Both Down: the player whose coach is asked whether to use Wrestle. */
+      wrestlerId?: string;
+      stage: "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "wrestle" | "standFirm" | "push" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
@@ -520,6 +522,8 @@ export type GameEvent =
   | { type: "BallCaught"; playerId: string }
   | { type: "BallPickedUp"; playerId: string }
   | { type: "PlayerKnockedDown"; playerId: string }
+  /** Placed prone without an armour roll (Wrestle). */
+  | { type: "PlayerPlacedProne"; playerId: string }
   | { type: "ArmourBroken"; playerId: string; roll: number }
   | { type: "ArmourHeld"; playerId: string; roll: number }
   | { type: "PlayerInjured"; playerId: string; result: "stunned" | "ko" | "cas" }

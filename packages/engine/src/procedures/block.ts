@@ -132,6 +132,45 @@ function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, 
   return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: proc.blitz ? "rush" : "dauntless", dice, rerolled: false, chain: [] };
 }
 
+/**
+ * Wrestle on Both Down: the attacker's coach is asked first, then the defender's (if the defender exerts a tackle
+ * zone). `after` is the player who already declined.
+ */
+function nextWrestler(attacker: PlayerState, defender: PlayerState, after?: string): string | undefined {
+  if (after === undefined && hasSkill(attacker, "Wrestle")) return attacker.id;
+  if (after !== defender.id && hasSkill(defender, "Wrestle") && hasTackleZone(defender)) return defender.id;
+  return undefined;
+}
+
+/** Both Down without Wrestle: whoever lacks Block is knocked down (a defender needs a tackle zone for Block). */
+function bothDown(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
+  const defenderBlocks = hasSkill(defender, "Block") && hasTackleZone(defender);
+  ctx.push(
+    ...(defenderBlocks ? [] : [knockDownDefender(attacker, defender)]),
+    ...(hasSkill(attacker, "Block") ? [] : [{ type: "KnockDown" as const, playerId: attacker.id, turnover: true, stage: "fall" as const }]),
+  );
+}
+
+/**
+ * Wrestle: both players are placed prone, without armour rolls and without a turnover, unless a ball carrier of the
+ * moving team goes down; the ball bounces. The attacker's action ends.
+ */
+function wrestle(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
+  const { state } = ctx;
+  for (const player of [defender, attacker]) {
+    const square = squareOf(ctx, player);
+    const carrying = ballCarrier(state)?.id === player.id;
+    player.status = "prone";
+    ctx.emit({ type: "PlayerPlacedProne", playerId: player.id });
+    if (!carrying) continue;
+    state.ball.carried = false;
+    if (player.side === state.activeSide) state.turnover = true;
+    ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+  }
+  const activation = state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === attacker.id);
+  if (activation) activation.finished = true;
+}
+
 /** Only the attacker's team may re-roll the block dice, once. */
 const canReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState) => canTeamReroll(state, attacker.side, proc.rerolled);
 
@@ -249,11 +288,14 @@ export const Block: Handler<P<"Block">> = {
           return "continue";
         }
         if (result === "both_down") {
-          // TODO: Wrestle, Juggernaut.
-          ctx.push(
-            ...(hasSkill(defender, "Block") ? [] : [knockDownDefender(attacker, defender)]),
-            ...(hasSkill(attacker, "Block") ? [] : [{ type: "KnockDown" as const, playerId: attacker.id, turnover: true, stage: "fall" as const }]),
-          );
+          // TODO: Juggernaut.
+          const wrestler = nextWrestler(attacker, defender);
+          if (wrestler) {
+            proc.wrestlerId = wrestler;
+            proc.stage = "wrestle";
+            return "continue";
+          }
+          bothDown(ctx, attacker, defender);
           proc.stage = "end";
           return "continue";
         }
@@ -264,6 +306,24 @@ export const Block: Handler<P<"Block">> = {
         proc.vacated = { ...from };
         proc.pushing = { playerId: defender.id, from: { ...from }, dir: { x: Math.sign(from.x - at.x), y: Math.sign(from.y - at.y) } };
         proc.stage = pushStage(state, proc);
+        return "continue";
+      }
+      case "wrestle": {
+        if (action === null) return "wait";
+        const wrestler = proc.wrestlerId!;
+        if (ctx.expect(action, "USE_SKILL").use) {
+          ctx.emit({ type: "SkillUsed", playerId: wrestler, skill: "Wrestle" });
+          wrestle(ctx, attacker, defender);
+          proc.stage = "end";
+          return "continue";
+        }
+        const next = nextWrestler(attacker, defender, wrestler);
+        if (next) {
+          proc.wrestlerId = next;
+          return "wait";
+        }
+        bothDown(ctx, attacker, defender);
+        proc.stage = "end";
         return "continue";
       }
       case "standFirm": {
@@ -361,6 +421,10 @@ export const Block: Handler<P<"Block">> = {
             ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }]
             : [];
         return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll];
+      }
+      case "wrestle": {
+        const wrestler = state.players[proc.wrestlerId!]!;
+        return [{ type: "USE_SKILL", side: wrestler.side, playerId: wrestler.id, skill: "Wrestle" }];
       }
       case "standFirm": {
         const pushed = state.players[proc.pushing!.playerId]!;

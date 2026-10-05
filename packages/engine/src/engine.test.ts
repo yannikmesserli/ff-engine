@@ -841,6 +841,39 @@ describe("engine", () => {
         expect(find(blockAway2(withSkills(toFirstTurn(), { "home-2": ["Dauntless"] })), "ROLL")?.reason).toBe("Block (1 die)");
       });
     });
+
+    describe("Wrestle", () => {
+      const bothDown = (s: GameState) => apply(blockAway2(s), roll(2), pick);
+
+      it("on Both Down, the attacker may place both players prone: no armour roll, no turnover, the action ends", () => {
+        let s = bothDown(withSkills(toFirstTurn(), { "home-2": ["Wrestle"] }));
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Wrestle" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect([s.players["home-2"]!.status, s.players["away-2"]!.status]).toEqual(["prone", "prone"]);
+        expect(s.log.some((e) => e.type === "ArmourBroken" || e.type === "ArmourHeld")).toBe(false);
+        expect([s.activeSide, s.activePlayerId, top(s).type]).toEqual(["home", null, "Turn"]);
+      });
+
+      it("the defender's coach is asked when the attacker does not use it", () => {
+        let s = bothDown(withSkills(toFirstTurn(), { "home-2": ["Wrestle"], "away-2": ["Wrestle"] }));
+        s = apply(s, { type: "USE_SKILL", use: false });
+        expect(find(s, "USE_SKILL")).toMatchObject({ side: "away", playerId: "away-2" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(s.players["away-2"]!.status).toBe("prone");
+        expect(s.activeSide).toBe("home");
+        // Declined by everyone: a normal Both Down, the attacker falls.
+        const declined = apply(bothDown(withSkills(toFirstTurn(), { "away-2": ["Wrestle"] })), { type: "USE_SKILL", use: false });
+        expect(find(declined, "ROLL")?.reason).toMatch(/^Armour/);
+      });
+
+      it("a ball carrier of the moving team placed prone drops the ball: turnover", () => {
+        let s = edit(withSkills(toFirstTurn(), { "home-2": ["Wrestle"] }), (c) => (c.ball = { square: { x: 12, y: 7 }, carried: true }));
+        s = apply(bothDown(s), { type: "USE_SKILL", use: true });
+        expect(find(s, "ROLL")?.reason).toBe("Bounce");
+        s = apply(s, roll(7));
+        expect(s.activeSide).toBe("away");
+      });
+    });
   });
 
   describe("standing up and stunned players", () => {
