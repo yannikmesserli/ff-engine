@@ -2,6 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { Procedure, Side } from "../types";
 import { other } from "../pitch";
 import { endDrive, resetForKickoff } from "./helpers";
+import { secretWeapons } from "./foul";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -87,8 +88,9 @@ export const CoinToss: Handler<P<"CoinToss">> = {
 };
 
 /**
- * One half as a loop of drives: end the previous drive (effects expire, Sweltering Heat), kick off, then alternate
- * team turns until a touchdown (the scoring team kicks next) or both teams played TURNS_PER_HALF turns.
+ * One half as a loop of drives: end the previous drive (effects expire, Secret Weapons sent off, Sweltering Heat), kick
+ * off, then alternate team turns until a touchdown (the scoring team kicks next) or both teams played TURNS_PER_HALF
+ * turns.
  */
 export const Half: Handler<P<"Half">> = {
   step(ctx, proc) {
@@ -97,7 +99,12 @@ export const Half: Handler<P<"Half">> = {
       proc.stage = "kickoff";
       if (state.drive > 0) {
         endDrive(ctx);
-        if (state.weather === "sweltering-heat") ctx.push({ type: "SwelteringHeat" });
+        const weapons = secretWeapons(state);
+        for (const p of weapons) ctx.emit({ type: "SecretWeaponSpotted", playerId: p.id });
+        ctx.push(
+          ...(weapons.length > 0 ? [{ type: "SecretWeapon" as const, playerIds: weapons.map((p) => p.id), stage: "argue" as const }] : []),
+          ...(state.weather === "sweltering-heat" ? [{ type: "SwelteringHeat" as const }] : []),
+        );
       }
       return "continue";
     }

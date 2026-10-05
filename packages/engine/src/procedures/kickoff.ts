@@ -136,6 +136,7 @@ export const Kickoff: Handler<P<"Kickoff">> = {
         const { square } = ctx.expect(action, "PLACE_BALL");
         if (!inHalf(receiving, square)) ctx.reject("The ball must be kicked into the receiving half.");
         proc.target = { ...square };
+        for (const p of Object.values(state.players)) p.played = isOnPitch(p);
         ctx.emit({ type: "BallPlaced", square });
         proc.stage = "scatter";
         return "continue";

@@ -204,6 +204,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${sideName(state, e.side)} bribes the referee${e.success ? ": it works!" : "... who keeps the money."}`;
     case "PlayerSentOff":
       return `${who(state, e.playerId)} is sent off!`;
+    case "SecretWeaponSpotted":
+      return `The drive is over: the referee wants ${who(state, e.playerId)} and their secret weapon off the pitch.`;
     case "FollowedUp":
       return `${who(state, e.playerId)} follows up.`;
     case "PlayerStoodUp":

@@ -1,4 +1,4 @@
-import type { Handler } from "../context";
+import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerState, Procedure, Square } from "../types";
 import { adjacent, ballCarrier, isOnPitch, playerAt, tackleZoneAt } from "../pitch";
 import { ARMOUR_DICE } from "./checks";
@@ -131,9 +131,7 @@ export const Foul: Handler<P<"Foul">> = {
       case "sendOff": {
         const square = squareOf(ctx, fouler);
         const carrying = ballCarrier(state)?.id === fouler.id;
-        fouler.at = "banned";
-        fouler.status = "standing";
-        ctx.emit({ type: "PlayerSentOff", playerId: fouler.id });
+        sendOff(ctx, fouler);
         state.turnover = true;
         if (carrying) {
           state.ball = { square: { ...square }, carried: false };
@@ -172,3 +170,91 @@ export const Foul: Handler<P<"Foul">> = {
   },
 };
 
+
+/** Secret Weapon players who played in the drive and are not a casualty or already sent off. */
+export const secretWeapons = (state: GameState) =>
+  Object.values(state.players).filter((p) => p.played && hasSkill(p, "Secret Weapon") && p.at !== "cas" && p.at !== "banned");
+
+/** Send a player off for the rest of the game. */
+function sendOff(ctx: Ctx, player: PlayerState) {
+  player.at = "banned";
+  player.status = "standing";
+  ctx.emit({ type: "PlayerSentOff", playerId: player.id });
+}
+
+/**
+ * Secret Weapon: at the end of a drive, every player with the skill who played in it is sent off, even from the
+ * reserves or the KO box. For each one the coach may argue the call (6: the player stays; 1: coach banned), then use
+ * bribes (2+: the player stays).
+ */
+export const SecretWeapon: Handler<P<"SecretWeapon">> = {
+  step(ctx, proc, action) {
+    const id = proc.playerIds[0];
+    if (id === undefined) return "done";
+    const player = getPlayer(ctx, id);
+    const team = ctx.state.teams[player.side];
+    const next = () => {
+      proc.playerIds.shift();
+      proc.stage = "argue";
+      return "continue" as const;
+    };
+    switch (proc.stage) {
+      case "argue": {
+        if (team.coachBanned) {
+          proc.stage = "bribe";
+          return "continue";
+        }
+        if (action === null) return "wait";
+        proc.stage = ctx.expect(action, "ARGUE_THE_CALL").argue ? "argueRoll" : "bribe";
+        return "continue";
+      }
+      case "argueRoll": {
+        if (action === null) return "wait";
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Argue the call ${ARGUE_THE_CALL_TARGET}+`);
+        if (roll! >= ARGUE_THE_CALL_TARGET) {
+          ctx.emit({ type: "ArgueTheCall", foulerId: player.id, result: "success" });
+          return next();
+        }
+        if (roll === 1) team.coachBanned = true;
+        ctx.emit({ type: "ArgueTheCall", foulerId: player.id, result: roll === 1 ? "coach-banned" : "failed" });
+        proc.stage = "bribe";
+        return "continue";
+      }
+      case "bribe": {
+        if (team.bribes > 0) {
+          if (action === null) return "wait";
+          if (ctx.expect(action, "BRIBE").use) {
+            proc.stage = "bribeRoll";
+            return "continue";
+          }
+        }
+        sendOff(ctx, player);
+        return next();
+      }
+      case "bribeRoll": {
+        if (action === null) return "wait";
+        team.bribes -= 1;
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Bribe ${BRIBE_TARGET}+`);
+        const success = roll! >= BRIBE_TARGET;
+        ctx.emit({ type: "BribeUsed", side: player.side, success });
+        if (success) return next();
+        proc.stage = "bribe";
+        return "continue";
+      }
+    }
+  },
+  actions(state, proc) {
+    const player = state.players[proc.playerIds[0]!]!;
+    const side = player.side;
+    switch (proc.stage) {
+      case "argue":
+        return [{ type: "ARGUE_THE_CALL", side, playerId: player.id }];
+      case "argueRoll":
+        return [{ type: "ROLL", side, dice: [{ kind: "d6", count: 1 }], reason: `Argue the call ${ARGUE_THE_CALL_TARGET}+ (${player.name})` }];
+      case "bribe":
+        return [{ type: "BRIBE", side, playerId: player.id, bribes: state.teams[side].bribes }];
+      case "bribeRoll":
+        return [{ type: "ROLL", side, dice: [{ kind: "d6", count: 1 }], reason: `Bribe ${BRIBE_TARGET}+ (${player.name})` }];
+    }
+  },
+};

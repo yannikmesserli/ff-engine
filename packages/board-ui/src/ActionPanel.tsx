@@ -68,6 +68,12 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   if (snap) return `${PROMPTS.SNAP} (${snap.remaining} left)`;
   if (main.type === "USE_REROLL" && main.skill) return `use ${main.skill} to re-roll?`;
   if (main.type === "USE_SKILL") return `use ${main.skill} (${state.players[main.playerId]!.name})?`;
+  if (state.stack.at(-1)?.type === "SecretWeapon" && (main.type === "ARGUE_THE_CALL" || main.type === "BRIBE")) {
+    const name = state.players[main.playerId]!.name;
+    return main.type === "ARGUE_THE_CALL"
+      ? `${name}'s secret weapon gets them sent off! Argue the call (6: the player stays; 1: coach banned)?`
+      : `use a bribe to keep ${name} (2+)?`;
+  }
   return PROMPTS[main.type];
 }
 

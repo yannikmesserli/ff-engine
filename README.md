@@ -128,6 +128,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   allowed); a failure loses the action (still used this turn, no turnover), but the player keeps their tackle zone.
 - Disturbing Presence: -1 to passes (and team-mate throws), catches and interceptions for each opponent with the skill
   on the pitch within 3 squares, even prone or stunned.
+- Secret Weapon: when a drive ends (touchdown or half time), each player with the skill who was on the pitch for its
+  kick-off and is not a casualty is sent off, even from the reserves or the KO box. The coach may argue the call (6:
+  the player stays; 1: coach banned), then use bribes (2+).
 
 Not yet: most other skills (Kick, Claws...), inducements, overtime.
 

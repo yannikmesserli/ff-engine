@@ -89,6 +89,8 @@ export interface PlayerState {
    * next activation or the end of the drive.
    */
   distracted: boolean;
+  /** Was on the pitch for the current drive's kick-off (Secret Weapon players are sent off when the drive ends). */
+  played: boolean;
 }
 
 /** A team's game-long and drive-long resources. */
@@ -341,6 +343,11 @@ export type Procedure =
       /** The victim held the ball when placed prone. */
       dropped?: boolean;
     }
+  /**
+   * End of a drive: the referee sends off the Secret Weapon players who played in it, one at a time (the first id);
+   * the coach may argue the call, then use bribes.
+   */
+  | { type: "SecretWeapon"; playerIds: string[]; stage: "argue" | "argueRoll" | "bribe" | "bribeRoll" }
   /** The crowd throws a rock at a stalling ball carrier. */
   | { type: "Stalling"; playerId: string }
   | {
@@ -560,9 +567,12 @@ export type GameEvent =
   | { type: "BallSecured"; playerId: string }
   | { type: "Fouled"; foulerId: string; victimId: string; assists: number }
   | { type: "RefereeCall"; foulerId: string; spotted: boolean }
+  /** `foulerId`: the player the referee wants to send off (a fouler or a Secret Weapon). */
   | { type: "ArgueTheCall"; foulerId: string; result: "success" | "failed" | "coach-banned" }
   | { type: "BribeUsed"; side: Side; success: boolean }
   | { type: "PlayerSentOff"; playerId: string }
+  /** The drive is over: the referee wants to send off this Secret Weapon player. */
+  | { type: "SecretWeaponSpotted"; playerId: string }
   | { type: "KoRecovery"; playerId: string; recovered: boolean }
   | { type: "CheckResult"; kind: CheckKind; playerId: string; success: boolean; roll: number; target: number }
   | { type: "RerollUsed"; side: Side }

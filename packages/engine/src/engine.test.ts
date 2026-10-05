@@ -764,6 +764,53 @@ describe("engine", () => {
       });
     });
 
+    describe("Secret Weapon", () => {
+      /** home-1 and home-2 have Secret Weapon, home-3 too but stays in the reserves; home-6 then scores. No bribes. */
+      const score = (change: (c: GameState) => void = () => {}) => {
+        let s = withSkills(toFirstTurn(), { "home-1": ["Secret Weapon"], "home-2": ["Secret Weapon"], "home-3": ["Secret Weapon"] });
+        s = edit(place(s, { "home-6": { x: 24, y: 3 } }), (c) => {
+          c.ball = { square: { x: 24, y: 3 }, carried: true };
+          Object.assign(c.players["home-3"]!, { at: "reserves", played: false });
+          c.teams.home.bribes = 0;
+          change(c);
+        });
+        return apply(s, startMove("home-6"), ...move({ x: 25, y: 3 }));
+      };
+
+      it("sends off the players who played in the drive when it ends; the coach may argue the call", () => {
+        let s = score();
+        expect(s.log.filter((e) => e.type === "SecretWeaponSpotted").map((e) => e.type === "SecretWeaponSpotted" && e.playerId)).toEqual(["home-1", "home-2"]);
+        expect(find(s, "ARGUE_THE_CALL")).toEqual({ type: "ARGUE_THE_CALL", side: "home", playerId: "home-1" });
+        s = apply(s, { type: "ARGUE_THE_CALL", argue: false });
+        expect(s.players["home-1"]!.at).toBe("banned");
+        s = apply(s, { type: "ARGUE_THE_CALL", argue: true });
+        expect(find(s, "ROLL")?.reason).toBe("Argue the call 6+ (Home 2)");
+        s = apply(s, roll(6));
+        expect(s.players["home-2"]!.at).toBe("reserves");
+        expect(s.players["home-3"]!.at).toBe("reserves");
+        expect(top(s)).toEqual({ type: "Setup", side: "home" });
+      });
+
+      it("a banned coach cannot argue, but bribes still work", () => {
+        let s = score((c) => (c.teams.home.bribes = 2));
+        s = apply(s, { type: "ARGUE_THE_CALL", argue: true }, roll(1));
+        expect(s.teams.home.coachBanned).toBe(true);
+        s = apply(s, { type: "BRIBE", use: true }, roll(2));
+        expect(s.players["home-1"]!.at).not.toBe("banned");
+        expect(find(s, "BRIBE")).toEqual({ type: "BRIBE", side: "home", playerId: "home-2", bribes: 1 });
+        s = apply(s, { type: "BRIBE", use: false });
+        expect(s.players["home-2"]!.at).toBe("banned");
+      });
+
+      it("a casualty is not sent off, a knocked-out player is", () => {
+        const s = score((c) => {
+          Object.assign(c.players["home-1"]!, { at: "cas", casualty: { result: "badly-hurt" } });
+          c.players["home-2"]!.at = "ko";
+        });
+        expect(find(s, "ARGUE_THE_CALL")?.playerId).toBe("home-2");
+      });
+    });
+
     describe("Bone Head and Really Stupid", () => {
       it("Bone Head: a 1 loses the declared action and distracts the player, without a turnover", () => {
         let s = apply(withSkills(toFirstTurn(), { "home-1": ["Bone Head"] }), declare("home-1", "blitz", "away-1"));
