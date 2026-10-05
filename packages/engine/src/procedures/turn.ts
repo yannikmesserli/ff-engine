@@ -29,6 +29,9 @@ export const BONE_HEAD_TARGET = 2;
 /** Really Stupid fails on 1-3, or only on a 1 with a team-mate (without Really Stupid) standing next to the player. */
 export const REALLY_STUPID_TARGET = 4;
 export const REALLY_STUPID_HELPED_TARGET = 2;
+/** Unchannelled Fury fails on 1-3, or only on a 1 for a Block or Blitz action (+2 to the roll). */
+export const FURY_TARGET = 4;
+export const FURY_BLOCK_TARGET = 2;
 
 /** Team actions that can only be declared once per turn. */
 const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure", "ttm"];
@@ -240,11 +243,12 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   return actions;
 }
 
-/** The Bone Head or Really Stupid roll a player makes when activated, if any. */
-function confusionCheck(state: GameState, player: PlayerState & { at: Square }): P<"Check"> | null {
-  const check = (kind: "bonehead" | "reallystupid", target: number): P<"Check"> =>
+/** The Bone Head, Really Stupid or Unchannelled Fury roll a player makes when activated, if any. */
+function confusionCheck(state: GameState, player: PlayerState & { at: Square }, action: PlayerActionType): P<"Check"> | null {
+  const check = (kind: "bonehead" | "reallystupid" | "fury", target: number): P<"Check"> =>
     ({ type: "Check", kind, playerId: player.id, target, modifier: 0, stage: "roll", rerolled: false });
   if (hasSkill(player, "Bone Head")) return check("bonehead", BONE_HEAD_TARGET);
+  if (hasSkill(player, "Unchannelled Fury")) return check("fury", action === "block" || action === "blitz" ? FURY_BLOCK_TARGET : FURY_TARGET);
   if (!hasSkill(player, "Really Stupid")) return null;
   const helped = adjacent(player.at).some((s) => {
     const p = playerAt(state, s);
@@ -256,8 +260,9 @@ function confusionCheck(state: GameState, player: PlayerState & { at: Square }):
 /**
  * One player activation: Bone Head / Really Stupid roll, stand up if prone, then step, block, throw, hand off or
  * foul according to the declared action, until the player ends it or nothing is left to do.
- * A failed Bone Head or Really Stupid roll ends the action (the declared action still counts as used this turn, no
- * turnover): the player stays where they are, prone if they were, and is distracted until their next activation.
+ * A failed Bone Head, Really Stupid or Unchannelled Fury roll ends the action (the declared action still counts as used
+ * this turn, no turnover): the player stays where they are, prone if they were; Bone Head and Really Stupid also
+ * distract them until their next activation.
  * Jump Up: stand up for free (no movement spent, no roll); a prone player declaring a Block stands up on an AG roll
  * with +1 instead (a failure ends the action, without a turnover).
  */
@@ -275,15 +280,18 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       }
       proc.stage = "confusion";
       state.lastCheck = null;
-      const check = confusionCheck(state, { ...player, at: squareOf(ctx, player) });
+      const check = confusionCheck(state, { ...player, at: squareOf(ctx, player) }, proc.action);
       if (check) ctx.push(check);
       return "continue";
     }
     if (proc.stage === "confusion") {
       if (failed(ctx)) {
-        const skill = state.lastCheck!.kind === "bonehead" ? "Bone Head" : "Really Stupid";
-        player.distracted = true;
-        ctx.emit({ type: "PlayerDistracted", playerId: player.id, skill });
+        const { kind } = state.lastCheck!;
+        if (kind === "fury") ctx.emit({ type: "ActionLost", playerId: player.id, skill: "Unchannelled Fury" });
+        else {
+          player.distracted = true;
+          ctx.emit({ type: "PlayerDistracted", playerId: player.id, skill: kind === "bonehead" ? "Bone Head" : "Really Stupid" });
+        }
         if (proc.stalling && player.status === "standing" && holdsBall(state, player)) ctx.push({ type: "Stalling", playerId: player.id });
         state.activePlayerId = null;
         return "done";

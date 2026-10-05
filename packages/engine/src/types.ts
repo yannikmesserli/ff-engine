@@ -186,6 +186,7 @@ export type CheckKind =
   | "jumpup"
   | "bonehead"
   | "reallystupid"
+  | "fury"
   | "dauntless"
   | "vomit"
   | "animosity"
@@ -243,7 +244,7 @@ export type Procedure =
   | {
       type: "MoveAction";
       playerId: string;
-      /** "confusion": after the Bone Head / Really Stupid roll, before standing up. */
+      /** "confusion": after the Bone Head / Really Stupid / Unchannelled Fury roll, before standing up. */
       stage: "start" | "confusion" | "standup" | "main";
       /** "block" only allows a single block; "blitz" a move with one block of `targetId` on the way. */
       action: PlayerActionType;
@@ -580,6 +581,8 @@ export type GameEvent =
   | { type: "SkillUsed"; playerId: string; skill: string }
   /** Failed a Bone Head or Really Stupid roll: the action is lost and the player is distracted. */
   | { type: "PlayerDistracted"; playerId: string; skill: string }
+  /** Failed an Unchannelled Fury roll: the action is lost, but the player keeps their tackle zone. */
+  | { type: "ActionLost"; playerId: string; skill: string }
   /** Regeneration worked: the casualty heals and the player goes to the reserves. */
   | { type: "Regenerated"; playerId: string }
   /** Always Hungry: the thrown player did not escape and is eaten (dead). */

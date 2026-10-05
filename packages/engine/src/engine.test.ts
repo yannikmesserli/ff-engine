@@ -778,6 +778,34 @@ describe("engine", () => {
       });
     });
 
+    describe("Unchannelled Fury", () => {
+      const fury = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Unchannelled Fury"] });
+
+      it("rolls after the declaration: 2+ for a Block or Blitz, 4+ otherwise", () => {
+        expect(find(apply(fury(), declare("home-2", "block")), "ROLL")?.reason).toBe("Unchannelled Fury 2+ (Home 2)");
+        expect(find(apply(fury(), declare("home-2", "blitz", "away-2")), "ROLL")?.reason).toBe("Unchannelled Fury 2+ (Home 2)");
+        expect(find(apply(fury(), startMove("home-2")), "ROLL")?.reason).toBe("Unchannelled Fury 4+ (Home 2)");
+        expect(find(apply(fury(), startMove("home-2"), roll(4)), "MOVE")).toBeDefined();
+      });
+
+      it("a failure loses the action without a turnover; the player keeps their tackle zone", () => {
+        let s = apply(fury(), declare("home-2", "blitz", "away-2"), roll(1));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        s = apply(s, { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "ActionLost", playerId: "home-2", skill: "Unchannelled Fury" });
+        expect(s.players["home-2"]).toMatchObject({ at: { x: 12, y: 7 }, activated: true, distracted: false });
+        expect([s.activeSide, s.activePlayerId]).toEqual(["home", null]);
+        expect(tackleZones(s, "away", { x: 13, y: 7 })).toBe(3);
+        expect(actionsOf(s, "home-4")).not.toContain("blitz");
+      });
+
+      it("a prone player who fails stays prone", () => {
+        const prone = edit(fury(), (c) => void (c.players["home-2"]!.status = "prone"));
+        const s = apply(prone, startMove("home-2"), roll(3), { type: "DECLINE_REROLL" });
+        expect(s.players["home-2"]).toMatchObject({ status: "prone", activated: true });
+      });
+    });
+
     describe("Jump Up", () => {
       const prone = (s: GameState, skills: string[] = ["Jump Up"]) =>
         edit(withSkills(s, { "home-1": skills }), (c) => void (c.players["home-1"]!.status = "prone"));

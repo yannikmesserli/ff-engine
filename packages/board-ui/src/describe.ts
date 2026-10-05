@@ -12,6 +12,7 @@ const CHECK_NAMES = {
   jumpup: "Jump Up roll",
   bonehead: "Bone Head roll",
   reallystupid: "Really Stupid roll",
+  fury: "Unchannelled Fury roll",
   dauntless: "Dauntless roll",
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
   animosity: "Animosity roll (a failure keeps the ball and ends the action)",
@@ -239,6 +240,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} uses ${e.skill}${SKILL_USES[e.skill] ? ` ${SKILL_USES[e.skill]}` : ""}.`;
     case "PlayerDistracted":
       return `${who(state, e.playerId)} fails the ${e.skill} roll: the action is lost, and they are distracted (no tackle zone) until their next action.`;
+    case "ActionLost":
+      return `${who(state, e.playerId)} fails the ${e.skill} roll and roars in rage: the action is lost.`;
     case "PlayerEaten":
       return `${who(state, e.byId)} eats ${who(state, e.playerId)}!`;
     case "Regenerated":

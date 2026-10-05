@@ -18,5 +18,5 @@ export const IMPLEMENTED_SKILLS: readonly string[] = [
   "Block", "Dodge", "Tackle", "Guard", "No Ball", "Dirty Player", "Sneaky Git", "Thick Skull", "Stunty", "Regeneration",
   "Loner", "Unsteady", "Mighty Blow", "Frenzy", "Pass", "Sure Hands", "Stand Firm", "Sidestep", "Catch", "Really Stupid",
   "Bone Head", "Jump Up", "Sprint", "Horns", "Dauntless", "Wrestle", "Juggernaut", "Projectile Vomit", "Animosity",
-  "Throw Team-mate", "Right Stuff", "Always Hungry",
+  "Throw Team-mate", "Right Stuff", "Always Hungry", "Unchannelled Fury",
 ];
