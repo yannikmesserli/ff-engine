@@ -12,6 +12,7 @@ const CHECK_NAMES = {
   jumpup: "Jump Up roll",
   bonehead: "Bone Head roll",
   reallystupid: "Really Stupid roll",
+  dauntless: "Dauntless roll",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -25,6 +26,7 @@ const SKILL_USES: Record<string, string> = {
   "Stand Firm": "and is not pushed back",
   Sidestep: "to choose where to be pushed",
   "Jump Up": "to stand up for free",
+  Dauntless: "and matches the defender's strength",
 };
 
 /** Display names of the weather conditions. */

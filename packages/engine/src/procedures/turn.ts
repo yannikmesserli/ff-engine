@@ -357,7 +357,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         attackerId: player.id,
         defenderId: target.id,
         blitz: proc.action === "blitz",
-        stage: proc.action === "blitz" ? "rush" : "roll",
+        stage: proc.action === "blitz" ? "rush" : "dauntless",
         dice,
         rerolled: false,
         chain: [],

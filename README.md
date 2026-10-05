@@ -103,8 +103,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   with +1 (a failure ends the action, no turnover).
 - Sprint: a third Rush.
 - Horns: +1 ST when blocking during a Blitz (Frenzy's second block too).
+- Dauntless: blocking a stronger player, D6 + ST must beat the defender's ST (team re-roll allowed) to match its
+  strength for the block; Horns and assists come on top.
 
-Not yet: most other skills (Kick, Wrestle, Juggernaut, Dauntless, Throw Team-mate / Right Stuff,
+Not yet: most other skills (Kick, Wrestle, Juggernaut, Throw Team-mate / Right Stuff,
 Always Hungry...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.

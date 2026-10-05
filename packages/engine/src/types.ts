@@ -185,7 +185,8 @@ export type CheckKind =
   | "loner"
   | "jumpup"
   | "bonehead"
-  | "reallystupid";
+  | "reallystupid"
+  | "dauntless";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -282,7 +283,9 @@ export type Procedure =
       blitz: boolean;
       /** Frenzy's second block against the same defender: there is no third one. */
       second?: boolean;
-      stage: "rush" | "rushResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "standFirm" | "push" | "followup" | "end";
+      /** Dauntless worked: the attacker's ST matches the defender's for this block. */
+      dauntless?: boolean;
+      stage: "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "standFirm" | "push" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];

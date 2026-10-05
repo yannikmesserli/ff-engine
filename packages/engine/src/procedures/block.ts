@@ -37,21 +37,32 @@ function assists(state: GameState, side: Side, target: Square, opponentId: strin
   }).length;
 }
 
-/** How a block is made, for its strength: during a Blitz (Horns). */
+/** How a block is made, for its strength: during a Blitz (Horns), after a successful Dauntless roll. */
 export interface BlockContext {
   blitz?: boolean;
+  dauntless?: boolean;
 }
 
-/** The attacker's strength before assists: Horns +1 during a Blitz. */
-function attackerStrength(attacker: PlayerState, { blitz = false }: BlockContext) {
-  return attacker.st + (blitz && hasSkill(attacker, "Horns") ? 1 : 0);
+/** The attacker's strength before assists: Dauntless raises it to the defender's ST, then Horns +1 during a Blitz. */
+function attackerStrength(attacker: PlayerState, defender: PlayerState, { blitz = false, dauntless = false }: BlockContext) {
+  const base = dauntless ? Math.max(attacker.st, defender.st) : attacker.st;
+  return base + (blitz && hasSkill(attacker, "Horns") ? 1 : 0);
+}
+
+/**
+ * Dauntless: against a stronger defender (but less than 6 ST stronger), D6 + ST must beat the defender's ST.
+ * Horns and assists do not count. Returns the D6 needed, or null when there is nothing to roll.
+ */
+export function dauntlessTarget(attacker: PlayerState, defender: PlayerState): number | null {
+  if (!hasSkill(attacker, "Dauntless") || attacker.st >= defender.st || attacker.st + 6 <= defender.st) return null;
+  return defender.st - attacker.st + 1;
 }
 
 /** Number of block dice: positive when the attacker chooses, negative when the defender does. */
 export function blockDice(state: GameState, attacker: PlayerState, defender: PlayerState, context: BlockContext = {}): number {
   if (!isOnPitch(attacker) || !isOnPitch(defender)) return 0;
   const extra = state.teams[attacker.side].extraAssist ? 1 : 0;
-  const a = attackerStrength(attacker, context) + assists(state, attacker.side, defender.at, defender.id, attacker.id) + extra;
+  const a = attackerStrength(attacker, defender, context) + assists(state, attacker.side, defender.at, defender.id, attacker.id) + extra;
   const d = defender.st + assists(state, defender.side, attacker.at, attacker.id, defender.id);
   if (a > 2 * d) return 3;
   if (a > d) return 2;
@@ -118,7 +129,7 @@ function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, 
   if (!adjacent(attacker.at).some((s) => sameSquare(s, defender.at))) return null;
   if (proc.blitz && attacker.movesUsed >= maxMoves(attacker)) return null;
   const dice = blockDice(state, attacker, defender, { blitz: proc.blitz });
-  return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: proc.blitz ? "rush" : "roll", dice, rerolled: false, chain: [] };
+  return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: proc.blitz ? "rush" : "dauntless", dice, rerolled: false, chain: [] };
 }
 
 /** Only the attacker's team may re-roll the block dice, once. */
@@ -152,7 +163,7 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
 }
 
 /**
- * One BB2025 block or blitz block: (Rush when blitzing) -> block dice -> re-roll ->
+ * One BB2025 block or blitz block: (Rush when blitzing) -> Dauntless -> block dice -> re-roll ->
  * choice of die -> pushback -> follow-up -> knock-downs -> loose ball -> touchdown check.
  */
 export const Block: Handler<P<"Block">> = {
@@ -176,6 +187,21 @@ export const Block: Handler<P<"Block">> = {
         if (state.lastCheck?.success === false) {
           ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
           return "done";
+        }
+        proc.stage = "dauntless";
+        return "continue";
+      case "dauntless": {
+        const target = dauntlessTarget(attacker, defender);
+        state.lastCheck = null;
+        proc.stage = "dauntlessResult";
+        if (target !== null) ctx.push({ type: "Check", kind: "dauntless", playerId: attacker.id, target, modifier: 0, stage: "roll", rerolled: false });
+        return "continue";
+      }
+      case "dauntlessResult":
+        if (state.lastCheck?.kind === "dauntless" && state.lastCheck.success) {
+          proc.dauntless = true;
+          proc.dice = blockDice(state, attacker, defender, { blitz: proc.blitz, dauntless: true });
+          ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Dauntless" });
         }
         proc.stage = "roll";
         return "continue";

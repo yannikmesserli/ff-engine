@@ -814,6 +814,33 @@ describe("engine", () => {
       expect(find(apply(s, declare("home-2", "blitz", "away-2")), "BLOCK")?.targets).toEqual([{ playerId: "away-2", dice: 2 }]);
       expect(find(apply(s, declare("home-2", "block")), "BLOCK")?.targets.find((t) => t.playerId === "away-2")?.dice).toBe(1);
     });
+
+    describe("Dauntless", () => {
+      const strongAway = (skills: string[]) => withSkills(toFirstTurn(team("Home"), team("Away", { st: 4 })), { "home-2": skills });
+
+      it("rolls D6 + ST against a stronger defender: beating its ST makes the block one die", () => {
+        let s = blockAway2(strongAway(["Dauntless"]));
+        expect(find(s, "ROLL")?.reason).toBe("Dauntless 2+ (Home 2)");
+        s = apply(s, roll(2));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Dauntless" });
+        expect(find(s, "ROLL")?.reason).toBe("Block (1 die)");
+      });
+
+      it("a failed roll can use a team re-roll, then the defender picks from 2 dice", () => {
+        const s = apply(blockAway2(strongAway(["Dauntless"])), roll(1));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        expect(find(apply(s, { type: "DECLINE_REROLL" }), "ROLL")?.reason).toBe("Block (2 dice, defender chooses)");
+      });
+
+      it("Horns adds to the matched strength during a Blitz", () => {
+        const s = apply(strongAway(["Dauntless", "Horns"]), declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" }, roll(2));
+        expect(find(s, "ROLL")?.reason).toBe("Block (2 dice)");
+      });
+
+      it("no roll against a weaker or equal defender", () => {
+        expect(find(blockAway2(withSkills(toFirstTurn(), { "home-2": ["Dauntless"] })), "ROLL")?.reason).toBe("Block (1 die)");
+      });
+    });
   });
 
   describe("standing up and stunned players", () => {
