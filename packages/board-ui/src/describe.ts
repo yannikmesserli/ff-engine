@@ -41,6 +41,7 @@ const SKILL_USES: Record<string, string> = {
   "Projectile Vomit": "",
   Stab: "",
   "Take Root": "and cannot be pushed",
+  Brawler: "to re-roll a Both Down",
 };
 
 /** Display names of the weather conditions. */

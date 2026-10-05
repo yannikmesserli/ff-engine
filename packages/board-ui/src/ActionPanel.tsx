@@ -186,6 +186,9 @@ export function ActionPanel(props: ActionPanelProps) {
         {blockDie && has("USE_REROLL") && (
           <button onClick={() => dispatch({ type: "USE_REROLL" })}>Re-roll the dice</button>
         )}
+        {main.type !== "USE_SKILL" && findTemplate(templates, "USE_SKILL")?.skill === "Brawler" && (
+          <button onClick={() => dispatch({ type: "USE_SKILL", use: true })}>Re-roll a Both Down (Brawler)</button>
+        )}
         {main.type === "USE_REROLL" && (
           <>
             <button onClick={() => dispatch({ type: "USE_REROLL" })}>{main.skill ? `Re-roll (${main.skill})` : `Re-roll (${main.available} left)`}</button>

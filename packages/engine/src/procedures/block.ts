@@ -212,6 +212,32 @@ function wrestle(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
 /** Only the attacker's team may re-roll the block dice, once. */
 const canReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState) => canTeamReroll(state, attacker.side, proc.rerolled);
 
+/** The face of a Both Down on the block dice. */
+const BOTH_DOWN_FACE = BLOCK_FACES.indexOf("both_down") + 1;
+
+/**
+ * Brawler: once per activation, not during a Blitz, the attacker may re-roll a single Both Down die instead of the
+ * block re-roll.
+ */
+const canBrawl = (proc: P<"Block">, attacker: PlayerState) =>
+  !proc.rerolled && !proc.blitz && hasSkill(attacker, "Brawler") && !attacker.usedSkills.includes("Brawler") && proc.results!.includes(BOTH_DOWN_FACE);
+
+/** Any re-roll the attacker could use on the block dice now. */
+const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState) => canReroll(state, proc, attacker) || canBrawl(proc, attacker);
+
+/** The USE_SKILL template offering Brawler, if it can be used. */
+const brawlerTemplate = (proc: P<"Block">, attacker: PlayerState) =>
+  canBrawl(proc, attacker) ? [{ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill: "Brawler" }] : [];
+
+/** Use Brawler: the re-roll of one Both Down die comes next. */
+function brawl(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
+  if (!canBrawl(proc, attacker)) ctx.reject("Brawler cannot be used now.");
+  attacker.usedSkills.push("Brawler");
+  ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Brawler" });
+  proc.rerolled = true;
+  proc.stage = "brawler";
+}
+
 /** Spend the team re-roll; a Loner attacker must roll for it first. */
 function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
   useTeamReroll(ctx, attacker.side);
@@ -286,14 +312,24 @@ export const Block: Handler<P<"Block">> = {
         if (action === null) return "wait";
         proc.results = ctx.roll(action, [{ kind: "block", count: Math.abs(proc.dice) }], "Block");
         // The attacker may re-roll from the choice of die; when the defender chooses, the re-roll is decided first.
-        proc.stage = proc.dice < 0 && canReroll(state, proc, attacker) ? "reroll" : "choose";
+        proc.stage = proc.dice < 0 && anyReroll(state, proc, attacker) ? "reroll" : "choose";
         return "continue";
       }
       case "reroll": {
         if (action === null) return "wait";
-        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
-        if (a.type === "USE_REROLL") useReroll(ctx, proc, attacker);
-        else proc.stage = "choose";
+        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
+        if (a.type === "USE_SKILL" && a.use) brawl(ctx, proc, attacker);
+        else if (a.type === "USE_REROLL") {
+          if (!canReroll(state, proc, attacker)) ctx.reject("No re-roll available.");
+          useReroll(ctx, proc, attacker);
+        } else proc.stage = "choose";
+        return "continue";
+      }
+      case "brawler": {
+        if (action === null) return "wait";
+        const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], "Brawler");
+        proc.results![proc.results!.indexOf(BOTH_DOWN_FACE)] = die!;
+        proc.stage = "choose";
         return "continue";
       }
       case "loner":
@@ -303,10 +339,15 @@ export const Block: Handler<P<"Block">> = {
         return "continue";
       case "choose": {
         // A single die without a possible re-roll leaves nothing to decide.
-        if (proc.results!.length === 1 && !canReroll(state, proc, attacker)) proc.face = proc.results![0]!;
+        if (proc.results!.length === 1 && !(proc.dice > 0 && anyReroll(state, proc, attacker))) proc.face = proc.results![0]!;
         else {
           if (action === null) return "wait";
-          const a = ctx.expect(action, "CHOOSE_BLOCK_DIE", "USE_REROLL");
+          const a = ctx.expect(action, "CHOOSE_BLOCK_DIE", "USE_REROLL", "USE_SKILL");
+          if (a.type === "USE_SKILL") {
+            if (proc.dice < 0) ctx.reject("The defender chooses the die.");
+            if (a.use) brawl(ctx, proc, attacker);
+            return "continue";
+          }
           if (a.type === "USE_REROLL") {
             if (proc.dice < 0 || !canReroll(state, proc, attacker)) ctx.reject("No re-roll available.");
             useReroll(ctx, proc, attacker);
@@ -453,18 +494,21 @@ export const Block: Handler<P<"Block">> = {
         return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: Math.abs(proc.dice) }], reason: `Block (${Math.abs(proc.dice)} ${proc.dice < 0 ? "dice, defender chooses" : Math.abs(proc.dice) > 1 ? "dice" : "die"})` }];
       case "reroll":
         return [
-          { type: "USE_REROLL", side: attacker.side, available: rerollsLeft(state, attacker.side) },
+          ...(canReroll(state, proc, attacker) ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }] : []),
+          ...brawlerTemplate(proc, attacker),
           { type: "DECLINE_REROLL", side: attacker.side },
         ];
       case "loner":
         return [lonerRollTemplate(attacker)];
+      case "brawler":
+        return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: "Brawler (re-roll a Both Down)" }];
       case "choose": {
         const chooser = proc.dice > 0 ? attacker.side : defender.side;
         const reroll =
           proc.dice > 0 && canReroll(state, proc, attacker)
             ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }]
             : [];
-        return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll];
+        return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll, ...(proc.dice > 0 ? brawlerTemplate(proc, attacker) : [])];
       }
       case "juggernaut":
         return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Juggernaut" }];

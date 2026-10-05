@@ -149,6 +149,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   without armour, a casualty is only Badly Hurt. Biting nobody is a turnover, and the player loses their tackle zone and
   drops the ball.
 - Defensive: in the opposing team's turn (not during a Charge), players marked by this player cannot use Guard.
+- Brawler: once per activation, not during a Blitz, the attacker may re-roll a single Both Down die instead of the
+  block re-roll (no team re-roll is spent).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

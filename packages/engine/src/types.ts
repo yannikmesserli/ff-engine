@@ -341,7 +341,7 @@ export type Procedure =
       dauntless?: boolean;
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
-      stage: "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "followup" | "end";
+      stage: "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "brawler" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];

@@ -1023,6 +1023,34 @@ describe("engine", () => {
       expect(dice(withSkills(s, { "home-2": ["Defensive"] }))).toBe(2);
     });
 
+    describe("Brawler", () => {
+      const brawler = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Brawler"] });
+
+      it("re-rolls a single Both Down die instead of the team re-roll, once per activation", () => {
+        let s = apply(blockAway2(brawler()), roll(2));
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Brawler" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(find(s, "ROLL")?.reason).toBe("Brawler (re-roll a Both Down)");
+        s = apply(s, roll(3));
+        expect(s.log).toContainEqual({ type: "BlockResult", attackerId: "home-2", defenderId: "away-2", face: 3 });
+        expect(s.teams.home.rerolls).toBe(1);
+        expect(s.players["home-2"]!.usedSkills).toContain("Brawler");
+      });
+
+      it("only on a Both Down, and not during a Blitz", () => {
+        expect(find(apply(blockAway2(brawler()), roll(3)), "USE_SKILL")).toBeUndefined();
+        const blitz = apply(brawler(), declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" }, roll(2));
+        expect(find(blitz, "USE_SKILL")).toBeUndefined();
+      });
+
+      it("is offered before the defender chooses from several dice", () => {
+        const strong = brawler(toFirstTurn(team("Home"), team("Away", { st: 4 })));
+        const s = apply(blockAway2(strong), roll(2, 6));
+        expect(types(s)).toEqual(["USE_REROLL", "USE_SKILL", "DECLINE_REROLL"]);
+        expect(apply(s, { type: "USE_SKILL", use: true }, roll(1)).stack.at(-1)).toMatchObject({ results: [1, 6] });
+      });
+    });
+
     describe("Take Root", () => {
       const rooted = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Take Root"] });
 
