@@ -101,8 +101,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   catch, intercept, assist, or use Stand Firm / Sidestep.
 - Jump Up: stand up for free (no movement, no 4+ roll); a prone player may declare a Block, standing up on an AG roll
   with +1 (a failure ends the action, no turnover).
+- Sprint: a third Rush.
 
-Not yet: most other skills (Kick, Wrestle, Juggernaut, Horns, Dauntless, Sprint, Throw Team-mate / Right Stuff,
+Not yet: most other skills (Kick, Wrestle, Juggernaut, Horns, Dauntless, Throw Team-mate / Right Stuff,
 Always Hungry...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.

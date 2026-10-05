@@ -5,7 +5,7 @@ import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { hasSkill, skillValue } from "../skills";
 import { canTeamReroll, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll, weatherModifier } from "./helpers";
-import { RUSH_SQUARES, RUSH_TARGET } from "./turn";
+import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -106,7 +106,7 @@ function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, 
   if (face !== "push" && face !== "defender_stumbles") return null;
   if (!isOnPitch(attacker) || !hasTackleZone(attacker) || !isOnPitch(defender) || defender.status !== "standing") return null;
   if (!adjacent(attacker.at).some((s) => sameSquare(s, defender.at))) return null;
-  if (proc.blitz && attacker.movesUsed >= attacker.ma + RUSH_SQUARES) return null;
+  if (proc.blitz && attacker.movesUsed >= maxMoves(attacker)) return null;
   const dice = blockDice(state, attacker, defender);
   return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: proc.blitz ? "rush" : "roll", dice, rerolled: false, chain: [] };
 }

@@ -800,6 +800,13 @@ describe("engine", () => {
         expect(find(s, "BLOCK")?.targets.map((t) => t.playerId)).toEqual(["away-1", "away-2"]);
       });
     });
+
+    it("Sprint allows a third Rush", () => {
+      const rushes = (skills: string[]) =>
+        apply(withSkills(toFirstTurn(), { "home-11": skills }), startMove("home-11"), ...HOME_11_FULL_MOVE, ...move({ x: 1, y: 14 }), roll(2), ...move({ x: 0, y: 14 }), roll(2));
+      expect(find(rushes([]), "MOVE")).toBeUndefined();
+      expect(find(rushes(["Sprint"]), "MOVE")?.squares).toContainEqual({ x: 0, y: 13, rolls: ["rush"] });
+    });
   });
 
   describe("standing up and stunned players", () => {

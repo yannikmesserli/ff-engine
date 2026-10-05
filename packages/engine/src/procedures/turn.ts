@@ -12,8 +12,10 @@ type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
 /** Secure the Ball picks up the ball on this roll instead of the player's AG. */
 export const SECURE_TARGET = 2;
-/** Squares a player may Rush beyond their MA. */
+/** Squares a player may Rush beyond their MA (Sprint: one more). */
 export const RUSH_SQUARES = 2;
+/** MA plus the Rushes the player may make: Sprint adds a third Rush. */
+export const maxMoves = (player: PlayerState) => player.ma + RUSH_SQUARES + (hasSkill(player, "Sprint") ? 1 : 0);
 export const RUSH_TARGET = 2;
 /** Movement spent standing up (all of it for players with less MA). */
 export const STAND_UP_COST = 3;
@@ -71,7 +73,7 @@ const jumpModifier = (state: GameState, player: PlayerState, from: Square, to: S
 /** Squares a player in a Move action may step (or jump) to, with the rolls each move requires. */
 export function legalMoves(state: GameState, player: PlayerState): Array<Square & { rolls: CheckKind[]; jump?: boolean }> {
   if (!isOnPitch(player) || player.status !== "standing") return [];
-  const left = player.ma + RUSH_SQUARES - player.movesUsed;
+  const left = maxMoves(player) - player.movesUsed;
   if (left <= 0) return [];
   const { ball } = state;
   const pickup = (s: Square): CheckKind[] => (ball.square && !ball.carried && sameSquare(ball.square, s) ? ["pickup"] : []);
@@ -428,7 +430,7 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
   const player = state.players[proc.playerId]!;
   if (proc.blocked || player.status !== "standing") return [];
   if (proc.action === "block") return adjacentTargets(state, player);
-  if (proc.action !== "blitz" || player.movesUsed >= player.ma + RUSH_SQUARES) return [];
+  if (proc.action !== "blitz" || player.movesUsed >= maxMoves(player)) return [];
   return adjacentTargets(state, player).filter((t) => t.id === proc.targetId);
 }
 
