@@ -8,7 +8,8 @@ pnpm build    # typecheck + production build
 ```
 
 Pick the home and away teams from `@bb/data`'s example teams, or load any team JSON file (format in
-`packages/data/README.md`). "New game" restarts with the current teams.
+`packages/data/README.md`). "New game" restarts with the current teams. The team pickers and "New game" are disabled
+while a game is in progress (from the first roll until the game ends; undoing back to the start enables them again).
 
 ## Query parameters
 

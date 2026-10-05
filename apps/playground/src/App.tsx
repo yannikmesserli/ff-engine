@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BloodBowlGame } from "@bb/board-ui";
+import type { GameState } from "@bb/engine";
 import { exampleTeams } from "@bb/data";
 
 const TEAM_KEYS = Object.keys(exampleTeams);
@@ -13,12 +14,12 @@ function parseSeed(param: string | null): number | undefined {
 }
 
 /** Pick an example team, or load any team JSON file (format in packages/data/README.md). */
-function TeamPicker(props: { label: string; value: unknown; onChange(team: unknown): void }) {
+function TeamPicker(props: { label: string; value: unknown; disabled: boolean; onChange(team: unknown): void }) {
   const key = TEAM_KEYS.find((k) => exampleTeams[k] === props.value) ?? "";
   return (
     <label>
       {props.label}{" "}
-      <select value={key} onChange={(e) => props.onChange(exampleTeams[e.target.value])}>
+      <select value={key} disabled={props.disabled} onChange={(e) => props.onChange(exampleTeams[e.target.value])}>
         {!key && <option value="">(custom file)</option>}
         {TEAM_KEYS.map((k) => (
           <option key={k} value={k}>
@@ -29,6 +30,7 @@ function TeamPicker(props: { label: string; value: unknown; onChange(team: unkno
       <input
         type="file"
         accept="application/json"
+        disabled={props.disabled}
         onChange={async (e) => {
           const file = e.target.files?.[0];
           if (file) props.onChange(JSON.parse(await file.text()));
@@ -38,19 +40,43 @@ function TeamPicker(props: { label: string; value: unknown; onChange(team: unkno
   );
 }
 
-/** Two team pickers and a "New game" button above the game; each new game gets fresh random dice. */
+/** The game has started (the first roll, the fan factor, is made) and is not over yet. */
+const inProgress = (state: GameState) => !state.finished && state.log.some((e) => e.type === "DiceRolled");
+
+/**
+ * Two team pickers and a "New game" button above the game; each new game gets fresh random dice. They are disabled
+ * while a game is in progress (undoing back to the first roll enables them again).
+ */
 export function App() {
   const [home, setHome] = useState<unknown>(exampleTeams["human"]);
   const [away, setAway] = useState<unknown>(exampleTeams["orc"]);
   const [gameId, setGameId] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const locked = playing ? "Finish the game first (or reload the page)" : undefined;
   return (
     <main>
       <header>
-        <TeamPicker label="Home" value={home} onChange={setHome} />
-        <TeamPicker label="Away" value={away} onChange={setAway} />
-        <button onClick={() => setGameId((n) => n + 1)}>New game</button>
+        <TeamPicker label="Home" value={home} disabled={playing} onChange={setHome} />
+        <TeamPicker label="Away" value={away} disabled={playing} onChange={setAway} />
+        <button
+          disabled={playing}
+          title={locked}
+          onClick={() => {
+            setGameId((n) => n + 1);
+            setPlaying(false);
+          }}
+        >
+          New game
+        </button>
       </header>
-      <BloodBowlGame key={gameId} home={home} away={away} assetsUrl="/img" seed={gameId === 0 ? SEED : undefined} />
+      <BloodBowlGame
+        key={gameId}
+        home={home}
+        away={away}
+        assetsUrl="/img"
+        seed={gameId === 0 ? SEED : undefined}
+        onChange={(state) => setPlaying(inProgress(state))}
+      />
     </main>
   );
 }
