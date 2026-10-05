@@ -118,6 +118,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
     }
     case "BLOCK":
       return { type: "BLOCK", targetId: pick(t.targets).playerId };
+    case "VOMIT":
+      return { type: "VOMIT", targetId: pick(t.targetIds) };
     case "CHOOSE_BLOCK_DIE":
       return { type: "CHOOSE_BLOCK_DIE", index: Math.floor(random() * t.results.length) };
     case "PUSH":

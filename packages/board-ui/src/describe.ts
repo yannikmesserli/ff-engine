@@ -13,6 +13,7 @@ const CHECK_NAMES = {
   bonehead: "Bone Head roll",
   reallystupid: "Really Stupid roll",
   dauntless: "Dauntless roll",
+  vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -29,6 +30,7 @@ const SKILL_USES: Record<string, string> = {
   Dauntless: "and matches the defender's strength",
   Wrestle: "and takes both players down",
   Juggernaut: "to turn Both Down into a Push",
+  "Projectile Vomit": "",
 };
 
 /** Display names of the weather conditions. */

@@ -186,7 +186,8 @@ export type CheckKind =
   | "jumpup"
   | "bonehead"
   | "reallystupid"
-  | "dauntless";
+  | "dauntless"
+  | "vomit";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -303,6 +304,18 @@ export type Procedure =
       bounceFrom?: Square;
     }
   | { type: "Crowd"; playerId: string; from: Square; hadBall: boolean }
+  /** Projectile Vomit on an adjacent opponent, instead of a block. */
+  | {
+      type: "Vomit";
+      attackerId: string;
+      defenderId: string;
+      blitz: boolean;
+      stage: "rush" | "rushResult" | "roll" | "result" | "armour" | "injury";
+      /** Who the vomit hits: the defender, or the attacker after a failed roll. */
+      victimId?: string;
+      /** The victim held the ball when placed prone. */
+      dropped?: boolean;
+    }
   /** The crowd throws a rock at a stalling ball carrier. */
   | { type: "Stalling"; playerId: string }
   | {
@@ -404,6 +417,8 @@ export type Action =
   /** Activate a player and declare an action; a Blitz names its target up front (BB2025). */
   | { type: "START_ACTION"; playerId: string; action: PlayerActionType; targetId?: string }
   | { type: "BLOCK"; targetId: string }
+  /** Projectile Vomit on an adjacent opponent instead of blocking them. */
+  | { type: "VOMIT"; targetId: string }
   /** Pick one of the rolled block dice (index into the results). */
   | { type: "CHOOSE_BLOCK_DIE"; index: number }
   | { type: "PUSH"; square: Square }
@@ -448,6 +463,7 @@ export type ActionTemplate =
   | { type: "START_ACTION"; side: Side; choices: Array<{ playerId: string; actions: PlayerActionType[] }>; blitzTargets: string[] }
   /** Block targets with the number of block dice (negative: the defender chooses). */
   | { type: "BLOCK"; side: Side; playerId: string; targets: Array<{ playerId: string; dice: number }> }
+  | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "CHOOSE_BLOCK_DIE"; side: Side; results: number[] }
   | { type: "PUSH"; side: Side; playerId: string; squares: Square[] }
   | { type: "FOLLOW_UP"; side: Side; playerId: string; square: Square }

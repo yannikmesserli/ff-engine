@@ -194,6 +194,11 @@ export function ActionPanel(props: ActionPanelProps) {
             formations={state.stack.at(-1)?.type === "Setup"}
           />
         )}
+        {findTemplate(templates, "VOMIT")?.targetIds.map((id) => (
+          <button key={id} onClick={() => dispatch({ type: "VOMIT", targetId: id })}>
+            Vomit on {state.players[id]!.name}
+          </button>
+        ))}
         {has("END_PLAYER_ACTION") && <button onClick={() => dispatch({ type: "END_PLAYER_ACTION" })}>End action</button>}
         {(has("END_TURN") || has("END_PLAYER_ACTION")) && (
           <button

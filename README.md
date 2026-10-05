@@ -109,6 +109,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   rolls and no turnover unless the moving team's ball carrier goes down; the attacker's action ends.
 - Juggernaut (Blitz only): the attacker's coach may turn Both Down into a Push, and the defender's Stand Firm and
   Wrestle do not work.
+- Projectile Vomit: instead of a block (a Blitz pays the square), 2+ hits the opponent, a failure the vomiting
+  player (team re-roll allowed); armour without modifiers, placed prone and injury if broken; the action ends, no
+  turnover unless the moving team's ball carrier drops the ball.
 
 Not yet: most other skills (Kick, Throw Team-mate / Right Stuff,
 Always Hungry...), inducements, overtime.

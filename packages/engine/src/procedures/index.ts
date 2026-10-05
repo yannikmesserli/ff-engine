@@ -1,6 +1,6 @@
 import type { HandlerMap } from "../context";
 import { Bounce, Catch, ThrowIn, Touchback } from "./ball";
-import { Block, Crowd } from "./block";
+import { Block, Crowd, Vomit } from "./block";
 import { HandOff, Pass } from "./pass";
 import { Foul } from "./foul";
 import { Check, KnockDown } from "./checks";
@@ -34,6 +34,7 @@ export const handlers: HandlerMap = {
   MoveAction,
   MoveStep,
   Block,
+  Vomit,
   Crowd,
   Pass,
   HandOff,

@@ -901,6 +901,47 @@ describe("engine", () => {
         expect(types(s)).not.toContain("USE_SKILL");
       });
     });
+
+    describe("Projectile Vomit", () => {
+      const vomiter = (skills = ["Projectile Vomit"]) => withSkills(toFirstTurn(), { "home-2": skills });
+      const vomit = (s: GameState) => apply(s, declare("home-2", "block"), { type: "VOMIT", targetId: "away-2" });
+
+      it("replaces a block: 2+ hits the target, armour without modifiers, placed prone if broken", () => {
+        let s = apply(vomiter(), declare("home-2", "block"));
+        expect(find(s, "VOMIT")?.targetIds).toEqual(["away-1", "away-2", "away-3"]);
+        s = apply(s, { type: "VOMIT", targetId: "away-2" });
+        expect(find(s, "ROLL")?.reason).toBe("Projectile Vomit 2+ (Home 2)");
+        s = apply(s, roll(2));
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 2, vomit)");
+        s = apply(s, roll(4, 4), roll(2, 3));
+        expect(s.players["away-2"]).toMatchObject({ at: { x: 13, y: 7 }, status: "stunned" });
+        expect([s.activeSide, top(s).type]).toEqual(["home", "Turn"]);
+      });
+
+      it("Mighty Blow does not help, and a held armour leaves the target standing", () => {
+        const s = apply(vomit(vomiter(["Projectile Vomit", "Mighty Blow"])), roll(2), roll(4, 3));
+        expect(s.log).toContainEqual({ type: "ArmourHeld", playerId: "away-2", roll: 7 });
+        expect(s.players["away-2"]!.status).toBe("standing");
+      });
+
+      it("a failed roll hits the vomiting player, without a turnover", () => {
+        let s = apply(vomit(vomiter()), roll(1));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        s = apply(s, { type: "DECLINE_REROLL" });
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Home 2, vomit)");
+        s = apply(s, roll(5, 4), roll(2, 2));
+        expect(s.players["home-2"]!.status).toBe("stunned");
+        expect(s.activeSide).toBe("home");
+      });
+
+      it("during a Blitz it costs a square and ends the action", () => {
+        let s = withSkills(toFirstTurn(), { "home-4": ["Projectile Vomit"] });
+        s = apply(s, declare("home-4", "blitz", "away-4"), ...move({ x: 11, y: 4 }, { x: 12, y: 4 }, { x: 13, y: 4 }, { x: 14, y: 4 }), { type: "VOMIT", targetId: "away-4" });
+        expect(s.players["home-4"]!.movesUsed).toBe(5);
+        s = apply(s, roll(2), roll(2, 2));
+        expect([s.activePlayerId, top(s).type]).toEqual([null, "Turn"]);
+      });
+    });
   });
 
   describe("standing up and stunned players", () => {

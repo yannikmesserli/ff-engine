@@ -484,3 +484,85 @@ export const Crowd: Handler<P<"Crowd">> = {
     return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason: `Injury (${state.players[proc.playerId]!.name} pushed into the crowd)` }];
   },
 };
+
+/** Projectile Vomit hits on 2+. */
+export const VOMIT_TARGET = 2;
+
+/**
+ * Projectile Vomit, instead of a block (during a Blitz it costs a square, a Rush if needed): 2+ hits the defender,
+ * a failure hits the vomiting player. The victim rolls armour without any modifier; if it breaks, they are placed
+ * prone and roll for injury. Not a turnover, unless the moving team's ball carrier drops the ball.
+ */
+export const Vomit: Handler<P<"Vomit">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const attacker = getPlayer(ctx, proc.attackerId);
+    switch (proc.stage) {
+      case "rush": {
+        const needsRush = attacker.movesUsed >= attacker.ma;
+        attacker.movesUsed += 1;
+        state.lastCheck = null;
+        proc.stage = "rushResult";
+        if (needsRush) {
+          ctx.push({ type: "Check", kind: "rush", playerId: attacker.id, target: RUSH_TARGET, modifier: weatherModifier(state, "rush"), stage: "roll", rerolled: false });
+        }
+        return "continue";
+      }
+      case "rushResult":
+        if (state.lastCheck?.success === false) {
+          ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+          return "done";
+        }
+        proc.stage = "roll";
+        return "continue";
+      case "roll":
+        state.lastCheck = null;
+        ctx.push({ type: "Check", kind: "vomit", playerId: attacker.id, target: VOMIT_TARGET, modifier: 0, stage: "roll", rerolled: false });
+        proc.stage = "result";
+        return "continue";
+      case "result":
+        ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Projectile Vomit" });
+        proc.victimId = state.lastCheck?.success ? proc.defenderId : attacker.id;
+        state.lastCheck = null;
+        proc.stage = "armour";
+        return "continue";
+      case "armour": {
+        if (action === null) return "wait";
+        const victim = getPlayer(ctx, proc.victimId!);
+        const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], `Armour ${victim.av}+ (vomit)`);
+        const roll = a! + b!;
+        if (roll < victim.av) {
+          ctx.emit({ type: "ArmourHeld", playerId: victim.id, roll });
+          return "done";
+        }
+        ctx.emit({ type: "ArmourBroken", playerId: victim.id, roll });
+        const carrying = ballCarrier(state)?.id === victim.id;
+        victim.status = "prone";
+        ctx.emit({ type: "PlayerPlacedProne", playerId: victim.id });
+        if (carrying) {
+          state.ball.carried = false;
+          proc.dropped = true;
+          if (victim.side === state.activeSide) state.turnover = true;
+        }
+        proc.stage = "injury";
+        return "continue";
+      }
+      case "injury": {
+        if (action === null) return "wait";
+        const victim = getPlayer(ctx, proc.victimId!);
+        const square = squareOf(ctx, victim);
+        const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury");
+        // The ball bounces once the injury is resolved.
+        if (proc.dropped) ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+        injure(ctx, victim, a! + b!);
+        return "done";
+      }
+    }
+  },
+  actions(state, proc) {
+    if (proc.stage !== "armour" && proc.stage !== "injury") return [];
+    const victim = state.players[proc.victimId!]!;
+    const reason = proc.stage === "armour" ? `Armour ${victim.av}+ (${victim.name}, vomit)` : `Injury (${victim.name})`;
+    return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason }];
+  },
+};

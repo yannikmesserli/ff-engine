@@ -323,7 +323,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         foulOptions(state, proc).length === 0);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "THROW", "HAND_OFF", "FOUL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "THROW", "HAND_OFF", "FOUL", "END_PLAYER_ACTION");
     if (a.type === "END_PLAYER_ACTION") return endActivation(ctx, proc, player);
     if (a.type === "THROW") {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
@@ -343,6 +343,15 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       if (!handOffOptions(state, proc).some((p) => p.id === a.targetId)) ctx.reject("Cannot hand off to this player.");
       proc.finished = true;
       ctx.push({ type: "HandOff", throwerId: player.id, catcherId: a.targetId, stage: "catch" });
+      return "continue";
+    }
+    if (a.type === "VOMIT") {
+      if (!vomitTargets(state, proc).some((t) => t.id === a.targetId)) ctx.reject("Cannot vomit on this player.");
+      proc.blocked = true;
+      // The vomit ends the action, even during a Blitz.
+      proc.finished = true;
+      const blitz = proc.action === "blitz";
+      ctx.push({ type: "Vomit", attackerId: player.id, defenderId: a.targetId, blitz, stage: blitz ? "rush" : "roll" });
       return "continue";
     }
     if (a.type === "BLOCK") {
@@ -372,12 +381,14 @@ export const MoveAction: Handler<P<"MoveAction">> = {
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
     const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
+    const vomits = vomitTargets(state, proc).map((t) => t.id);
     const throws = throwOptions(state, proc);
     const handOffs = handOffOptions(state, proc).map((p) => p.id);
     const fouls = foulOptions(state, proc);
     return [
       ...(proc.action === "block" ? [] : [{ type: "MOVE" as const, side: player.side, playerId: player.id, squares: legalMoves(state, player) }]),
       ...(targets.length > 0 ? [{ type: "BLOCK" as const, side: player.side, playerId: player.id, targets }] : []),
+      ...(vomits.length > 0 ? [{ type: "VOMIT" as const, side: player.side, playerId: player.id, targetIds: vomits }] : []),
       ...(throws.length > 0 ? [{ type: "THROW" as const, side: player.side, playerId: player.id, squares: throws }] : []),
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
       ...(fouls.length > 0 ? [{ type: "FOUL" as const, side: player.side, playerId: player.id, targets: fouls }] : []),
@@ -433,6 +444,10 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
   if (proc.action !== "blitz" || player.movesUsed >= maxMoves(player)) return [];
   return adjacentTargets(state, player).filter((t) => t.id === proc.targetId);
 }
+
+/** Projectile Vomit can replace any block the player could make now. */
+const vomitTargets = (state: GameState, proc: P<"MoveAction">) =>
+  hasSkill(state.players[proc.playerId]!, "Projectile Vomit") ? activationTargets(state, proc) : [];
 
 /** Step a player (and the ball they carry) to an adjacent square, spending one square of movement. */
 function movePlayer(ctx: Ctx, player: PlayerState, to: Square, squares = 1) {
