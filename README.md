@@ -148,6 +148,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
   before passing, handing off or scoring, the player bites an adjacent Thrall team-mate: placed prone, injury roll
   without armour, a casualty is only Badly Hurt. Biting nobody is a turnover, and the player loses their tackle zone and
   drops the ball.
+- Defensive: in the opposing team's turn (not during a Charge), players marked by this player cannot use Guard.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

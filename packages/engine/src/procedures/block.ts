@@ -22,14 +22,26 @@ const COMPASS: Square[] = [
 ];
 
 /**
+ * Defensive: in the opposing team's turn (not during a Charge), a player with Guard marked by an opponent with
+ * Defensive cannot use Guard.
+ */
+function guardCancelled(state: GameState, helper: PlayerState & { at: Square }): boolean {
+  if (state.activeSide !== helper.side || state.stack.some((p) => p.type === "Turn" && p.charge)) return false;
+  return adjacent(helper.at).some((n) => {
+    const marker = tackleZoneAt(state, n);
+    return marker !== undefined && marker.side !== helper.side && hasSkill(marker, "Defensive");
+  });
+}
+
+/**
  * Assists for `side` against the opponent standing on `target`: team-mates next to it exerting a tackle zone (except
- * `excludeId`) that are not marked by any other opponent, or that have Guard.
+ * `excludeId`) that are not marked by any other opponent, or that have Guard (unless Defensive cancels it).
  */
 function assists(state: GameState, side: Side, target: Square, opponentId: string, excludeId: string): number {
   return adjacent(target).filter((s) => {
     const helper = tackleZoneAt(state, s);
     if (!helper || helper.side !== side || helper.id === excludeId) return false;
-    if (hasSkill(helper, "Guard")) return true;
+    if (hasSkill(helper, "Guard") && !guardCancelled(state, { ...helper, at: s })) return true;
     return adjacent(s).every((n) => {
       const marker = tackleZoneAt(state, n);
       return !marker || marker.side === side || marker.id === opponentId;

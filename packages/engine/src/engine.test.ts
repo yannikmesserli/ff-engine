@@ -1012,6 +1012,17 @@ describe("engine", () => {
       });
     });
 
+    it("Defensive: in the opponent's turn, players it marks cannot use Guard", () => {
+      // home-6 at (14,6), next to away-2 and marked by away-1 and away-6: only Guard lets it assist.
+      const s = withSkills(place(toFirstTurn(), { "home-6": { x: 14, y: 6 } }), { "home-6": ["Guard"] });
+      const dice = (state: GameState) => find(apply(state, declare("home-2", "block")), "BLOCK")?.targets.find((t) => t.playerId === "away-2")?.dice;
+      expect(dice(s)).toBe(2);
+      expect(dice(withSkills(s, { "away-1": ["Defensive"] }))).toBe(1);
+      // The defender's own Defensive counts too, but a team-mate of the guard does not.
+      expect(dice(withSkills(s, { "away-2": ["Defensive"] }))).toBe(1);
+      expect(dice(withSkills(s, { "home-2": ["Defensive"] }))).toBe(2);
+    });
+
     describe("Take Root", () => {
       const rooted = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Take Root"] });
 
