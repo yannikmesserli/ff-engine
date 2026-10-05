@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
-import { adjacent, ballCarrier, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
+import { adjacent, ballCarrier, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice } from "./block";
 import { handOffTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
@@ -73,6 +73,20 @@ function jumpSquares(state: GameState, player: PlayerState & { at: Square }): Sq
 /** Jump roll modifier: -1 per tackle zone on the square left or the one landed in, whichever has more. */
 const jumpModifier = (state: GameState, player: PlayerState, from: Square, to: Square) =>
   -Math.max(tackleZones(state, player.side, from), tackleZones(state, player.side, to));
+
+/**
+ * Dodge roll modifier: -1 per opponent's tackle zone on the square moved to (none for Stunty; Titchy opponents do not
+ * count), +1 for a Titchy player.
+ */
+export function dodgeModifier(state: GameState, player: PlayerState, to: Square): number {
+  const zones = hasSkill(player, "Stunty")
+    ? 0
+    : adjacent(to).filter((s) => {
+        const marker = tackleZoneAt(state, s);
+        return marker !== undefined && marker.side !== player.side && !hasSkill(marker, "Titchy");
+      }).length;
+  return -zones + (hasSkill(player, "Titchy") ? 1 : 0);
+}
 
 /** Squares a player in a Move action may step (or jump) to, with the rolls each move requires. */
 export function legalMoves(state: GameState, player: PlayerState): Array<Square & { rolls: CheckKind[]; jump?: boolean }> {
@@ -526,8 +540,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         if (proc.jump) {
           check("jump", player.ag, jumpModifier(state, player, squareOf(ctx, player), proc.to));
         } else if (tackleZones(state, player.side, squareOf(ctx, player)) > 0) {
-          // Stunty: tackle zones on the square moved to do not count.
-          check("dodge", player.ag, hasSkill(player, "Stunty") ? 0 : -tackleZones(state, player.side, proc.to));
+          check("dodge", player.ag, dodgeModifier(state, player, proc.to));
         }
         return "continue";
       case "move": {

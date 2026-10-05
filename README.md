@@ -133,6 +133,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
   the player stays; 1: coach banned), then use bribes (2+).
 - Claws: when the blocker knocks an opponent down, a natural armour roll of 8+ breaks armour above 8+; it does not
   stack with Mighty Blow, which then goes to the injury roll.
+- Titchy: +1 to the player's Dodge rolls; opponents dodging into their tackle zone do not count it.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

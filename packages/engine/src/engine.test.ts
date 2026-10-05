@@ -657,6 +657,14 @@ describe("engine", () => {
       });
     });
 
+    it("Titchy: +1 to the player's Dodge rolls, and opponents dodging next to them ignore their tackle zone", () => {
+      // home-1 dodges from (12,6) to (12,5), into away-1's tackle zone: 4+ without Titchy.
+      const dodge = (skills: Record<string, string[]>) => find(apply(withSkills(toFirstTurn(), skills), startMove("home-1"), ...move({ x: 12, y: 5 })), "ROLL")?.reason;
+      expect(dodge({})).toMatch(/^Dodge 4\+/);
+      expect(dodge({ "home-1": ["Titchy"] })).toMatch(/^Dodge 3\+/);
+      expect(dodge({ "away-1": ["Titchy"] })).toMatch(/^Dodge 3\+/);
+    });
+
     describe("Frenzy", () => {
       const frenzy = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Frenzy"] });
 
