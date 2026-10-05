@@ -187,7 +187,8 @@ export type CheckKind =
   | "bonehead"
   | "reallystupid"
   | "dauntless"
-  | "vomit";
+  | "vomit"
+  | "animosity";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -255,7 +256,8 @@ export type Procedure =
       throwerId: string;
       target: Square;
       range: PassRange;
-      stage: "roll" | "reroll" | "loner" | "outcome" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
+      /** "animosity": the thrower may first have to roll for Animosity towards the receiver. */
+      stage: "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "outcome" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
       rerolled: boolean;
       result?: PassResult;
       /** Where the ball comes down (after an inaccurate scatter). */
@@ -264,7 +266,7 @@ export type Procedure =
       throwInFrom?: Square;
       interceptorId?: string;
     }
-  | { type: "HandOff"; throwerId: string; catcherId: string; stage: "catch" | "end" }
+  | { type: "HandOff"; throwerId: string; catcherId: string; stage: "animosity" | "animosityResult" | "catch" | "end" }
   | {
       type: "Foul";
       foulerId: string;

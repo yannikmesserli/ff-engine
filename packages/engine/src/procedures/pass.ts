@@ -2,7 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { GameState, PassRange, PassResult, PlayerState, Procedure, Square } from "../types";
 import { SCATTER, passes } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
-import { hasSkill } from "../skills";
+import { hasSkill, skillName } from "../skills";
 import { canTeamReroll, checkTouchdown, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -111,6 +111,32 @@ export const interceptionTarget = (state: GameState, interceptor: PlayerState & 
 /** Pass: the thrower may re-roll an inaccurate pass or a fumble with the skill instead of a team re-roll. */
 const passSkillReroll = (thrower: PlayerState, proc: P<"Pass">) => !proc.rerolled && hasSkill(thrower, "Pass");
 
+/** Animosity is overcome on 2+. */
+export const ANIMOSITY_TARGET = 2;
+
+/**
+ * Animosity(X): the thrower dislikes team-mates with keyword X ("Animosity" alone: all team-mates). Several keywords
+ * may be separated by ";".
+ */
+export function dislikes(thrower: PlayerState, receiver: PlayerState | undefined): boolean {
+  const skill = thrower.skills.find((s) => skillName(s) === "Animosity");
+  if (!skill || !receiver || receiver.side !== thrower.side || receiver.id === thrower.id) return false;
+  const value = /\((.*)\)$/.exec(skill)?.[1]?.trim().toLowerCase();
+  if (!value || value === "all") return true;
+  return value.split(";").some((k) => receiver.keywords.includes(k.trim()));
+}
+
+/** Push the Animosity roll before a pass or hand-off to a disliked team-mate; false when there is none. */
+function rollAnimosity(ctx: Ctx, thrower: PlayerState, receiver: PlayerState | undefined): boolean {
+  ctx.state.lastCheck = null;
+  if (!dislikes(thrower, receiver)) return false;
+  ctx.push({ type: "Check", kind: "animosity", playerId: thrower.id, target: ANIMOSITY_TARGET, modifier: 0, stage: "roll", rerolled: false });
+  return true;
+}
+
+/** A failed Animosity roll: the ball is not released and the action ends, without a turnover. */
+const animosityFailed = (state: GameState) => state.lastCheck?.kind === "animosity" && !state.lastCheck.success;
+
 /** After a pass or hand-off: a turnover unless a team-mate of the thrower holds the ball. */
 function endBallAction(ctx: Ctx, thrower: PlayerState) {
   const carrier = ballCarrier(ctx.state);
@@ -119,8 +145,8 @@ function endBallAction(ctx: Ctx, thrower: PlayerState) {
 }
 
 /**
- * A thrown pass (BB2025): PA roll with a team re-roll, fumble / inaccurate scatter, one
- * interception attempt under the ruler, then the ball lands and may be caught.
+ * A thrown pass (BB2025): Animosity towards the receiver, PA roll with a team re-roll, fumble / inaccurate scatter,
+ * one interception attempt under the ruler, then the ball lands and may be caught.
  */
 export const Pass: Handler<P<"Pass">> = {
   step(ctx, proc, action) {
@@ -129,6 +155,15 @@ export const Pass: Handler<P<"Pass">> = {
     const at = squareOf(ctx, thrower);
     const modifiers = passModifiers(state, { ...thrower, at }, proc.range);
     switch (proc.stage) {
+      case "animosity":
+        rollAnimosity(ctx, thrower, playerAt(state, proc.target));
+        proc.stage = "animosityResult";
+        return "continue";
+      case "animosityResult":
+        if (animosityFailed(state)) return "done";
+        ctx.emit({ type: "PassThrown", playerId: thrower.id, target: { ...proc.target }, range: proc.range });
+        proc.stage = "roll";
+        return "continue";
       case "roll": {
         if (thrower.pa === null) {
           // No Passing Ability: the pass is fumbled automatically.
@@ -290,10 +325,20 @@ export function handOffTargets(state: GameState, player: PlayerState) {
     .filter((p): p is PlayerState => p !== undefined && p.side === player.side && p.status === "standing" && !hasSkill(p, "No Ball"));
 }
 
-/** Hand-off: the ball goes to the adjacent team-mate, who rolls to catch it (no scatter modifier). */
+/** Hand-off: Animosity towards the receiver, then the ball goes to the adjacent team-mate, who rolls to catch it (no scatter modifier). */
 export const HandOff: Handler<P<"HandOff">> = {
   step(ctx, proc) {
     const thrower = getPlayer(ctx, proc.throwerId);
+    if (proc.stage === "animosity") {
+      rollAnimosity(ctx, thrower, getPlayer(ctx, proc.catcherId));
+      proc.stage = "animosityResult";
+      return "continue";
+    }
+    if (proc.stage === "animosityResult") {
+      if (animosityFailed(ctx.state)) return "done";
+      proc.stage = "catch";
+      return "continue";
+    }
     if (proc.stage === "catch") {
       const catcher = getPlayer(ctx, proc.catcherId);
       ctx.state.ball = { square: { ...squareOf(ctx, catcher) }, carried: false };

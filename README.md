@@ -112,6 +112,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Projectile Vomit: instead of a block (a Blitz pays the square), 2+ hits the opponent, a failure the vomiting
   player (team re-roll allowed); armour without modifiers, placed prone and injury if broken; the action ends, no
   turnover unless the moving team's ball carrier drops the ball.
+- Animosity(X): before a pass or hand-off to a team-mate with keyword X (plain Animosity: any team-mate), 2+ (team
+  re-roll allowed); a failure keeps the ball and ends the action, without a turnover.
 
 Not yet: most other skills (Kick, Throw Team-mate / Right Stuff,
 Always Hungry...), inducements, overtime.

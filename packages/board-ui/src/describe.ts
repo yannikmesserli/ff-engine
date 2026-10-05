@@ -14,6 +14,7 @@ const CHECK_NAMES = {
   reallystupid: "Really Stupid roll",
   dauntless: "Dauntless roll",
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
+  animosity: "Animosity roll (a failure keeps the ball and ends the action)",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */

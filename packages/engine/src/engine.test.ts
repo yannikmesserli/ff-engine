@@ -942,6 +942,36 @@ describe("engine", () => {
         expect([s.activePlayerId, top(s).type]).toEqual([null, "Turn"]);
       });
     });
+
+    describe("Animosity", () => {
+      const thrower = (skill: string) => apply(withSkills(toFirstTurn(), { "home-5": [skill] }), declare("home-5", "pass"), ...TO_BALL, roll(3));
+      const toHome4 = { type: "THROW", square: { x: 10, y: 4 } } as const;
+
+      it("rolls 2+ before passing to a team-mate; a failure keeps the ball, ends the action and uses the Pass", () => {
+        let s = apply(thrower("Animosity"), toHome4);
+        expect(find(s, "ROLL")?.reason).toBe("Animosity 2+ (Home 5)");
+        s = apply(s, roll(1), { type: "DECLINE_REROLL" });
+        expect(s.ball).toEqual({ square: { x: 4, y: 2 }, carried: true });
+        expect([s.activeSide, s.activePlayerId]).toEqual(["home", null]);
+        expect(s.log.some((e) => e.type === "PassThrown")).toBe(false);
+        expect(actionsOf(s, "home-4")).not.toContain("pass");
+        expect(find(apply(thrower("Animosity"), toHome4, roll(2)), "ROLL")?.reason).toBe("Pass 5+ (short)");
+      });
+
+      it("only towards a team-mate on the target square with the disliked keyword", () => {
+        expect(find(apply(thrower("Animosity"), { type: "THROW", square: { x: 10, y: 2 } }), "ROLL")?.reason).toMatch(/^Pass/);
+        const goblinHater = thrower("Animosity(goblin)");
+        expect(find(apply(goblinHater, toHome4), "ROLL")?.reason).toMatch(/^Pass/);
+        const goblin = edit(goblinHater, (c) => void (c.players["home-4"]!.keywords = ["goblin", "lineman"]));
+        expect(find(apply(goblin, toHome4), "ROLL")?.reason).toBe("Animosity 2+ (Home 5)");
+      });
+
+      it("applies to hand-offs too", () => {
+        let s = place(withSkills(toFirstTurn(), { "home-5": ["Animosity"] }), { "home-4": { x: 5, y: 3 } });
+        s = apply(s, declare("home-5", "handoff"), ...TO_BALL, roll(3), { type: "HAND_OFF", targetId: "home-4" });
+        expect(find(s, "ROLL")?.reason).toBe("Animosity 2+ (Home 5)");
+      });
+    });
   });
 
   describe("standing up and stunned players", () => {

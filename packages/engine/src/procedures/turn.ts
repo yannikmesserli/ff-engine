@@ -328,8 +328,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (a.type === "THROW") {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
       proc.finished = true;
-      ctx.emit({ type: "PassThrown", playerId: player.id, target: { x: square.x, y: square.y }, range: square.range });
-      ctx.push({ type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, stage: "roll", rerolled: false });
+      ctx.push({ type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, stage: "animosity", rerolled: false });
       return "continue";
     }
     if (a.type === "FOUL") {
@@ -342,7 +341,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (a.type === "HAND_OFF") {
       if (!handOffOptions(state, proc).some((p) => p.id === a.targetId)) ctx.reject("Cannot hand off to this player.");
       proc.finished = true;
-      ctx.push({ type: "HandOff", throwerId: player.id, catcherId: a.targetId, stage: "catch" });
+      ctx.push({ type: "HandOff", throwerId: player.id, catcherId: a.targetId, stage: "animosity" });
       return "continue";
     }
     if (a.type === "VOMIT") {
