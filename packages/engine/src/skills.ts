@@ -20,5 +20,5 @@ export const IMPLEMENTED_SKILLS: readonly string[] = [
   "Bone Head", "Jump Up", "Sprint", "Horns", "Dauntless", "Wrestle", "Juggernaut", "Projectile Vomit", "Animosity",
   "Throw Team-mate", "Right Stuff", "Always Hungry", "Unchannelled Fury",
   "Disturbing Presence", "Secret Weapon", "Claws", "Titchy", "Stab", "Prehensile Tail", "Strong Arm", "Take Root",
-  "Plague Ridden", "Bloodlust", "Defensive", "Brawler",
+  "Plague Ridden", "Bloodlust", "Defensive", "Brawler", "Nerves of Steel",
 ];

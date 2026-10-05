@@ -1,8 +1,9 @@
 import type { Handler } from "../context";
 import type { DiceSpec, GameState, Procedure, Side, Square } from "../types";
 import { SCATTER, isCorner, throwInDirection } from "../dice";
-import { inBounds, isOnPitch, offset, tackleZones, teamPlayers } from "../pitch";
+import { inBounds, isOnPitch, offset, teamPlayers } from "../pitch";
 import { checkTouchdown, disturbingPresences, getPlayer, landBall, squareOf, weatherModifier } from "./helpers";
+import { markingZones } from "./pass";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -76,8 +77,8 @@ export const ThrowIn: Handler<P<"ThrowIn">> = {
 };
 
 /**
- * A standing player tries to catch the ball on their square (AG, tackle zones, weather, Disturbing Presence); a failure
- * bounces it.
+ * A standing player tries to catch the ball on their square (AG, tackle zones unless they have Nerves of Steel, weather,
+ * Disturbing Presence); a failure bounces it.
  * A distracted player cannot catch: the ball bounces straight away.
  */
 export const Catch: Handler<P<"Catch">> = {
@@ -98,7 +99,7 @@ export const Catch: Handler<P<"Catch">> = {
         kind: "catch",
         playerId: player.id,
         target: player.ag,
-        modifier: -tackleZones(state, player.side, square) - (proc.scattered ? 1 : 0) + weatherModifier(state, "catch") - disturbingPresences(state, player),
+        modifier: -markingZones(state, { ...player, at: square }) - (proc.scattered ? 1 : 0) + weatherModifier(state, "catch") - disturbingPresences(state, player),
         stage: "roll",
         rerolled: false,
       });

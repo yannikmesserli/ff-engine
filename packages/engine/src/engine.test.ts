@@ -1051,6 +1051,22 @@ describe("engine", () => {
       });
     });
 
+    it("Nerves of Steel: tackle zones do not count for the player's passes, catches and interceptions", () => {
+      // home-2 at (12,7) is marked by three opponents.
+      const carrier = (skills: string[]) =>
+        edit(withSkills(toFirstTurn(), { "home-2": skills }), (c) => (c.ball = { square: { x: 12, y: 7 }, carried: true }));
+      const needed = (s: GameState) => find(apply(s, declare("home-2", "pass")), "THROW")?.squares.find((q) => q.x === 10 && q.y === 4)?.needed;
+      expect(needed(carrier([]))).toBe(6);
+      expect(needed(carrier(["Nerves of Steel"]))).toBe(5);
+      // home-1 hands off to home-2.
+      const handOff = (skills: string[]) =>
+        find(apply(edit(withSkills(toFirstTurn(), { "home-2": skills }), (c) => (c.ball = { square: { x: 12, y: 6 }, carried: true })), declare("home-1", "handoff"), { type: "HAND_OFF", targetId: "home-2" }), "ROLL")?.reason;
+      expect(handOff([])).toBe("Catch 6+ (Home 2)");
+      expect(handOff(["Nerves of Steel"])).toBe("Catch 3+ (Home 2)");
+      const interceptor = { ...toFirstTurn().players["away-2"]!, at: { x: 13, y: 7 }, skills: ["Nerves of Steel"] };
+      expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(6);
+    });
+
     describe("Take Root", () => {
       const rooted = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Take Root"] });
 

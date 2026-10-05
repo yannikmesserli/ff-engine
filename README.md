@@ -151,6 +151,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Defensive: in the opposing team's turn (not during a Charge), players marked by this player cannot use Guard.
 - Brawler: once per activation, not during a Blitz, the attacker may re-roll a single Both Down die instead of the
   block re-roll (no team re-roll is spent).
+- Nerves of Steel: tackle zones do not count for the player's passes (team-mate throws excepted), catches and
+  interceptions.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

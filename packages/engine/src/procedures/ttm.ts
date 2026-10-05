@@ -18,7 +18,7 @@ export function throwableTeamMates(state: GameState, thrower: PlayerState): Play
 
 /** Added to the thrower's PA for a team-mate throw: the pass modifiers, and Strong Arm's +1 to the roll. */
 const throwModifiers = (state: GameState, thrower: PlayerState & { at: Square }, range: PassRange) =>
-  passModifiers(state, thrower, range) - (hasSkill(thrower, "Strong Arm") ? 1 : 0);
+  passModifiers(state, thrower, range, true) - (hasSkill(thrower, "Strong Arm") ? 1 : 0);
 
 /** Squares a team-mate can be thrown to: Quick or Short range only, with the roll needed for a superb throw. */
 export function teamMateTargets(state: GameState, thrower: PlayerState) {

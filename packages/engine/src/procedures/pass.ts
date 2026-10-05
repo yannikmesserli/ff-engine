@@ -40,9 +40,17 @@ export function passRange(state: GameState, from: Square, to: Square): PassRange
   return range;
 }
 
-/** Everything added to the thrower's PA: range, tackle zones on the thrower, Very Sunny, Disturbing Presence. */
-export function passModifiers(state: GameState, thrower: PlayerState & { at: Square }, range: PassRange) {
-  return RANGE_MODIFIER[range] + tackleZones(state, thrower.side, thrower.at) + (state.weather === "very-sunny" ? 1 : 0) + disturbingPresences(state, thrower);
+/** Nerves of Steel: tackle zones do not count for the player's passes, catches and interceptions. */
+export const markingZones = (state: GameState, player: PlayerState & { at: Square }) =>
+  hasSkill(player, "Nerves of Steel") ? 0 : tackleZones(state, player.side, player.at);
+
+/**
+ * Everything added to the thrower's PA: range, tackle zones on the thrower (not with Nerves of Steel, unless throwing a
+ * team-mate), Very Sunny, Disturbing Presence.
+ */
+export function passModifiers(state: GameState, thrower: PlayerState & { at: Square }, range: PassRange, teamMate = false) {
+  const zones = teamMate ? tackleZones(state, thrower.side, thrower.at) : markingZones(state, thrower);
+  return RANGE_MODIFIER[range] + zones + (state.weather === "very-sunny" ? 1 : 0) + disturbingPresences(state, thrower);
 }
 
 /** The D6 roll needed for an accurate pass, or null without PA. */
@@ -97,14 +105,14 @@ export function interceptors(state: GameState, thrower: PlayerState, target: Squ
 
 /**
  * BB2025 interception target: AG +3 accurate / +2 inaccurate, +1 per tackle
- * zone, +1 in Pouring Rain, +1 per Disturbing Presence.
+ * zone (not with Nerves of Steel), +1 in Pouring Rain, +1 per Disturbing Presence.
  */
 export const interceptionTarget = (state: GameState, interceptor: PlayerState & { at: Square }, result: PassResult) =>
   Math.max(
     2,
     interceptor.ag +
       (result === "accurate" ? 3 : 2) +
-      tackleZones(state, interceptor.side, interceptor.at) +
+      markingZones(state, interceptor) +
       (state.weather === "pouring-rain" ? 1 : 0) +
       disturbingPresences(state, interceptor),
   );
