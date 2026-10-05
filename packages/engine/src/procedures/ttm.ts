@@ -1,5 +1,5 @@
 import type { Ctx, Handler } from "../context";
-import type { GameState, PlayerState, Procedure, Square } from "../types";
+import type { GameState, PassRange, PlayerState, Procedure, Square } from "../types";
 import { SCATTER } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, offset, playerAt, sameSquare, tackleZones } from "../pitch";
 import { hasSkill } from "../skills";
@@ -16,13 +16,17 @@ export function throwableTeamMates(state: GameState, thrower: PlayerState): Play
     .filter((p): p is PlayerState => p !== undefined && p.side === thrower.side && hasSkill(p, "Right Stuff"));
 }
 
+/** Added to the thrower's PA for a team-mate throw: the pass modifiers, and Strong Arm's +1 to the roll. */
+const throwModifiers = (state: GameState, thrower: PlayerState & { at: Square }, range: PassRange) =>
+  passModifiers(state, thrower, range) - (hasSkill(thrower, "Strong Arm") ? 1 : 0);
+
 /** Squares a team-mate can be thrown to: Quick or Short range only, with the roll needed for a superb throw. */
 export function teamMateTargets(state: GameState, thrower: PlayerState) {
   if (!isOnPitch(thrower)) return [];
   return allSquares((s) => !sameSquare(s, thrower.at)).flatMap((s) => {
     const range = passRange(state, thrower.at, s);
     if (range !== "quick" && range !== "short") return [];
-    return [{ ...s, range, needed: shownNeeded(thrower, passModifiers(state, thrower, range)) }];
+    return [{ ...s, range, needed: shownNeeded(thrower, throwModifiers(state, thrower, range)) }];
   });
 }
 
@@ -62,8 +66,8 @@ function eat(ctx: Ctx, thrower: PlayerState, thrown: PlayerState) {
 const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count: proc.result === "fumble" ? 1 : 3 }];
 
 /**
- * Throw Team-mate: the throw is rolled like a pass (PA, range, tackle zones on the thrower, Very Sunny; team re-roll,
- * no interception). A superb or subpar throw scatters three times from the target square, a fumble once from the
+ * Throw Team-mate: the throw is rolled like a pass (PA, range, tackle zones on the thrower, Very Sunny, Disturbing
+ * Presence, +1 for Strong Arm; team re-roll, no interception). A superb or subpar throw scatters three times from the target square, a fumble once from the
  * thrown player's square. Landing on a player knocks them down (a turnover if they are the thrower's team-mate) and
  * the thrown player scatters on; leaving the pitch means the crowd (always a turnover). The landing roll is on AG,
  * -1 for a subpar throw, -1 for a fumble and -1 per tackle zone; it fails without a roll after landing on someone,
@@ -107,7 +111,7 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         proc.stage = "scatter";
         return "continue";
       case "roll": {
-        const modifiers = passModifiers(state, { ...thrower, at: squareOf(ctx, thrower) }, proc.range);
+        const modifiers = throwModifiers(state, { ...thrower, at: squareOf(ctx, thrower) }, proc.range);
         if (thrower.pa === null) proc.result = "fumble";
         else {
           if (action === null) return "wait";
@@ -198,7 +202,7 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
     const thrower = state.players[proc.throwerId]! as PlayerState & { at: Square };
     switch (proc.stage) {
       case "roll": {
-        const needed = shownNeeded(thrower, passModifiers(state, thrower, proc.range));
+        const needed = shownNeeded(thrower, throwModifiers(state, thrower, proc.range));
         return [{ type: "ROLL", side: thrower.side, dice: [{ kind: "d6", count: 1 }], reason: `Throw team-mate ${needed}+ (${proc.range})` }];
       }
       case "reroll":

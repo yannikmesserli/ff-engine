@@ -1216,6 +1216,13 @@ describe("engine", () => {
         expect(apply(s, roll(3)).activeSide).toBe("away");
       });
 
+      it("Strong Arm: +1 to the throw", () => {
+        const s = apply(withSkills(ttmTeam(), { "home-4": ["Throw Team-mate", "Strong Arm"] }), declare("home-4", "ttm"));
+        expect(find(s, "THROW_TEAM_MATE")?.squares).toContainEqual({ x: 7, y: 4, range: "quick", needed: 3 });
+        expect(find(apply(s, throwTo({ x: 7, y: 4 })), "ROLL")?.reason).toBe("Throw team-mate 3+ (quick)");
+        expect(apply(s, throwTo({ x: 7, y: 4 }), roll(3)).log).toContainEqual({ type: "TeamMateThrown", playerId: "home-4", thrownId: "home-5", result: "accurate" });
+      });
+
       it("a prone team-mate can be thrown, but does not land on their feet", () => {
         const prone = edit(ttmTeam(), (c) => void (c.players["home-5"]!.status = "prone"));
         const s = apply(prone, declare("home-4", "ttm"), throwTo({ x: 7, y: 4 }), roll(4), roll(1, 5, 3));
