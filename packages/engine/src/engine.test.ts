@@ -665,6 +665,19 @@ describe("engine", () => {
       expect(dodge({ "away-1": ["Titchy"] })).toMatch(/^Dodge 3\+/);
     });
 
+    it("Prehensile Tail: -1 to Dodge and Jump rolls of opponents leaving its tackle zone", () => {
+      const tail = withSkills(toFirstTurn(), { "away-1": ["Prehensile Tail"] });
+      // home-1 leaves (12,6), marked by away-1, for (12,5), also in its tackle zone: 5+ instead of 4+.
+      expect(find(apply(tail, startMove("home-1"), ...move({ x: 12, y: 5 })), "ROLL")?.reason).toMatch(/^Dodge 5\+/);
+      // Leaving away-1's tackle zone towards (11,5): 4+ instead of 3+.
+      expect(find(apply(tail, startMove("home-1"), ...move({ x: 11, y: 5 })), "ROLL")?.reason).toMatch(/^Dodge 4\+/);
+      // Jumping over prone away-2 from (12,7) to (14,7): four tackle zones on the landing square, then the tail.
+      const prone = (s: GameState) => edit(s, (c) => void (c.players["away-2"]!.status = "prone"));
+      const jump = (s: GameState) => top(apply(prone(s), startMove("home-2"), ...move({ x: 14, y: 7 })));
+      expect(jump(toFirstTurn())).toMatchObject({ kind: "jump", modifier: -4 });
+      expect(jump(tail)).toMatchObject({ kind: "jump", modifier: -5 });
+    });
+
     describe("Frenzy", () => {
       const frenzy = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Frenzy"] });
 

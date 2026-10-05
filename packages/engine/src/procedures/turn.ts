@@ -70,22 +70,29 @@ function jumpSquares(state: GameState, player: PlayerState & { at: Square }): Sq
   return squares;
 }
 
-/** Jump roll modifier: -1 per tackle zone on the square left or the one landed in, whichever has more. */
+/** Prehensile Tail: opponents with the skill marking the square a player leaves, -1 each to Dodge and Jump rolls. */
+const prehensileTails = (state: GameState, player: PlayerState, from: Square) =>
+  adjacent(from).filter((s) => {
+    const marker = tackleZoneAt(state, s);
+    return marker !== undefined && marker.side !== player.side && hasSkill(marker, "Prehensile Tail");
+  }).length;
+
+/** Jump roll modifier: -1 per tackle zone on the square left or the one landed in, whichever has more; Prehensile Tail. */
 const jumpModifier = (state: GameState, player: PlayerState, from: Square, to: Square) =>
-  -Math.max(tackleZones(state, player.side, from), tackleZones(state, player.side, to));
+  -Math.max(tackleZones(state, player.side, from), tackleZones(state, player.side, to)) - prehensileTails(state, player, from);
 
 /**
- * Dodge roll modifier: -1 per opponent's tackle zone on the square moved to (none for Stunty; Titchy opponents do not
- * count), +1 for a Titchy player.
+ * Dodge roll modifier from `from` to `to`: -1 per opponent's tackle zone on the square moved to (none for Stunty; Titchy
+ * opponents do not count), -1 per Prehensile Tail marking the square left, +1 for a Titchy player.
  */
-export function dodgeModifier(state: GameState, player: PlayerState, to: Square): number {
+export function dodgeModifier(state: GameState, player: PlayerState, from: Square, to: Square): number {
   const zones = hasSkill(player, "Stunty")
     ? 0
     : adjacent(to).filter((s) => {
         const marker = tackleZoneAt(state, s);
         return marker !== undefined && marker.side !== player.side && !hasSkill(marker, "Titchy");
       }).length;
-  return -zones + (hasSkill(player, "Titchy") ? 1 : 0);
+  return -zones - prehensileTails(state, player, from) + (hasSkill(player, "Titchy") ? 1 : 0);
 }
 
 /** Squares a player in a Move action may step (or jump) to, with the rolls each move requires. */
@@ -543,7 +550,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         if (proc.jump) {
           check("jump", player.ag, jumpModifier(state, player, squareOf(ctx, player), proc.to));
         } else if (tackleZones(state, player.side, squareOf(ctx, player)) > 0) {
-          check("dodge", player.ag, dodgeModifier(state, player, proc.to));
+          check("dodge", player.ag, dodgeModifier(state, player, squareOf(ctx, player), proc.to));
         }
         return "continue";
       case "move": {

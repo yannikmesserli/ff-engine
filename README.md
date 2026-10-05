@@ -136,6 +136,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Titchy: +1 to the player's Dodge rolls; opponents dodging into their tackle zone do not count it.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
+- Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 
