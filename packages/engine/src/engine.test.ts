@@ -1075,6 +1075,35 @@ describe("engine", () => {
       });
     });
 
+    describe("Stab", () => {
+      const stabber = (skills = ["Stab"]) => withSkills(toFirstTurn(), { "home-2": skills });
+
+      it("replaces a block: unmodified armour roll, placed prone and injured if it breaks; no turnover", () => {
+        let s = apply(stabber(), declare("home-2", "block"));
+        expect(find(s, "STAB")?.targetIds).toEqual(["away-1", "away-2", "away-3"]);
+        s = apply(s, { type: "STAB", targetId: "away-2" });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Stab" });
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 2, stab)");
+        s = apply(s, roll(4, 4), roll(2, 3));
+        expect(s.players["away-2"]).toMatchObject({ at: { x: 13, y: 7 }, status: "stunned" });
+        expect([s.activeSide, top(s).type]).toEqual(["home", "Turn"]);
+      });
+
+      it("Mighty Blow and Claws do not help; a held armour leaves the target standing", () => {
+        const s = apply(stabber(["Stab", "Mighty Blow", "Claws"]), declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(4, 3));
+        expect(s.log).toContainEqual({ type: "ArmourHeld", playerId: "away-2", roll: 7 });
+        expect(s.players["away-2"]!.status).toBe("standing");
+      });
+
+      it("during a Blitz it costs a square and ends the action", () => {
+        let s = withSkills(toFirstTurn(), { "home-4": ["Stab"] });
+        s = apply(s, declare("home-4", "blitz", "away-4"), ...move({ x: 11, y: 4 }, { x: 12, y: 4 }, { x: 13, y: 4 }, { x: 14, y: 4 }), { type: "STAB", targetId: "away-4" });
+        expect(s.players["home-4"]!.movesUsed).toBe(5);
+        s = apply(s, roll(2, 2));
+        expect([s.activePlayerId, top(s).type]).toEqual([null, "Turn"]);
+      });
+    });
+
     describe("Animosity", () => {
       const thrower = (skill: string) => apply(withSkills(toFirstTurn(), { "home-5": [skill] }), declare("home-5", "pass"), ...TO_BALL, roll(3));
       const toHome4 = { type: "THROW", square: { x: 10, y: 4 } } as const;

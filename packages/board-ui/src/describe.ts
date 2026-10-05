@@ -37,6 +37,7 @@ const SKILL_USES: Record<string, string> = {
   Wrestle: "and takes both players down",
   Juggernaut: "to turn Both Down into a Push",
   "Projectile Vomit": "",
+  Stab: "",
 };
 
 /** Display names of the weather conditions. */

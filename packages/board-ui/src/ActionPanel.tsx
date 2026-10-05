@@ -211,6 +211,11 @@ export function ActionPanel(props: ActionPanelProps) {
             Vomit on {state.players[id]!.name}
           </button>
         ))}
+        {findTemplate(templates, "STAB")?.targetIds.map((id) => (
+          <button key={id} onClick={() => dispatch({ type: "STAB", targetId: id })}>
+            Stab {state.players[id]!.name}
+          </button>
+        ))}
         {has("END_PLAYER_ACTION") && <button onClick={() => dispatch({ type: "END_PLAYER_ACTION" })}>End action</button>}
         {(has("END_TURN") || has("END_PLAYER_ACTION")) && (
           <button

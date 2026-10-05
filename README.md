@@ -134,6 +134,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Claws: when the blocker knocks an opponent down, a natural armour roll of 8+ breaks armour above 8+; it does not
   stack with Mighty Blow, which then goes to the injury roll.
 - Titchy: +1 to the player's Dodge rolls; opponents dodging into their tackle zone do not count it.
+- Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
+  (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

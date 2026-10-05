@@ -331,9 +331,10 @@ export type Procedure =
       bounceFrom?: Square;
     }
   | { type: "Crowd"; playerId: string; from: Square; hadBall: boolean }
-  /** Projectile Vomit on an adjacent opponent, instead of a block. */
+  /** Projectile Vomit or Stab on an adjacent opponent, instead of a block. */
   | {
       type: "Vomit";
+      skill: "Projectile Vomit" | "Stab";
       attackerId: string;
       defenderId: string;
       blitz: boolean;
@@ -453,6 +454,8 @@ export type Action =
   | { type: "BLOCK"; targetId: string }
   /** Projectile Vomit on an adjacent opponent instead of blocking them. */
   | { type: "VOMIT"; targetId: string }
+  /** Stab an adjacent opponent instead of blocking them. */
+  | { type: "STAB"; targetId: string }
   /** Pick one of the rolled block dice (index into the results). */
   | { type: "CHOOSE_BLOCK_DIE"; index: number }
   | { type: "PUSH"; square: Square }
@@ -500,6 +503,7 @@ export type ActionTemplate =
   /** Block targets with the number of block dice (negative: the defender chooses). */
   | { type: "BLOCK"; side: Side; playerId: string; targets: Array<{ playerId: string; dice: number }> }
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
+  | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "CHOOSE_BLOCK_DIE"; side: Side; results: number[] }
   | { type: "PUSH"; side: Side; playerId: string; squares: Square[] }
   | { type: "FOLLOW_UP"; side: Side; playerId: string; square: Square }

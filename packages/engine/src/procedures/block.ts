@@ -490,10 +490,14 @@ export const Crowd: Handler<P<"Crowd">> = {
 /** Projectile Vomit hits on 2+. */
 export const VOMIT_TARGET = 2;
 
+/** The attack in armour roll reasons. */
+const attackName = (proc: P<"Vomit">) => (proc.skill === "Stab" ? "stab" : "vomit");
+
 /**
- * Projectile Vomit, instead of a block (during a Blitz it costs a square, a Rush if needed): 2+ hits the defender,
- * a failure hits the vomiting player. The victim rolls armour without any modifier; if it breaks, they are placed
- * prone and roll for injury. Not a turnover, unless the moving team's ball carrier drops the ball.
+ * Projectile Vomit or Stab, instead of a block (during a Blitz it costs a square, a Rush if needed). Projectile Vomit
+ * hits the defender on 2+, the vomiting player on a failure; Stab always hits the defender. The victim rolls armour
+ * without any modifier; if it breaks, they are placed prone and roll for injury (no modifier either). Not a turnover,
+ * unless the moving team's ball carrier drops the ball.
  */
 export const Vomit: Handler<P<"Vomit">> = {
   step(ctx, proc, action) {
@@ -518,6 +522,12 @@ export const Vomit: Handler<P<"Vomit">> = {
         proc.stage = "roll";
         return "continue";
       case "roll":
+        if (proc.skill === "Stab") {
+          ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Stab" });
+          proc.victimId = proc.defenderId;
+          proc.stage = "armour";
+          return "continue";
+        }
         state.lastCheck = null;
         ctx.push({ type: "Check", kind: "vomit", playerId: attacker.id, target: VOMIT_TARGET, modifier: 0, stage: "roll", rerolled: false });
         proc.stage = "result";
@@ -531,7 +541,7 @@ export const Vomit: Handler<P<"Vomit">> = {
       case "armour": {
         if (action === null) return "wait";
         const victim = getPlayer(ctx, proc.victimId!);
-        const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], `Armour ${victim.av}+ (vomit)`);
+        const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], `Armour ${victim.av}+ (${attackName(proc)})`);
         const roll = a! + b!;
         if (roll < victim.av) {
           ctx.emit({ type: "ArmourHeld", playerId: victim.id, roll });
@@ -564,7 +574,7 @@ export const Vomit: Handler<P<"Vomit">> = {
   actions(state, proc) {
     if (proc.stage !== "armour" && proc.stage !== "injury") return [];
     const victim = state.players[proc.victimId!]!;
-    const reason = proc.stage === "armour" ? `Armour ${victim.av}+ (${victim.name}, vomit)` : `Injury (${victim.name})`;
+    const reason = proc.stage === "armour" ? `Armour ${victim.av}+ (${victim.name}, ${attackName(proc)})` : `Injury (${victim.name})`;
     return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason }];
   },
 };
