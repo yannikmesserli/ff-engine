@@ -28,6 +28,7 @@ const SKILL_USES: Record<string, string> = {
   "Jump Up": "to stand up for free",
   Dauntless: "and matches the defender's strength",
   Wrestle: "and takes both players down",
+  Juggernaut: "to turn Both Down into a Push",
 };
 
 /** Display names of the weather conditions. */

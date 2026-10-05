@@ -874,6 +874,33 @@ describe("engine", () => {
         expect(s.activeSide).toBe("away");
       });
     });
+
+    describe("Juggernaut", () => {
+      /** home-4 blitzes away-4 at (15,4) after moving next to it, and rolls Both Down. */
+      const blitzBothDown = (s: GameState) =>
+        apply(s, declare("home-4", "blitz", "away-4"), ...move({ x: 11, y: 4 }, { x: 12, y: 4 }, { x: 13, y: 4 }, { x: 14, y: 4 }), { type: "BLOCK", targetId: "away-4" }, roll(2), pick);
+
+      it("may turn Both Down into a Push during a Blitz, and cancels the defender's Stand Firm", () => {
+        let s = blitzBothDown(withSkills(toFirstTurn(), { "home-4": ["Juggernaut"], "away-4": ["Stand Firm"] }));
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-4", skill: "Juggernaut" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(types(s)).toEqual(["PUSH"]);
+        s = apply(s, { type: "PUSH", square: { x: 16, y: 4 } }, { type: "FOLLOW_UP", follow: false });
+        expect(s.players["away-4"]).toMatchObject({ at: { x: 16, y: 4 }, status: "standing" });
+        expect(s.players["home-4"]!.status).toBe("standing");
+      });
+
+      it("cancels the defender's Wrestle when Both Down stands", () => {
+        const s = apply(blitzBothDown(withSkills(toFirstTurn(), { "home-4": ["Juggernaut"], "away-4": ["Wrestle"] })), { type: "USE_SKILL", use: false });
+        expect(types(s)).not.toContain("USE_SKILL");
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour/);
+      });
+
+      it("does nothing in a Block action", () => {
+        const s = apply(blockAway2(withSkills(toFirstTurn(), { "home-2": ["Juggernaut"] })), roll(2), pick);
+        expect(types(s)).not.toContain("USE_SKILL");
+      });
+    });
   });
 
   describe("standing up and stunned players", () => {

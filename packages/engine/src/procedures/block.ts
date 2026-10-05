@@ -99,9 +99,17 @@ export function pushChoice(state: GameState, proc: P<"Block">): { side: Side; sq
   return { side: state.players[proc.attackerId]!.side, squares: pushbackSquares(state, pushing.from, pushing.dir), sidestep: false };
 }
 
-/** Stand Firm: the player being pushed (defender or chain-pushed) may refuse, if they exert a tackle zone. */
+/** Juggernaut works during a Blitz only. */
+const juggernaut = (proc: P<"Block">, attacker: PlayerState) => proc.blitz && hasSkill(attacker, "Juggernaut");
+
+/**
+ * Stand Firm: the player being pushed (defender or chain-pushed) may refuse, if they exert a tackle zone. A blitzing
+ * Juggernaut cancels it for opponents.
+ */
 const pushStage = (state: GameState, proc: P<"Block">) => {
   const player = state.players[proc.pushing!.playerId]!;
+  const attacker = state.players[proc.attackerId]!;
+  if (juggernaut(proc, attacker) && player.side !== attacker.side) return "push";
   return hasSkill(player, "Stand Firm") && hasTackleZone(player) ? "standFirm" : "push";
 };
 
@@ -134,13 +142,28 @@ function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, 
 
 /**
  * Wrestle on Both Down: the attacker's coach is asked first, then the defender's (if the defender exerts a tackle
- * zone). `after` is the player who already declined.
+ * zone, and the attacker is not a blitzing Juggernaut). `after` is the player who already declined.
  */
-function nextWrestler(attacker: PlayerState, defender: PlayerState, after?: string): string | undefined {
+function nextWrestler(proc: P<"Block">, attacker: PlayerState, defender: PlayerState, after?: string): string | undefined {
   if (after === undefined && hasSkill(attacker, "Wrestle")) return attacker.id;
-  if (after !== defender.id && hasSkill(defender, "Wrestle") && hasTackleZone(defender)) return defender.id;
+  if (after !== defender.id && hasSkill(defender, "Wrestle") && hasTackleZone(defender) && !juggernaut(proc, attacker)) return defender.id;
   return undefined;
 }
+
+/** Both Down: Juggernaut (may turn it into a Push), then Wrestle, then the knock-downs. */
+function resolveBothDown(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) {
+  const wrestler = nextWrestler(proc, attacker, defender);
+  if (wrestler) {
+    proc.wrestlerId = wrestler;
+    proc.stage = "wrestle";
+    return;
+  }
+  bothDown(ctx, attacker, defender);
+  proc.stage = "end";
+}
+
+/** The face of a Push on the block dice. */
+const PUSH_FACE = BLOCK_FACES.indexOf("push") + 1;
 
 /** Both Down without Wrestle: whoever lacks Block is knocked down (a defender needs a tackle zone for Block). */
 function bothDown(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
@@ -288,15 +311,8 @@ export const Block: Handler<P<"Block">> = {
           return "continue";
         }
         if (result === "both_down") {
-          // TODO: Juggernaut.
-          const wrestler = nextWrestler(attacker, defender);
-          if (wrestler) {
-            proc.wrestlerId = wrestler;
-            proc.stage = "wrestle";
-            return "continue";
-          }
-          bothDown(ctx, attacker, defender);
-          proc.stage = "end";
+          if (juggernaut(proc, attacker)) proc.stage = "juggernaut";
+          else resolveBothDown(ctx, proc, attacker, defender);
           return "continue";
         }
         const dodges = result === "defender_stumbles" && hasSkill(defender, "Dodge") && !hasSkill(attacker, "Tackle");
@@ -308,6 +324,15 @@ export const Block: Handler<P<"Block">> = {
         proc.stage = pushStage(state, proc);
         return "continue";
       }
+      case "juggernaut": {
+        if (action === null) return "wait";
+        if (ctx.expect(action, "USE_SKILL").use) {
+          ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Juggernaut" });
+          proc.face = PUSH_FACE;
+          proc.stage = "resolve";
+        } else resolveBothDown(ctx, proc, attacker, defender);
+        return "continue";
+      }
       case "wrestle": {
         if (action === null) return "wait";
         const wrestler = proc.wrestlerId!;
@@ -317,7 +342,7 @@ export const Block: Handler<P<"Block">> = {
           proc.stage = "end";
           return "continue";
         }
-        const next = nextWrestler(attacker, defender, wrestler);
+        const next = nextWrestler(proc, attacker, defender, wrestler);
         if (next) {
           proc.wrestlerId = next;
           return "wait";
@@ -422,6 +447,8 @@ export const Block: Handler<P<"Block">> = {
             : [];
         return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll];
       }
+      case "juggernaut":
+        return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Juggernaut" }];
       case "wrestle": {
         const wrestler = state.players[proc.wrestlerId!]!;
         return [{ type: "USE_SKILL", side: wrestler.side, playerId: wrestler.id, skill: "Wrestle" }];

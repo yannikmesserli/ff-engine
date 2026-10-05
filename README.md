@@ -107,8 +107,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   strength for the block; Horns and assists come on top.
 - Wrestle: on Both Down, the attacker's coach (then the defender's) may place both players prone instead: no armour
   rolls and no turnover unless the moving team's ball carrier goes down; the attacker's action ends.
+- Juggernaut (Blitz only): the attacker's coach may turn Both Down into a Push, and the defender's Stand Firm and
+  Wrestle do not work.
 
-Not yet: most other skills (Kick, Juggernaut, Throw Team-mate / Right Stuff,
+Not yet: most other skills (Kick, Throw Team-mate / Right Stuff,
 Always Hungry...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.
