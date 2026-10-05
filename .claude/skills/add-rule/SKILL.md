@@ -20,7 +20,8 @@ Read `packages/engine/README.md`. Typically:
    while the stage waits for a `ROLL`. The JSDoc states the rule in game terms.
 3. Register the handler in `src/procedures/index.ts`; export any helper the UI needs from `src/index.ts`.
 4. Skills: `hasSkill(player, "Exact Roster Name")` from `src/skills.ts`. Check the spelling in
-   `packages/data/src/generated/rosters.json`.
+   `packages/data/src/generated/rosters.json`. Add the skill to `IMPLEMENTED_SKILLS` (same file): the UI flags the
+   others as not applied yet. Its tooltip text is in `packages/data/src/skills.ts`.
 
 ## 3. Test
 

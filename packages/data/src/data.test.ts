@@ -1,6 +1,6 @@
-import { createGame, getAvailableActions, step, type Action, type ActionTemplate, type GameState } from "@bb/engine";
+import { IMPLEMENTED_SKILLS, createGame, getAvailableActions, skillName, step, type Action, type ActionTemplate, type GameState } from "@bb/engine";
 import { afterAll, describe, expect, it } from "vitest";
-import { TeamError, exampleTeams, formationActions, formations, resolveTeam, rosters } from "./index";
+import { SKILL_DESCRIPTIONS, TeamError, exampleTeams, formationActions, formations, resolveTeam, rosters, skillDescription } from "./index";
 
 describe("data", () => {
   it("has the BB2025 rosters from FUMBBL", () => {
@@ -163,6 +163,28 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: t.type } as Action;
   }
 }
+
+describe("skill descriptions", () => {
+  /** Skills only gained through advancement, not on any starting roster. */
+  const ADVANCEMENT_ONLY = ["Kick", "Multiple Block", "Bullseye", "Accurate", "Cannoneer", "Leader", "Big Hand", "Extra Arms",
+    "Monstrous Mouth", "Two Heads", "Very Long Legs", "Lethal Flight", "Lone Fouler", "Pile Driver", "Put the Boot In",
+    "Quick Foul", "Saboteur", "Violent Innovator"];
+
+  it("describes every skill of the rosters, the engine and advancement", () => {
+    const fromRosters = rosters.flatMap((r) => r.positions.flatMap((p) => p.skills.map(skillName)));
+    const missing = [...new Set([...fromRosters, ...IMPLEMENTED_SKILLS, ...ADVANCEMENT_ONLY])].filter((s) => !SKILL_DESCRIPTIONS[s]);
+    expect(missing).toEqual([]);
+  });
+
+  it("fills in the skill's value", () => {
+    expect(skillDescription("Loner(4)")).toMatch(/needs a 4\+ on a D6/);
+    expect(skillDescription("Mighty Blow(+2)")).toMatch(/^\+2 to the armour/);
+    expect(skillDescription("Mighty Blow")).toMatch(/^\+1 to the armour/);
+    expect(skillDescription("Animosity(goblin)")).toMatch(/to a team-mate with keyword goblin/);
+    expect(skillDescription("Animosity")).toMatch(/to any team-mate/);
+    expect(skillDescription("Unknown skill")).toBeNull();
+  });
+});
 
 describe("random games", () => {
   const seenKickoffResults = new Set<string>();

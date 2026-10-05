@@ -20,6 +20,7 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 | `formationActions(state, side, formation)` | `PLACE_PLAYER` actions that clear a side's half and set up a formation. |
 | `resolveTeam(json, rosters?)` | Validates a team file against its roster and merges in position stats. Throws `TeamError`. |
 | `TeamFileSchema`, `RosterSchema` | zod schemas (and the `TeamFile`, `Roster` types). |
+| `SKILL_DESCRIPTIONS`, `skillDescription(skill)` | Short BB2025 descriptions of every skill and trait (our own wording), for tooltips; `skillDescription("Loner(4)")` fills in the value. |
 
 `src/generated/rosters.json` is written by `pnpm fetch-rosters`; do not edit it by hand. `src/teams.json` and
 `src/formations.json` are plain data files: edit them directly (the tests validate every team against its roster).

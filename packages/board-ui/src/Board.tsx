@@ -47,6 +47,8 @@ interface BoardProps {
   dispatch(action: Action): void;
   /** Called with the hovered player, or null when the pointer leaves it. */
   onHover(playerId: string | null): void;
+  /** A player was clicked (anywhere: pitch or dugout), e.g. to pin their card. */
+  onInspect(playerId: string): void;
   /** Players picked for a SELECT_PLAYERS decision, or the Quick Snap player about to move. */
   picked: string[];
   setPicked(ids: string[]): void;
@@ -68,7 +70,7 @@ const squareId = (s: Square) => `sq-${s.x}-${s.y}`;
 const at = (s: Square) => ({ left: s.x * SQUARE_SIZE, top: s.y * SQUARE_SIZE });
 
 /** The pitch between both dugouts: renders the board templates and turns clicks and drags into actions. */
-export function Board({ state, templates, assets, dispatch, onHover, picked, setPicked, menu, setMenu, aiming }: BoardProps) {
+export function Board({ state, templates, assets, dispatch, onHover, onInspect, picked, setPicked, menu, setMenu, aiming }: BoardProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const placement = findTemplate(templates, "PLACE_PLAYER");
   const ballTarget = findTemplate(templates, "PLACE_BALL");
@@ -177,7 +179,10 @@ export function Board({ state, templates, assets, dispatch, onHover, picked, set
       blockDice={block?.targets.find((t) => t.playerId === p.id)?.dice}
       foulAssists={foul?.targets.find((t) => t.playerId === p.id)?.assists}
       blitzTarget={p.id === blitzTarget}
-      onClick={() => clickPlayer(p)}
+      onClick={() => {
+        onInspect(p.id);
+        clickPlayer(p);
+      }}
       onHover={onHover}
     />
   );

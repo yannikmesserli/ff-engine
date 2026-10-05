@@ -1,7 +1,8 @@
 # @bb/board-ui
 
 React component that plays a complete hot-seat BB2025 Blood Bowl game in the browser: scoreboard, pitch with both
-dugouts, decision panel, last roll with undo, hovered player card and game log. All rules come from `@bb/engine`; this
+dugouts, decision panel, last roll with undo, player card (hovered, or pinned by clicking a player; skills have
+description tooltips) and game log. All rules come from `@bb/engine`; this
 package only renders the engine's state and turns clicks into engine actions.
 
 ## Usage

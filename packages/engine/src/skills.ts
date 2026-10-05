@@ -12,3 +12,11 @@ export function skillValue(player: PlayerState, name: string, fallback: number):
   if (skill === undefined) return null;
   return Number(/\(\+?(\d+)\+?\)$/.exec(skill)?.[1] ?? fallback);
 }
+
+/** Skills the engine applies (by name, without value); keep in step with the README's "Implemented so far". */
+export const IMPLEMENTED_SKILLS: readonly string[] = [
+  "Block", "Dodge", "Tackle", "Guard", "No Ball", "Dirty Player", "Sneaky Git", "Thick Skull", "Stunty", "Regeneration",
+  "Loner", "Unsteady", "Mighty Blow", "Frenzy", "Pass", "Sure Hands", "Stand Firm", "Sidestep", "Catch", "Really Stupid",
+  "Bone Head", "Jump Up", "Sprint", "Horns", "Dauntless", "Wrestle", "Juggernaut", "Projectile Vomit", "Animosity",
+  "Throw Team-mate", "Right Stuff", "Always Hungry",
+];

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  IMPLEMENTED_SKILLS,
   IllegalActionError,
   createGame,
   getAvailableActions,
+  skillName,
   step,
   type Action,
   type ActionTemplate,
@@ -11,7 +13,7 @@ import {
   type PlayerState,
   type Side,
 } from "@bb/engine";
-import { resolveTeam } from "@bb/data";
+import { resolveTeam, skillDescription } from "@bb/data";
 import { ActionPanel } from "./ActionPanel";
 import { Board, type ActionMenuState } from "./Board";
 import { DiceRolls } from "./Dice";
@@ -93,6 +95,8 @@ function Game(props: { initial: GameState; assets: string; onChange?(s: GameStat
   const [error, setError] = useState<string | null>(null);
   const [autoRoll, setAutoRoll] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
+  /** Clicked player: their card stays until another player is clicked or it is closed. */
+  const [pinned, setPinned] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
   const [menu, setMenu] = useState<ActionMenuState | null>(null);
   const [aiming, setAiming] = useState(false);
@@ -150,7 +154,9 @@ function Game(props: { initial: GameState; assets: string; onChange?(s: GameStat
     return () => clearTimeout(timer);
   }, [autoRoll, onlyRoll, state]);
 
-  const player = hovered ? state.players[hovered] : undefined;
+  // The hovered player's card, else the pinned one.
+  const shown = hovered ?? pinned;
+  const player = shown ? state.players[shown] : undefined;
 
   return (
     <div className="bb-game">
@@ -161,6 +167,7 @@ function Game(props: { initial: GameState; assets: string; onChange?(s: GameStat
         assets={assets}
         dispatch={dispatch}
         onHover={setHovered}
+        onInspect={setPinned}
         picked={picked}
         setPicked={setPicked}
         menu={menu}
@@ -186,7 +193,7 @@ function Game(props: { initial: GameState; assets: string; onChange?(s: GameStat
           />
           {error && <div className="bb-panel bb-error">{error}</div>}
           <LastRoll state={state} assets={assets} canUndo={!online && history.length > 1} onUndo={undo} />
-          {player && <PlayerCard player={player} />}
+          {player && <PlayerCard player={player} pinned={player.id === pinned} onClose={() => setPinned(null)} />}
         </div>
         <GameLog state={state} />
       </div>
@@ -248,10 +255,30 @@ function LastRoll(props: { state: GameState; assets: string; canUndo: boolean; o
   );
 }
 
-/** Stats and skills of the hovered player. */
-function PlayerCard({ player }: { player: PlayerState }) {
+/** A skill name with its description as a tooltip, flagged when the engine does not apply it yet. */
+function Skill({ skill }: { skill: string }) {
+  const description = skillDescription(skill) ?? "No description yet.";
+  const missing = !IMPLEMENTED_SKILLS.includes(skillName(skill));
+  return (
+    <span className={`bb-skill${missing ? " bb-skill-missing" : ""}`} tabIndex={0}>
+      {skill}
+      <span className="bb-tip" role="tooltip">
+        {description}
+        {missing && <em> Not applied by this engine yet.</em>}
+      </span>
+    </span>
+  );
+}
+
+/** Stats and skills of the hovered player, or of the clicked one (pinned until closed). */
+function PlayerCard({ player, pinned, onClose }: { player: PlayerState; pinned: boolean; onClose(): void }) {
   return (
     <div className={`bb-panel bb-player-card bb-side-${player.side}`}>
+      {pinned && (
+        <button className="bb-link bb-unpin" title="Unpin this player" onClick={onClose}>
+          ×
+        </button>
+      )}
       <strong>
         #{player.nr} {player.name}
       </strong>{" "}
@@ -259,7 +286,16 @@ function PlayerCard({ player }: { player: PlayerState }) {
       <div className="bb-stats">
         MA {player.ma} · ST {player.st} · AG {player.ag}+ · PA {player.pa === null ? "–" : `${player.pa}+`} · AV {player.av}+
       </div>
-      <div className="bb-skills">{player.skills.join(", ") || "No skills"}</div>
+      <div className="bb-skills">
+        {player.skills.length === 0
+          ? "No skills"
+          : player.skills.map((s, i) => (
+              <span key={s}>
+                {i > 0 && ", "}
+                <Skill skill={s} />
+              </span>
+            ))}
+      </div>
       {player.casualty && <div className="bb-casualty">{casualtyName(player.casualty)}</div>}
     </div>
   );

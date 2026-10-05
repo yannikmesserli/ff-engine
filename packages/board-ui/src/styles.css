@@ -155,6 +155,14 @@
 .bb-d3 { display: inline-flex; align-items: center; justify-content: center; color: #222; font-weight: 700; }
 .bb-coin { width: auto; padding: 6px 8px; background: #c9a227; color: #222; border-radius: 16px; font-weight: 700; height: auto; }
 .bb-stats { font-family: ui-monospace, monospace; margin-top: 2px; }
-.bb-skills { font-size: 12px; opacity: 0.8; }
+.bb-skills { font-size: 12px; }
+.bb-player-card { position: relative; }
+.bb-unpin { position: absolute; top: 4px; right: 8px; font-size: 16px; text-decoration: none; }
+.bb-skill { position: relative; border-bottom: 1px dotted currentColor; cursor: help; color: #cfccc6; }
+.bb-skill-missing { color: #8d8a85; }
+.bb-skill .bb-tip { display: none; position: absolute; bottom: 130%; left: 0; z-index: 10; width: 260px; padding: 6px 8px;
+  background: #1c1e22; border: 1px solid #444; border-radius: 4px; font-size: 12px; line-height: 1.4; color: #e8e6e1; }
+.bb-skill:hover .bb-tip, .bb-skill:focus .bb-tip { display: block; }
+.bb-skill .bb-tip em { display: block; margin-top: 4px; color: #ffb74d; font-style: normal; }
 .bb-casualty { font-size: 12px; color: #e57373; }
 .bb-log { width: 320px; height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.5; }
