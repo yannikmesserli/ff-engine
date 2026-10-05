@@ -41,6 +41,12 @@ describe("data", () => {
     expect(team.players.map((p) => p.nr)).toEqual([1]);
   });
 
+  it("gives teams with Plague Ridden their lineman position for raised players", () => {
+    const nurgle = resolveTeam({ name: "N", roster: "Nurgle", rerolls: 0, players: [{ number: 1, name: "A", position: "Rotter Lineman" }] });
+    expect(nurgle.raisePosition).toMatchObject({ position: "Rotter Lineman", skills: ["Decay", "Plague Ridden"] });
+    expect(resolveTeam(exampleTeams["human"]).raisePosition).toBeUndefined();
+  });
+
   it("reports invalid teams", () => {
     expect(() => resolveTeam({ name: "x" })).toThrow(TeamError);
     expect(() => resolveTeam({ ...exampleTeams["human"], roster: "Gnoll" })).toThrow(/Unknown roster/);

@@ -141,6 +141,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Take Root: a standing player rolls 2+ when activated (team re-roll allowed); on a failure they are rooted until
   knocked down or placed prone, or the drive ends: the action goes on, but they cannot move or rush, cannot follow up
   and are never pushed (nobody in the chain moves), and cannot be thrown.
+- Plague Ridden: once per game, an opponent killed by the player's block (not a Big Guy, and without Stunty,
+  Regeneration or Decay) joins the team's reserves as a new player of its lineman position (Rotter for Nurgle).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

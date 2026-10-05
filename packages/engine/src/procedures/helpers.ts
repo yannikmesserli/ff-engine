@@ -1,11 +1,42 @@
 import type { Ctx } from "../context";
-import type { Action, ActionTemplate, GameState, PlayerState, Side, Square, Weather } from "../types";
+import type { Action, ActionTemplate, GameState, PlayerState, Side, Square, TeamSetup, Weather } from "../types";
 import { hasSkill, skillName } from "../skills";
 import { inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, teamPlayers } from "../pitch";
 
 /** The player with this id, or reject the action. */
 export function getPlayer(ctx: Ctx, id: string): PlayerState {
   return ctx.state.players[id] ?? ctx.reject(`Unknown player ${id}.`);
+}
+
+/** A player of `side` in the reserves, before the kick-off; the id is "<side>-<nr>". */
+export function createPlayer(side: Side, p: TeamSetup["players"][number]): PlayerState {
+  const { nr, name, position, ma, st, ag, pa, av } = p;
+  return {
+    nr,
+    name,
+    position,
+    ma,
+    st,
+    ag,
+    pa,
+    av,
+    skills: [...p.skills],
+    keywords: [...(p.keywords ?? [])],
+    id: `${side}-${nr}`,
+    side,
+    at: "reserves",
+    status: "standing",
+    activated: false,
+    movesUsed: 0,
+    exhausted: false,
+    snack: null,
+    nigglingInjuries: p.nigglingInjuries ?? 0,
+    casualty: null,
+    usedSkills: [],
+    distracted: false,
+    played: false,
+    rooted: false,
+  };
 }
 
 /** The square of a player on the pitch, or reject the action. */

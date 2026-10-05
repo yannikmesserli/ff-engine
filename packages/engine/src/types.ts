@@ -123,6 +123,10 @@ export interface TeamState {
   extraAssist: boolean;
   /** Apothecaries left for this game (one use each). */
   apothecaries: number;
+  /** The position an opponent killed by a Plague Ridden player joins the team as, if any. */
+  raisePosition: PositionStats | null;
+  /** Opponents who joined the team this game (Plague Ridden: once per game). */
+  raisedDead: number;
 }
 
 /** Where the ball is; `square` is null while it is off the pitch (before the kick-off, during a throw-in or touchback). */
@@ -130,6 +134,18 @@ export interface BallState {
   square: Square | null;
   /** Held by the player on `square`, as opposed to lying on the ground. */
   carried: boolean;
+}
+
+/** A position's characteristics, skills and keywords, as given to a new player. */
+export interface PositionStats {
+  position: string;
+  ma: number;
+  st: number;
+  ag: number;
+  pa: number | null;
+  av: number;
+  skills: string[];
+  keywords?: string[];
 }
 
 /** Input shape used to create a game: a fully resolved team (stats already merged from the roster). */
@@ -142,20 +158,16 @@ export interface TeamSetup {
   dedicatedFans: number;
   cheerleaders: number;
   assistantCoaches: number;
-  players: Array<{
-    nr: number;
-    name: string;
-    position: string;
-    ma: number;
-    st: number;
-    ag: number;
-    pa: number | null;
-    av: number;
-    skills: string[];
-    keywords?: string[];
-    /** Niggling Injuries from earlier games. */
-    nigglingInjuries?: number;
-  }>;
+  /** The lineman position an opponent killed by one of the team's Plague Ridden players joins the team as. */
+  raisePosition?: PositionStats;
+  players: Array<
+    PositionStats & {
+      nr: number;
+      name: string;
+      /** Niggling Injuries from earlier games. */
+      nigglingInjuries?: number;
+    }
+  >;
 }
 
 /** "coin": 1 heads, 2 tails. "block": 1..6, see BLOCK_FACES. */
@@ -364,6 +376,8 @@ export type Procedure =
       outcome: InjuryOutcome;
       /** Pushed into the crowd: the player leaves the pitch even when only stunned. */
       crowd: boolean;
+      /** The opponent whose block caused the injury (Plague Ridden). */
+      attackerId?: string;
       stage: "casualty" | "regeneration" | "regenerated" | "apothecary" | "apothecaryRoll" | "apothecaryChoice" | "place";
       casualty?: Casualty;
       /** The apothecary's casualty re-roll, to choose from. */
@@ -400,8 +414,8 @@ export type Procedure =
       turnover: boolean;
       /** Mighty Blow of the blocker who knocked the player down: added to the armour or the injury roll. */
       mightyBlow?: { playerId: string; bonus: number };
-      /** The blocker who knocked the player down has Claws: an armour roll of 8+ breaks the armour. */
-      clawsId?: string;
+      /** The opponent whose block knocked the player down (Claws, Plague Ridden). */
+      blockerId?: string;
       /** Mighty Blow broke the armour, so it does not apply to the injury roll. */
       mightyBlowOnArmour?: boolean;
       stage: "fall" | "armour" | "injury" | "bounce";
@@ -609,6 +623,8 @@ export type GameEvent =
   | { type: "ActionLost"; playerId: string; skill: string }
   /** Regeneration worked: the casualty heals and the player goes to the reserves. */
   | { type: "Regenerated"; playerId: string }
+  /** Plague Ridden: the killed player `fromId` joins the other team in the reserves as `playerId`. */
+  | { type: "PlayerRaised"; playerId: string; fromId: string }
   /** Always Hungry: the thrown player did not escape and is eaten (dead). */
   | { type: "PlayerEaten"; playerId: string; byId: string }
   /** The apothecary's work is done: the player is stunned, back in the reserves, or keeps `casualty`. */

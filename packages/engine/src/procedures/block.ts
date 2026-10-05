@@ -114,7 +114,7 @@ const pushStage = (state: GameState, proc: P<"Block">) => {
   return hasSkill(player, "Stand Firm") && hasTackleZone(player) ? "standFirm" : "push";
 };
 
-/** Mighty Blow and Claws of the attacker, for a knock-down of an opponent caused by the block. */
+/** The attacker's Mighty Blow, Claws and Plague Ridden, for a knock-down of an opponent caused by the block. */
 function knockDownDefender(attacker: PlayerState, defender: PlayerState): P<"KnockDown"> {
   const opponent = attacker.side !== defender.side;
   const bonus = opponent ? skillValue(attacker, "Mighty Blow", 1) : null;
@@ -124,7 +124,7 @@ function knockDownDefender(attacker: PlayerState, defender: PlayerState): P<"Kno
     turnover: false,
     stage: "fall",
     ...(bonus ? { mightyBlow: { playerId: attacker.id, bonus } } : {}),
-    ...(opponent && hasSkill(attacker, "Claws") ? { clawsId: attacker.id } : {}),
+    ...(opponent ? { blockerId: attacker.id } : {}),
   };
 }
 

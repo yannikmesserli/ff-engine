@@ -678,6 +678,30 @@ describe("engine", () => {
       expect(jump(tail)).toMatchObject({ kind: "jump", modifier: -5 });
     });
 
+    describe("Plague Ridden", () => {
+      const ROTTER = { position: "Rotter Lineman", ma: 5, st: 3, ag: 4, pa: 6, av: 9, skills: ["Decay", "Plague Ridden"], keywords: ["human", "lineman"] };
+      /** home-2 (Plague Ridden) knocks away-2 down and kills them: armour 12, injury 12, casualty 16. */
+      const kill = (s: GameState) =>
+        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(16, 1));
+      const nurgle = (change: (c: GameState) => void = () => {}) =>
+        edit(withSkills(toFirstTurn({ ...team("Home"), raisePosition: ROTTER }), { "home-2": ["Plague Ridden"] }), change);
+
+      it("an opponent killed by the player's block joins the team's reserves as a lineman, once per game", () => {
+        const s = kill(nurgle());
+        expect(s.players["away-2"]!.casualty).toEqual({ result: "dead" });
+        expect(s.log).toContainEqual({ type: "PlayerRaised", playerId: "home-12", fromId: "away-2" });
+        expect(s.players["home-12"]).toMatchObject({ name: "Away 2", position: "Rotter Lineman", side: "home", at: "reserves", ma: 5, av: 9 });
+        expect(s.teams.home.raisedDead).toBe(1);
+        const again = kill(edit(nurgle(), (c) => void (c.teams.home.raisedDead = 1)));
+        expect(again.log.some((e) => e.type === "PlayerRaised")).toBe(false);
+      });
+
+      it("not for Big Guys or players with Stunty, Regeneration or Decay", () => {
+        expect(kill(nurgle((c) => void (c.players["away-2"]!.keywords = ["big guy"]))).players["home-12"]).toBeUndefined();
+        expect(kill(nurgle((c) => void (c.players["away-2"]!.skills = ["Stunty"]))).players["home-12"]).toBeUndefined();
+      });
+    });
+
     describe("Frenzy", () => {
       const frenzy = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Frenzy"] });
 

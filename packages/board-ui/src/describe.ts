@@ -250,6 +250,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} takes root: they cannot move until knocked down or the drive ends.`;
     case "ActionLost":
       return `${who(state, e.playerId)} fails the ${e.skill} roll and roars in rage: the action is lost.`;
+    case "PlayerRaised":
+      return `${who(state, e.fromId)} rises again, infected, and joins ${sideName(state, state.players[e.playerId]!.side)} as ${state.players[e.playerId]!.position}!`;
     case "PlayerEaten":
       return `${who(state, e.byId)} eats ${who(state, e.playerId)}!`;
     case "Regenerated":

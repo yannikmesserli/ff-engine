@@ -1,6 +1,7 @@
 import { produce } from "immer";
 import { IllegalActionError, createContext, run, type Handler } from "./context";
 import { handlers } from "./procedures";
+import { createPlayer } from "./procedures/helpers";
 import type { Action, ActionTemplate, GameEvent, GameState, PlayerState, Side, TeamSetup } from "./types";
 
 export interface GameOptions {
@@ -20,34 +21,8 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number): GameState
   const teams = { home, away };
   for (const side of ["home", "away"] as const) {
     for (const p of teams[side].players) {
-      const id = `${side}-${p.nr}`;
-      const { nr, name, position, ma, st, ag, pa, av } = p;
-      players[id] = {
-        nr,
-        name,
-        position,
-        ma,
-        st,
-        ag,
-        pa,
-        av,
-        skills: [...p.skills],
-        keywords: [...(p.keywords ?? [])],
-        id,
-        side,
-        at: "reserves",
-        status: "standing",
-        activated: false,
-        movesUsed: 0,
-        exhausted: false,
-        snack: null,
-        nigglingInjuries: p.nigglingInjuries ?? 0,
-        casualty: null,
-        usedSkills: [],
-        distracted: false,
-        played: false,
-        rooted: false,
-      };
+      const player = createPlayer(side, p);
+      players[player.id] = player;
     }
   }
   const team = (side: Side) => ({
@@ -67,6 +42,8 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number): GameState
     coachBanned: false,
     extraAssist: false,
     apothecaries: teams[side].apothecary ? 1 : 0,
+    raisePosition: teams[side].raisePosition ?? null,
+    raisedDead: 0,
   });
   return {
     version: 1,

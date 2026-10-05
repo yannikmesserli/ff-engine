@@ -125,10 +125,12 @@ const mightyBlowNote = (bonus: number) => (bonus > 0 ? ` (+${bonus} Mighty Blow)
 export const CLAWS_ARMOUR = 8;
 
 /** Claws applies to the knock-down: the blocker has it and the player's AV is above 8+. */
-const clawsApply = (proc: P<"KnockDown">, player: PlayerState) => proc.clawsId !== undefined && player.av > CLAWS_ARMOUR;
+const clawsApply = (state: GameState, proc: P<"KnockDown">, player: PlayerState) =>
+  proc.blockerId !== undefined && hasSkill(state.players[proc.blockerId]!, "Claws") && player.av > CLAWS_ARMOUR;
 
 /** Name of Claws in armour roll reasons. */
-const clawsNote = (proc: P<"KnockDown">, player: PlayerState) => (clawsApply(proc, player) ? ` (Claws: ${CLAWS_ARMOUR}+)` : "");
+const clawsNote = (state: GameState, proc: P<"KnockDown">, player: PlayerState) =>
+  clawsApply(state, proc, player) ? ` (Claws: ${CLAWS_ARMOUR}+)` : "";
 
 /**
  * Player goes prone (a turnover if `turnover`), then armour, injury and finally a bounce if they held the ball.
@@ -154,11 +156,11 @@ export const KnockDown: Handler<P<"KnockDown">> = {
       }
       case "armour": {
         if (action === null) return "wait";
-        const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Armour ${player.av}+${mightyBlowNote(proc.mightyBlow?.bonus ?? 0)}${clawsNote(proc, player)}`);
+        const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Armour ${player.av}+${mightyBlowNote(proc.mightyBlow?.bonus ?? 0)}${clawsNote(state, proc, player)}`);
         let roll = a! + b!;
         const bonus = proc.mightyBlow?.bonus ?? 0;
-        if (clawsApply(proc, player) && roll >= CLAWS_ARMOUR && roll < player.av) {
-          ctx.emit({ type: "SkillUsed", playerId: proc.clawsId!, skill: "Claws" });
+        if (clawsApply(state, proc, player) && roll >= CLAWS_ARMOUR && roll < player.av) {
+          ctx.emit({ type: "SkillUsed", playerId: proc.blockerId!, skill: "Claws" });
           ctx.emit({ type: "ArmourBroken", playerId: player.id, roll });
           proc.stage = "injury";
           return "continue";
@@ -184,7 +186,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Injury${mightyBlowNote(bonus)}`);
         if (bonus > 0) ctx.emit({ type: "SkillUsed", playerId: proc.mightyBlow!.playerId, skill: "Mighty Blow" });
         // The casualty roll and the apothecary run before the ball bounces.
-        injure(ctx, player, a! + b! + bonus);
+        injure(ctx, player, a! + b! + bonus, false, proc.blockerId);
         proc.stage = "bounce";
         return "continue";
       }
@@ -198,7 +200,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     const reason =
       proc.stage === "injury"
         ? `Injury${mightyBlowNote(injuryBonus(proc))}`
-        : `Armour ${player.av}+ (${player.name})${mightyBlowNote(proc.mightyBlow?.bonus ?? 0)}${clawsNote(proc, player)}`;
+        : `Armour ${player.av}+ (${player.name})${mightyBlowNote(proc.mightyBlow?.bonus ?? 0)}${clawsNote(state, proc, player)}`;
     return [{ type: "ROLL", side: null, dice: [...ARMOUR_DICE], reason }];
   },
 };

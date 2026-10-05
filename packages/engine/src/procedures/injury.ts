@@ -1,7 +1,8 @@
 import type { Ctx, Handler } from "../context";
 import type { Action, Casualty, Characteristic, DiceSpec, InjuryOutcome, PlayerState, Procedure } from "../types";
 import { hasSkill } from "../skills";
-import { getPlayer } from "./helpers";
+import { teamPlayers } from "../pitch";
+import { createPlayer, getPlayer } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -69,8 +70,11 @@ export const REGENERATION_TARGET = 4;
 
 const afterCasualty = (player: PlayerState) => (hasSkill(player, "Regeneration") ? "regeneration" : "apothecary");
 
-/** Resolve an injury roll total on `player`: emits the table result and pushes the casualty / apothecary follow-up. */
-export function injure(ctx: Ctx, player: PlayerState, total: number, crowd = false) {
+/**
+ * Resolve an injury roll total on `player`: emits the table result and pushes the casualty / apothecary follow-up.
+ * `attackerId`: the opponent whose block caused it (Plague Ridden).
+ */
+export function injure(ctx: Ctx, player: PlayerState, total: number, crowd = false, attackerId?: string) {
   const outcome = injuryOutcome(player, total);
   ctx.emit({ type: "PlayerInjured", playerId: player.id, result: outcome === "stunned" ? "stunned" : outcome === "ko" ? "ko" : "cas" });
   ctx.push({
@@ -78,6 +82,7 @@ export function injure(ctx: Ctx, player: PlayerState, total: number, crowd = fal
     playerId: player.id,
     outcome,
     crowd,
+    ...(attackerId ? { attackerId } : {}),
     stage: outcome === "casualty" ? "casualty" : outcome === "badly-hurt" ? afterCasualty(player) : "apothecary",
     ...(outcome === "badly-hurt" ? { casualty: { result: "badly-hurt" as const } } : {}),
   });
@@ -202,9 +207,30 @@ function place(ctx: Ctx, player: PlayerState, proc: P<"Injury">) {
     player.at = "cas";
     player.status = "standing";
     player.casualty = proc.casualty!;
+    if (proc.casualty!.result === "dead" && proc.attackerId) raiseInfected(ctx, player, getPlayer(ctx, proc.attackerId));
   }
   if (proc.treated) {
     const result = proc.healed ? "reserves" : proc.outcome === "stunned" ? "stunned" : "casualty";
     ctx.emit({ type: "ApothecaryResult", playerId: player.id, result, casualty: result === "casualty" ? proc.casualty! : null });
   }
+}
+
+/** A killed player with one of these skills cannot be raised (Plague Ridden). */
+const UNRAISABLE_SKILLS = ["Stunty", "Regeneration", "Decay"];
+
+/**
+ * Plague Ridden: once per game, an opponent killed by the block of a player with the skill (not a Big Guy, and
+ * without Stunty, Regeneration or Decay) joins the blocker's team in the reserves, as a new player of its lineman
+ * position.
+ */
+function raiseInfected(ctx: Ctx, dead: PlayerState, attacker: PlayerState) {
+  const { state } = ctx;
+  const team = state.teams[attacker.side];
+  if (!hasSkill(attacker, "Plague Ridden") || attacker.side === dead.side || !team.raisePosition || team.raisedDead > 0) return;
+  if (dead.keywords.includes("big guy") || UNRAISABLE_SKILLS.some((s) => hasSkill(dead, s))) return;
+  const nr = 1 + Math.max(...teamPlayers(state, attacker.side).map((p) => p.nr));
+  const raised = createPlayer(attacker.side, { ...team.raisePosition, nr, name: dead.name });
+  state.players[raised.id] = raised;
+  team.raisedDead += 1;
+  ctx.emit({ type: "PlayerRaised", playerId: raised.id, fromId: dead.id });
 }
