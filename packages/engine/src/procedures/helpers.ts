@@ -1,7 +1,7 @@
 import type { Ctx } from "../context";
 import type { Action, ActionTemplate, GameState, PlayerState, Side, Square, Weather } from "../types";
-import { skillName } from "../skills";
-import { inBounds, inHalf, isOnPitch, playerAt, sameSquare, scoringEndZoneX } from "../pitch";
+import { hasSkill, skillName } from "../skills";
+import { inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, teamPlayers } from "../pitch";
 
 /** The player with this id, or reject the action. */
 export function getPlayer(ctx: Ctx, id: string): PlayerState {
@@ -78,6 +78,15 @@ export function endDrive(ctx: Ctx) {
     team.driveRerolls = 0;
     team.extraAssist = false;
   }
+}
+
+/** Disturbing Presence: opponents with the skill on the pitch within 3 squares of the player, even prone or stunned. */
+export function disturbingPresences(state: GameState, player: PlayerState): number {
+  if (!isOnPitch(player)) return 0;
+  const { at } = player;
+  return teamPlayers(state, other(player.side)).filter(
+    (p) => isOnPitch(p) && hasSkill(p, "Disturbing Presence") && Math.max(Math.abs(p.at.x - at.x), Math.abs(p.at.y - at.y)) <= 3,
+  ).length;
 }
 
 /** BB2025 weather modifier added to a check roll. */

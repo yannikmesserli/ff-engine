@@ -740,6 +740,30 @@ describe("engine", () => {
       expect(s.log).toContainEqual({ type: "PassResult", playerId: "home-5", result: "accurate" });
     });
 
+    describe("Disturbing Presence", () => {
+      /** away-11 with Disturbing Presence at (6,4), prone: within 3 squares of the ball at (4,2). */
+      const disturbing = (s = toFirstTurn()) =>
+        edit(withSkills(place(s, { "away-11": { x: 6, y: 4 } }), { "away-11": ["Disturbing Presence"] }), (c) => void (c.players["away-11"]!.status = "prone"));
+
+      it("-1 to passes of opponents within 3 squares, even when prone", () => {
+        const s = apply(disturbing(), declare("home-5", "pass"), ...TO_BALL, roll(3));
+        expect(find(s, "THROW")?.squares).toContainEqual({ x: 10, y: 4, range: "short", needed: 6 });
+        expect(find(apply(s, { type: "THROW", square: { x: 10, y: 4 } }), "ROLL")?.reason).toBe("Pass 6+ (short)");
+      });
+
+      it("-1 to catches", () => {
+        const s = apply(place(disturbing(), { "home-4": { x: 5, y: 3 } }), declare("home-5", "handoff"), ...TO_BALL, roll(3), { type: "HAND_OFF", targetId: "home-4" });
+        expect(find(s, "ROLL")?.reason).toBe("Catch 4+ (Home 4)");
+      });
+
+      it("-1 to interceptions, and only counts opponents", () => {
+        const s = withSkills(toFirstTurn(), { "home-2": ["Disturbing Presence"], "away-3": ["Disturbing Presence"] });
+        const interceptor = { ...s.players["away-2"]!, at: { x: 13, y: 7 } };
+        expect(interceptionTarget(s, interceptor, "accurate")).toBe(10);
+        expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(9);
+      });
+    });
+
     describe("Bone Head and Really Stupid", () => {
       it("Bone Head: a 1 loses the declared action and distracts the player, without a turnover", () => {
         let s = apply(withSkills(toFirstTurn(), { "home-1": ["Bone Head"] }), declare("home-1", "blitz", "away-1"));

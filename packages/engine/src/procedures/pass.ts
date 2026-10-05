@@ -3,7 +3,7 @@ import type { GameState, PassRange, PassResult, PlayerState, Procedure, Square }
 import { SCATTER, passes } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName } from "../skills";
-import { canTeamReroll, checkTouchdown, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
+import { canTeamReroll, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -40,9 +40,9 @@ export function passRange(state: GameState, from: Square, to: Square): PassRange
   return range;
 }
 
-/** Everything added to the thrower's PA: range, tackle zones on the thrower, Very Sunny. */
+/** Everything added to the thrower's PA: range, tackle zones on the thrower, Very Sunny, Disturbing Presence. */
 export function passModifiers(state: GameState, thrower: PlayerState & { at: Square }, range: PassRange) {
-  return RANGE_MODIFIER[range] + tackleZones(state, thrower.side, thrower.at) + (state.weather === "very-sunny" ? 1 : 0);
+  return RANGE_MODIFIER[range] + tackleZones(state, thrower.side, thrower.at) + (state.weather === "very-sunny" ? 1 : 0) + disturbingPresences(state, thrower);
 }
 
 /** The D6 roll needed for an accurate pass, or null without PA. */
@@ -97,7 +97,7 @@ export function interceptors(state: GameState, thrower: PlayerState, target: Squ
 
 /**
  * BB2025 interception target: AG +3 accurate / +2 inaccurate, +1 per tackle
- * zone, +1 in Pouring Rain.
+ * zone, +1 in Pouring Rain, +1 per Disturbing Presence.
  */
 export const interceptionTarget = (state: GameState, interceptor: PlayerState & { at: Square }, result: PassResult) =>
   Math.max(
@@ -105,7 +105,8 @@ export const interceptionTarget = (state: GameState, interceptor: PlayerState & 
     interceptor.ag +
       (result === "accurate" ? 3 : 2) +
       tackleZones(state, interceptor.side, interceptor.at) +
-      (state.weather === "pouring-rain" ? 1 : 0),
+      (state.weather === "pouring-rain" ? 1 : 0) +
+      disturbingPresences(state, interceptor),
   );
 
 /** Pass: the thrower may re-roll an inaccurate pass or a fumble with the skill instead of a team re-roll. */

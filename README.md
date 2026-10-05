@@ -126,8 +126,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   thrown as a fumble) or be eaten: dead without apothecary or Regeneration, a turnover only with the ball.
 - Unchannelled Fury: rolled when the player is activated, 2+ for a Block or Blitz and 4+ otherwise (team re-roll
   allowed); a failure loses the action (still used this turn, no turnover), but the player keeps their tackle zone.
+- Disturbing Presence: -1 to passes (and team-mate throws), catches and interceptions for each opponent with the skill
+  on the pitch within 3 squares, even prone or stunned.
 
-Not yet: most other skills (Kick, Claws, Disturbing Presence...), inducements, overtime.
+Not yet: most other skills (Kick, Claws...), inducements, overtime.
 
 The playground accepts `?seed=42` to replay the same dice.
 
