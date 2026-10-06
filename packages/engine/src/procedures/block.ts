@@ -99,12 +99,20 @@ export function pushbackSquares(state: GameState, from: Square, dir: Square): Sq
 }
 
 /**
- * Where the player being pushed can go, and which side chooses. Sidestep: the pushed player's coach picks any free
- * adjacent square (if there is one) instead of the usual three; a player without a tackle zone cannot use it.
+ * Where the player being pushed can go, and which side chooses. Grab (Block actions, the defender only): the attacker
+ * may also pick any free square next to the defender, and Sidestep does not work. Sidestep: the pushed player's coach
+ * picks any free adjacent square (if there is one) instead of the usual three; a player without a tackle zone cannot use
+ * it.
  */
-export function pushChoice(state: GameState, proc: P<"Block">): { side: Side; squares: Square[]; sidestep: boolean } {
+export function pushChoice(state: GameState, proc: P<"Block">): { side: Side; squares: Square[]; sidestep: boolean; grab?: Square[] } {
   const pushing = proc.pushing!;
   const player = state.players[pushing.playerId]!;
+  const attacker = state.players[proc.attackerId]!;
+  if (!proc.blitz && hasSkill(attacker, "Grab") && pushing.playerId === proc.defenderId && player.side !== attacker.side) {
+    const usual = pushbackSquares(state, pushing.from, pushing.dir);
+    const free = adjacent(pushing.from).filter((s) => !playerAt(state, s) && !usual.some((u) => sameSquare(u, s)));
+    return { side: attacker.side, squares: [...usual, ...free], sidestep: false, grab: free };
+  }
   if (hasSkill(player, "Sidestep") && hasTackleZone(player)) {
     const free = adjacent(pushing.from).filter((s) => !playerAt(state, s));
     if (free.length > 0) return { side: player.side, squares: free, sidestep: true };
@@ -540,7 +548,7 @@ export const Block: Handler<P<"Block">> = {
       }
       case "push": {
         const pushing = proc.pushing!;
-        const { squares, sidestep } = pushChoice(state, proc);
+        const { squares, sidestep, grab } = pushChoice(state, proc);
         let to: Square | null;
         if (squares.length === 0) to = null;
         else if (squares.length === 1) to = squares[0]!;
@@ -551,6 +559,7 @@ export const Block: Handler<P<"Block">> = {
           to = square;
         }
         if (sidestep) ctx.emit({ type: "SkillUsed", playerId: pushing.playerId, skill: "Sidestep" });
+        if (to && grab?.some((s) => sameSquare(s, to))) ctx.emit({ type: "SkillUsed", playerId: proc.attackerId, skill: "Grab" });
         proc.chain.push({ playerId: pushing.playerId, to: to && { ...to } });
         const occupant = to && playerAt(state, to);
         if (to && occupant) {

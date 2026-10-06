@@ -38,6 +38,7 @@ const SKILL_USES: Record<string, string> = {
   Catch: "to re-roll the catch",
   "Sure Feet": "to re-roll the rush",
   "Arm Bar": "",
+  Grab: "to push the opponent where they want",
   Pass: "to re-roll the pass",
   "Mighty Blow": "",
   Claws: "to break the armour",

@@ -1316,6 +1316,23 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    it("Grab: in a Block action, the attacker may push the defender to any free adjacent square; Sidestep does not work", () => {
+      const grab = withSkills(toFirstTurn(), { "home-2": ["Grab"], "away-2": ["Sidestep"] });
+      let s = apply(blockAway2(grab), roll(3), pick);
+      const push = find(s, "PUSH")!;
+      expect(push.side).toBe("home");
+      // Every square around away-2 at (13,7) but the usual three is taken: nothing more to choose from.
+      expect(push.squares.map(({ x, y }) => [x, y])).toEqual([[14, 6], [14, 7], [14, 8]]);
+      // With away-1 gone, (13,6) is free too (home-1 now assists: two dice).
+      s = apply(place(grab, { "away-1": { x: 20, y: 1 } }), declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(3, 3), pick);
+      expect(find(s, "PUSH")!.squares.some((q) => q.x === 13 && q.y === 6)).toBe(true);
+      s = apply(s, { type: "PUSH", square: { x: 13, y: 6 } });
+      expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Grab" });
+      // Not during a Blitz: Sidestep works again.
+      const blitz = apply(grab, declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" }, roll(3), pick);
+      expect(find(blitz, "PUSH")!.side).toBe("away");
+    });
+
     it("Arm Bar: +1 to the armour (or injury) roll of a player falling after a dodge out of the tackle zone", () => {
       // home-1 dodges from (12,6), next to away-1, to (11,5) and fails.
       const s = apply(withSkills(toFirstTurn(), { "away-1": ["Arm Bar"] }), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1), { type: "DECLINE_REROLL" });

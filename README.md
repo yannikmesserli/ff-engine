@@ -226,6 +226,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Arm Bar: when an opponent falls after a failed dodge or jump out of the player's tackle zone (or after the player
   dived into their square with Diving Tackle), +1 to their armour roll if that breaks it, otherwise to the injury roll.
   Not for a failed Rush, nor against Iron Hard Skin.
+- Grab: in a Block action (not a Blitz), the attacker may push the defender to any free square next to them, besides
+  the usual three, and the defender's Sidestep does not work.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 
