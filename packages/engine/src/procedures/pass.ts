@@ -3,6 +3,7 @@ import type { GameState, PassRange, PassResult, PlayerState, Procedure, Square }
 import { SCATTER, passes } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName } from "../skills";
+import { explosion, rethrow } from "./bomb";
 import { canTeamReroll, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -154,7 +155,8 @@ function endBallAction(ctx: Ctx, thrower: PlayerState) {
 }
 
 /**
- * A thrown pass (BB2025): Animosity towards the receiver, On the Ball moves of the opponents, PA roll with a team re-roll,
+ * A thrown pass (BB2025), or a bomb (Throw Bomb: thrown like a pass, without Animosity or On the Ball; a fumble
+ * explodes on the thrower, an intercepted bomb is thrown again by the interceptor, and it lands with `BombLanding`): Animosity towards the receiver, On the Ball moves of the opponents, PA roll with a team re-roll,
  * fumble (Safe Pass: the thrower may keep the ball on a natural 1, ending the action without a turnover) / inaccurate scatter,
  * one interception attempt under the ruler, then the ball lands and may be caught.
  */
@@ -165,17 +167,28 @@ export const Pass: Handler<P<"Pass">> = {
     const at = squareOf(ctx, thrower);
     const modifiers = passModifiers(state, { ...thrower, at }, proc.range);
     switch (proc.stage) {
+      case "aim": {
+        // The player who caught the bomb throws it again straight away.
+        if (action === null) return "wait";
+        const { square } = ctx.expect(action, "THROW");
+        const to = throwTargets(state, thrower).find((s) => sameSquare(s, square)) ?? ctx.reject("Cannot throw there.");
+        proc.target = { x: to.x, y: to.y };
+        proc.range = to.range;
+        proc.stage = "animosity";
+        return "continue";
+      }
       case "animosity":
         // A failed Bloodlust feeding before the throw ends the action.
-        if (state.turnover) return "done";
-        rollAnimosity(ctx, thrower, playerAt(state, proc.target));
+        if (state.turnover && !proc.bomb) return "done";
+        if (!proc.bomb) rollAnimosity(ctx, thrower, playerAt(state, proc.target));
+        else state.lastCheck = null;
         proc.stage = "animosityResult";
         return "continue";
       case "animosityResult":
         if (animosityFailed(state)) return "done";
-        ctx.emit({ type: "PassThrown", playerId: thrower.id, target: { ...proc.target }, range: proc.range });
-        // On the Ball: the opponents may move before the throw.
-        ctx.push({ type: "OnTheBall", side: other(thrower.side), kickoff: false, stage: "select", moved: [] });
+        ctx.emit({ type: "PassThrown", playerId: thrower.id, target: { ...proc.target }, range: proc.range, ...(proc.bomb ? { bomb: true } : {}) });
+        // On the Ball: the opponents may move before the throw (not for a bomb).
+        if (!proc.bomb) ctx.push({ type: "OnTheBall", side: other(thrower.side), kickoff: false, stage: "select", moved: [] });
         proc.stage = "roll";
         return "continue";
       case "roll": {
@@ -219,6 +232,12 @@ export const Pass: Handler<P<"Pass">> = {
           proc.stage = "safePass";
           return "continue";
         }
+        if (proc.result === "fumble" && proc.bomb) {
+          // A fumbled bomb explodes in the thrower's square.
+          ctx.push(explosion(state, at));
+          proc.stage = "end";
+          return "continue";
+        }
         if (proc.result === "fumble") {
           // The ball bounces from the thrower's square.
           state.ball = { square: { ...at }, carried: false };
@@ -227,15 +246,16 @@ export const Pass: Handler<P<"Pass">> = {
           proc.stage = "end";
           return "continue";
         }
-        state.ball = { square: null, carried: false };
+        if (!proc.bomb) state.ball = { square: null, carried: false };
         proc.landing = { ...proc.target };
         proc.stage = proc.result === "inaccurate" ? "scatter" : "intercept";
         return "continue";
       case "safePass":
         if (action === null) return "wait";
         if (ctx.expect(action, "USE_SKILL").use) {
-          // The thrower keeps the ball and the action ends, without a turnover.
+          // The thrower keeps the ball (or the bomb does not go off) and the action ends, without a turnover.
           ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Safe Pass" });
+          if (proc.bomb) ctx.emit({ type: "BombLost" });
           proc.stage = "end";
         } else {
           proc.result = "fumble";
@@ -284,7 +304,12 @@ export const Pass: Handler<P<"Pass">> = {
         const square = squareOf(ctx, interceptor);
         const target = interceptionTarget(state, { ...interceptor, at: square }, proc.result!);
         const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Interception ${Math.min(6, target)}+`);
-        if (passes(roll!, 0, target)) {
+        if (passes(roll!, 0, target) && proc.bomb) {
+          // An intercepted bomb must be thrown again by the interceptor.
+          ctx.emit({ type: "Intercepted", playerId: interceptor.id });
+          ctx.push(rethrow(interceptor.id));
+          proc.stage = "end";
+        } else if (passes(roll!, 0, target)) {
           state.ball = { square: { ...square }, carried: true };
           ctx.emit({ type: "Intercepted", playerId: interceptor.id });
           proc.stage = "end";
@@ -295,7 +320,9 @@ export const Pass: Handler<P<"Pass">> = {
         return "continue";
       }
       case "land":
-        if (proc.throwInFrom) ctx.push({ type: "ThrowIn", from: proc.throwInFrom });
+        if (proc.bomb && proc.throwInFrom) ctx.emit({ type: "BombLost" });
+        else if (proc.bomb) ctx.push({ type: "BombLanding", square: proc.landing!, scattered: proc.result === "inaccurate", bounced: false, stage: "land" });
+        else if (proc.throwInFrom) ctx.push({ type: "ThrowIn", from: proc.throwInFrom });
         else {
           landBall(ctx, proc.landing!, proc.landing!, {
             kickoff: false,
@@ -307,13 +334,16 @@ export const Pass: Handler<P<"Pass">> = {
         proc.stage = "end";
         return "continue";
       case "end":
-        endBallAction(ctx, thrower);
+        // A bomb only causes a turnover by knocking down the team's players.
+        if (!proc.bomb) endBallAction(ctx, thrower);
         return "done";
     }
   },
   actions(state, proc) {
     const thrower = state.players[proc.throwerId]! as PlayerState & { at: Square };
     switch (proc.stage) {
+      case "aim":
+        return [{ type: "THROW", side: thrower.side, playerId: thrower.id, squares: throwTargets(state, thrower) }];
       case "roll": {
         const needed = shownNeeded(thrower, passModifiers(state, thrower, proc.range));
         return [{ type: "ROLL", side: thrower.side, dice: [{ kind: "d6", count: 1 }], reason: `Pass ${needed}+ (${proc.range})` }];

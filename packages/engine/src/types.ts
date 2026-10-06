@@ -186,7 +186,7 @@ export interface DiceRoll {
 }
 
 /** Actions a player can declare when activated. */
-export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm" | "gaze";
+export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm" | "gaze" | "bomb";
 
 /** BB2025 range bands: Quick, Short, Long, Long Bomb. */
 export type PassRange = "quick" | "short" | "long" | "bomb";
@@ -218,7 +218,8 @@ export type CheckKind =
   | "shadowing"
   | "savagery"
   | "appearance"
-  | "gaze";
+  | "gaze"
+  | "bombcatch";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -294,9 +295,12 @@ export type Procedure =
       throwerId: string;
       target: Square;
       range: PassRange;
+      /** A bomb (Throw Bomb action) rather than the ball: no Animosity or On the Ball, and it explodes where it stops. */
+      bomb?: boolean;
       /** "animosity": the thrower may first have to roll for Animosity towards the receiver. */
       /** "safePass": a natural 1 may be saved by Safe Pass. */
-      stage: "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
+      /** "aim": a player who caught a bomb picks where to throw it again. */
+      stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
       rerolled: boolean;
       result?: PassResult;
       /** The natural D6 of the pass roll. */
@@ -394,6 +398,13 @@ export type Procedure =
    * opponent passes; at the kick-off only one unmarked player, in their own half.
    */
   | { type: "OnTheBall"; side: Side; kickoff: boolean; stage: "select" | "move"; playerId?: string; moved: string[] }
+  /**
+   * A thrown bomb comes down on `square`: a standing player there may catch it (and must throw it again), otherwise it
+   * explodes; on an empty square it first bounces once.
+   */
+  | { type: "BombLanding"; square: Square; scattered: boolean; bounced: boolean; stage: "land" | "catch"; catcherId?: string }
+  /** A bomb explodes: the player on `square` is hit, each player next to it on a 4+; `targets` are still to resolve. */
+  | { type: "Explosion"; square: Square; targets: string[]; stage: "explode" | "next" | "roll" }
   /** Hit and Run: after their block (or Stab), the player may step to a free square away from any opponent. */
   | { type: "HitAndRun"; playerId: string; stage: "ask" | "move" }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
@@ -641,7 +652,12 @@ export type GameEvent =
   | { type: "BlockResult"; attackerId: string; defenderId: string; face: number }
   | { type: "PlayerPushed"; playerId: string; from: Square; to: Square | null }
   | { type: "FollowedUp"; playerId: string; to: Square }
-  | { type: "PassThrown"; playerId: string; target: Square; range: PassRange }
+  | { type: "PassThrown"; playerId: string; target: Square; range: PassRange; bomb?: boolean }
+  | { type: "BombCaught"; playerId: string }
+  | { type: "BombExploded"; square: Square }
+  /** The bomb left the pitch, or Safe Pass kept it: it does not explode. */
+  | { type: "BombLost" }
+  | { type: "BombHit"; playerId: string }
   | { type: "PassResult"; playerId: string; result: PassResult }
   /** `result`: "accurate" is a superb throw, "inaccurate" a subpar one. */
   | { type: "TeamMateThrown"; playerId: string; thrownId: string; result: PassResult }

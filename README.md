@@ -191,6 +191,12 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Break Tackle: once per turn, +1 to a Dodge roll with ST 3 or less, +2 with ST 4, +3 with ST 5 or more, used only when
   the roll would fail without it (Diving Tackle included).
 - My Ball: the player cannot declare a Pass or Hand-off action (nor can No Ball or Ball & Chain players).
+- Bombardier: a once-per-turn Throw Bomb special action, without moving first. The bomb is thrown like a pass (range,
+  PA roll, Pass and team re-rolls, Safe Pass, interception; no Animosity or On the Ball). A fumble explodes on the
+  thrower; a bomb leaving the pitch is lost; on an empty square it bounces once. A standing player where it comes down
+  tries to catch it (no Catch re-roll) and must throw it again at once (an interceptor too); otherwise it explodes:
+  the player in the square is hit, each adjacent player on a 4+. Standing players hit are knocked down (a turnover for
+  the moving team), prone or stunned ones roll armour, without modifiers.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

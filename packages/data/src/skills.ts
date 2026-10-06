@@ -88,7 +88,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Animal Savagery": "After declaring an action, roll a D6 (+2 for a Block or Blitz): on 1-3 the player lashes out at an adjacent team-mate, or loses the action.",
   Animosity: "Before passing or handing off to {X}, roll a D6: on a 1 the player refuses and the action ends.",
   "Ball & Chain": "Can only take a Ball & Chain move: moves randomly, blocking whoever is in the way.",
-  Bombardier: "Special action: throws a bomb that knocks down players where it lands.",
+  Bombardier: "Once per turn, a Throw Bomb special action (no move first): thrown like a pass, the bomb explodes where it stops, hitting the player there and those around it on 4+.",
   "Bone Head": "After declaring an action, roll a D6: on a 1 the action is lost and the player is distracted (no tackle zone) until their next activation.",
   "Breathe Fire": "Special action: breathes fire on an adjacent opponent, who may be knocked down or placed prone.",
   Chainsaw: "Special action: a chainsaw attack on an adjacent opponent, +3 to the armour roll; a 1 hurts this player instead.",

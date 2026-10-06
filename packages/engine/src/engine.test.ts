@@ -1250,6 +1250,44 @@ describe("engine", () => {
       expect(actionsOf(withSkills(s, { "home-4": ["My Ball"] }), "home-4")).not.toContain("handoff");
     });
 
+    describe("Bombardier", () => {
+      const bomber = (s = toFirstTurn()) => withSkills(s, { "home-4": ["Bombardier"] });
+      const throwBomb = (s: GameState, square: Square) => apply(s, declare("home-4", "bomb"), { type: "THROW", square });
+
+      it("Throw Bomb: once per turn, no move before the throw, thrown like a pass", () => {
+        let s = apply(bomber(), declare("home-4", "bomb"));
+        expect(types(s)).toEqual(["THROW", "END_PLAYER_ACTION"]);
+        s = apply(s, { type: "THROW", square: { x: 6, y: 4 } });
+        expect(s.log).toContainEqual({ type: "PassThrown", playerId: "home-4", target: { x: 6, y: 4 }, range: "short", bomb: true });
+        expect(find(s, "ROLL")?.reason).toBe("Pass 5+ (short)");
+        // Accurate on an empty square: it bounces once (east, to (7,4)) and explodes; home-5 at (8,5) is hit on a 4+.
+        s = apply(s, roll(5), roll(3));
+        expect(s.log).toContainEqual({ type: "BombExploded", square: { x: 7, y: 4 } });
+        expect(find(s, "ROLL")?.reason).toBe("Explosion 4+ (Home 5)");
+        s = apply(s, roll(4));
+        expect(s.players["home-5"]!.status).toBe("prone");
+        expect(s.turnover).toBe(true);
+        expect(s.ball).toEqual({ square: { x: 4, y: 2 }, carried: false });
+      });
+
+      it("a fumble explodes on the thrower", () => {
+        const s = apply(throwBomb(bomber(), { x: 6, y: 4 }), roll(1), { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "BombHit", playerId: "home-4" });
+        expect([s.players["home-4"]!.status, s.turnover]).toEqual(["prone", true]);
+      });
+
+      it("a player who catches the bomb must throw it again; a failed catch sets it off", () => {
+        // home-6 stands at (10,6).
+        let s = apply(throwBomb(bomber(), { x: 10, y: 6 }), roll(6));
+        expect(find(s, "ROLL")?.reason).toBe("Catch (bomb) 3+ (Home 6)");
+        const caught = apply(s, roll(3));
+        expect(caught.log).toContainEqual({ type: "BombCaught", playerId: "home-6" });
+        expect(find(caught, "THROW")).toMatchObject({ side: "home", playerId: "home-6" });
+        s = apply(s, roll(2), { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "BombHit", playerId: "home-6" });
+      });
+    });
+
     describe("Break Tackle", () => {
       // home-1 dodges from (12,6) to (11,5): a 3+ dodge.
       const breaker = (skills: string[] = []) => withSkills(toFirstTurn(), { "home-1": ["Break Tackle"], "away-1": skills });

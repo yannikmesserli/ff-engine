@@ -26,6 +26,7 @@ const CHECK_NAMES = {
   savagery: "Animal Savagery roll (a failure means lashing out at a team-mate)",
   appearance: "Foul Appearance roll (a failure wastes the block and ends the action)",
   gaze: "Hypnotic Gaze roll",
+  bombcatch: "catch of the bomb",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -91,6 +92,7 @@ export const ACTION_NAMES: Record<PlayerActionType, string> = {
   secure: "Secure the Ball",
   ttm: "Throw Team-mate",
   gaze: "Hypnotic Gaze",
+  bomb: "Throw Bomb",
 };
 
 /** Display names of the pass ranges, shortest first. */
@@ -197,7 +199,15 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     case "PlayerPushed":
       return e.to ? null : `${who(state, e.playerId)} is pushed into the crowd!`;
     case "PassThrown":
-      return `${who(state, e.playerId)} throws a ${PASS_RANGE_NAMES[e.range].toLowerCase()}.`;
+      return e.bomb ? `${who(state, e.playerId)} throws a bomb!` : `${who(state, e.playerId)} throws a ${PASS_RANGE_NAMES[e.range].toLowerCase()}.`;
+    case "BombCaught":
+      return `${who(state, e.playerId)} catches the bomb and must throw it again!`;
+    case "BombExploded":
+      return `BOOM! The bomb explodes at (${e.square.x}, ${e.square.y}).`;
+    case "BombLost":
+      return "The bomb fizzles out harmlessly.";
+    case "BombHit":
+      return `${who(state, e.playerId)} is caught in the blast.`;
     case "PassResult":
       return `The pass is ${e.result === "fumble" ? "fumbled!" : e.result}.`;
     case "TeamMateThrown":

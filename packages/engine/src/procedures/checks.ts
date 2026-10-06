@@ -34,6 +34,7 @@ const CHECK_NAMES = {
   savagery: "Animal Savagery",
   appearance: "Foul Appearance",
   gaze: "Hypnotic Gaze",
+  bombcatch: "Catch (bomb)",
 } as const;
 
 /** The natural d6 result needed, for display ("4+"). */

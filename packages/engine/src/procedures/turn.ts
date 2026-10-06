@@ -36,7 +36,7 @@ export const FURY_TARGET = 4;
 export const FURY_BLOCK_TARGET = 2;
 
 /** Team actions that can only be declared once per turn. */
-const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure", "ttm"];
+const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure", "ttm", "bomb"];
 
 /** The innermost player activation on the stack. */
 const activation = (state: GameState) => state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction");
@@ -268,6 +268,8 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   // A Foul can be declared as long as an opponent is prone or stunned somewhere on the pitch.
   const foulable = teamPlayers(state, other(player.side)).some((o) => isOnPitch(o) && o.status !== "standing");
   if (free("foul") && foulable) actions.push("foul");
+  // Bombardier: a Throw Bomb special action, once per turn.
+  if (free("bomb") && hasSkill(player, "Bombardier")) actions.push("bomb");
   // Hypnotic Gaze: a special action any number of players may declare each turn.
   if (hasSkill(player, "Hypnotic Gaze") && blitzTargets(state, player.side).length > 0) actions.push("gaze");
   return actions;
@@ -441,6 +443,12 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (action === null) return "wait";
     const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "END_PLAYER_ACTION");
     if (a.type === "END_PLAYER_ACTION") return endActivation(ctx, proc, player);
+    if (a.type === "THROW" && proc.action === "bomb") {
+      const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
+      proc.finished = true;
+      ctx.push({ type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, bomb: true, stage: "animosity", rerolled: false });
+      return "continue";
+    }
     if (a.type === "THROW") {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
       proc.finished = true;
@@ -525,7 +533,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const throwable = ttmOptions(state, proc).map((p) => p.id);
     const gazes = gazeOptions(state, proc).map((p) => p.id);
     return [
-      ...(proc.action === "block" ? [] : [{ type: "MOVE" as const, side: player.side, playerId: player.id, squares: legalMoves(state, player) }]),
+      ...(proc.action === "block" || proc.action === "bomb" ? [] : [{ type: "MOVE" as const, side: player.side, playerId: player.id, squares: legalMoves(state, player) }]),
       ...(targets.length > 0 ? [{ type: "BLOCK" as const, side: player.side, playerId: player.id, targets }] : []),
       ...(vomits.length > 0 ? [{ type: "VOMIT" as const, side: player.side, playerId: player.id, targetIds: vomits }] : []),
       ...(stabs.length > 0 ? [{ type: "STAB" as const, side: player.side, playerId: player.id, targetIds: stabs }] : []),
@@ -653,7 +661,10 @@ function releasingBall(state: GameState, proc: P<"MoveAction">, action: "pass" |
   return proc.action === action && !proc.finished && player.status === "standing" && holdsBall(state, player) ? player : null;
 }
 
+/** Squares the player may throw the ball (Pass) or a bomb (Throw Bomb, standing, without moving first) to. */
 const throwOptions = (state: GameState, proc: P<"MoveAction">) => {
+  const bomber = state.players[proc.playerId]!;
+  if (proc.action === "bomb") return !proc.finished && bomber.status === "standing" ? throwTargets(state, bomber) : [];
   const player = releasingBall(state, proc, "pass");
   return player ? throwTargets(state, player) : [];
 };
@@ -663,9 +674,9 @@ const handOffOptions = (state: GameState, proc: P<"MoveAction">) => {
   return player ? handOffTargets(state, player) : [];
 };
 
-/** A Block action does not move; Move and Blitz actions do. */
+/** Block and Throw Bomb actions do not move; Move and Blitz actions do. */
 const activationMoves = (state: GameState, proc: P<"MoveAction">) =>
-  proc.action === "block" || proc.finished ? [] : legalMoves(state, state.players[proc.playerId]!);
+  proc.action === "block" || proc.action === "bomb" || proc.finished ? [] : legalMoves(state, state.players[proc.playerId]!);
 
 /** Who the active player may block now: anyone adjacent for a Block, the declared target once for a Blitz. */
 function activationTargets(state: GameState, proc: P<"MoveAction">) {
