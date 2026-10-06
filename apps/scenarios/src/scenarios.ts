@@ -224,4 +224,41 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "diving-tackle",
+    title: "Diving Tackle and Break Tackle on a dodge",
+    instructions: [
+      "Home's first turn. Click Gorbag (#1: Block, Break Tackle, Dodge) and declare a Move to the square behind him: a 3+ dodge away from three humans. Hans (#1) and Fritz (#3) have Diving Tackle.",
+      "Enter the dodge by hand to see each case (Undo to try the next): 5 or 6, Diving Tackle cannot make it fail and is not offered.",
+      "4: the away coach is offered Diving Tackle (-2); Break Tackle (+1) still saves the dodge, and the tackler lands prone in the square Gorbag left.",
+      "3 or 2: with Diving Tackle the dodge fails, and Dodge re-rolls it automatically, keeping the -2. Without it, a 2 is saved by Break Tackle.",
+      "Break Tackle works once per turn: after using it, step back next to a human and dodge away again to see it gone.",
+    ],
+    home: {
+      name: "Slippery Gits",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Gorbag", position: "Orc Blitzer", skills: ["Dodge"] },
+        { number: 2, name: "Snaga", position: "Orc Lineman" },
+        { number: 3, name: "Lugbur", position: "Orc Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Tacklers",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman", skills: ["Diving Tackle"] },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman", skills: ["Diving Tackle"] },
+      ],
+    },
+    seed: 5,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

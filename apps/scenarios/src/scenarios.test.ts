@@ -53,4 +53,21 @@ describe("scenarios", () => {
     s = step(s, { type: "ROLL", values: [4] }).state;
     expect(find(s, "THROW")).toMatchObject({ side: "away", playerId: "away-5" });
   });
+
+  it("diving-tackle: on a 4, Diving Tackle is offered and Break Tackle still saves the dodge", () => {
+    let s = load("diving-tackle");
+    s = step(s, { type: "START_ACTION", playerId: "home-1", action: "move" }).state;
+    s = step(s, { type: "MOVE", square: { x: 11, y: 7 } }).state;
+    expect(find(s, "ROLL")?.reason).toBe("Dodge 3+ (Gorbag)");
+    const five = step(s, { type: "ROLL", values: [5] }).state;
+    expect(find(five, "SELECT_PLAYERS")).toBeUndefined();
+    // On a 3, Diving Tackle makes the dodge fail: Dodge re-rolls it, keeping the -2.
+    const three = step(step(s, { type: "ROLL", values: [3] }).state, { type: "SELECT_PLAYERS", playerIds: ["away-3"] }).state;
+    expect(find(three, "ROLL")?.reason).toBe("Dodge 5+ (Gorbag)");
+    s = step(s, { type: "ROLL", values: [4] }).state;
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1", "away-3"] });
+    s = step(s, { type: "SELECT_PLAYERS", playerIds: ["away-1"] }).state;
+    expect(s.players["home-1"]).toMatchObject({ at: { x: 11, y: 7 }, status: "standing", usedSkills: ["Break Tackle"] });
+    expect(s.players["away-1"]).toMatchObject({ at: { x: 12, y: 7 }, status: "prone" });
+  });
 });
