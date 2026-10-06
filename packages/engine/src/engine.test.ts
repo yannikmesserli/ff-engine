@@ -1243,6 +1243,13 @@ describe("engine", () => {
       });
     });
 
+    it("My Ball: the player cannot declare a Pass or Hand-off action", () => {
+      const s = edit(toFirstTurn(), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+      expect(actionsOf(s, "home-4")).toEqual(expect.arrayContaining(["pass", "handoff"]));
+      expect(actionsOf(withSkills(s, { "home-4": ["My Ball"] }), "home-4")).not.toContain("pass");
+      expect(actionsOf(withSkills(s, { "home-4": ["My Ball"] }), "home-4")).not.toContain("handoff");
+    });
+
     describe("Break Tackle", () => {
       // home-1 dodges from (12,6) to (11,5): a 3+ dodge.
       const breaker = (skills: string[] = []) => withSkills(toFirstTurn(), { "home-1": ["Break Tackle"], "away-1": skills });

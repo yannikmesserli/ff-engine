@@ -190,6 +190,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
   single Skull die instead of the block re-roll, without spending a team re-roll.
 - Break Tackle: once per turn, +1 to a Dodge roll with ST 3 or less, +2 with ST 4, +3 with ST 5 or more, used only when
   the roll would fail without it (Diving Tackle included).
+- My Ball: the player cannot declare a Pass or Hand-off action (nor can No Ball or Ball & Chain players).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

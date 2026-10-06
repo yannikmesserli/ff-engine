@@ -243,6 +243,9 @@ function canSecure(state: GameState, player: PlayerState) {
   return !standingOpponents(state, player.side).some((o) => Math.max(Math.abs(o.at.x - square.x), Math.abs(o.at.y - square.y)) <= 2);
 }
 
+/** My Ball (and No Ball, Ball & Chain): the player cannot declare a Pass or Hand-off action. */
+const keepsBall = (player: PlayerState) => ["My Ball", "No Ball", "Ball & Chain"].some((s) => hasSkill(player, s));
+
 /**
  * Actions the player may declare: Block needs a standing player next to a standing opponent;
  * Blitz, Pass, Hand-off, Foul and Secure the Ball are once per turn; Hypnotic Gaze is not. A Charge (kick-off event) only allows Move and Blitz.
@@ -256,8 +259,8 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   if (!proc.charge && canBlock && adjacentTargets(state, player).length > 0) actions.push("block");
   if (free("blitz") && blitzTargets(state, player.side).length > 0) actions.push("blitz");
   if (proc.charge) return actions;
-  if (free("pass") && ballAvailable(state, player)) actions.push("pass");
-  if (free("handoff") && ballAvailable(state, player)) actions.push("handoff");
+  if (free("pass") && ballAvailable(state, player) && !keepsBall(player)) actions.push("pass");
+  if (free("handoff") && ballAvailable(state, player) && !keepsBall(player)) actions.push("handoff");
   if (free("secure") && canSecure(state, player)) actions.push("secure");
   // Throw Team-mate: a standing thrower, with a team-mate with Right Stuff on the pitch to throw.
   const throwable = teamPlayers(state, player.side).some((p) => p.id !== player.id && isOnPitch(p) && hasSkill(p, "Right Stuff"));
