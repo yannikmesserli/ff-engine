@@ -333,4 +333,39 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "block-rerolls",
+    title: "Block re-rolls: team re-roll, Brawler, Hatred, Pro and Loner",
+    instructions: [
+      "Home's first turn. Declare a Block with Gunther (#1: Pro, Brawler, Hatred(orc), Loner(4)) on the orc in front of him: 2 dice, you choose.",
+      "Enter 1 and 2 (Physical dice): a Skull and a Both Down. Four re-rolls are offered: the team re-roll (Gunther must then roll 4+ for Loner), Brawler (the Both Down), Hatred (the Skull, he hates orcs) and Pro (the die you pick, on a 3+).",
+      "Only one of them can be used on a block. Undo to try each; a failed Pro roll offers the team re-roll (with Loner) to roll Pro again.",
+    ],
+    home: {
+      name: "Altdorf Grudges",
+      roster: "Human",
+      rerolls: 3,
+      players: [
+        { number: 1, name: "Gunther", position: "Human Lineman", skills: ["Pro", "Brawler", "Hatred(orc)", "Loner(4)"] },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 8,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 6 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

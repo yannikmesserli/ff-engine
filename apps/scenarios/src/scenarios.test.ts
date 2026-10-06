@@ -105,4 +105,14 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "MOVE", square: { x: 10, y: 7 } }, { type: "ROLL", values: [6] }]);
     expect(find(s, "SELECT_PLAYERS")).toBeUndefined();
   });
+
+  it("block-rerolls: a Skull and a Both Down offer the team re-roll, Brawler, Hatred and Pro", () => {
+    const s = applyActions(load("block-rerolls"), [
+      { type: "START_ACTION", playerId: "home-1", action: "block" },
+      { type: "BLOCK", targetId: "away-1" },
+      { type: "ROLL", values: [1, 2] },
+    ]);
+    expect(getAvailableActions(s).map((t) => (t.type === "USE_SKILL" ? t.skill : t.type))).toEqual(["CHOOSE_BLOCK_DIE", "USE_REROLL", "Brawler", "Hatred", "Pro"]);
+    expect(find(step(s, { type: "USE_REROLL" }).state, "ROLL")?.reason).toBe("Loner 4+ (Gunther)");
+  });
 });
