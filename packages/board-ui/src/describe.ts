@@ -51,6 +51,7 @@ const SKILL_USES: Record<string, string> = {
   Shadowing: "and follows into the vacated square",
   "Strip Ball": "and knocks the ball loose",
   "Safe Pass": "and keeps the ball",
+  "Hit and Run": "to step away",
 };
 
 /** Display names of the weather conditions. */

@@ -1194,6 +1194,30 @@ describe("engine", () => {
       });
     });
 
+    describe("Hit and Run", () => {
+      const runner = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Hit and Run"] });
+
+      it("after the block, the player may step to a free square away from opponents, without a roll", () => {
+        let s = apply(blockAway2(runner()), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour/);
+        s = apply(s, roll(1, 1));
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Hit and Run" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        // (13,7), left by away-2, is next to opponents; the other squares around (12,7) are taken.
+        expect(find(s, "MOVE")?.squares.map(({ x, y }) => [x, y])).toEqual([[11, 6], [11, 7], [11, 8]]);
+        s = apply(s, ...move({ x: 11, y: 7 }));
+        expect(s.players["home-2"]!.at).toEqual({ x: 11, y: 7 });
+        expect([s.activePlayerId, s.turnover, top(s).type]).toEqual([null, false, "Turn"]);
+      });
+
+      it("not after a turnover, and it can be declined", () => {
+        const down = apply(blockAway2(runner()), roll(1), pick, roll(1, 1));
+        expect(types(down)).not.toContain("USE_SKILL");
+        const declined = apply(blockAway2(runner()), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(1, 1), { type: "USE_SKILL", use: false });
+        expect(declined.players["home-2"]!.at).toEqual({ x: 12, y: 7 });
+      });
+    });
+
     describe("Hypnotic Gaze", () => {
       const gazer = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Hypnotic Gaze"] });
       const gaze = (s: GameState) => apply(s, declare("home-2", "gaze"), { type: "GAZE", targetId: "away-2" });

@@ -476,10 +476,10 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const skill = a.type === "VOMIT" ? "Projectile Vomit" : "Stab";
       if (!specialTargets(state, proc, skill).some((t) => t.id === a.targetId)) ctx.reject(`Cannot use ${skill} on this player.`);
       proc.blocked = true;
-      // The attack ends the action, even during a Blitz.
+      // The attack ends the action, even during a Blitz (but Hit and Run may follow a Stab).
       proc.finished = true;
       const blitz = proc.action === "blitz";
-      ctx.push({ type: "Vomit", skill, attackerId: player.id, defenderId: a.targetId, blitz, stage: "appearance" });
+      ctx.push({ type: "Vomit", skill, attackerId: player.id, defenderId: a.targetId, blitz, stage: "appearance" }, ...hitAndRun(player, skill === "Stab"));
       return "continue";
     }
     if (a.type === "BLOCK") {
@@ -498,7 +498,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         dice,
         rerolled: false,
         chain: [],
-      });
+      }, ...hitAndRun(player, true));
       return "continue";
     }
     if (!activationMoves(state, proc).some((s) => sameSquare(s, a.square))) ctx.reject("Illegal move.");
@@ -539,6 +539,48 @@ export const MoveAction: Handler<P<"MoveAction">> = {
 };
 
 const holdsBall = (state: GameState, player: PlayerState) => ballCarrier(state)?.id === player.id;
+
+/** Hit and Run runs once the block (and any Frenzy block) or Stab is over. */
+const hitAndRun = (player: PlayerState, allowed: boolean): Procedure[] =>
+  allowed && hasSkill(player, "Hit and Run") ? [{ type: "HitAndRun", playerId: player.id, stage: "ask" }] : [];
+
+/** Hit and Run: free squares next to the player that are not next to any opponent, standing or not. */
+export function hitAndRunSquares(state: GameState, player: PlayerState): Square[] {
+  if (!isOnPitch(player) || player.status !== "standing" || isRooted(player)) return [];
+  return adjacent(player.at).filter(
+    (s) => !playerAt(state, s) && !adjacent(s).some((n) => playerAt(state, n)?.side === other(player.side)),
+  );
+}
+
+/**
+ * Hit and Run: after a block (once any Frenzy block is over) or a Stab, a standing player with the skill may move one
+ * square to a free square that is not next to an opponent: no Dodge or Rush, no movement spent, a pick-up if the ball
+ * is there. Not after a turnover.
+ */
+export const HitAndRun: Handler<P<"HitAndRun">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const player = getPlayer(ctx, proc.playerId);
+    const squares = hitAndRunSquares(state, player);
+    if (state.turnover || state.touchdown !== null || squares.length === 0) return "done";
+    if (action === null) return "wait";
+    if (proc.stage === "ask") {
+      if (!ctx.expect(action, "USE_SKILL").use) return "done";
+      proc.stage = "move";
+      return "wait";
+    }
+    const { square } = ctx.expect(action, "MOVE");
+    if (!squares.some((s) => sameSquare(s, square))) ctx.reject("Illegal Hit and Run square.");
+    ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Hit and Run" });
+    ctx.push({ type: "MoveStep", playerId: player.id, to: { x: square.x, y: square.y }, stage: "rush", hitAndRun: true });
+    return "done";
+  },
+  actions(state, proc) {
+    const player = state.players[proc.playerId]!;
+    if (proc.stage === "ask") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Hit and Run" }];
+    return [{ type: "MOVE", side: player.side, playerId: player.id, squares: hitAndRunSquares(state, player).map((s) => ({ ...s, rolls: [] })) }];
+  },
+};
 
 /** Animal Savagery: standing team-mates next to the player, one of whom gets lashed out at. */
 export function lashOutTargets(state: GameState, player: PlayerState): PlayerState[] {
@@ -660,8 +702,8 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     /** Step onto the target square; leaving tackle zones (without jumping) gives Shadowing players a chance to follow. */
     const step = (): Procedure[] => {
       const from = { ...squareOf(ctx, player) };
-      movePlayer(ctx, player, proc.to, squares);
-      return proc.jump || proc.onTheBall === "kickoff" ? [] : [{ type: "Shadow", playerId: player.id, from, stage: "select" }];
+      movePlayer(ctx, player, proc.to, proc.hitAndRun ? 0 : squares);
+      return proc.jump || proc.hitAndRun || proc.onTheBall === "kickoff" ? [] : [{ type: "Shadow", playerId: player.id, from, stage: "select" }];
     };
     const fall = (inStartSquare = false) => {
       ctx.push(...(inStartSquare ? [] : step()), { type: "KnockDown", playerId: player.id, turnover: !proc.onTheBall, stage: "fall" });
@@ -688,7 +730,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
       case "rush":
         state.lastCheck = null;
         proc.stage = proc.jump ? "rush2" : "dodge";
-        if (player.movesUsed >= player.ma && !proc.onTheBall) check("rush", RUSH_TARGET, weatherModifier(state, "rush"));
+        if (player.movesUsed >= player.ma && !proc.onTheBall && !proc.hitAndRun) check("rush", RUSH_TARGET, weatherModifier(state, "rush"));
         return "continue";
       case "rush2":
         if (failed(ctx)) return fall(true);
@@ -702,7 +744,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         proc.stage = "move";
         if (proc.jump) {
           check("jump", player.ag, jumpModifier(state, player, squareOf(ctx, player), proc.to));
-        } else if (tackleZones(state, player.side, squareOf(ctx, player)) > 0) {
+        } else if (!proc.hitAndRun && tackleZones(state, player.side, squareOf(ctx, player)) > 0) {
           check("dodge", player.ag, dodgeModifier(state, player, squareOf(ctx, player), proc.to));
         }
         return "continue";

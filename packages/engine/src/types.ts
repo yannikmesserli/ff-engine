@@ -392,6 +392,8 @@ export type Procedure =
    * opponent passes; at the kick-off only one unmarked player, in their own half.
    */
   | { type: "OnTheBall"; side: Side; kickoff: boolean; stage: "select" | "move"; playerId?: string; moved: string[] }
+  /** Hit and Run: after their block (or Stab), the player may step to a free square away from any opponent. */
+  | { type: "HitAndRun"; playerId: string; stage: "ask" | "move" }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
   | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "result" }
   /** Shadowing: an opponent may follow the player who just left `from`, out of their tackle zone. */
@@ -424,6 +426,8 @@ export type Procedure =
       jump?: boolean;
       /** An On the Ball move out of the team's turn (when the opponent passes, or at the kick-off): no Rush, no turnover. */
       onTheBall?: "pass" | "kickoff";
+      /** Hit and Run: a free step, without any roll (but a pick-up) and without spending movement. */
+      hitAndRun?: boolean;
       /** "fell": after the knock-down of a failed roll, which Steady Footing may have avoided. */
       /** "arrive": after the step (and any Shadowing), pick up the ball or score. */
       stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup";

@@ -180,6 +180,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   move the same way, in their own half, with team re-rolls allowed.
 - Safe Pass: a pass fumbled on a natural 1 (after any re-roll) may be saved: the thrower keeps the ball and the action
   ends, without a turnover. Fumbles from modifiers are dropped as usual.
+- Hit and Run: after a block (once any Frenzy block is over, during a Blitz too) or a Stab, a standing player with the
+  skill may step to a free adjacent square that is not next to any opponent: no Dodge or Rush, no movement spent, a
+  pick-up if the ball is there. Not after a turnover.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 
