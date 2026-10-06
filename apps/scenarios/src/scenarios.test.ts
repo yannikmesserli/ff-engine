@@ -115,4 +115,13 @@ describe("scenarios", () => {
     expect(getAvailableActions(s).map((t) => (t.type === "USE_SKILL" ? t.skill : t.type))).toEqual(["CHOOSE_BLOCK_DIE", "USE_REROLL", "Brawler", "Hatred", "Pro"]);
     expect(find(step(s, { type: "USE_REROLL" }).state, "ROLL")?.reason).toBe("Loner 4+ (Gunther)");
   });
+
+  it("throw-team-mate: Really Stupid first, then the goblin can be thrown", () => {
+    let s = step(load("throw-team-mate"), { type: "START_ACTION", playerId: "home-1", action: "ttm" }).state;
+    expect(find(s, "ROLL")?.reason).toBe("Really Stupid 2+ (Grumbol)");
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    expect(find(s, "THROW_TEAM_MATE")?.playerIds).toEqual(["home-2"]);
+    s = step(s, { type: "THROW_TEAM_MATE", targetId: "home-2", square: { x: 16, y: 8 } }).state;
+    expect(find(s, "ROLL")?.reason).toMatch(/^Always Hungry 2\+/);
+  });
 });

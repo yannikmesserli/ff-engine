@@ -368,4 +368,43 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "throw-team-mate",
+    title: "Throw Team-mate, Right Stuff and Always Hungry",
+    instructions: [
+      "Home's first turn. Declare Throw Team-mate with Grumbol (#1, Troll): first his Really Stupid roll (2+, a team-mate stands next to him).",
+      "Click Snikkit (#2, Goblin with Right Stuff), then a highlighted square (Quick or Short range) to throw him to.",
+      "Always Hungry: Grumbol rolls 2+ first; on a 1 Snikkit must escape on 2+ (then he is thrown as a fumble) or is eaten.",
+      "Then the throw roll (a superb throw lands in the square, a subpar one scatters three times, a fumble once from Snikkit), and Snikkit's landing roll (AG, -1 per tackle zone). Throw him onto an opponent to see the hit.",
+    ],
+    home: {
+      name: "Flying Gits",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grumbol", position: "Troll" },
+        { number: 2, name: "Snikkit", position: "Goblin Lineman" },
+        { number: 3, name: "Grishnak", position: "Orc Lineman" },
+        { number: 4, name: "Ugluk", position: "Orc Lineman" },
+        { number: 5, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Targets",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+        { number: 4, name: "Kurt", position: "Human Lineman" },
+      ],
+    },
+    seed: 9,
+    actions: toFirstTurn({
+      home: { 1: { x: 11, y: 7 }, 2: { x: 10, y: 7 }, 3: { x: 12, y: 5 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 9 } },
+      away: { 1: { x: 13, y: 5 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 9 }, 4: { x: 16, y: 7 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];
