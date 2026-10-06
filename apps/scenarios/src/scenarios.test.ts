@@ -40,4 +40,17 @@ describe("scenarios", () => {
     s = step(s, { type: "ROLL", values: [1, 3] }).state;
     expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-4"] });
   });
+
+  it("bombardier: a bomb caught by an orc must be thrown back by the away coach", () => {
+    let s = load("bombardier");
+    s = step(s, { type: "START_ACTION", playerId: "home-1", action: "bomb" }).state;
+    s = step(s, { type: "THROW", square: { x: 16, y: 7 } }).state;
+    expect(find(s, "ROLL")?.reason).toBe("Pass 4+ (short)");
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-2"] });
+    s = step(s, { type: "SELECT_PLAYERS", playerIds: [] }).state;
+    expect(find(s, "ROLL")?.reason).toBe("Catch (bomb) 3+ (Gorbag)");
+    s = step(s, { type: "ROLL", values: [4] }).state;
+    expect(find(s, "THROW")).toMatchObject({ side: "away", playerId: "away-5" });
+  });
 });

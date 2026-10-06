@@ -183,4 +183,45 @@ export const SCENARIOS: Scenario[] = [
       { x: 5, y: 7 },
     ),
   },
+  {
+    id: "bombardier",
+    title: "Bombardier: throw a bomb",
+    instructions: [
+      "Home's first turn. Click Ludwig (#1) and declare Throw Bomb: he cannot move first.",
+      "Click \"Throw…\" and pick a target: Gorbag (#5, a short throw) to see a catch, or the empty square above Lugdush (#6) to see the bomb bounce once before it explodes.",
+      "Grishnak (#2) on the line may be under the path: the away coach may try to intercept, and an interceptor must throw the bomb straight back.",
+      "A player who catches the bomb must throw it again at once (the away coach aims); a failed catch sets it off on them.",
+      "The explosion hits the player in the square, and each player around it on a 4+: standing players are knocked down, prone ones roll armour. Knocking down a home player is a turnover; a fumble (a 1) explodes on Ludwig. Undo to try another target.",
+    ],
+    home: {
+      name: "Altdorf Sappers",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Ludwig", position: "Human Thrower", skills: ["Bombardier"] },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Blast Radius",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Snaga", position: "Orc Lineman" },
+        { number: 2, name: "Grishnak", position: "Orc Lineman" },
+        { number: 3, name: "Lugbur", position: "Orc Lineman" },
+        { number: 4, name: "Ugluk", position: "Orc Lineman" },
+        { number: 5, name: "Gorbag", position: "Orc Lineman" },
+        { number: 6, name: "Lugdush", position: "Orc Lineman" },
+      ],
+    },
+    seed: 4,
+    actions: toFirstTurn({
+      home: { 1: { x: 11, y: 8 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 7 }, 4: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 4 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 10 }, 4: { x: 16, y: 6 }, 5: { x: 16, y: 7 }, 6: { x: 17, y: 7 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];
