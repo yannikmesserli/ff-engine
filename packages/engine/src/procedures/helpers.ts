@@ -183,22 +183,56 @@ export const proTemplate = (state: GameState, player: PlayerState, rerolled: boo
   canUsePro(state, player, rerolled) ? [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Pro" }] : [];
 
 /** Use Pro: roll the D6 that decides whether the re-roll happens. */
-export function rollPro(ctx: Ctx, action: Action, player: PlayerState): boolean {
-  player.usedSkills.push("Pro");
-  ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Pro" });
+function rollPro(ctx: Ctx, action: Action, player: PlayerState): boolean {
+  if (!player.usedSkills.includes("Pro")) {
+    player.usedSkills.push("Pro");
+    ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Pro" });
+  }
   const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Pro ${PRO_TARGET}+`);
   const success = roll! >= PRO_TARGET;
   ctx.emit({ type: "CheckResult", kind: "pro", playerId: player.id, success, roll: roll!, target: PRO_TARGET });
   return success;
 }
 
-/** The ROLL template of a Pro roll. */
-export const proRollTemplate = (player: PlayerState): ActionTemplate => ({
-  type: "ROLL",
-  side: player.side,
-  dice: [{ kind: "d6", count: 1 }],
-  reason: `Pro ${PRO_TARGET}+ (${player.name})`,
-});
+/** The stages of a Pro re-roll, in the procedures that offer it. */
+export type ProStage = "pro" | "proTeam" | "proLoner";
+
+/**
+ * Pro's stages, shared by the procedures that offer it: "pro" rolls the Pro D6. After a failure the coach may spend a
+ * team re-roll, once, to roll it again ("proTeam", then "proLoner" for a Loner player, who may lose the re-roll).
+ * Returns "reroll" when the die may be re-rolled, "stands" when the first result stays, "wait" for the next decision.
+ */
+export function stepPro(ctx: Ctx, proc: { stage: string; proRetried?: boolean }, action: Action, player: PlayerState): "reroll" | "stands" | "wait" {
+  const { state } = ctx;
+  if (proc.stage === "proTeam") {
+    if (ctx.expect(action, "USE_REROLL", "DECLINE_REROLL").type === "DECLINE_REROLL") return "stands";
+    useTeamReroll(ctx, player.side);
+    proc.proRetried = true;
+    proc.stage = lonerTarget(player) === null ? "pro" : "proLoner";
+    return "wait";
+  }
+  if (proc.stage === "proLoner") {
+    if (!rollLoner(ctx, action, player)) return "stands";
+    proc.stage = "pro";
+    return "wait";
+  }
+  if (rollPro(ctx, action, player)) return "reroll";
+  if (proc.proRetried || !canTeamReroll(state, player.side, false)) return "stands";
+  proc.stage = "proTeam";
+  return "wait";
+}
+
+/** The templates of Pro's stages: the Pro roll, the team re-roll of a failed one, or the Loner roll for it. */
+export function proTemplates(state: GameState, stage: ProStage, player: PlayerState): ActionTemplate[] {
+  if (stage === "proLoner") return [lonerRollTemplate(player)];
+  if (stage === "proTeam") {
+    return [
+      { type: "USE_REROLL", side: player.side, available: rerollsLeft(state, player.side) },
+      { type: "DECLINE_REROLL", side: player.side },
+    ];
+  }
+  return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `Pro ${PRO_TARGET}+ (${player.name})` }];
+}
 
 /** Spend a team re-roll, drive re-rolls first. */
 export function useTeamReroll(ctx: Ctx, side: Side) {

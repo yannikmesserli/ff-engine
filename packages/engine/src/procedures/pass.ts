@@ -4,7 +4,7 @@ import { SCATTER, passes } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName } from "../skills";
 import { explosion, rethrow } from "./bomb";
-import { canTeamReroll, canUsePro, proRollTemplate, proTemplate, rollPro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, proTemplate, proTemplates, stepPro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -233,9 +233,13 @@ export const Pass: Handler<P<"Pass">> = {
         proc.stage = rollLoner(ctx, action, thrower) ? "roll" : "outcome";
         return "continue";
       case "pro":
+      case "proTeam":
+      case "proLoner": {
         if (action === null) return "wait";
-        proc.stage = rollPro(ctx, action, thrower) ? "roll" : "outcome";
+        const pro = stepPro(ctx, proc, action, thrower);
+        if (pro !== "wait") proc.stage = pro === "reroll" ? "roll" : "outcome";
         return "continue";
+      }
       case "outcome":
         if (proc.result === "fumble" && proc.roll === 1 && hasSkill(thrower, "Safe Pass")) {
           proc.stage = "safePass";
@@ -368,7 +372,9 @@ export const Pass: Handler<P<"Pass">> = {
       case "loner":
         return [lonerRollTemplate(thrower)];
       case "pro":
-        return [proRollTemplate(thrower)];
+      case "proTeam":
+      case "proLoner":
+        return proTemplates(state, proc.stage, thrower);
       case "safePass":
         return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Safe Pass" }];
       case "scatter":

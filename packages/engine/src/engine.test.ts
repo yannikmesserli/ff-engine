@@ -1326,13 +1326,27 @@ describe("engine", () => {
         // That was the block's one re-roll, and no team re-roll was spent.
         expect(types(s)).toEqual(["CHOOSE_BLOCK_DIE"]);
         expect(s.teams.home.rerolls).toBe(1);
-        // A failed Pro roll keeps the dice.
+        // A failed Pro roll keeps the dice, unless a team re-roll (here with Loner) gets another Pro roll.
         const failed = apply(blockAway2(strong), roll(1, 2), { type: "USE_SKILL", use: true, skill: "Pro" }, { type: "REROLL_BLOCK_DIE", index: 1 }, roll(2));
-        expect(find(failed, "CHOOSE_BLOCK_DIE")?.results).toEqual([1, 2]);
+        expect(find(apply(failed, { type: "DECLINE_REROLL" }), "CHOOSE_BLOCK_DIE")?.results).toEqual([1, 2]);
+        const loner = edit(failed, (c) => c.players["home-2"]!.skills.push("Loner(4)"));
+        const lonely = apply(loner, { type: "USE_REROLL" });
+        expect(find(lonely, "ROLL")?.reason).toBe("Loner 4+ (Home 2)");
+        expect(find(apply(lonely, roll(3)), "CHOOSE_BLOCK_DIE")?.results).toEqual([1, 2]);
+        expect(find(apply(lonely, roll(4), roll(3), roll(5)), "CHOOSE_BLOCK_DIE")?.results).toEqual([1, 5]);
       });
 
-      it("a failed Pro roll keeps the first result; it works for passes too", () => {
-        expect(apply(dodge(1), { type: "USE_SKILL", use: true }, roll(2)).players["home-1"]!.status).toBe("prone");
+      it("a failed Pro roll keeps the first result, unless a team re-roll is spent to roll Pro again; passes too", () => {
+        const failed = apply(dodge(1), { type: "USE_SKILL", use: true }, roll(2));
+        expect(types(failed)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        expect(apply(failed, { type: "DECLINE_REROLL" }).players["home-1"]!.status).toBe("prone");
+        let retried = apply(failed, { type: "USE_REROLL" });
+        expect([find(retried, "ROLL")?.reason, retried.teams.home.rerolls]).toEqual(["Pro 3+ (Home 1)", 0]);
+        retried = apply(retried, roll(3), roll(6));
+        expect(retried.players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing" });
+        // Only once: a second failed Pro roll stands.
+        const twice = apply(failed, { type: "USE_REROLL" }, roll(1));
+        expect(twice.players["home-1"]!.status).toBe("prone");
         const passer = edit(withSkills(toFirstTurn(), { "home-4": ["Pro"] }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
         const s = apply(passer, declare("home-4", "pass"), { type: "THROW", square: { x: 6, y: 4 } }, roll(2));
         expect(find(s, "USE_SKILL")?.skill).toBe("Pro");

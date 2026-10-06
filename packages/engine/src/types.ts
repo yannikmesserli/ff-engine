@@ -304,9 +304,11 @@ export type Procedure =
       /** "animosity": the thrower may first have to roll for Animosity towards the receiver. */
       /** "safePass": a natural 1 may be saved by Safe Pass. */
       /** "aim": a player who caught a bomb picks where to throw it again. */
-      stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "pro" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
+      stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
       rerolled: boolean;
       result?: PassResult;
+      /** A team re-roll was spent on a failed Pro roll. */
+      proRetried?: boolean;
       /** The natural D6 of the pass roll. */
       roll?: number;
       /** Where the ball comes down (after an inaccurate scatter). */
@@ -360,6 +362,8 @@ export type Procedure =
       taunted?: boolean;
       /** Pro: the index of the block die to re-roll. */
       proDie?: number;
+      /** A team re-roll was spent on a failed Pro roll. */
+      proRetried?: boolean;
       /** The skill re-rolling a single die (Brawler: a Both Down, Hatred: a Skull). */
       singleDie?: "Brawler" | "Hatred";
       /** Dauntless worked: the attacker's ST matches the defender's for this block. */
@@ -367,7 +371,7 @@ export type Procedure =
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
       /** "appearance": the defender's Foul Appearance, rolled first. */
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "pro" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "pro" | "proTeam" | "proLoner" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
@@ -470,13 +474,15 @@ export type Procedure =
       target: number;
       modifier: number;
       /**
-       * "loner": a Loner player rolls to use the team re-roll; "pro": the Pro roll to re-roll; "divingTackle": an
-       * opponent may use Diving Tackle.
+       * "loner": a Loner player rolls to use the team re-roll; "pro" / "proTeam" / "proLoner": the Pro roll to re-roll
+       * (see `stepPro`); "divingTackle": an opponent may use Diving Tackle.
        */
-      stage: "roll" | "reroll" | "loner" | "pro" | "divingTackle";
+      stage: "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "divingTackle";
       rerolled: boolean;
       /** The natural roll, kept when the re-roll is declined or lost. */
       roll?: number;
+      /** A team re-roll was spent on a failed Pro roll. */
+      proRetried?: boolean;
       /** A dodge or jump from `from` to `to`: opponents with Diving Tackle may make it harder. */
       leaving?: { from: Square; to: Square };
       /** The opponent who used Diving Tackle on this roll (-2 from then on, re-roll included). */

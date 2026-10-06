@@ -3,7 +3,7 @@ import type { GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, proRollTemplate, proTemplate, rerollsLeft, rollLoner, rollPro, squareOf, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollsLeft, rollLoner, squareOf, stepPro, useTeamReroll } from "./helpers";
 import { injure } from "./injury";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -132,7 +132,8 @@ function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolea
  * Diving Tackle: after a successful dodge or jump that -2 would turn into a failure, the opposing coach may pick one
  * eligible tackler; the roll then fails (unless Break Tackle saves it), and a re-roll keeps the -2.
  * Break Tackle: once per turn, its bonus is added to a Dodge roll that would fail without it.
- * Pro: instead of a team re-roll, once per turn the active player may roll a D6: on 3+ the die is re-rolled.
+ * Pro: instead of a team re-roll, once per turn the active player may roll a D6: on 3+ the die is re-rolled; after a
+ * failure, a team re-roll may be spent to roll Pro again.
  * Writes its outcome to `state.lastCheck`.
  */
 export const Check: Handler<P<"Check">> = {
@@ -155,10 +156,16 @@ export const Check: Handler<P<"Check">> = {
       proc.stage = lonerTarget(player) === null ? "roll" : "loner";
       return "wait";
     }
-    if (proc.stage === "loner" || proc.stage === "pro") {
-      // A failed Loner or Pro roll keeps the first result.
-      if (!(proc.stage === "loner" ? rollLoner(ctx, action, player) : rollPro(ctx, action, player))) return finish(state, proc, false);
+    if (proc.stage === "loner") {
+      // A failed Loner roll keeps the first result.
+      if (!rollLoner(ctx, action, player)) return finish(state, proc, false);
       proc.stage = "roll";
+      return "wait";
+    }
+    if (proc.stage === "pro" || proc.stage === "proTeam" || proc.stage === "proLoner") {
+      const pro = stepPro(ctx, proc, action, player);
+      if (pro === "stands") return finish(state, proc, false);
+      if (pro === "reroll") proc.stage = "roll";
       return "wait";
     }
     if (proc.stage === "divingTackle") {
@@ -193,7 +200,7 @@ export const Check: Handler<P<"Check">> = {
       ];
     }
     if (proc.stage === "loner") return [lonerRollTemplate(player)];
-    if (proc.stage === "pro") return [proRollTemplate(player)];
+    if (proc.stage === "pro" || proc.stage === "proTeam" || proc.stage === "proLoner") return proTemplates(state, proc.stage, player);
     if (proc.stage === "divingTackle") {
       const playerIds = divingTacklers(state, proc, player).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: other(player.side), playerIds, max: 1, reason: `Diving Tackle: choose a player to make ${player.name}'s ${CHECK_NAMES[proc.kind].toLowerCase()} fail` }];

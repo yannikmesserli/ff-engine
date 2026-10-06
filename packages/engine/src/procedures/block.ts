@@ -4,7 +4,7 @@ import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, pl
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { hasSkill, skillName, skillValue } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proRollTemplate, proTemplate, rollPro, squareOf, useTeamReroll, weatherModifier } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proTemplate, proTemplates, squareOf, stepPro, useTeamReroll, weatherModifier } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -434,10 +434,14 @@ export const Block: Handler<P<"Block">> = {
         return "continue";
       }
       case "pro":
+      case "proTeam":
+      case "proLoner": {
         if (action === null) return "wait";
         // A failed Pro roll keeps the dice already rolled.
-        proc.stage = rollPro(ctx, action, attacker) ? "proReroll" : "choose";
+        const pro = stepPro(ctx, proc, action, attacker);
+        if (pro !== "wait") proc.stage = pro === "reroll" ? "proReroll" : "choose";
         return "continue";
+      }
       case "proReroll": {
         if (action === null) return "wait";
         const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], "Pro (re-roll a block die)");
@@ -646,7 +650,9 @@ export const Block: Handler<P<"Block">> = {
       case "proDie":
         return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: "Pro" }];
       case "pro":
-        return [proRollTemplate(attacker)];
+      case "proTeam":
+      case "proLoner":
+        return proTemplates(state, proc.stage, attacker);
       case "proReroll":
         return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: "Pro (re-roll a block die)" }];
       case "loner":

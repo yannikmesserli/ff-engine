@@ -57,6 +57,7 @@ export const SCENARIOS: Scenario[] = [
       "Home's first turn. Click Gunther (#1, Pro) and declare a Block on the orc in front of him: 2 dice, you choose (the lineman above him assists).",
       "Click \"Physical dice\" and enter 1 and 1: two Skulls.",
       "Click \"Re-roll with Pro (3+)\", pick the die to re-roll, then roll the Pro D6 (3+) and the new block die.",
+      "Enter 1 or 2 for the Pro D6 to fail it: a team re-roll is then offered to roll Pro again.",
     ],
     home: {
       name: "Altdorf Pros",
