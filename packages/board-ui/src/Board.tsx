@@ -172,7 +172,8 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
       player={p}
       roster={state.teams[p.side].roster}
       assets={assets}
-      active={state.activePlayerId === p.id || picked.includes(p.id)}
+      // The acting player, or the one moving out of their turn (On the Ball, Hit and Run).
+      active={state.activePlayerId === p.id || move?.playerId === p.id || picked.includes(p.id)}
       draggable={draggable.has(p.id)}
       selectable={selectable.has(p.id)}
       hasBall={state.ball.carried && isOnPitch(p) && state.ball.square !== null && sameSquare(state.ball.square, p.at)}
