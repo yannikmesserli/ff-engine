@@ -58,12 +58,12 @@ function jumpedSquares(from: Square, to: Square): Square[] {
 }
 
 /**
- * A jump goes two squares, over a prone or stunned player (either team), into an empty square. Pogo: over any square,
- * empty or not.
+ * A jump goes two squares, over a prone or stunned player (either team), into an empty square. Leap, Pogo: over any
+ * square, empty or not.
  */
 function jumpSquares(state: GameState, player: PlayerState & { at: Square }): Square[] {
   if (hasSkill(player, "Ball & Chain")) return [];
-  const leaps = hasSkill(player, "Pogo");
+  const leaps = hasSkill(player, "Pogo") || hasSkill(player, "Leap");
   const squares: Square[] = [];
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) {
@@ -86,10 +86,13 @@ const prehensileTails = (state: GameState, player: PlayerState, from: Square) =>
 
 /**
  * Jump roll modifier: -1 per tackle zone on the square left or the one landed in, whichever has more; Prehensile Tail.
- * Pogo ignores both.
+ * Pogo ignores both; Leap reduces the total by 1, but not below -1.
  */
-const jumpModifier = (state: GameState, player: PlayerState, from: Square, to: Square) =>
-  hasSkill(player, "Pogo") ? 0 : -Math.max(tackleZones(state, player.side, from), tackleZones(state, player.side, to)) - prehensileTails(state, player, from);
+function jumpModifier(state: GameState, player: PlayerState, from: Square, to: Square): number {
+  if (hasSkill(player, "Pogo")) return 0;
+  const penalty = Math.max(tackleZones(state, player.side, from), tackleZones(state, player.side, to)) + prehensileTails(state, player, from);
+  return -(hasSkill(player, "Leap") && penalty > 1 ? penalty - 1 : penalty);
+}
 
 /**
  * Dodge roll modifier from `from` to `to`: -1 per opponent's tackle zone on the square moved to (none for Stunty; Titchy

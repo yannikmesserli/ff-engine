@@ -219,6 +219,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Drunkard: -1 to every Rush roll (moves and the square a Blitz block costs).
 - Cloud Burster: nobody may intercept the player's passes or bombs (a player with Very Long Legs still may).
 - Decay: +1 to the player's casualty rolls (and, as before, a killed Decay player cannot be raised by Plague Ridden).
+- Leap: the player may jump over any adjacent square (empty or occupied) into an empty square, and the Jump roll's
+  tackle zone and Prehensile Tail penalty is reduced by 1, but not below -1.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

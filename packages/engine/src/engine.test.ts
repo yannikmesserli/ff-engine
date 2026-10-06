@@ -1263,6 +1263,17 @@ describe("engine", () => {
       expect(actionsOf(withSkills(s, { "home-4": ["My Ball"] }), "home-4")).not.toContain("handoff");
     });
 
+    it("Leap: jumps over any square; the tackle zone penalty is reduced by 1, not below -1", () => {
+      // home-2 at (12,7) is marked by three opponents: a jump to (10,7) over home's empty (11,7).
+      const s = withSkills(toFirstTurn(), { "home-2": ["Leap"] });
+      const jump = find(apply(s, startMove("home-2")), "MOVE")!.squares.find((q) => q.x === 10 && q.y === 7);
+      expect(jump?.rolls).toEqual(["jump"]);
+      expect(find(apply(s, startMove("home-2"), ...move({ x: 10, y: 7 })), "ROLL")?.reason).toBe("Jump 5+ (Home 2)");
+      // One tackle zone stays -1.
+      const one = place(s, { "away-1": { x: 20, y: 1 }, "away-3": { x: 20, y: 3 } });
+      expect(find(apply(one, startMove("home-2"), ...move({ x: 10, y: 7 })), "ROLL")?.reason).toBe("Jump 4+ (Home 2)");
+    });
+
     it("Pogo: jumps over any square, ignoring tackle zones, Prehensile Tail and Diving Tackle", () => {
       // home-2 at (12,7) is marked by three opponents; (10,7) is empty, two squares away over (11,7).
       const s = withSkills(toFirstTurn(), { "home-2": ["Pogo"], "away-2": ["Prehensile Tail", "Diving Tackle"] });

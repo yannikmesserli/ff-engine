@@ -11,7 +11,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   Dodge: "Once per turn, may re-roll a failed Dodge roll. When blocked, a Stumble is only a push (unless the blocker has Tackle).",
   "Hit and Run": "After a block, if still standing, may move one free square, as long as it is not into an opponent's tackle zone.",
   "Jump Up": "Stands up for free (no movement spent). May declare a Block while prone: an AG roll with +1 to stand up and block.",
-  Leap: "May jump over any adjacent square, occupied or not; the Jump roll is at most -1.",
+  Leap: "May jump over any adjacent square, occupied or not; the Jump roll's penalty is reduced by 1, but not below -1.",
   "Safe Pair of Hands": "When knocked down or placed prone with the ball, places it in an adjacent free square instead of it bouncing.",
   Sidestep: "When pushed back, this player's coach chooses the square: any free adjacent square.",
   Sprint: "May Rush three times per action instead of two.",
