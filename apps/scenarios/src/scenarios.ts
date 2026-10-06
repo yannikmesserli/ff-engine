@@ -572,4 +572,39 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "wrestle-steady-footing",
+    title: "Wrestle and Steady Footing",
+    instructions: [
+      "Home's first turn: two one-die blocks, with the die entered by hand (Physical dice).",
+      "Bertrand (#1, Squire, Wrestle) blocks Wilhelm (#1, Bodyguard, Wrestle and Stand Firm). Enter 2, a Both Down: the home coach is asked about Wrestle first, then (if declined) the away coach. Wrestle places both prone, without armour rolls or a turnover, and ends Bertrand's action; declined by both, the two of them are knocked down (no Block) and it is a turnover.",
+      "Galahad (#2, Grail Knight, Steady Footing) blocks Dieter (#2). Enter 1, a Skull: before going down, Galahad may roll for Steady Footing; on a 6 he stays on his feet and there is no turnover.",
+    ],
+    home: {
+      name: "Bastonne Lances",
+      roster: "Bretonnian",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Bertrand", position: "Bretonnian Squire" },
+        { number: 2, name: "Galahad", position: "Grail Knight" },
+        { number: 3, name: "Roland", position: "Bretonnian Squire" },
+      ],
+    },
+    away: {
+      name: "Altdorf Guard",
+      roster: "Imperial Nobility",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Wilhelm", position: "Bodyguard" },
+        { number: 2, name: "Dieter", position: "Imperial Retainer" },
+        { number: 3, name: "Konrad", position: "Imperial Retainer" },
+      ],
+    },
+    seed: 14,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

@@ -156,4 +156,21 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "START_ACTION", playerId: "home-2", action: "block" }, { type: "BLOCK", targetId: "away-1" }]);
     expect(find(s, "ROLL")?.reason).toBe("Foul Appearance 2+ (Otto)");
   });
+
+  it("wrestle-steady-footing: both coaches are asked about Wrestle; Steady Footing before a fall", () => {
+    const start = load("wrestle-steady-footing");
+    const block = (attacker: string, defender: string, face: number) =>
+      applyActions(start, [
+        { type: "START_ACTION", playerId: attacker, action: "block" },
+        { type: "BLOCK", targetId: defender },
+        { type: "ROLL", values: [face] },
+        { type: "CHOOSE_BLOCK_DIE", index: 0 },
+      ]);
+    let s = block("home-1", "away-1", 2);
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "home", skill: "Wrestle" });
+    s = step(s, { type: "USE_SKILL", use: false }).state;
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "away", skill: "Wrestle" });
+    s = block("home-2", "away-2", 1);
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "home", playerId: "home-2", skill: "Steady Footing" });
+  });
 });
