@@ -15,20 +15,26 @@ export interface Scenario {
 
 const roll = (...values: number[]): Action => ({ type: "ROLL", values });
 
-/** Where each player (by number) is set up, and where the kick-off ball comes to rest. */
-export interface Kickoff {
+/** Where each player (by number) is set up. */
+export interface Setup {
   home: Record<number, Square>;
   away: Record<number, Square>;
-  /** A free square of the home half, at least two rows from the top sideline. */
+}
+
+/** A setup, and where the kick-off ball comes to rest. */
+export interface Kickoff extends Setup {
+  /**
+   * A square of the home half, at least two rows from the top sideline: if a home player stands there, the ball lands
+   * on them and they catch it; otherwise it comes down just above it and bounces onto it.
+   */
   ball: Square;
 }
 
 /**
- * Actions from a new game to home's first turn: nice weather, away wins the coin toss and kicks, both teams are set up
- * as given, and the ball deviates one square south onto the square above `ball` (Get the Ref, nothing happens) and
- * bounces south onto `ball`.
+ * Actions from a new game to the kick-off: nice weather, away wins the coin toss and kicks, both teams are set up as
+ * given, and the ball is kicked to `target`. The kick-off deviation roll comes next.
  */
-export function toFirstTurn({ home, away, ball }: Kickoff): Action[] {
+export function toKickoff({ home, away }: Setup, target: Square): Action[] {
   const setup = (side: "home" | "away", squares: Record<number, Square>): Action[] => [
     ...Object.entries(squares).map(([nr, square]): Action => ({ type: "PLACE_PLAYER", playerId: `${side}-${nr}`, square })),
     { type: "END_SETUP" },
@@ -41,10 +47,21 @@ export function toFirstTurn({ home, away, ball }: Kickoff): Action[] {
     { type: "CHOOSE_KICK", kick: true },
     ...setup("away", away),
     ...setup("home", home),
-    { type: "PLACE_BALL", square: { x: ball.x, y: ball.y - 2 } },
+    { type: "PLACE_BALL", square: target },
+  ];
+}
+
+/**
+ * Actions from a new game to home's first turn: `toKickoff`, then the ball deviates one square south (Get the Ref,
+ * nothing happens) and comes to rest on `ball`, caught by the home player there with a 6.
+ */
+export function toFirstTurn({ home, away, ball }: Kickoff): Action[] {
+  const caught = Object.values(home).some((s) => s.x === ball.x && s.y === ball.y);
+  return [
+    ...toKickoff({ home, away }, { x: ball.x, y: ball.y - (caught ? 1 : 2) }),
     roll(5, 1), // deviation: one square south
     roll(1, 1), // kick-off event: Get the Ref
-    roll(5), // bounce: south
+    roll(caught ? 6 : 5), // the catch, or a bounce south
   ];
 }
 
@@ -85,5 +102,85 @@ export const SCENARIOS: Scenario[] = [
       away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
       ball: { x: 5, y: 7 },
     }),
+  },
+  {
+    id: "on-the-ball-pass",
+    title: "On the Ball: move when the opponent passes",
+    instructions: [
+      "Home's first turn: Ludwig (#1) holds the ball and has declared a Pass. Click \"Throw…\", then Kurt (#5) in the bottom wide zone (a long pass).",
+      "Before the throw, the away coach may move each On the Ball player (#1 on the line, #2 behind it) up to 3 squares, one at a time: pick one, click squares, then Done.",
+      "Grishnak (#1) is marked: leaving takes a dodge, without a team re-roll (it is not their turn). A failed dodge ends these moves, without a turnover. Nobody rushes.",
+      "Moving under the pass path lets them try to intercept.",
+    ],
+    home: {
+      name: "Altdorf Passers",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Ludwig", position: "Human Thrower" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Fritz", position: "Human Lineman" },
+        { number: 5, name: "Kurt", position: "Human Catcher" },
+      ],
+    },
+    away: {
+      name: "Ball Watchers",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman", skills: ["On the Ball"] },
+        { number: 2, name: "Ugluk", position: "Orc Lineman", skills: ["On the Ball"] },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+        { number: 4, name: "Lugdush", position: "Orc Lineman" },
+      ],
+    },
+    seed: 2,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 6, y: 7 }, 2: { x: 12, y: 5 }, 3: { x: 12, y: 7 }, 4: { x: 12, y: 9 }, 5: { x: 11, y: 12 } },
+        away: { 1: { x: 13, y: 9 }, 2: { x: 16, y: 8 }, 3: { x: 13, y: 5 }, 4: { x: 13, y: 7 } },
+        ball: { x: 6, y: 7 },
+      }),
+      { type: "START_ACTION", playerId: "home-1", action: "pass" },
+    ],
+  },
+  {
+    id: "on-the-ball-kickoff",
+    title: "On the Ball: move during the kick-off",
+    instructions: [
+      "Away has kicked the ball towards (5, 7). Roll the kick-off deviation (Physical dice: 1 and 3 sends it 3 squares north).",
+      "Before the kick-off event, one unmarked home player with On the Ball may move up to 3 squares in the home half: Kurt (#4) can, Hans (#1) on the line of scrimmage is marked and cannot.",
+      "Move Kurt next to where the ball comes down, or under it, then click Done. Here the team re-roll is offered for a failed dodge.",
+    ],
+    home: {
+      name: "Altdorf Returners",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman", skills: ["On the Ball"] },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+        { number: 4, name: "Kurt", position: "Human Catcher", skills: ["On the Ball"] },
+      ],
+    },
+    away: {
+      name: "Kick Masters",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 3,
+    actions: toKickoff(
+      {
+        home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 5 }, 3: { x: 12, y: 9 }, 4: { x: 7, y: 6 } },
+        away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 5 }, 3: { x: 13, y: 9 } },
+      },
+      { x: 5, y: 7 },
+    ),
   },
 ];

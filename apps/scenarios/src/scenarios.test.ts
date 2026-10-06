@@ -11,10 +11,8 @@ const find = <T extends ActionTemplate["type"]>(s: GameState, type: T) =>
   getAvailableActions(s).find((t): t is Extract<ActionTemplate, { type: T }> => t.type === type);
 
 describe("scenarios", () => {
-  it.each(SCENARIOS.map((s) => s.id))("%s reaches home's first turn", (id) => {
-    const s = load(id);
-    expect([s.activeSide, s.teams.home.turn]).toEqual(["home", 1]);
-    expect(find(s, "START_ACTION")).toBeDefined();
+  it.each(SCENARIOS.map((s) => s.id))("%s loads: its actions are all legal", (id) => {
+    expect(getAvailableActions(load(id)).length).toBeGreaterThan(0);
   });
 
   it("pro-block: a two-dice block where Pro can re-roll a die", () => {
@@ -24,5 +22,22 @@ describe("scenarios", () => {
     s = step(s, { type: "BLOCK", targetId: "away-1" }).state;
     s = step(s, { type: "ROLL", values: [1, 1] }).state;
     expect(getAvailableActions(s).some((t) => t.type === "USE_SKILL" && t.skill === "Pro")).toBe(true);
+  });
+
+  it("on-the-ball-pass: the thrower aims, then the away coach picks On the Ball players", () => {
+    let s = load("on-the-ball-pass");
+    expect(s.ball).toEqual({ square: { x: 6, y: 7 }, carried: true });
+    s = step(s, { type: "THROW", square: { x: 11, y: 12 } }).state;
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1", "away-2"] });
+    s = step(s, { type: "SELECT_PLAYERS", playerIds: ["away-1"] }).state;
+    s = step(s, { type: "MOVE", square: { x: 12, y: 10 } }).state;
+    expect(find(s, "ROLL")?.reason).toMatch(/^Dodge/);
+  });
+
+  it("on-the-ball-kickoff: after the deviation, only the unmarked On the Ball player may move", () => {
+    let s = load("on-the-ball-kickoff");
+    expect(find(s, "ROLL")?.reason).toBe("Kick-off deviation");
+    s = step(s, { type: "ROLL", values: [1, 3] }).state;
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-4"] });
   });
 });

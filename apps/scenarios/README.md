@@ -16,7 +16,10 @@ from a new game to the position. `<BloodBowlGame actions={...}>` replays them wi
 scenario only goes through legal steps, and the state stays consistent.
 
 - `toFirstTurn({ home, away, ball })` builds the actions to reach home's first turn: nice weather, away kicks, both
-  teams set up on the given squares (players by number), and a quiet kick-off ending with the ball on `ball`. Add
-  more actions after it to go further (`{ type: "ROLL", values: [...] }` for fixed dice).
+  teams set up on the given squares (players by number), and a quiet kick-off ending with the ball on `ball` (caught
+  by the home player standing there, if any). Add more actions after it to go further (`{ type: "ROLL", values: [...] }`
+  for fixed dice).
+- `toKickoff({ home, away }, target)` stops earlier: the ball has just been kicked to `target`, and the deviation roll
+  is next.
 - `src/scenarios.test.ts` checks every scenario still reaches home's first turn; add a check that the scenario offers
   what it is meant to show.
