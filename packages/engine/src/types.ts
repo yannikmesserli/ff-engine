@@ -384,6 +384,11 @@ export type Procedure =
   | { type: "SecretWeapon"; playerIds: string[]; stage: "argue" | "argueRoll" | "bribe" | "bribeRoll" }
   /** Bloodlust: the thirsty player bites an adjacent Thrall team-mate, or fails to feed. */
   | { type: "Feed"; playerId: string; stage: "select" | "injury"; victimId?: string; dropped?: boolean }
+  /**
+   * On the Ball: players of `side` move up to three squares each, one at a time (`playerId` is moving), when the
+   * opponent passes; at the kick-off only one unmarked player, in their own half.
+   */
+  | { type: "OnTheBall"; side: Side; kickoff: boolean; stage: "select" | "move"; playerId?: string; moved: string[] }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
   | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "result" }
   /** Shadowing: an opponent may follow the player who just left `from`, out of their tackle zone. */
@@ -414,6 +419,8 @@ export type Procedure =
       to: Square;
       /** Jumping over a prone or stunned player: two squares, a Jump roll instead of a Dodge. */
       jump?: boolean;
+      /** An On the Ball move out of the team's turn (when the opponent passes, or at the kick-off): no Rush, no turnover. */
+      onTheBall?: "pass" | "kickoff";
       /** "fell": after the knock-down of a failed roll, which Steady Footing may have avoided. */
       /** "arrive": after the step (and any Shadowing), pick up the ball or score. */
       stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup";

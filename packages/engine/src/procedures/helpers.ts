@@ -157,9 +157,16 @@ export function resetForKickoff(ctx: Ctx) {
 /** Team re-rolls left for the drive (Brilliant Coaching) and the half. */
 export const rerollsLeft = (state: GameState, side: Side) => state.teams[side].rerolls + state.teams[side].driveRerolls;
 
-/** BB2025: any number of team re-rolls per turn, only in the team's own turn, each roll at most once. */
+/**
+ * BB2025: any number of team re-rolls per turn, only in the team's own turn (or while a receiving player makes an On the
+ * Ball move at the kick-off), each roll at most once.
+ */
 export const canTeamReroll = (state: GameState, side: Side, rerolled: boolean) =>
-  !rerolled && state.activeSide === side && rerollsLeft(state, side) > 0;
+  !rerolled && (state.activeSide === side || movingAtKickoff(state, side)) && rerollsLeft(state, side) > 0;
+
+/** A player of `side` is making an On the Ball move at the kick-off. */
+const movingAtKickoff = (state: GameState, side: Side) =>
+  state.stack.some((p) => p.type === "OnTheBall" && p.kickoff && p.side === side);
 
 /** Spend a team re-roll, drive re-rolls first. */
 export function useTeamReroll(ctx: Ctx, side: Side) {

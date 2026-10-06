@@ -173,6 +173,11 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Hypnotic Gaze: a special action any number of players may declare each turn. The player may move first, then gazes at
   an adjacent standing opponent (after that opponent's Foul Appearance): on 3+ (team re-roll allowed) the opponent is
   distracted until their next activation. The activation ends either way, without a turnover.
+- On the Ball: when an opponent declares a pass (after Animosity, before the throw), each player with the skill and a
+  tackle zone may move up to 3 squares, one at a time, whatever their MA: dodges and jumps as usual (skill re-rolls
+  such as Dodge, but no team re-roll, since it is not their turn), no Rush; a fall ends these moves, without a
+  turnover. After the kick-off deviation (unless it is a touchback), one unmarked receiving player with the skill may
+  move the same way, in their own half, with team re-rolls allowed.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

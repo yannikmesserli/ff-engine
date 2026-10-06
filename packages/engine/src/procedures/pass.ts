@@ -154,7 +154,7 @@ function endBallAction(ctx: Ctx, thrower: PlayerState) {
 }
 
 /**
- * A thrown pass (BB2025): Animosity towards the receiver, PA roll with a team re-roll, fumble / inaccurate scatter,
+ * A thrown pass (BB2025): Animosity towards the receiver, On the Ball moves of the opponents, PA roll with a team re-roll, fumble / inaccurate scatter,
  * one interception attempt under the ruler, then the ball lands and may be caught.
  */
 export const Pass: Handler<P<"Pass">> = {
@@ -173,6 +173,8 @@ export const Pass: Handler<P<"Pass">> = {
       case "animosityResult":
         if (animosityFailed(state)) return "done";
         ctx.emit({ type: "PassThrown", playerId: thrower.id, target: { ...proc.target }, range: proc.range });
+        // On the Ball: the opponents may move before the throw.
+        ctx.push({ type: "OnTheBall", side: other(thrower.side), kickoff: false, stage: "select", moved: [] });
         proc.stage = "roll";
         return "continue";
       case "roll": {

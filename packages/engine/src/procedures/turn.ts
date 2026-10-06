@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
-import { adjacent, ballCarrier, inBounds, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, revolted, rollFoulAppearance } from "./block";
 import { handOffTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
@@ -661,10 +661,10 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     const step = (): Procedure[] => {
       const from = { ...squareOf(ctx, player) };
       movePlayer(ctx, player, proc.to, squares);
-      return proc.jump ? [] : [{ type: "Shadow", playerId: player.id, from, stage: "select" }];
+      return proc.jump || proc.onTheBall === "kickoff" ? [] : [{ type: "Shadow", playerId: player.id, from, stage: "select" }];
     };
     const fall = (inStartSquare = false) => {
-      ctx.push(...(inStartSquare ? [] : step()), { type: "KnockDown", playerId: player.id, turnover: true, stage: "fall" });
+      ctx.push(...(inStartSquare ? [] : step()), { type: "KnockDown", playerId: player.id, turnover: !proc.onTheBall, stage: "fall" });
       proc.stage = "fell";
       proc.fellInPlace = inStartSquare;
       return "continue" as const;
@@ -688,13 +688,13 @@ export const MoveStep: Handler<P<"MoveStep">> = {
       case "rush":
         state.lastCheck = null;
         proc.stage = proc.jump ? "rush2" : "dodge";
-        if (player.movesUsed >= player.ma) check("rush", RUSH_TARGET, weatherModifier(state, "rush"));
+        if (player.movesUsed >= player.ma && !proc.onTheBall) check("rush", RUSH_TARGET, weatherModifier(state, "rush"));
         return "continue";
       case "rush2":
         if (failed(ctx)) return fall(true);
         state.lastCheck = null;
         proc.stage = "dodge";
-        if (player.movesUsed + 1 >= player.ma) check("rush", RUSH_TARGET, weatherModifier(state, "rush"));
+        if (player.movesUsed + 1 >= player.ma && !proc.onTheBall) check("rush", RUSH_TARGET, weatherModifier(state, "rush"));
         return "continue";
       case "dodge":
         if (failed(ctx)) return fall(proc.jump);
@@ -827,4 +827,87 @@ export const Gaze: Handler<P<"Gaze">> = {
     return "done";
   },
   actions: () => [],
+};
+
+/** On the Ball: squares moved, whatever the player's MA, and never a Rush. */
+export const ON_THE_BALL_SQUARES = 3;
+
+/** Squares an On the Ball move may step or jump to; at the kick-off, only in the team's own half. */
+export function onTheBallMoves(state: GameState, player: PlayerState, kickoff: boolean): Array<Square & { rolls: CheckKind[]; jump?: boolean }> {
+  if (!isOnPitch(player) || player.status !== "standing" || isRooted(player)) return [];
+  const left = ON_THE_BALL_SQUARES - player.movesUsed;
+  const allowed = (s: Square) => !kickoff || inHalf(player.side, s);
+  const dodge: CheckKind[] = tackleZones(state, player.side, player.at) > 0 ? ["dodge"] : [];
+  const steps = left < 1 ? [] : adjacent(player.at).filter((s) => !playerAt(state, s) && allowed(s)).map((s) => ({ ...s, rolls: dodge }));
+  const jumps = left < 2 ? [] : jumpSquares(state, player).filter(allowed).map((s) => ({ ...s, jump: true, rolls: ["jump" as const] }));
+  return [...steps, ...jumps];
+}
+
+/**
+ * Players who may still make an On the Ball move: on the pitch with a tackle zone and not rooted; at the kick-off only
+ * one, not marked by an opponent.
+ */
+function onTheBallPlayers(state: GameState, proc: P<"OnTheBall">): PlayerState[] {
+  if (proc.kickoff && proc.moved.length > 0) return [];
+  return teamPlayers(state, proc.side).filter(
+    (p) =>
+      isOnPitch(p) && hasTackleZone(p) && !isRooted(p) && hasSkill(p, "On the Ball") && !proc.moved.includes(p.id) &&
+      (!proc.kickoff || tackleZones(state, p.side, p.at) === 0),
+  );
+}
+
+/**
+ * On the Ball: when an opponent declares a pass (after Animosity, before the throw), each player with the skill may
+ * move up to three squares, one player at a time, following the normal movement rules but without Rushing; a fall ends
+ * these moves (not a turnover). After the kick-off deviation (unless it is a touchback), one unmarked receiving player
+ * with the skill may move the same way, in their own half. Team re-rolls are allowed at the kick-off only.
+ */
+export const OnTheBall: Handler<P<"OnTheBall">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    if (proc.stage === "move") {
+      const player = getPlayer(ctx, proc.playerId!);
+      const fell = player.status !== "standing" || !isOnPitch(player);
+      const squares = onTheBallMoves(state, player, proc.kickoff);
+      if (!fell && squares.length > 0) {
+        if (action === null) return "wait";
+        const a = ctx.expect(action, "MOVE", "DONE");
+        if (a.type === "MOVE") {
+          const to = squares.find((s) => sameSquare(s, a.square)) ?? ctx.reject("Illegal move.");
+          ctx.push({ type: "MoveStep", playerId: player.id, to: { x: to.x, y: to.y }, stage: "rush", onTheBall: proc.kickoff ? "kickoff" : "pass", ...(to.jump ? { jump: true } : {}) });
+          return "continue";
+        }
+      }
+      player.movesUsed = 0;
+      proc.moved.push(player.id);
+      delete proc.playerId;
+      if (fell) return "done";
+      proc.stage = "select";
+      return "continue";
+    }
+    const candidates = onTheBallPlayers(state, proc);
+    if (candidates.length === 0) return "done";
+    if (action === null) return "wait";
+    const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+    const id = playerIds[0];
+    if (playerIds.length > 1 || (id !== undefined && !candidates.some((c) => c.id === id))) ctx.reject("Invalid player.");
+    if (id === undefined) return "done";
+    getPlayer(ctx, id).movesUsed = 0;
+    ctx.emit({ type: "SkillUsed", playerId: id, skill: "On the Ball" });
+    proc.playerId = id;
+    proc.stage = "move";
+    return "continue";
+  },
+  actions(state, proc) {
+    if (proc.stage === "move") {
+      const player = state.players[proc.playerId!]!;
+      return [
+        { type: "MOVE", side: proc.side, playerId: player.id, squares: onTheBallMoves(state, player, proc.kickoff) },
+        { type: "DONE", side: proc.side },
+      ];
+    }
+    const when = proc.kickoff ? "the kick-off" : "the pass";
+    const playerIds = onTheBallPlayers(state, proc).map((p) => p.id);
+    return [{ type: "SELECT_PLAYERS", side: proc.side, playerIds, max: 1, reason: `On the Ball: choose a player to move up to 3 squares before ${when}` }];
+  },
 };

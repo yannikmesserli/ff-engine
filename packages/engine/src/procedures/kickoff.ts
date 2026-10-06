@@ -148,6 +148,8 @@ export const Kickoff: Handler<P<"Kickoff">> = {
         proc.landing = offset(proc.target!, SCATTER[direction!]!, distance!);
         proc.touchback = !inHalf(receiving, proc.landing);
         ctx.emit({ type: "BallScattered", to: proc.landing });
+        // On the Ball: a receiving player may move while the ball is in the air.
+        if (!proc.touchback) ctx.push({ type: "OnTheBall", side: receiving, kickoff: true, stage: "select", moved: [] });
         proc.stage = "event";
         return "continue";
       }

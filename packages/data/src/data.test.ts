@@ -159,7 +159,9 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
     case "MOVE_INSTEAD":
       return { type: "MOVE_INSTEAD", move: random() < 0.5 };
     case "MOVE":
-      return t.squares.length > 0 && random() < 0.9 ? { type: "MOVE", square: pick(t.squares) } : { type: "END_PLAYER_ACTION" };
+      if (t.squares.length > 0 && random() < 0.9) return { type: "MOVE", square: pick(t.squares) };
+      // On the Ball moves end with DONE.
+      return templates.some((u) => u.type === "DONE") ? { type: "DONE" } : { type: "END_PLAYER_ACTION" };
     case "SELECT_PLAYERS": {
       const shuffled = [...t.playerIds].sort(() => random() - 0.5);
       const min = t.min ?? 0;

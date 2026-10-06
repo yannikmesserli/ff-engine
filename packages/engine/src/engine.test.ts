@@ -1113,6 +1113,64 @@ describe("engine", () => {
       expect(apply(standUp, roll(2)).players["home-2"]!.status).toBe("standing");
     });
 
+    describe("On the Ball", () => {
+      const select = (...playerIds: string[]): Action => ({ type: "SELECT_PLAYERS", playerIds });
+
+      it("after the kick-off deviation, one unmarked receiving player moves up to 3 squares in their own half", () => {
+        const kicked = withSkills(toKick({ x: 5, y: 1 }), { "home-1": ["On the Ball"], "home-4": ["On the Ball"], "home-6": ["On the Ball"] });
+        let s = apply(kicked, roll(7, 1));
+        // home-1 (12,6) is marked by the line of scrimmage.
+        expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-4", "home-6"], max: 1 });
+        s = apply(s, select("home-4"), ...move({ x: 11, y: 4 }, { x: 12, y: 4 }));
+        expect(find(s, "MOVE")?.squares.some((q) => q.x === 13)).toBe(false);
+        s = apply(s, ...move({ x: 12, y: 3 }));
+        expect(s.players["home-4"]!.at).toEqual({ x: 12, y: 3 });
+        // Only one player, then the kick-off event.
+        expect(find(s, "ROLL")?.reason).toBe("Kick-off event");
+      });
+
+      it("at the kick-off, the receiving team may use a team re-roll", () => {
+        let s = apply(withSkills(toKick({ x: 5, y: 1 }), { "home-4": ["On the Ball"] }), roll(7, 1), select("home-4"));
+        // (12,5) is next to away-1 (13,6): leaving it takes a dodge.
+        s = apply(s, ...move({ x: 11, y: 5 }, { x: 12, y: 5 }, { x: 12, y: 4 }), roll(1));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        s = apply(s, { type: "USE_REROLL" }, roll(6));
+        expect([s.players["home-4"]!.at, s.teams.home.rerolls]).toEqual([{ x: 12, y: 4 }, 0]);
+      });
+
+      it("when the opponent passes, each player with the skill may move 3 squares, dodging but never rushing", () => {
+        const passing = edit(withSkills(toFirstTurn(), { "away-1": ["On the Ball"] }), (c) => {
+          c.ball = { square: { x: 10, y: 4 }, carried: true };
+          c.players["away-1"]!.ma = 2;
+        });
+        let s = apply(passing, declare("home-4", "pass"), { type: "THROW", square: { x: 6, y: 4 } });
+        expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1"] });
+        s = apply(s, select("away-1"), ...move({ x: 12, y: 5 }));
+        expect(find(s, "ROLL")?.reason).toBe("Dodge 4+ (Away 1)");
+        s = apply(s, roll(6), ...move({ x: 11, y: 5 }), roll(6), ...move({ x: 11, y: 4 }), roll(6));
+        expect(s.players["away-1"]!.at).toEqual({ x: 11, y: 4 });
+        // Now marking the thrower: the pass is harder.
+        expect(find(s, "ROLL")?.reason).toBe("Pass 6+ (short)");
+      });
+
+      it("skill re-rolls work (Dodge), team re-rolls do not", () => {
+        const passing = edit(withSkills(toFirstTurn(), { "away-1": ["On the Ball", "Dodge"] }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+        let s = apply(passing, declare("home-4", "pass"), { type: "THROW", square: { x: 6, y: 4 } }, select("away-1"), ...move({ x: 12, y: 5 }), roll(1));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "away-1", skill: "Dodge" });
+        s = apply(s, roll(1));
+        expect(types(s)).not.toContain("USE_REROLL");
+        expect(s.players["away-1"]!.status).toBe("prone");
+      });
+
+      it("a fall ends the moves, without a turnover", () => {
+        const passing = edit(withSkills(toFirstTurn(), { "away-1": ["On the Ball"] }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+        let s = apply(passing, declare("home-4", "pass"), { type: "THROW", square: { x: 6, y: 4 } }, select("away-1"), ...move({ x: 12, y: 5 }), roll(1));
+        s = apply(s, roll(1, 1));
+        expect([s.players["away-1"]!.status, s.turnover]).toEqual(["prone", false]);
+        expect(find(s, "ROLL")?.reason).toBe("Pass 5+ (short)");
+      });
+    });
+
     describe("Hypnotic Gaze", () => {
       const gazer = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Hypnotic Gaze"] });
       const gaze = (s: GameState) => apply(s, declare("home-2", "gaze"), { type: "GAZE", targetId: "away-2" });
