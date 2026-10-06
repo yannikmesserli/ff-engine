@@ -186,7 +186,7 @@ export interface DiceRoll {
 }
 
 /** Actions a player can declare when activated. */
-export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm";
+export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm" | "gaze";
 
 /** BB2025 range bands: Quick, Short, Long, Long Bomb. */
 export type PassRange = "quick" | "short" | "long" | "bomb";
@@ -217,7 +217,8 @@ export type CheckKind =
   | "escape"
   | "shadowing"
   | "savagery"
-  | "appearance";
+  | "appearance"
+  | "gaze";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -383,6 +384,8 @@ export type Procedure =
   | { type: "SecretWeapon"; playerIds: string[]; stage: "argue" | "argueRoll" | "bribe" | "bribeRoll" }
   /** Bloodlust: the thirsty player bites an adjacent Thrall team-mate, or fails to feed. */
   | { type: "Feed"; playerId: string; stage: "select" | "injury"; victimId?: string; dropped?: boolean }
+  /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
+  | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "result" }
   /** Shadowing: an opponent may follow the player who just left `from`, out of their tackle zone. */
   | { type: "Shadow"; playerId: string; from: Square; stage: "select" | "result"; shadowerId?: string }
   /** The crowd throws a rock at a stalling ball carrier. */
@@ -512,6 +515,8 @@ export type Action =
   /** Throw Team-mate: throw the adjacent team-mate `targetId` to `square`. */
   | { type: "THROW_TEAM_MATE"; targetId: string; square: Square }
   | { type: "FOUL"; targetId: string }
+  /** Hypnotic Gaze: distract the adjacent opponent `targetId`. */
+  | { type: "GAZE"; targetId: string }
   /** The referee spotted the foul: argue the call (6: the fouler stays, but it is still a turnover)? */
   | { type: "ARGUE_THE_CALL"; argue: boolean }
   /** Use a bribe (2+: the fouler stays and no turnover)? */
@@ -563,6 +568,7 @@ export type ActionTemplate =
   | { type: "THROW_TEAM_MATE"; side: Side; playerId: string; playerIds: string[]; squares: Array<Square & { range: PassRange; needed: number }> }
   /** Prone or stunned opponents next to the fouler, with the armour roll modifier from foul assists. */
   | { type: "FOUL"; side: Side; playerId: string; targets: Array<{ playerId: string; assists: number }> }
+  | { type: "GAZE"; side: Side; playerId: string; targetIds: string[] }
   | { type: "ARGUE_THE_CALL"; side: Side; playerId: string }
   | { type: "BRIBE"; side: Side; playerId: string; bribes: number }
   | { type: "USE_APOTHECARY"; side: Side; playerId: string; outcome: InjuryOutcome; casualty: Casualty | null }
@@ -656,6 +662,8 @@ export type GameEvent =
   | { type: "FeedingFailed"; playerId: string }
   /** Failed a Take Root roll: the player cannot move until knocked down or the drive ends. */
   | { type: "PlayerRooted"; playerId: string }
+  /** Hypnotic Gaze worked: `victimId` is distracted until their next activation. */
+  | { type: "PlayerHypnotised"; playerId: string; victimId: string }
   /** Failed an Animal Savagery roll: `playerId` knocks down the team-mate `victimId`, and the action ends. */
   | { type: "LashedOut"; playerId: string; victimId: string }
   /** Failed an Unchannelled Fury roll: the action is lost, but the player keeps their tackle zone. */

@@ -25,6 +25,7 @@ const CHECK_NAMES = {
   shadowing: "Shadowing roll",
   savagery: "Animal Savagery roll (a failure means lashing out at a team-mate)",
   appearance: "Foul Appearance roll (a failure wastes the block and ends the action)",
+  gaze: "Hypnotic Gaze roll",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -84,6 +85,7 @@ export const ACTION_NAMES: Record<PlayerActionType, string> = {
   foul: "Foul",
   secure: "Secure the Ball",
   ttm: "Throw Team-mate",
+  gaze: "Hypnotic Gaze",
 };
 
 /** Display names of the pass ranges, shortest first. */
@@ -263,6 +265,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} finds nobody to bite: turnover, and they lose their tackle zone.`;
     case "PlayerRooted":
       return `${who(state, e.playerId)} takes root: they cannot move until knocked down or the drive ends.`;
+    case "PlayerHypnotised":
+      return `${who(state, e.playerId)} hypnotises ${who(state, e.victimId)}: no tackle zone until their next action.`;
     case "LashedOut":
       return `${who(state, e.playerId)} lashes out at ${who(state, e.victimId)}, and the action ends.`;
     case "ActionLost":

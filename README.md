@@ -170,6 +170,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Strip Ball: an opponent holding the ball who is pushed back by the player (Push, or a Stumble saved by Dodge) without
   being knocked down drops it in the square they were pushed to, where it bounces; not when they have Sure Hands (and a
   tackle zone), stand firm or are rooted.
+- Hypnotic Gaze: a special action any number of players may declare each turn. The player may move first, then gazes at
+  an adjacent standing opponent (after that opponent's Foul Appearance): on 3+ (team re-roll allowed) the opponent is
+  distracted until their next activation. The activation ends either way, without a turnover.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

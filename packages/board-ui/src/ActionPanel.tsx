@@ -222,6 +222,11 @@ export function ActionPanel(props: ActionPanelProps) {
             Vomit on {state.players[id]!.name}
           </button>
         ))}
+        {findTemplate(templates, "GAZE")?.targetIds.map((id) => (
+          <button key={id} onClick={() => dispatch({ type: "GAZE", targetId: id })}>
+            Gaze at {state.players[id]!.name}
+          </button>
+        ))}
         {findTemplate(templates, "STAB")?.targetIds.map((id) => (
           <button key={id} onClick={() => dispatch({ type: "STAB", targetId: id })}>
             Stab {state.players[id]!.name}

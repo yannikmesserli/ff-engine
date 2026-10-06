@@ -1,7 +1,7 @@
 import type { Ctx, Handler } from "../context";
 import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, inBounds, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
-import { blockDice } from "./block";
+import { blockDice, revolted, rollFoulAppearance } from "./block";
 import { handOffTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
@@ -245,7 +245,7 @@ function canSecure(state: GameState, player: PlayerState) {
 
 /**
  * Actions the player may declare: Block needs a standing player next to a standing opponent;
- * Blitz, Pass, Hand-off, Foul and Secure the Ball are once per turn. A Charge (kick-off event) only allows Move and Blitz.
+ * Blitz, Pass, Hand-off, Foul and Secure the Ball are once per turn; Hypnotic Gaze is not. A Charge (kick-off event) only allows Move and Blitz.
  */
 export function declarableActions(state: GameState, proc: P<"Turn">, player: PlayerState): PlayerActionType[] {
   if (!canAct(player)) return [];
@@ -265,6 +265,8 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   // A Foul can be declared as long as an opponent is prone or stunned somewhere on the pitch.
   const foulable = teamPlayers(state, other(player.side)).some((o) => isOnPitch(o) && o.status !== "standing");
   if (free("foul") && foulable) actions.push("foul");
+  // Hypnotic Gaze: a special action any number of players may declare each turn.
+  if (hasSkill(player, "Hypnotic Gaze") && blitzTargets(state, player.side).length > 0) actions.push("gaze");
   return actions;
 }
 
@@ -430,10 +432,11 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         throwOptions(state, proc).length === 0 &&
         handOffOptions(state, proc).length === 0 &&
         foulOptions(state, proc).length === 0 &&
+        gazeOptions(state, proc).length === 0 &&
         ttmOptions(state, proc).length === 0);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "THROW", "HAND_OFF", "FOUL", "THROW_TEAM_MATE", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "END_PLAYER_ACTION");
     if (a.type === "END_PLAYER_ACTION") return endActivation(ctx, proc, player);
     if (a.type === "THROW") {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
@@ -454,6 +457,13 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       proc.finished = true;
       ctx.emit({ type: "Fouled", foulerId: player.id, victimId: target.playerId, assists: target.assists });
       ctx.push({ type: "Foul", foulerId: player.id, victimId: target.playerId, assists: target.assists, stage: "armour" });
+      return "continue";
+    }
+    if (a.type === "GAZE") {
+      if (!gazeOptions(state, proc).some((t) => t.id === a.targetId)) ctx.reject("Cannot gaze at this player.");
+      // The activation ends once the gaze has been attempted.
+      proc.finished = true;
+      ctx.push({ type: "Gaze", playerId: player.id, victimId: a.targetId, stage: "appearance" });
       return "continue";
     }
     if (a.type === "HAND_OFF") {
@@ -510,6 +520,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const handOffs = handOffOptions(state, proc).map((p) => p.id);
     const fouls = foulOptions(state, proc);
     const throwable = ttmOptions(state, proc).map((p) => p.id);
+    const gazes = gazeOptions(state, proc).map((p) => p.id);
     return [
       ...(proc.action === "block" ? [] : [{ type: "MOVE" as const, side: player.side, playerId: player.id, squares: legalMoves(state, player) }]),
       ...(targets.length > 0 ? [{ type: "BLOCK" as const, side: player.side, playerId: player.id, targets }] : []),
@@ -518,6 +529,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(throws.length > 0 ? [{ type: "THROW" as const, side: player.side, playerId: player.id, squares: throws }] : []),
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
       ...(fouls.length > 0 ? [{ type: "FOUL" as const, side: player.side, playerId: player.id, targets: fouls }] : []),
+      ...(gazes.length > 0 ? [{ type: "GAZE" as const, side: player.side, playerId: player.id, targetIds: gazes }] : []),
       ...(throwable.length > 0
         ? [{ type: "THROW_TEAM_MATE" as const, side: player.side, playerId: player.id, playerIds: throwable, squares: teamMateTargets(state, player) }]
         : []),
@@ -579,6 +591,12 @@ function endActivation(ctx: Ctx, proc: P<"MoveAction">, player: PlayerState) {
 const ttmOptions = (state: GameState, proc: P<"MoveAction">) => {
   const player = state.players[proc.playerId]!;
   return proc.action === "ttm" && !proc.finished && player.status === "standing" ? throwableTeamMates(state, player) : [];
+};
+
+/** Hypnotic Gaze: any standing opponent next to the (standing) player, once the action allows it. */
+const gazeOptions = (state: GameState, proc: P<"MoveAction">) => {
+  const player = state.players[proc.playerId]!;
+  return proc.action === "gaze" && !proc.finished && player.status === "standing" ? adjacentTargets(state, player) : [];
 };
 
 const foulOptions = (state: GameState, proc: P<"MoveAction">) =>
@@ -776,4 +794,37 @@ export const Shadow: Handler<P<"Shadow">> = {
     const playerIds = shadowers(state, mover, proc.from).map((p) => p.id);
     return [{ type: "SELECT_PLAYERS", side: other(mover.side), playerIds, max: 1, reason: `Shadowing: choose a player to follow ${mover.name}` }];
   },
+};
+
+/** Hypnotic Gaze works on 3+. */
+export const HYPNOTIC_GAZE_TARGET = 3;
+
+/**
+ * Hypnotic Gaze (a special action, after an optional move): Foul Appearance first, then a D6 (team re-roll allowed);
+ * on 3+ the adjacent opponent is distracted until their next activation (no tackle zone, cannot catch, assist...).
+ * The activation ends either way, without a turnover.
+ */
+export const Gaze: Handler<P<"Gaze">> = {
+  step(ctx, proc) {
+    const { state } = ctx;
+    const player = getPlayer(ctx, proc.playerId);
+    const victim = getPlayer(ctx, proc.victimId);
+    if (proc.stage === "appearance") {
+      rollFoulAppearance(ctx, player, victim);
+      proc.stage = "appearanceResult";
+      return "continue";
+    }
+    if (proc.stage === "appearanceResult") {
+      if (revolted(ctx, player)) return "done";
+      ctx.push({ type: "Check", kind: "gaze", playerId: player.id, target: HYPNOTIC_GAZE_TARGET, modifier: 0, stage: "roll", rerolled: false });
+      proc.stage = "result";
+      return "continue";
+    }
+    if (state.lastCheck?.kind === "gaze" && state.lastCheck.success) {
+      victim.distracted = true;
+      ctx.emit({ type: "PlayerHypnotised", playerId: player.id, victimId: victim.id });
+    }
+    return "done";
+  },
+  actions: () => [],
 };

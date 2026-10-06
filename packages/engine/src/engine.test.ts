@@ -1113,6 +1113,38 @@ describe("engine", () => {
       expect(apply(standUp, roll(2)).players["home-2"]!.status).toBe("standing");
     });
 
+    describe("Hypnotic Gaze", () => {
+      const gazer = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Hypnotic Gaze"] });
+      const gaze = (s: GameState) => apply(s, declare("home-2", "gaze"), { type: "GAZE", targetId: "away-2" });
+
+      it("is a special action any number of players may declare, after an optional move", () => {
+        let s = withSkills(gazer(), { "home-1": ["Hypnotic Gaze"] });
+        expect(actionsOf(s, "home-2")).toContain("gaze");
+        s = apply(s, declare("home-1", "gaze"), { type: "END_PLAYER_ACTION" });
+        expect(actionsOf(s, "home-2")).toContain("gaze");
+        expect(find(apply(s, declare("home-2", "gaze")), "GAZE")).toEqual({ type: "GAZE", side: "home", playerId: "home-2", targetIds: ["away-1", "away-2", "away-3"] });
+      });
+
+      it("on 3+ the opponent is distracted, and the activation ends either way", () => {
+        let s = gaze(gazer());
+        expect(find(s, "ROLL")?.reason).toBe("Hypnotic Gaze 3+ (Home 2)");
+        s = apply(s, roll(3));
+        expect(s.players["away-2"]!.distracted).toBe(true);
+        expect(s.log).toContainEqual({ type: "PlayerHypnotised", playerId: "home-2", victimId: "away-2" });
+        expect([s.activePlayerId, s.turnover]).toEqual([null, false]);
+        // No tackle zone: home-1 at (12,6) is now only marked by away-1.
+        expect(tackleZones(s, "home", { x: 12, y: 6 })).toBe(1);
+        s = apply(gaze(gazer()), roll(2), { type: "DECLINE_REROLL" });
+        expect([s.players["away-2"]!.distracted, s.activePlayerId, s.turnover]).toEqual([false, null, false]);
+      });
+
+      it("Foul Appearance comes first", () => {
+        const s = gaze(withSkills(gazer(), { "away-2": ["Foul Appearance"] }));
+        expect(find(s, "ROLL")?.reason).toBe("Foul Appearance 2+ (Home 2)");
+        expect(apply(s, roll(1), { type: "DECLINE_REROLL" }).activePlayerId).toBeNull();
+      });
+    });
+
     describe("Strip Ball", () => {
       // away-2 at (13,7) holds the ball; home-2 blocks them from (12,7) and rolls a Push.
       const carrier = (skills: string[] = []) =>
