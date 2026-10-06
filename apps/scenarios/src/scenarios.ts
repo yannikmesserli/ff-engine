@@ -607,4 +607,39 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "safe-pair-of-hands",
+    title: "Safe Pair of Hands: place the ball instead of a bounce",
+    instructions: [
+      "Home's first turn: Orion (#1, Wood Elf Thrower, Safe Pair of Hands) holds the ball on the line of scrimmage.",
+      "Declare a Block with Orion on the orc in front of him and enter 1 (Physical dice), a Skull: Orion is knocked down (a turnover). After his armour roll, the home coach may use Safe Pair of Hands, then click a free square next to him: the ball stays there, without a bounce.",
+      "Undo, and declare a Move instead: step back away from the orc and fail the dodge (enter 1, decline the re-roll). A player who falls over cannot use Safe Pair of Hands: the ball bounces.",
+    ],
+    home: {
+      name: "Athel Loren Hands",
+      roster: "Wood Elf",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Orion", position: "Wood Elf Thrower" },
+        { number: 2, name: "Ariel", position: "Wood Elf Lineman" },
+        { number: 3, name: "Drycha", position: "Wood Elf Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 15,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 12, y: 7 },
+    }),
+  },
 ];

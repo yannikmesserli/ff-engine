@@ -173,4 +173,27 @@ describe("scenarios", () => {
     s = block("home-2", "away-2", 1);
     expect(find(s, "USE_SKILL")).toMatchObject({ side: "home", playerId: "home-2", skill: "Steady Footing" });
   });
+
+  it("safe-pair-of-hands: the knocked-down ball carrier may place the ball", () => {
+    let s = load("safe-pair-of-hands");
+    expect(s.ball).toEqual({ square: { x: 12, y: 7 }, carried: true });
+    s = applyActions(s, [
+      { type: "START_ACTION", playerId: "home-1", action: "block" },
+      { type: "BLOCK", targetId: "away-1" },
+      { type: "ROLL", values: [1] },
+      { type: "CHOOSE_BLOCK_DIE", index: 0 },
+      { type: "ROLL", values: [1, 1] },
+    ]);
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "home", skill: "Safe Pair of Hands" });
+    s = step(s, { type: "USE_SKILL", use: true }).state;
+    expect(find(s, "PLACE_BALL")?.squares).toContainEqual({ x: 11, y: 7 });
+    const fell = applyActions(load("safe-pair-of-hands"), [
+      { type: "START_ACTION", playerId: "home-1", action: "move" },
+      { type: "MOVE", square: { x: 11, y: 7 } },
+      { type: "ROLL", values: [1] },
+      { type: "DECLINE_REROLL" },
+      { type: "ROLL", values: [1, 1] },
+    ]);
+    expect(find(fell, "ROLL")?.reason).toBe("Bounce");
+  });
 });
