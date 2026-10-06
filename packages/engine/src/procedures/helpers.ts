@@ -135,6 +135,10 @@ export function weatherModifier(state: { weather: Weather }, kind: "rush" | "pic
   return state.weather === "pouring-rain" ? -1 : 0;
 }
 
+/** Rush roll modifier: the weather (Blizzard), and -1 for a Drunkard. */
+export const rushModifier = (state: GameState, player: PlayerState) =>
+  weatherModifier(state, "rush") - (hasSkill(player, "Drunkard") ? 1 : 0);
+
 /** Clear the pitch before a kick-off: everyone fit goes back to the reserves. */
 export function resetForKickoff(ctx: Ctx) {
   const { state } = ctx;

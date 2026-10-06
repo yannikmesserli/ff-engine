@@ -216,6 +216,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
   chooses any of their prone (not stunned) players within 3 squares of a standing team-mate with the skill; each rolls
   a D6 and stands up on 5+. The coach may choose again among the others.
 - Sure Feet: once per turn, a failed Rush is re-rolled automatically (before any team re-roll).
+- Drunkard: -1 to every Rush roll (moves and the square a Blitz block costs).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

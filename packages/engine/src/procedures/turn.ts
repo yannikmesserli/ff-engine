@@ -5,7 +5,7 @@ import { blockDice, revolted, rollFoulAppearance } from "./block";
 import { handOffTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
-import { checkTouchdown, getPlayer, inScoringPosition, squareOf, weatherModifier } from "./helpers";
+import { checkTouchdown, getPlayer, inScoringPosition, rushModifier, squareOf, weatherModifier } from "./helpers";
 import { isStalling } from "./stalling";
 import { TURNS_PER_HALF } from "./game";
 import { teamMateTargets, throwableTeamMates } from "./ttm";
@@ -780,13 +780,13 @@ export const MoveStep: Handler<P<"MoveStep">> = {
       case "rush":
         state.lastCheck = null;
         proc.stage = proc.jump ? "rush2" : "dodge";
-        if (player.movesUsed >= player.ma && !proc.onTheBall && !proc.hitAndRun) check("rush", RUSH_TARGET, weatherModifier(state, "rush"));
+        if (player.movesUsed >= player.ma && !proc.onTheBall && !proc.hitAndRun) check("rush", RUSH_TARGET, rushModifier(state, player));
         return "continue";
       case "rush2":
         if (failed(ctx)) return fall(true);
         state.lastCheck = null;
         proc.stage = "dodge";
-        if (player.movesUsed + 1 >= player.ma && !proc.onTheBall) check("rush", RUSH_TARGET, weatherModifier(state, "rush"));
+        if (player.movesUsed + 1 >= player.ma && !proc.onTheBall) check("rush", RUSH_TARGET, rushModifier(state, player));
         return "continue";
       case "dodge":
         if (failed(ctx)) return fall(proc.jump);

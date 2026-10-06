@@ -4,7 +4,7 @@ import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, pl
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { hasSkill, skillName, skillValue } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proTemplate, proTemplates, squareOf, stepPro, useTeamReroll, weatherModifier } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proTemplate, proTemplates, rushModifier, squareOf, stepPro, useTeamReroll } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -374,7 +374,7 @@ export const Block: Handler<P<"Block">> = {
         state.lastCheck = null;
         proc.stage = "rushResult";
         if (needsRush) {
-          ctx.push({ type: "Check", kind: "rush", playerId: attacker.id, target: RUSH_TARGET, modifier: weatherModifier(state, "rush"), stage: "roll", rerolled: false });
+          ctx.push({ type: "Check", kind: "rush", playerId: attacker.id, target: RUSH_TARGET, modifier: rushModifier(state, attacker), stage: "roll", rerolled: false });
         }
         return "continue";
       }
@@ -738,7 +738,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         state.lastCheck = null;
         proc.stage = "rushResult";
         if (needsRush) {
-          ctx.push({ type: "Check", kind: "rush", playerId: attacker.id, target: RUSH_TARGET, modifier: weatherModifier(state, "rush"), stage: "roll", rerolled: false });
+          ctx.push({ type: "Check", kind: "rush", playerId: attacker.id, target: RUSH_TARGET, modifier: rushModifier(state, attacker), stage: "roll", rerolled: false });
         }
         return "continue";
       }

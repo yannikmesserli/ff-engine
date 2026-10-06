@@ -1305,6 +1305,11 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    it("Drunkard: -1 to Rush rolls", () => {
+      const s = apply(withSkills(toFirstTurn(), { "home-11": ["Drunkard"] }), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
+      expect(find(s, "ROLL")?.reason).toBe("Rush 3+ (Home 11)");
+    });
+
     it("Sure Feet: once per turn, a failed Rush is re-rolled automatically", () => {
       let s = withSkills(toFirstTurn(), { "home-11": ["Sure Feet"] });
       s = apply(s, startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH, roll(1));
