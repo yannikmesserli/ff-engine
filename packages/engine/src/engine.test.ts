@@ -1051,6 +1051,28 @@ describe("engine", () => {
       });
     });
 
+    describe("Hatred", () => {
+      const hater = (keywords: string[]) =>
+        edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
+
+      it("re-rolls a single Skull against a hated player, also during a Blitz", () => {
+        let s = apply(blockAway2(hater(["troll", "big guy"])), roll(1));
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Hatred" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(find(s, "ROLL")?.reason).toBe("Hatred (re-roll a Skull)");
+        s = apply(s, roll(6));
+        expect(s.log).toContainEqual({ type: "BlockResult", attackerId: "home-2", defenderId: "away-2", face: 6 });
+        expect(s.teams.home.rerolls).toBe(1);
+        const blitz = apply(hater(["troll"]), declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" }, roll(1));
+        expect(find(blitz, "USE_SKILL")?.skill).toBe("Hatred");
+      });
+
+      it("not against other players, nor on other faces", () => {
+        expect(find(apply(blockAway2(hater(["lineman"])), roll(1)), "USE_SKILL")).toBeUndefined();
+        expect(find(apply(blockAway2(hater(["troll"])), roll(2)), "USE_SKILL")).toBeUndefined();
+      });
+    });
+
     it("Nerves of Steel: tackle zones do not count for the player's passes, catches and interceptions", () => {
       // home-2 at (12,7) is marked by three opponents.
       const carrier = (skills: string[]) =>

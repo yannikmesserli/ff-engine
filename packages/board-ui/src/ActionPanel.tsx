@@ -190,6 +190,9 @@ export function ActionPanel(props: ActionPanelProps) {
         {main.type !== "USE_SKILL" && findTemplate(templates, "USE_SKILL")?.skill === "Brawler" && (
           <button onClick={() => dispatch({ type: "USE_SKILL", use: true })}>Re-roll a Both Down (Brawler)</button>
         )}
+        {main.type !== "USE_SKILL" && findTemplate(templates, "USE_SKILL")?.skill === "Hatred" && (
+          <button onClick={() => dispatch({ type: "USE_SKILL", use: true })}>Re-roll a Skull (Hatred)</button>
+        )}
         {main.type === "USE_REROLL" && (
           <>
             <button onClick={() => dispatch({ type: "USE_REROLL" })}>{main.skill ? `Re-roll (${main.skill})` : `Re-roll (${main.available} left)`}</button>

@@ -94,7 +94,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   Chainsaw: "Special action: a chainsaw attack on an adjacent opponent, +3 to the armour roll; a 1 hurts this player instead.",
   Decay: "Casualty rolls against this player are +1.",
   Drunkard: "-1 to Rush rolls.",
-  Hatred: "When blocking an opponent with keyword {X}, may re-roll one block die.",
+  Hatred: "When blocking an opponent with keyword {X}, may re-roll one Skull result.",
   "Hypnotic Gaze": "Special action: an adjacent opponent loses their tackle zone on 3+ until their next activation.",
   Insignificant: "Only matters when building the team: there cannot be more Insignificant players than the others.",
   "Kick Team-mate": "Special action: kicks an adjacent team-mate with Right Stuff downfield.",

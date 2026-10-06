@@ -3,7 +3,7 @@ import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
-import { hasSkill, skillValue } from "../skills";
+import { hasSkill, skillName, skillValue } from "../skills";
 import { canTeamReroll, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll, weatherModifier } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
@@ -235,31 +235,55 @@ export function revolted(ctx: Ctx, attacker: PlayerState): boolean {
 /** Only the attacker's team may re-roll the block dice, once. */
 const canReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState) => canTeamReroll(state, attacker.side, proc.rerolled);
 
-/** The face of a Both Down on the block dice. */
+/** The faces of a Both Down and a Skull (attacker down) on the block dice. */
 const BOTH_DOWN_FACE = BLOCK_FACES.indexOf("both_down") + 1;
+const SKULL_FACE = BLOCK_FACES.indexOf("attacker_down") + 1;
+
+/** Skills that re-roll a single block die of a given face, with that face. */
+const SINGLE_DIE_SKILLS = { Brawler: BOTH_DOWN_FACE, Hatred: SKULL_FACE } as const;
+type SingleDieSkill = keyof typeof SINGLE_DIE_SKILLS;
+
+/** Hatred(X): the attacker hates the defender, who has keyword X (several separated by ";"). */
+export function hates(attacker: PlayerState, defender: PlayerState): boolean {
+  const skill = attacker.skills.find((s) => skillName(s) === "Hatred");
+  const value = skill && /\((.*)\)$/.exec(skill)?.[1];
+  return !!value && value.toLowerCase().split(";").some((k) => defender.keywords.includes(k.trim()));
+}
 
 /**
- * Brawler: once per activation, not during a Blitz, the attacker may re-roll a single Both Down die instead of the
- * block re-roll.
+ * The skill that may re-roll a single die instead of the block re-roll, if any: Brawler a Both Down (once per
+ * activation, not during a Blitz), Hatred(X) a Skull when blocking a player with keyword X.
  */
-const canBrawl = (proc: P<"Block">, attacker: PlayerState) =>
-  !proc.rerolled && !proc.blitz && hasSkill(attacker, "Brawler") && !attacker.usedSkills.includes("Brawler") && proc.results!.includes(BOTH_DOWN_FACE);
+function singleDieSkill(proc: P<"Block">, attacker: PlayerState, defender: PlayerState): SingleDieSkill | null {
+  if (proc.rerolled) return null;
+  const brawler = !proc.blitz && hasSkill(attacker, "Brawler") && !attacker.usedSkills.includes("Brawler");
+  if (brawler && proc.results!.includes(BOTH_DOWN_FACE)) return "Brawler";
+  if (hates(attacker, defender) && proc.results!.includes(SKULL_FACE)) return "Hatred";
+  return null;
+}
 
 /** Any re-roll the attacker could use on the block dice now. */
-const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState) => canReroll(state, proc, attacker) || canBrawl(proc, attacker);
+const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
+  canReroll(state, proc, attacker) || singleDieSkill(proc, attacker, defender) !== null;
 
-/** The USE_SKILL template offering Brawler, if it can be used. */
-const brawlerTemplate = (proc: P<"Block">, attacker: PlayerState) =>
-  canBrawl(proc, attacker) ? [{ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill: "Brawler" }] : [];
-
-/** Use Brawler: the re-roll of one Both Down die comes next. */
-function brawl(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
-  if (!canBrawl(proc, attacker)) ctx.reject("Brawler cannot be used now.");
-  attacker.usedSkills.push("Brawler");
-  ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Brawler" });
-  proc.rerolled = true;
-  proc.stage = "brawler";
+/** The USE_SKILL template offering a single-die re-roll skill, if one can be used. */
+function singleDieTemplate(proc: P<"Block">, attacker: PlayerState, defender: PlayerState) {
+  const skill = singleDieSkill(proc, attacker, defender);
+  return skill ? [{ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill }] : [];
 }
+
+/** Use Brawler or Hatred: the re-roll of one die comes next. */
+function useSingleDie(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) {
+  const skill = singleDieSkill(proc, attacker, defender) ?? ctx.reject("No single-die re-roll available.");
+  if (skill === "Brawler") attacker.usedSkills.push("Brawler");
+  ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill });
+  proc.rerolled = true;
+  proc.singleDie = skill;
+  proc.stage = "singleDie";
+}
+
+/** Reason of the single-die re-roll. */
+const singleDieReason = (skill: SingleDieSkill) => `${skill} (re-roll a ${skill === "Brawler" ? "Both Down" : "Skull"})`;
 
 /** Spend the team re-roll; a Loner attacker must roll for it first. */
 function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
@@ -353,23 +377,23 @@ export const Block: Handler<P<"Block">> = {
         if (action === null) return "wait";
         proc.results = ctx.roll(action, [{ kind: "block", count: Math.abs(proc.dice) }], "Block");
         // The attacker may re-roll from the choice of die; when the defender chooses, the re-roll is decided first.
-        proc.stage = proc.dice < 0 && anyReroll(state, proc, attacker) ? "reroll" : "choose";
+        proc.stage = proc.dice < 0 && anyReroll(state, proc, attacker, defender) ? "reroll" : "choose";
         return "continue";
       }
       case "reroll": {
         if (action === null) return "wait";
         const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
-        if (a.type === "USE_SKILL" && a.use) brawl(ctx, proc, attacker);
+        if (a.type === "USE_SKILL" && a.use) useSingleDie(ctx, proc, attacker, defender);
         else if (a.type === "USE_REROLL") {
           if (!canReroll(state, proc, attacker)) ctx.reject("No re-roll available.");
           useReroll(ctx, proc, attacker);
         } else proc.stage = "choose";
         return "continue";
       }
-      case "brawler": {
+      case "singleDie": {
         if (action === null) return "wait";
-        const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], "Brawler");
-        proc.results![proc.results!.indexOf(BOTH_DOWN_FACE)] = die!;
+        const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], singleDieReason(proc.singleDie!));
+        proc.results![proc.results!.indexOf(SINGLE_DIE_SKILLS[proc.singleDie!])] = die!;
         proc.stage = "choose";
         return "continue";
       }
@@ -380,13 +404,13 @@ export const Block: Handler<P<"Block">> = {
         return "continue";
       case "choose": {
         // A single die without a possible re-roll leaves nothing to decide.
-        if (proc.results!.length === 1 && !(proc.dice > 0 && anyReroll(state, proc, attacker))) proc.face = proc.results![0]!;
+        if (proc.results!.length === 1 && !(proc.dice > 0 && anyReroll(state, proc, attacker, defender))) proc.face = proc.results![0]!;
         else {
           if (action === null) return "wait";
           const a = ctx.expect(action, "CHOOSE_BLOCK_DIE", "USE_REROLL", "USE_SKILL");
           if (a.type === "USE_SKILL") {
             if (proc.dice < 0) ctx.reject("The defender chooses the die.");
-            if (a.use) brawl(ctx, proc, attacker);
+            if (a.use) useSingleDie(ctx, proc, attacker, defender);
             return "continue";
           }
           if (a.type === "USE_REROLL") {
@@ -541,20 +565,20 @@ export const Block: Handler<P<"Block">> = {
       case "reroll":
         return [
           ...(canReroll(state, proc, attacker) ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }] : []),
-          ...brawlerTemplate(proc, attacker),
+          ...singleDieTemplate(proc, attacker, defender),
           { type: "DECLINE_REROLL", side: attacker.side },
         ];
       case "loner":
         return [lonerRollTemplate(attacker)];
-      case "brawler":
-        return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: "Brawler (re-roll a Both Down)" }];
+      case "singleDie":
+        return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: singleDieReason(proc.singleDie!) }];
       case "choose": {
         const chooser = proc.dice > 0 ? attacker.side : defender.side;
         const reroll =
           proc.dice > 0 && canReroll(state, proc, attacker)
             ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }]
             : [];
-        return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll, ...(proc.dice > 0 ? brawlerTemplate(proc, attacker) : [])];
+        return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll, ...(proc.dice > 0 ? singleDieTemplate(proc, attacker, defender) : [])];
       }
       case "juggernaut":
         return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Juggernaut" }];

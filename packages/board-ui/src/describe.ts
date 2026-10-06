@@ -47,6 +47,7 @@ const SKILL_USES: Record<string, string> = {
   Stab: "",
   "Take Root": "and cannot be pushed",
   Brawler: "to re-roll a Both Down",
+  Hatred: "to re-roll a Skull",
   "Steady Footing": "and stays on their feet",
   Shadowing: "and follows into the vacated square",
   "Strip Ball": "and knocks the ball loose",

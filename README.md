@@ -186,6 +186,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Diving Tackle: after a successful dodge or jump out of the tackle zone of opponents with the skill (who are not next
   to the square moved to), that -2 would turn into a failure, the opposing coach may pick one of them: the roll fails
   (a re-roll keeps the -2), and the tackler is placed prone in the square left, without an armour roll.
+- Hatred(X): when blocking a player with keyword X (Blitz and Frenzy blocks included), the attacker may re-roll a
+  single Skull die instead of the block re-roll, without spending a team re-roll.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

@@ -346,12 +346,14 @@ export type Procedure =
       blitz: boolean;
       /** Frenzy's second block against the same defender: there is no third one. */
       second?: boolean;
+      /** The skill re-rolling a single die (Brawler: a Both Down, Hatred: a Skull). */
+      singleDie?: "Brawler" | "Hatred";
       /** Dauntless worked: the attacker's ST matches the defender's for this block. */
       dauntless?: boolean;
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
       /** "appearance": the defender's Foul Appearance, rolled first. */
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "brawler" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "followup" | "end";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "singleDie" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
