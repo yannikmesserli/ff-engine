@@ -235,6 +235,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   comes down next to standing players with the skill, the moving team (the kicking team at the kick-off) may pick one
   of its divers, or its own player in the square, to catch it, then the other team; the catch is rolled from the
   catcher's square, and a failure bounces from there. Not for bombs.
+- Insignificant: a team-building rule, checked by `resolveTeam`: a team may not have more players with the trait than
+  players without it. It has no effect during the game.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

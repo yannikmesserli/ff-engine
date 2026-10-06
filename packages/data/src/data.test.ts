@@ -61,6 +61,20 @@ describe("data", () => {
     expect(() => resolveTeam(twoBigGuys)).toThrow(/at most 1 Big Guys/);
   });
 
+  it("rejects more Insignificant players than other players", () => {
+    const team = (snotlings: number, others: number) => ({
+      name: "Snots",
+      roster: "Snotling",
+      rerolls: 1,
+      players: [
+        ...Array.from({ length: snotlings }, (_, i) => ({ number: i + 1, name: `Snot ${i + 1}`, position: "Snotling Lineman" })),
+        ...Array.from({ length: others }, (_, i) => ({ number: 20 + i, name: `Runna ${i + 1}`, position: "Stilty Runna" })),
+      ],
+    });
+    expect(() => resolveTeam(team(2, 2))).not.toThrow();
+    expect(() => resolveTeam(team(3, 2))).toThrow(/At most as many Insignificant players as other players \(3 of 5\)/);
+  });
+
   it.each(Object.keys(formations))("formation %s gives a legal setup for both sides", (name) => {
     // Fan factor, weather and coin toss; the toss winner kicks.
     const pregame: Action[] = [

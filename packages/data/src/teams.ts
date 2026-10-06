@@ -48,7 +48,8 @@ const positionStats = (position: Roster["positions"][number]): PositionStats => 
 });
 
 /**
- * Validate a team file against its BB2025 roster (re-rolls, apothecary, position quantities, Big Guys) and build the
+ * Validate a team file against its BB2025 roster (re-rolls, apothecary, position quantities, Big Guys, Insignificant
+ * players) and build the
  * engine's team: position characteristics with improvements and injuries applied, position skills plus gained ones.
  * Players who miss the next game are left out.
  */
@@ -73,6 +74,11 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
   }
   const bigGuys = team.players.filter((p) => positionOf(p).type === "Big Guy").length;
   if (bigGuys > roster.maxBigGuys) throw new TeamError(`${roster.name} can have at most ${roster.maxBigGuys} Big Guys.`);
+  // Insignificant: no more players with the trait than players without it.
+  const insignificant = team.players.filter((p) => [...positionOf(p).skills, ...p.skills].includes("Insignificant")).length;
+  if (insignificant > team.players.length - insignificant) {
+    throw new TeamError(`At most as many Insignificant players as other players (${insignificant} of ${team.players.length}).`);
+  }
   // Plague Ridden: a killed opponent may join the team as a lineman.
   const plagueRidden = team.players.some((p) => [...positionOf(p).skills, ...p.skills].includes("Plague Ridden"));
   const lineman = roster.positions.find((pos) => pos.keywords.includes("lineman"));

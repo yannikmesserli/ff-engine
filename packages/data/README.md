@@ -64,9 +64,9 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
 - `missNextGame`: the player is left out when the team is resolved.
 - Unknown fields are rejected, so typos don't pass silently.
 - `resolveTeam` also checks the roster exists, re-rolls are within `maxRerolls`, the roster may hire an apothecary,
-  position quantities and the Big Guy limit are respected, and clamps characteristics to the BB2025 limits (MA 1-9,
-  ST 1-8, AG/PA 1-6, AV 3-11). A team with a Plague Ridden player gets its roster's lineman position as
-  `raisePosition`, the position a killed opponent joins the team as.
+  position quantities, the Big Guy limit and Insignificant (no more such players than others) are respected, and
+  clamps characteristics to the BB2025 limits (MA 1-9, ST 1-8, AG/PA 1-6, AV 3-11). A team with a Plague Ridden player
+  gets its roster's lineman position as `raisePosition`, the position a killed opponent joins the team as.
 
 ## Formations
 
