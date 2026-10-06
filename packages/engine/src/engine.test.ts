@@ -4,6 +4,7 @@ import {
   CASUALTY_DICE,
   blockDice,
   flightMarkers,
+  scatterOrigin,
   IllegalActionError,
   casualtyFor,
   createGame,
@@ -2602,6 +2603,14 @@ describe("engine", () => {
       s = apply(s, roll(7, 1));
       expect(flightMarkers(s)).toEqual([{ kind: "ball", square: { x: 4, y: 1 }, state: "landing" }]);
       expect(flightMarkers(apply(s, QUIET_EVENT, roll(5)))).toEqual([]);
+    });
+
+    it("scatterOrigin: the square the next d8 moves from (kick-off deviation, then the bounce)", () => {
+      let s = toKick({ x: 5, y: 1 });
+      expect(scatterOrigin(s)).toEqual({ x: 5, y: 1 });
+      s = apply(s, roll(7, 1), QUIET_EVENT);
+      expect(scatterOrigin(s)).toEqual({ x: 4, y: 1 });
+      expect(scatterOrigin(apply(s, roll(5)))).toBeNull();
     });
 
     it("show a pass target before the throw, and a bomb held, landing or exploding", () => {

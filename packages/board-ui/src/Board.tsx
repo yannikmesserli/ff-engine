@@ -2,6 +2,9 @@ import type { ReactNode } from "react";
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import {
   flightMarkers,
+  inBounds,
+  scatterOrigin,
+  SCATTER,
   PITCH_HEIGHT,
   PITCH_WIDTH,
   isOnPitch,
@@ -92,6 +95,8 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
   const foul = findTemplate(templates, "FOUL");
   const giveBall = findTemplate(templates, "GIVE_BALL");
   const select = findTemplate(templates, "SELECT_PLAYERS");
+  // A d8 roll is due: number the squares around where it moves from.
+  const d8Origin = findTemplate(templates, "ROLL")?.dice.some((d) => d.kind === "d8") ? scatterOrigin(state) : null;
   const snap = findTemplate(templates, "SNAP");
   const snapMove = snap?.moves.find((m) => m.playerId === picked[0]);
   const choiceFor = (id: string) => startAction?.choices.find((c) => c.playerId === id);
@@ -227,6 +232,15 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
             {state.ball.square && !state.ball.carried && (
               <img className="bb-ball" src={`${assets}/ball/sball_30x30.png`} alt="ball" style={at(state.ball.square)} />
             )}
+            {d8Origin &&
+              Object.entries(SCATTER).map(([d, dir]) => {
+                const s = { x: d8Origin.x + dir.x, y: d8Origin.y + dir.y };
+                return inBounds(s) ? (
+                  <span key={d} className="bb-d8-number" style={at(s)}>
+                    {d}
+                  </span>
+                ) : null;
+              })}
             {flightMarkers(state).map((m) => (
               <div key={`${m.kind}-${m.state}-${squareId(m.square)}`} className={`bb-flight bb-flight-${m.state}`} style={at(m.square)}>
                 <img src={`${assets}/ball/${m.kind === "bomb" ? "sbomb_30x30.png" : "sball_30x30.png"}`} alt={`${m.kind} ${FLIGHT_NAMES[m.state]}`} />

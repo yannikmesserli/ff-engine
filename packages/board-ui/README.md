@@ -39,7 +39,8 @@ state ──getAvailableActions──▶ templates ──Board / ActionPanel─�
 3. `Board` turns square and player clicks (and setup drags) into actions; `ActionPanel` shows the prompt and the
    buttons for everything else. The board also draws `flightMarkers(state)`: a kicked or thrown ball or bomb where it
    was aimed (dashed ring, it may still deviate or scatter) and where it comes down (solid ring), a bomb held by a
-   player who must throw it again, and an exploding bomb.
+   player who must throw it again, and an exploding bomb. While a d8 roll is due (a bounce, the kick-off deviation, a
+   scatter), the squares around `scatterOrigin(state)` show the d8 number that moves the ball (or player) there.
 4. `dispatch(...actions)` applies them with `step` as a single undo entry. An `IllegalActionError` is shown in the
    error panel instead of crashing. With "Auto-roll dice", a lone `ROLL` template is dispatched after a short delay.
 

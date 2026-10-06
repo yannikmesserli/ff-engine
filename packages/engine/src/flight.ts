@@ -1,5 +1,5 @@
 import type { GameState, Square } from "./types";
-import { inBounds, isOnPitch } from "./pitch";
+import { inBounds, isOnPitch, playerAt } from "./pitch";
 
 /**
  * A ball or bomb that is not lying on the pitch or carried, for display:
@@ -39,4 +39,32 @@ export function flightMarkers(state: GameState): FlightMarker[] {
     }
   }
   return markers;
+}
+
+/**
+ * The square the next d8 roll moves the ball, a bomb or a thrown player from (a bounce, a kick-off deviation, gusts of
+ * wind, an inaccurate pass, a team-mate throw), for display; null when no such roll is due. With several d8, the first
+ * one moves from there.
+ */
+export function scatterOrigin(state: GameState): Square | null {
+  const p = state.stack.at(-1);
+  if (!p) return null;
+  switch (p.type) {
+    case "Bounce":
+      return p.from;
+    case "Kickoff":
+      return p.stage === "scatter" ? (p.target ?? null) : p.stage === "gusts" ? (p.landing ?? null) : null;
+    case "Pass":
+      return p.stage === "scatter" ? p.target : null;
+    case "BombLanding":
+      return p.stage === "land" && !p.bounced && !playerAt(state, p.square) ? p.square : null;
+    case "ThrowTeamMate": {
+      if (p.stage === "bounce") return p.at ?? null;
+      if (p.stage !== "scatter") return null;
+      const thrown = state.players[p.thrownId];
+      return p.result === "fumble" ? (thrown && isOnPitch(thrown) ? thrown.at : null) : p.target;
+    }
+    default:
+      return null;
+  }
 }
