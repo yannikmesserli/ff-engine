@@ -537,4 +537,39 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "hypnotic-gaze",
+    title: "Hypnotic Gaze and Foul Appearance",
+    instructions: [
+      "Home's first turn. Click Hans (#1, Hypnotic Gaze) and declare Hypnotic Gaze: he may move first, then click \"Gaze at …\" for an adjacent standing opponent.",
+      "Gazing at Festus (#1, Bloater, Foul Appearance) takes a Foul Appearance roll first (2+; a 1 ends Hans's action). Then the gaze: on 3+ Festus is distracted until his next action (no tackle zone, no assists). The action ends either way, without a turnover.",
+      "Then block Festus with Otto (#2): Foul Appearance is rolled again before the block (a failure wastes the block and ends Otto's action, without a turnover).",
+    ],
+    home: {
+      name: "Altdorf Mesmerists",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman", skills: ["Hypnotic Gaze"] },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Rotten Bellies",
+      roster: "Nurgle",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Festus", position: "Bloater" },
+        { number: 2, name: "Gutrot", position: "Rotter Lineman" },
+        { number: 3, name: "Pustule", position: "Rotter Lineman" },
+      ],
+    },
+    seed: 13,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 8 }, 2: { x: 12, y: 6 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 5 }, 3: { x: 13, y: 10 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];
