@@ -94,4 +94,15 @@ describe("scenarios", () => {
     s = step(s, { type: "FOLLOW_UP", follow: false }).state;
     expect(find(s, "USE_SKILL")).toMatchObject({ side: "home", skill: "Hit and Run" });
   });
+
+  it("shadowing: after the dodge, the away coach picks a shadower who follows on 4+", () => {
+    let s = load("shadowing");
+    expect(s.players["away-2"]!.ma).toBe(1);
+    s = applyActions(s, [{ type: "START_ACTION", playerId: "home-1", action: "move" }, { type: "MOVE", square: { x: 11, y: 7 } }, { type: "ROLL", values: [6] }]);
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1", "away-2"] });
+    s = applyActions(s, [{ type: "SELECT_PLAYERS", playerIds: ["away-2"] }, { type: "ROLL", values: [4] }]);
+    expect(s.players["away-2"]!.at).toEqual({ x: 12, y: 7 });
+    s = applyActions(s, [{ type: "MOVE", square: { x: 10, y: 7 } }, { type: "ROLL", values: [6] }]);
+    expect(find(s, "SELECT_PLAYERS")).toBeUndefined();
+  });
 });

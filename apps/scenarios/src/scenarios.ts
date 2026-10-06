@@ -297,4 +297,40 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "shadowing",
+    title: "Shadowing: follow a player leaving the tackle zone",
+    instructions: [
+      "Home's first turn. Declare a Move with Kurt (#1, Catcher) and step back to the square behind him: a dodge out of the tackle zones of all three elves.",
+      "The away coach then picks one shadower (Malekith #1 or Morathi #2, both Assassins with Shadowing) or skips: on a D6 of 4+ the shadower steps into the square Kurt left, without any roll.",
+      "Keep running away: each time Kurt leaves a shadower's tackle zone, the away coach may shadow again. Morathi has MA 1 (old injuries), so she can only shadow once this turn; Malekith up to 7 times.",
+      "A jump over a prone player does not trigger Shadowing.",
+    ],
+    home: {
+      name: "Altdorf Runners",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Kurt", position: "Human Catcher" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Naggaroth Shadows",
+      roster: "Dark Elf",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Malekith", position: "Dark Elf Assassin" },
+        { number: 2, name: "Morathi", position: "Dark Elf Assassin", injuries: ["ma", "ma", "ma", "ma", "ma", "ma"] },
+        { number: 3, name: "Kaldor", position: "Dark Elf Lineman" },
+      ],
+    },
+    seed: 7,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 8 }, 3: { x: 13, y: 7 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];
