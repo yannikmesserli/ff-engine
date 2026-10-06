@@ -465,4 +465,40 @@ export const SCENARIOS: Scenario[] = [
       ...knockBack("home-3", "away-3", { x: 14, y: 10 }),
     ],
   },
+  {
+    id: "animal-savagery",
+    title: "Animal Savagery: lash out at a team-mate",
+    instructions: [
+      "Home's first turn. Declare an action with Skritch (#1, Rat Ogre): Animal Savagery is rolled first, 2+ for a Block or Blitz, 4+ otherwise (Loner(4) applies to the team re-roll).",
+      "Fail it (Physical dice: 1) and decline the re-roll: the home coach must pick one of the two standing team-mates next to Skritch (no Skip). That rat is knocked down (Mighty Blow counts for the armour only) and Skritch's action ends, without a turnover.",
+      "Undo, and first move Snikch (#2) and Queek (#3) away from Skritch: now a failed roll finds nobody to lash out at, so the action is lost and Skritch is distracted (no tackle zone).",
+    ],
+    home: {
+      name: "Clan Rattus",
+      roster: "Skaven",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Skritch", position: "Rat Ogre" },
+        { number: 2, name: "Snikch", position: "Skaven Clanrat" },
+        { number: 3, name: "Queek", position: "Skaven Clanrat" },
+        { number: 4, name: "Ikit", position: "Skaven Clanrat" },
+      ],
+    },
+    away: {
+      name: "Altdorf Ratcatchers",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    seed: 11,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 6 }, 3: { x: 11, y: 7 }, 4: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

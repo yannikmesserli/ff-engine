@@ -131,4 +131,11 @@ describe("scenarios", () => {
     s = step(s, { type: "END_TURN" }).state;
     expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1", "away-2"], max: 2 });
   });
+
+  it("animal-savagery: a failed roll makes the home coach pick a team-mate to lash out at", () => {
+    let s = step(load("animal-savagery"), { type: "START_ACTION", playerId: "home-1", action: "block" }).state;
+    expect(find(s, "ROLL")?.reason).toBe("Animal Savagery 2+ (Skritch)");
+    s = applyActions(s, [{ type: "ROLL", values: [1] }, { type: "DECLINE_REROLL" }]);
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-2", "home-3"], min: 1, max: 1 });
+  });
 });
