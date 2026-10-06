@@ -1305,6 +1305,14 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    it("Sure Feet: once per turn, a failed Rush is re-rolled automatically", () => {
+      let s = withSkills(toFirstTurn(), { "home-11": ["Sure Feet"] });
+      s = apply(s, startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH, roll(1));
+      expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-11", skill: "Sure Feet" });
+      s = apply(s, roll(2), ...move({ x: 0, y: 14 }), roll(1));
+      expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+    });
+
     describe("Pro", () => {
       // home-1 dodges from (12,6) to (11,5).
       const dodge = (value: number) => apply(withSkills(toFirstTurn(), { "home-1": ["Pro"] }), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(value));

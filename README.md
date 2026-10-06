@@ -215,6 +215,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Pick-me-up: at the end of the opposing team's turn (not after a touchdown or the last turn of the half), the coach
   chooses any of their prone (not stunned) players within 3 squares of a standing team-mate with the skill; each rolls
   a D6 and stands up on 5+. The coach may choose again among the others.
+- Sure Feet: once per turn, a failed Rush is re-rolled automatically (before any team re-roll).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 
