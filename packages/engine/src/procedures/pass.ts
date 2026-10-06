@@ -96,11 +96,16 @@ export function underRuler(thrower: Square, target: Square, player: Square): boo
   return c > a && c > b && 1.74 > (2 * d) / Math.sqrt(c);
 }
 
-/** Opponents under the ruler exerting a tackle zone (standing, not distracted) who may try to intercept. */
+/**
+ * Opponents under the ruler exerting a tackle zone (standing, not distracted) who may try to intercept. Cloud Burster:
+ * nobody may intercept the thrower's passes (or bombs), except a player with Very Long Legs.
+ */
 export function interceptors(state: GameState, thrower: PlayerState, target: Square) {
   if (!isOnPitch(thrower)) return [];
+  const cloudBurster = hasSkill(thrower, "Cloud Burster");
   return teamPlayers(state, other(thrower.side)).filter(
-    (p): p is PlayerState & { at: Square } => isOnPitch(p) && hasTackleZone(p) && !hasSkill(p, "No Ball") && underRuler(thrower.at, target, p.at),
+    (p): p is PlayerState & { at: Square } =>
+      isOnPitch(p) && hasTackleZone(p) && !hasSkill(p, "No Ball") && underRuler(thrower.at, target, p.at) && (!cloudBurster || hasSkill(p, "Very Long Legs")),
   );
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { interceptionTarget } from "./procedures/pass";
+import { interceptionTarget, interceptors } from "./procedures/pass";
 import {
   CASUALTY_DICE,
   blockDice,
@@ -1303,6 +1303,13 @@ describe("engine", () => {
       ended = apply(ended, roll(5, 4));
       expect([ended.players["away-1"]!.status, ended.players["away-3"]!.status]).toEqual(["standing", "prone"]);
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
+    });
+
+    it("Cloud Burster: the thrower's passes cannot be intercepted", () => {
+      const s = edit(toFirstTurn(), (c) => (c.ball = { square: { x: 12, y: 6 }, carried: true }));
+      const under = (skills: string[]) => interceptors(withSkills(s, { "home-1": skills }), withSkills(s, { "home-1": skills }).players["home-1"]!, { x: 16, y: 6 });
+      expect(under([]).map((p) => p.id)).toContain("away-1");
+      expect(under(["Cloud Burster"])).toEqual([]);
     });
 
     it("Drunkard: -1 to Rush rolls", () => {

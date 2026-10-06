@@ -45,7 +45,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   // Passing
   Accurate: "+1 to Quick and Short passes.",
   Cannoneer: "+1 to Long passes and Long Bombs.",
-  "Cloud Burster": "Long passes and Long Bombs from this player cannot be intercepted.",
+  "Cloud Burster": "This player's passes cannot be intercepted (except by a player with Very Long Legs).",
   "Dump-off": "When about to be blocked, may first make a Quick pass; it is not a turnover.",
   "Give and Go": "After a successful Quick pass or hand-off, may keep moving.",
   "Hail Mary Pass": "May throw to any square of the pitch; it is never accurate and cannot be intercepted.",
