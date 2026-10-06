@@ -1250,6 +1250,19 @@ describe("engine", () => {
       expect(actionsOf(withSkills(s, { "home-4": ["My Ball"] }), "home-4")).not.toContain("handoff");
     });
 
+    it("Pogo: jumps over any square, ignoring tackle zones, Prehensile Tail and Diving Tackle", () => {
+      // home-2 at (12,7) is marked by three opponents; (10,7) is empty, two squares away over (11,7).
+      const s = withSkills(toFirstTurn(), { "home-2": ["Pogo"], "away-2": ["Prehensile Tail", "Diving Tackle"] });
+      const jumps = find(apply(s, startMove("home-2")), "MOVE")!.squares.filter((q) => q.rolls.includes("jump"));
+      expect(jumps.some((q) => q.x === 10 && q.y === 7)).toBe(true);
+      expect(find(apply(withSkills(s, { "home-2": [] }), startMove("home-2")), "MOVE")!.squares.some((q) => q.rolls.includes("jump"))).toBe(false);
+      let jumped = apply(s, startMove("home-2"), ...move({ x: 10, y: 7 }));
+      expect(find(jumped, "ROLL")?.reason).toBe("Jump 3+ (Home 2)");
+      jumped = apply(jumped, roll(3));
+      expect(types(jumped)).not.toContain("SELECT_PLAYERS");
+      expect(jumped.players["home-2"]).toMatchObject({ at: { x: 10, y: 7 }, status: "standing" });
+    });
+
     describe("Bombardier", () => {
       const bomber = (s = toFirstTurn()) => withSkills(s, { "home-4": ["Bombardier"] });
       const throwBomb = (s: GameState, square: Square) => apply(s, declare("home-4", "bomb"), { type: "THROW", square });

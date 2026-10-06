@@ -197,6 +197,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   tries to catch it (no Catch re-roll) and must throw it again at once (an interceptor too); otherwise it explodes:
   the player in the square is hit, each adjacent player on a 4+. Standing players hit are knocked down (a turnover for
   the moving team), prone or stunned ones roll armour, without modifiers.
+- Pogo: the player may jump over any adjacent square (empty or occupied, standing players included) into an empty
+  square; the Jump roll ignores tackle zones and Prehensile Tail, and Diving Tackle does not work on it.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

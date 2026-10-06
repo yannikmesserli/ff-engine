@@ -61,10 +61,11 @@ export const DIVING_TACKLE_MODIFIER = 2;
 
 /**
  * Opponents who may use Diving Tackle on this dodge or jump: next to the square left with a tackle zone, not next to the
- * square moved to, and not the active player (a thrower whose pass is being blocked).
+ * square moved to, and not the active player (a thrower whose pass is being blocked); not on the jumps of a Pogo player.
  */
 export function divingTacklers(state: GameState, proc: P<"Check">, player: PlayerState): PlayerState[] {
-  if (!proc.leaving || proc.divingTacklerId !== undefined) return [];
+  // Pogo: Diving Tackle does not work on the player's jumps.
+  if (!proc.leaving || proc.divingTacklerId !== undefined || (proc.kind === "jump" && hasSkill(player, "Pogo"))) return [];
   const { from, to } = proc.leaving;
   return adjacent(from).flatMap((s) => {
     const p = tackleZoneAt(state, s);

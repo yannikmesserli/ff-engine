@@ -56,9 +56,13 @@ function jumpedSquares(from: Square, to: Square): Square[] {
   return steps(to.x - from.x).flatMap((dx) => steps(to.y - from.y).map((dy) => ({ x: from.x + dx, y: from.y + dy })));
 }
 
-/** A jump goes two squares, over a prone or stunned player (either team), into an empty square. */
+/**
+ * A jump goes two squares, over a prone or stunned player (either team), into an empty square. Pogo: over any square,
+ * empty or not.
+ */
 function jumpSquares(state: GameState, player: PlayerState & { at: Square }): Square[] {
   if (hasSkill(player, "Ball & Chain")) return [];
+  const leaps = hasSkill(player, "Pogo");
   const squares: Square[] = [];
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) {
@@ -66,7 +70,7 @@ function jumpSquares(state: GameState, player: PlayerState & { at: Square }): Sq
       const to = { x: player.at.x + dx, y: player.at.y + dy };
       if (!inBounds(to) || playerAt(state, to)) continue;
       const over = jumpedSquares(player.at, to).map((s) => playerAt(state, s));
-      if (over.some((p) => p !== undefined && p.status !== "standing")) squares.push(to);
+      if (leaps || over.some((p) => p !== undefined && p.status !== "standing")) squares.push(to);
     }
   }
   return squares;
@@ -79,9 +83,12 @@ const prehensileTails = (state: GameState, player: PlayerState, from: Square) =>
     return marker !== undefined && marker.side !== player.side && hasSkill(marker, "Prehensile Tail");
   }).length;
 
-/** Jump roll modifier: -1 per tackle zone on the square left or the one landed in, whichever has more; Prehensile Tail. */
+/**
+ * Jump roll modifier: -1 per tackle zone on the square left or the one landed in, whichever has more; Prehensile Tail.
+ * Pogo ignores both.
+ */
 const jumpModifier = (state: GameState, player: PlayerState, from: Square, to: Square) =>
-  -Math.max(tackleZones(state, player.side, from), tackleZones(state, player.side, to)) - prehensileTails(state, player, from);
+  hasSkill(player, "Pogo") ? 0 : -Math.max(tackleZones(state, player.side, from), tackleZones(state, player.side, to)) - prehensileTails(state, player, from);
 
 /**
  * Dodge roll modifier from `from` to `to`: -1 per opponent's tackle zone on the square moved to (none for Stunty; Titchy

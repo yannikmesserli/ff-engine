@@ -103,7 +103,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "No Ball": "Cannot catch, pick up, intercept or hold the ball.",
   "Pick-me-up": "Each turn, roll a D6 for each prone team-mate within 3 squares: on 5+ they stand up.",
   "Plague Ridden": "Once per game, an opponent this player kills can join the team as a lineman.",
-  Pogo: "May jump over any adjacent square without any negative modifier.",
+  Pogo: "May jump over any adjacent square, empty or not, ignoring tackle zones and Prehensile Tail; Diving Tackle does not work on its jumps.",
   "Projectile Vomit": "Instead of a block: on 2+, an adjacent opponent rolls armour with no modifier and is placed prone if it breaks; on a 1, this player does.",
   "Really Stupid": "After declaring an action, roll a D6 (2+ next to a team-mate without Really Stupid, 4+ otherwise) or the action is lost and the player is distracted.",
   Regeneration: "After a casualty roll, roll a D6: on 4+ the player heals and goes to the reserves.",
