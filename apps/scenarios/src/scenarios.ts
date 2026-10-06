@@ -683,4 +683,41 @@ export const SCENARIOS: Scenario[] = [
       { type: "START_ACTION", playerId: "home-1", action: "pass" },
     ],
   },
+  {
+    id: "fumblerooski",
+    title: "Fumblerooski: drop the ball in the square left",
+    instructions: [
+      "Home's first turn: Ithilmar (#1, Elf Lineman, Fumblerooski) holds the ball on the line of scrimmage.",
+      "Declare a Move with him and click \"Drop the ball on the next step (Fumblerooski)\", then step back (a dodge away from the orc). The ball stays, without bouncing, in the square he left, even if the dodge fails; leaving it is no turnover.",
+      "End his action: it is still home's turn. Then Move Caledor (#4) onto the ball to pick it up again (a pick-up roll, -1 for the orc's tackle zone).",
+      "Undo and end Ithilmar's action without stepping: he keeps the ball.",
+    ],
+    home: {
+      name: "Elven Tricksters",
+      roster: "Elven Union",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Ithilmar", position: "Elf Lineman" },
+        { number: 2, name: "Aenarion", position: "Elf Lineman" },
+        { number: 3, name: "Belannaer", position: "Elf Lineman" },
+        { number: 4, name: "Caledor", position: "Elf Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 17,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 8 }, 2: { x: 12, y: 5 }, 3: { x: 12, y: 10 }, 4: { x: 10, y: 8 } },
+      away: { 1: { x: 13, y: 8 }, 2: { x: 13, y: 5 }, 3: { x: 13, y: 10 } },
+      ball: { x: 12, y: 8 },
+    }),
+  },
 ];

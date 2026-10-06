@@ -205,4 +205,17 @@ describe("scenarios", () => {
     s = step(s, { type: "SELECT_PLAYERS", playerIds: ["home-4"] }).state;
     expect(find(s, "ROLL")?.reason).toBe("Catch 2+ (Kurt)");
   });
+
+  it("fumblerooski: the ball stays in the square left, and a team-mate may pick it up", () => {
+    let s = applyActions(load("fumblerooski"), [
+      { type: "START_ACTION", playerId: "home-1", action: "move" },
+      { type: "USE_SKILL", use: true, skill: "Fumblerooski" },
+      { type: "MOVE", square: { x: 11, y: 7 } },
+      { type: "ROLL", values: [6] },
+      { type: "END_PLAYER_ACTION" },
+    ]);
+    expect([s.ball, s.turnover]).toEqual([{ square: { x: 12, y: 8 }, carried: false }, false]);
+    s = applyActions(s, [{ type: "START_ACTION", playerId: "home-4", action: "move" }, { type: "MOVE", square: { x: 11, y: 8 } }, { type: "MOVE", square: { x: 12, y: 8 } }]);
+    expect(find(s, "ROLL")?.reason).toMatch(/^Pick-up/);
+  });
 });
