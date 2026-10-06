@@ -1171,6 +1171,29 @@ describe("engine", () => {
       });
     });
 
+    describe("Safe Pass", () => {
+      // home-4 at (10,4) holds the ball and throws it to (6,4).
+      const thrower = (skills: string[]) =>
+        edit(withSkills(toFirstTurn(), { "home-4": skills }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+      const fumble = (s: GameState, natural: number) => apply(s, declare("home-4", "pass"), { type: "THROW", square: { x: 6, y: 4 } }, roll(natural), { type: "DECLINE_REROLL" });
+
+      it("on a natural 1, the thrower may keep the ball: the action ends, without a turnover", () => {
+        let s = fumble(thrower(["Safe Pass"]), 1);
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-4", skill: "Safe Pass" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(s.ball).toEqual({ square: { x: 10, y: 4 }, carried: true });
+        expect([s.turnover, s.activePlayerId, top(s).type]).toEqual([false, null, "Turn"]);
+      });
+
+      it("declined, or on a modified fumble, the ball is dropped as usual", () => {
+        const declined = apply(fumble(thrower(["Safe Pass"]), 1), { type: "USE_SKILL", use: false });
+        expect([declined.turnover, declined.ball.carried]).toEqual([true, false]);
+        // Three tackle zones on the thrower: a 2 is a fumble too, but not a natural 1.
+        const marked = place(thrower(["Safe Pass"]), { "away-1": { x: 11, y: 4 }, "away-2": { x: 11, y: 5 }, "away-3": { x: 11, y: 3 } });
+        expect(types(fumble(marked, 2))).not.toContain("USE_SKILL");
+      });
+    });
+
     describe("Hypnotic Gaze", () => {
       const gazer = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Hypnotic Gaze"] });
       const gaze = (s: GameState) => apply(s, declare("home-2", "gaze"), { type: "GAZE", targetId: "away-2" });

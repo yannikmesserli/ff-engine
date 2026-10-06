@@ -295,9 +295,12 @@ export type Procedure =
       target: Square;
       range: PassRange;
       /** "animosity": the thrower may first have to roll for Animosity towards the receiver. */
-      stage: "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "outcome" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
+      /** "safePass": a natural 1 may be saved by Safe Pass. */
+      stage: "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
       rerolled: boolean;
       result?: PassResult;
+      /** The natural D6 of the pass roll. */
+      roll?: number;
       /** Where the ball comes down (after an inaccurate scatter). */
       landing?: Square;
       /** The scatter left the pitch: throw-in from this square. */

@@ -154,7 +154,8 @@ function endBallAction(ctx: Ctx, thrower: PlayerState) {
 }
 
 /**
- * A thrown pass (BB2025): Animosity towards the receiver, On the Ball moves of the opponents, PA roll with a team re-roll, fumble / inaccurate scatter,
+ * A thrown pass (BB2025): Animosity towards the receiver, On the Ball moves of the opponents, PA roll with a team re-roll,
+ * fumble (Safe Pass: the thrower may keep the ball on a natural 1, ending the action without a turnover) / inaccurate scatter,
  * one interception attempt under the ruler, then the ball lands and may be caught.
  */
 export const Pass: Handler<P<"Pass">> = {
@@ -186,6 +187,7 @@ export const Pass: Handler<P<"Pass">> = {
         }
         if (action === null) return "wait";
         const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Pass ${shownNeeded(thrower, modifiers)}+`);
+        proc.roll = roll!;
         proc.result = evaluatePass(thrower, roll!, modifiers);
         ctx.emit({ type: "PassResult", playerId: thrower.id, result: proc.result });
         const canReroll = passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled);
@@ -213,6 +215,10 @@ export const Pass: Handler<P<"Pass">> = {
         proc.stage = rollLoner(ctx, action, thrower) ? "roll" : "outcome";
         return "continue";
       case "outcome":
+        if (proc.result === "fumble" && proc.roll === 1 && hasSkill(thrower, "Safe Pass")) {
+          proc.stage = "safePass";
+          return "continue";
+        }
         if (proc.result === "fumble") {
           // The ball bounces from the thrower's square.
           state.ball = { square: { ...at }, carried: false };
@@ -224,6 +230,18 @@ export const Pass: Handler<P<"Pass">> = {
         state.ball = { square: null, carried: false };
         proc.landing = { ...proc.target };
         proc.stage = proc.result === "inaccurate" ? "scatter" : "intercept";
+        return "continue";
+      case "safePass":
+        if (action === null) return "wait";
+        if (ctx.expect(action, "USE_SKILL").use) {
+          // The thrower keeps the ball and the action ends, without a turnover.
+          ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Safe Pass" });
+          proc.stage = "end";
+        } else {
+          proc.result = "fumble";
+          delete proc.roll;
+          proc.stage = "outcome";
+        }
         return "continue";
       case "scatter": {
         if (action === null) return "wait";
@@ -307,6 +325,8 @@ export const Pass: Handler<P<"Pass">> = {
         ];
       case "loner":
         return [lonerRollTemplate(thrower)];
+      case "safePass":
+        return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Safe Pass" }];
       case "scatter":
         return [{ type: "ROLL", side: null, dice: [{ kind: "d8", count: 3 }], reason: "Inaccurate pass" }];
       case "intercept":

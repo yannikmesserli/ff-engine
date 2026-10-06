@@ -178,6 +178,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   such as Dodge, but no team re-roll, since it is not their turn), no Rush; a fall ends these moves, without a
   turnover. After the kick-off deviation (unless it is a touchback), one unmarked receiving player with the skill may
   move the same way, in their own half, with team re-rolls allowed.
+- Safe Pass: a pass fumbled on a natural 1 (after any re-roll) may be saved: the thrower keeps the ball and the action
+  ends, without a turnover. Fumbles from modifiers are dropped as usual.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

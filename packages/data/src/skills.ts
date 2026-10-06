@@ -54,7 +54,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "On the Ball": "When an opponent declares a pass (or at the kick-off), may move up to 3 squares.",
   Pass: "May re-roll an inaccurate or fumbled pass, instead of using a team re-roll.",
   Punt: "Special action: kicks the ball downfield, with a direction and a distance roll.",
-  "Safe Pass": "A fumbled pass is not dropped: the thrower keeps the ball and the action ends, without a turnover.",
+  "Safe Pass": "A pass fumbled on a natural 1 is not dropped: the thrower keeps the ball and the action ends, without a turnover.",
   // Devious
   "Dirty Player": "+{X} to the armour or the injury roll (not both) when fouling.",
   "Eye Gouge": "An opponent this player pushes back cannot assist until their next activation.",

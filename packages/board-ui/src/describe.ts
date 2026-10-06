@@ -50,6 +50,7 @@ const SKILL_USES: Record<string, string> = {
   "Steady Footing": "and stays on their feet",
   Shadowing: "and follows into the vacated square",
   "Strip Ball": "and knocks the ball loose",
+  "Safe Pass": "and keeps the ball",
 };
 
 /** Display names of the weather conditions. */
