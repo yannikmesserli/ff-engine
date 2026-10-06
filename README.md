@@ -205,7 +205,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
   attacker from following up (Frenzy included); a blitzing Juggernaut ignores it.
 - Pro: once per turn, the active player (standing, in their team's turn) may roll a D6 instead of using a team re-roll
   on one of their failed rolls (single-D6 checks and passes): on 3+ the die is re-rolled, otherwise the first result
-  stands. Not yet for block dice.
+  stands. On block dice, the coach first picks the one die to re-roll.
 - Eye Gouge: an opponent the player pushes back with a block cannot give block assists (offensive or defensive) until
   their next activation (or the end of the drive).
 - Pick-me-up: at the end of the opposing team's turn (not after a touchdown or the last turn of the half), the coach

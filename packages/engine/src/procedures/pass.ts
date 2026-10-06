@@ -211,7 +211,7 @@ export const Pass: Handler<P<"Pass">> = {
         if (action === null) return "wait";
         const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
         if (a.type === "USE_SKILL" && a.use) {
-          if (!canUsePro(state, thrower, proc.rerolled)) ctx.reject("Pro cannot be used now.");
+          if ((a.skill ?? "Pro") !== "Pro" || !canUsePro(state, thrower, proc.rerolled)) ctx.reject("Pro cannot be used now.");
           proc.rerolled = true;
           proc.stage = "pro";
         } else if (a.type === "USE_REROLL" && passSkillReroll(thrower, proc)) {

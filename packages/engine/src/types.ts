@@ -358,6 +358,8 @@ export type Procedure =
       fended?: boolean;
       /** Taunt: the defender's coach chose whether to force the follow-up. */
       taunted?: boolean;
+      /** Pro: the index of the block die to re-roll. */
+      proDie?: number;
       /** The skill re-rolling a single die (Brawler: a Both Down, Hatred: a Skull). */
       singleDie?: "Brawler" | "Hatred";
       /** Dauntless worked: the attacker's ST matches the defender's for this block. */
@@ -365,7 +367,7 @@ export type Procedure =
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
       /** "appearance": the defender's Foul Appearance, rolled first. */
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "singleDie" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "pro" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
@@ -576,8 +578,10 @@ export type Action =
   | { type: "MOVE"; square: Square }
   /** Bloodlust: take a Move action instead of the declared Block or Secure the Ball? */
   | { type: "MOVE_INSTEAD"; move: boolean }
-  /** Use an optional skill offered by a USE_SKILL template (Stand Firm)? */
-  | { type: "USE_SKILL"; use: boolean }
+  /** Use an optional skill offered by a USE_SKILL template (Stand Firm)? `skill` picks one when several are offered. */
+  | { type: "USE_SKILL"; use: boolean; skill?: string }
+  /** Pro: the block die to re-roll (index into the results). */
+  | { type: "REROLL_BLOCK_DIE"; index: number }
   | { type: "END_PLAYER_ACTION" }
   | { type: "END_TURN" }
   /** Choose players for a kick-off event (Solid Defence, High Kick, Charge). May be empty. */
@@ -607,6 +611,7 @@ export type ActionTemplate =
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "CHOOSE_BLOCK_DIE"; side: Side; results: number[] }
+  | { type: "REROLL_BLOCK_DIE"; side: Side; results: number[]; skill: string }
   | { type: "PUSH"; side: Side; playerId: string; squares: Square[] }
   | { type: "FOLLOW_UP"; side: Side; playerId: string; square: Square }
   /** Squares in range, with the range band and the D6 roll needed for an accurate pass. */

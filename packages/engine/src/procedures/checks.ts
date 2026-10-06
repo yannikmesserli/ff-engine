@@ -144,7 +144,7 @@ export const Check: Handler<P<"Check">> = {
       const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
       if (a.type === "DECLINE_REROLL" || (a.type === "USE_SKILL" && !a.use)) return finish(state, proc, false);
       if (a.type === "USE_SKILL") {
-        if (!canUsePro(state, player, proc.rerolled)) ctx.reject("Pro cannot be used now.");
+        if ((a.skill ?? "Pro") !== "Pro" || !canUsePro(state, player, proc.rerolled)) ctx.reject("Pro cannot be used now.");
         proc.rerolled = true;
         proc.stage = "pro";
         return "wait";

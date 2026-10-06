@@ -1310,6 +1310,27 @@ describe("engine", () => {
         expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
       });
 
+      it("on block dice, the coach picks the die to re-roll, then rolls Pro", () => {
+        const strong = withSkills(toFirstTurn(team("Home", { st: 4 })), { "home-2": ["Pro", "Brawler"] });
+        let s = apply(blockAway2(strong), roll(1, 2));
+        expect(types(s)).toEqual(["CHOOSE_BLOCK_DIE", "USE_REROLL", "USE_SKILL", "USE_SKILL"]);
+        expect(getAvailableActions(s).filter((t) => t.type === "USE_SKILL").map((t) => (t as { skill: string }).skill)).toEqual(["Brawler", "Pro"]);
+        s = apply(s, { type: "USE_SKILL", use: true, skill: "Pro" });
+        expect(find(s, "REROLL_BLOCK_DIE")).toEqual({ type: "REROLL_BLOCK_DIE", side: "home", results: [1, 2], skill: "Pro" });
+        s = apply(s, { type: "REROLL_BLOCK_DIE", index: 0 });
+        expect(find(s, "ROLL")?.reason).toBe("Pro 3+ (Home 2)");
+        s = apply(s, roll(3));
+        expect(find(s, "ROLL")?.reason).toBe("Pro (re-roll a block die)");
+        s = apply(s, roll(6));
+        expect(find(s, "CHOOSE_BLOCK_DIE")?.results).toEqual([6, 2]);
+        // That was the block's one re-roll, and no team re-roll was spent.
+        expect(types(s)).toEqual(["CHOOSE_BLOCK_DIE"]);
+        expect(s.teams.home.rerolls).toBe(1);
+        // A failed Pro roll keeps the dice.
+        const failed = apply(blockAway2(strong), roll(1, 2), { type: "USE_SKILL", use: true, skill: "Pro" }, { type: "REROLL_BLOCK_DIE", index: 1 }, roll(2));
+        expect(find(failed, "CHOOSE_BLOCK_DIE")?.results).toEqual([1, 2]);
+      });
+
       it("a failed Pro roll keeps the first result; it works for passes too", () => {
         expect(apply(dodge(1), { type: "USE_SKILL", use: true }, roll(2)).players["home-1"]!.status).toBe("prone");
         const passer = edit(withSkills(toFirstTurn(), { "home-4": ["Pro"] }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));

@@ -155,7 +155,9 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
     case "FOLLOW_UP":
       return { type: "FOLLOW_UP", follow: random() < 0.5 };
     case "USE_SKILL":
-      return { type: "USE_SKILL", use: random() < 0.7 };
+      return { type: "USE_SKILL", use: random() < 0.7, skill: t.skill };
+    case "REROLL_BLOCK_DIE":
+      return { type: "REROLL_BLOCK_DIE", index: Math.floor(random() * t.results.length) };
     case "MOVE_INSTEAD":
       return { type: "MOVE_INSTEAD", move: random() < 0.5 };
     case "MOVE":

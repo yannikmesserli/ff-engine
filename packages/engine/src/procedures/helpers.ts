@@ -179,7 +179,7 @@ export const canUsePro = (state: GameState, player: PlayerState, rerolled: boole
   state.activeSide === player.side && player.status === "standing";
 
 /** The USE_SKILL template offering Pro, if it can be used. */
-export const proTemplate = (state: GameState, player: PlayerState, rerolled: boolean): ActionTemplate[] =>
+export const proTemplate = (state: GameState, player: PlayerState, rerolled: boolean): Array<Extract<ActionTemplate, { type: "USE_SKILL" }>> =>
   canUsePro(state, player, rerolled) ? [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Pro" }] : [];
 
 /** Use Pro: roll the D6 that decides whether the re-roll happens. */

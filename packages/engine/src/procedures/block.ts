@@ -4,7 +4,7 @@ import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, pl
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { hasSkill, skillName, skillValue } from "../skills";
-import { canTeamReroll, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll, weatherModifier } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proRollTemplate, proTemplate, rollPro, squareOf, useTeamReroll, weatherModifier } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -263,9 +263,26 @@ function singleDieSkill(proc: P<"Block">, attacker: PlayerState, defender: Playe
   return null;
 }
 
-/** Any re-roll the attacker could use on the block dice now. */
+/** Any re-roll the attacker could use on the block dice now (team re-roll, Brawler, Hatred, Pro). */
 const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
-  canReroll(state, proc, attacker) || singleDieSkill(proc, attacker, defender) !== null;
+  canReroll(state, proc, attacker) || singleDieSkill(proc, attacker, defender) !== null || canUsePro(state, attacker, proc.rerolled);
+
+/** The re-roll skills offered on the block dice now, as USE_SKILL templates. */
+const skillTemplates = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) => [
+  ...singleDieTemplate(proc, attacker, defender),
+  ...proTemplate(state, attacker, proc.rerolled),
+];
+
+/** Use the re-roll skill named by the action (the only one offered when it names none): Brawler, Hatred or Pro. */
+function useSkill(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: PlayerState, skill: string | undefined) {
+  const offered = skillTemplates(ctx.state, proc, attacker, defender).map((t) => t.skill);
+  const chosen = skill ?? offered[0];
+  if (chosen === undefined || !offered.includes(chosen)) ctx.reject("This skill cannot be used now.");
+  if (chosen !== "Pro") return useSingleDie(ctx, proc, attacker, defender);
+  // Pro: the coach picks the die, then rolls for it.
+  proc.rerolled = true;
+  proc.stage = "proDie";
+}
 
 /** The USE_SKILL template offering a single-die re-roll skill, if one can be used. */
 function singleDieTemplate(proc: P<"Block">, attacker: PlayerState, defender: PlayerState) {
@@ -394,7 +411,7 @@ export const Block: Handler<P<"Block">> = {
       case "reroll": {
         if (action === null) return "wait";
         const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
-        if (a.type === "USE_SKILL" && a.use) useSingleDie(ctx, proc, attacker, defender);
+        if (a.type === "USE_SKILL" && a.use) useSkill(ctx, proc, attacker, defender, a.skill);
         else if (a.type === "USE_REROLL") {
           if (!canReroll(state, proc, attacker)) ctx.reject("No re-roll available.");
           useReroll(ctx, proc, attacker);
@@ -405,6 +422,26 @@ export const Block: Handler<P<"Block">> = {
         if (action === null) return "wait";
         const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], singleDieReason(proc.singleDie!));
         proc.results![proc.results!.indexOf(SINGLE_DIE_SKILLS[proc.singleDie!])] = die!;
+        proc.stage = "choose";
+        return "continue";
+      }
+      case "proDie": {
+        if (action === null) return "wait";
+        const { index } = ctx.expect(action, "REROLL_BLOCK_DIE");
+        if (proc.results![index] === undefined) ctx.reject("Invalid die.");
+        proc.proDie = index;
+        proc.stage = "pro";
+        return "continue";
+      }
+      case "pro":
+        if (action === null) return "wait";
+        // A failed Pro roll keeps the dice already rolled.
+        proc.stage = rollPro(ctx, action, attacker) ? "proReroll" : "choose";
+        return "continue";
+      case "proReroll": {
+        if (action === null) return "wait";
+        const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], "Pro (re-roll a block die)");
+        proc.results![proc.proDie!] = die!;
         proc.stage = "choose";
         return "continue";
       }
@@ -421,7 +458,7 @@ export const Block: Handler<P<"Block">> = {
           const a = ctx.expect(action, "CHOOSE_BLOCK_DIE", "USE_REROLL", "USE_SKILL");
           if (a.type === "USE_SKILL") {
             if (proc.dice < 0) ctx.reject("The defender chooses the die.");
-            if (a.use) useSingleDie(ctx, proc, attacker, defender);
+            if (a.use) useSkill(ctx, proc, attacker, defender, a.skill);
             return "continue";
           }
           if (a.type === "USE_REROLL") {
@@ -603,9 +640,15 @@ export const Block: Handler<P<"Block">> = {
       case "reroll":
         return [
           ...(canReroll(state, proc, attacker) ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }] : []),
-          ...singleDieTemplate(proc, attacker, defender),
+          ...skillTemplates(state, proc, attacker, defender),
           { type: "DECLINE_REROLL", side: attacker.side },
         ];
+      case "proDie":
+        return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: "Pro" }];
+      case "pro":
+        return [proRollTemplate(attacker)];
+      case "proReroll":
+        return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: "Pro (re-roll a block die)" }];
       case "loner":
         return [lonerRollTemplate(attacker)];
       case "singleDie":
@@ -616,7 +659,7 @@ export const Block: Handler<P<"Block">> = {
           proc.dice > 0 && canReroll(state, proc, attacker)
             ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }]
             : [];
-        return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll, ...(proc.dice > 0 ? singleDieTemplate(proc, attacker, defender) : [])];
+        return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll, ...(proc.dice > 0 ? skillTemplates(state, proc, attacker, defender) : [])];
       }
       case "juggernaut":
         return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Juggernaut" }];

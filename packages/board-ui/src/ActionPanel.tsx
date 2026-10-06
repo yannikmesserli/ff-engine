@@ -39,6 +39,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   PUSH: "click a square to push the player to",
   FOLLOW_UP: "follow up into the vacated square?",
   CHOOSE_BLOCK_DIE: "pick a block die",
+  REROLL_BLOCK_DIE: "pick the block die to re-roll",
   THROW: "move, or aim a pass",
   HAND_OFF: "move, or click an adjacent team-mate to hand the ball to",
   THROW_TEAM_MATE: "move, or click an adjacent team-mate with Right Stuff, then a square to throw them to",
@@ -52,6 +53,13 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   USE_SKILL: "use a skill?",
   MOVE_INSTEAD: "Bloodlust: take a Move action instead of the declared action?",
   SNAP: "Quick Snap: click an open player, then an adjacent square",
+};
+
+/** Buttons of the re-roll skills offered next to another decision (block dice, team re-roll). */
+const REROLL_SKILLS: Record<string, string> = {
+  Brawler: "Re-roll a Both Down (Brawler)",
+  Hatred: "Re-roll a Skull (Hatred)",
+  Pro: "Re-roll with Pro (3+)",
 };
 
 /** Short pass range names for the legend, shortest first. */
@@ -187,14 +195,21 @@ export function ActionPanel(props: ActionPanelProps) {
         {blockDie && has("USE_REROLL") && (
           <button onClick={() => dispatch({ type: "USE_REROLL" })}>Re-roll the dice</button>
         )}
-        {main.type !== "USE_SKILL" && findTemplate(templates, "USE_SKILL")?.skill === "Brawler" && (
-          <button onClick={() => dispatch({ type: "USE_SKILL", use: true })}>Re-roll a Both Down (Brawler)</button>
+        {templates.map((t) =>
+          t.type === "USE_SKILL" && t !== main && REROLL_SKILLS[t.skill] ? (
+            <button key={t.skill} onClick={() => dispatch({ type: "USE_SKILL", use: true, skill: t.skill })}>
+              {REROLL_SKILLS[t.skill]}
+            </button>
+          ) : null,
         )}
-        {main.type !== "USE_SKILL" && findTemplate(templates, "USE_SKILL")?.skill === "Pro" && (
-          <button onClick={() => dispatch({ type: "USE_SKILL", use: true })}>Re-roll with Pro (3+)</button>
-        )}
-        {main.type !== "USE_SKILL" && findTemplate(templates, "USE_SKILL")?.skill === "Hatred" && (
-          <button onClick={() => dispatch({ type: "USE_SKILL", use: true })}>Re-roll a Skull (Hatred)</button>
+        {main.type === "REROLL_BLOCK_DIE" && (
+          <span className="bb-block-dice">
+            {main.results.map((v, i) => (
+              <button key={i} title={`Re-roll this ${blockFaceName(v)} (${main.skill})`} onClick={() => dispatch({ type: "REROLL_BLOCK_DIE", index: i })}>
+                <DieFace kind="block" value={v} assets={assets} />
+              </button>
+            ))}
+          </span>
         )}
         {main.type === "USE_REROLL" && (
           <>
@@ -210,8 +225,8 @@ export function ActionPanel(props: ActionPanelProps) {
         )}
         {main.type === "USE_SKILL" && (
           <>
-            <button onClick={() => dispatch({ type: "USE_SKILL", use: true })}>Use {main.skill}</button>
-            <button onClick={() => dispatch({ type: "USE_SKILL", use: false })}>Don't use</button>
+            <button onClick={() => dispatch({ type: "USE_SKILL", use: true, skill: main.skill })}>Use {main.skill}</button>
+            <button onClick={() => dispatch({ type: "USE_SKILL", use: false, skill: main.skill })}>Don't use</button>
           </>
         )}
         {main.type === "PLACE_PLAYER" && (
