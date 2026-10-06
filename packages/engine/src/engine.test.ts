@@ -1305,6 +1305,12 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    it("Decay: +1 to the casualty roll", () => {
+      const player = toFirstTurn().players["home-1"]!;
+      expect(casualtyFor(player, 8, 1)).toEqual({ result: "badly-hurt" });
+      expect(casualtyFor({ ...player, skills: ["Decay"] }, 8, 1)).toEqual({ result: "seriously-hurt" });
+    });
+
     it("Cloud Burster: the thrower's passes cannot be intercepted", () => {
       const s = edit(toFirstTurn(), (c) => (c.ball = { square: { x: 12, y: 6 }, carried: true }));
       const under = (skills: string[]) => interceptors(withSkills(s, { "home-1": skills }), withSkills(s, { "home-1": skills }).players["home-1"]!, { x: 16, y: 6 });

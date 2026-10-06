@@ -49,12 +49,16 @@ function canLower(player: PlayerState, stat: Characteristic) {
   }
 }
 
+/** Added to the D16 casualty roll: +1 per Niggling Injury, +1 with Decay. */
+const casualtyModifier = (player: PlayerState) => player.nigglingInjuries + (hasSkill(player, "Decay") ? 1 : 0);
+
 /**
- * BB2025 casualty table on D16 + Niggling Injuries: 1-8 Badly Hurt, 9-10 Seriously Hurt, 11-12 Serious Injury,
- * 13-14 Lasting Injury (the D6 picks the characteristic; Seriously Hurt if it cannot be lowered), 15+ Dead.
+ * BB2025 casualty table on D16 + Niggling Injuries (+1 with Decay): 1-8 Badly Hurt, 9-10 Seriously Hurt, 11-12
+ * Serious Injury, 13-14 Lasting Injury (the D6 picks the characteristic; Seriously Hurt if it cannot be lowered), 15+
+ * Dead.
  */
 export function casualtyFor(player: PlayerState, d16: number, d6: number): Casualty {
-  const roll = d16 + player.nigglingInjuries;
+  const roll = d16 + casualtyModifier(player);
   if (roll >= 15) return { result: "dead" };
   if (roll >= 13) {
     const lasting = LASTING_INJURIES[d6 - 1]!;
@@ -100,7 +104,7 @@ export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = f
 function rollCasualty(ctx: Ctx, player: PlayerState, action: Action, reason: string) {
   const [d16, d6] = ctx.roll(action, CASUALTY_DICE, reason);
   const casualty = casualtyFor(player, d16!, d6!);
-  ctx.emit({ type: "CasualtyRolled", playerId: player.id, roll: d16! + player.nigglingInjuries, casualty });
+  ctx.emit({ type: "CasualtyRolled", playerId: player.id, roll: d16! + casualtyModifier(player), casualty });
   return casualty;
 }
 
