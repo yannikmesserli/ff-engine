@@ -65,6 +65,22 @@ export function toFirstTurn({ home, away, ball }: Kickoff): Action[] {
   ];
 }
 
+/**
+ * A one-die block that knocks the defender down: a Defender Down (with a team re-roll left, the die is picked), the
+ * push to `to`, no follow-up, and an armour roll of 2 that holds.
+ */
+export function knockBack(attackerId: string, defenderId: string, to: Square): Action[] {
+  return [
+    { type: "START_ACTION", playerId: attackerId, action: "block" },
+    { type: "BLOCK", targetId: defenderId },
+    roll(6),
+    { type: "CHOOSE_BLOCK_DIE", index: 0 },
+    { type: "PUSH", square: to },
+    { type: "FOLLOW_UP", follow: false },
+    roll(1, 1),
+  ];
+}
+
 /** Every scenario, in menu order. */
 export const SCENARIOS: Scenario[] = [
   {
@@ -406,5 +422,47 @@ export const SCENARIOS: Scenario[] = [
       away: { 1: { x: 13, y: 5 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 9 }, 4: { x: 16, y: 7 } },
       ball: { x: 5, y: 7 },
     }),
+  },
+  {
+    id: "pick-me-up",
+    title: "Pick-me-up: stand up after the opponent's turn",
+    instructions: [
+      "Home has already knocked down three Norse raiders this turn (they are prone). Click End turn.",
+      "At the end of home's turn, the away coach may pick prone raiders within 3 squares of Bjorn (#4, Beer Boar, Pick-me-up): Ragnar (#1) and Sven (#2), not Leif (#3), who is too far.",
+      "Each one picked rolls a D6 (several dice at once) and stands up on 5+; the coach may then pick again among the others, or skip.",
+    ],
+    home: {
+      name: "Altdorf Bashers",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Hangover Hall",
+      roster: "Norse",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Ragnar", position: "Norse Raider" },
+        { number: 2, name: "Sven", position: "Norse Raider" },
+        { number: 3, name: "Leif", position: "Norse Raider" },
+        { number: 4, name: "Bjorn", position: "Beer Boar" },
+      ],
+    },
+    seed: 10,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 5 }, 3: { x: 12, y: 9 } },
+        away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 5 }, 3: { x: 13, y: 9 }, 4: { x: 16, y: 6 } },
+        ball: { x: 5, y: 7 },
+      }),
+      // Three blocks: Defender Down, pushed straight back, no follow-up, armour holds.
+      ...knockBack("home-1", "away-1", { x: 14, y: 7 }),
+      ...knockBack("home-2", "away-2", { x: 14, y: 4 }),
+      ...knockBack("home-3", "away-3", { x: 14, y: 10 }),
+    ],
   },
 ];

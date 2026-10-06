@@ -124,4 +124,11 @@ describe("scenarios", () => {
     s = step(s, { type: "THROW_TEAM_MATE", targetId: "home-2", square: { x: 16, y: 8 } }).state;
     expect(find(s, "ROLL")?.reason).toMatch(/^Always Hungry 2\+/);
   });
+
+  it("pick-me-up: at the end of home's turn, the away coach picks the prone raiders in range", () => {
+    let s = load("pick-me-up");
+    expect(["away-1", "away-2", "away-3"].map((id) => s.players[id]!.status)).toEqual(["prone", "prone", "prone"]);
+    s = step(s, { type: "END_TURN" }).state;
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1", "away-2"], max: 2 });
+  });
 });
