@@ -149,7 +149,7 @@ export function ActionPanel(props: ActionPanelProps) {
               setPicked([]);
             }}
           >
-            {picked.length === 0 ? "Skip" : `Confirm ${picked.length}/${select.max}`}
+            {picked.length === 0 && !select.min ? "Skip" : `Confirm ${picked.length}/${select.max}`}
           </button>
         )}
         {has("DONE") && (
