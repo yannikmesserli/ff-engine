@@ -441,11 +441,15 @@ export type Procedure =
       /** Value the d6 (after modifiers) must reach. */
       target: number;
       modifier: number;
-      /** "loner": a Loner player rolls to use the team re-roll. */
-      stage: "roll" | "reroll" | "loner";
+      /** "loner": a Loner player rolls to use the team re-roll; "divingTackle": an opponent may use Diving Tackle. */
+      stage: "roll" | "reroll" | "loner" | "divingTackle";
       rerolled: boolean;
       /** The natural roll, kept when the re-roll is declined or lost. */
       roll?: number;
+      /** A dodge or jump from `from` to `to`: opponents with Diving Tackle may make it harder. */
+      leaving?: { from: Square; to: Square };
+      /** The opponent who used Diving Tackle on this roll (-2 from then on, re-roll included). */
+      divingTacklerId?: string;
     }
   | {
       type: "KnockDown";
@@ -493,7 +497,8 @@ export interface GameState {
   /** Team that scored in the current drive; ends the drive. */
   touchdown: Side | null;
   /** Result of the last finished Check, read by the procedure that pushed it. */
-  lastCheck: { kind: CheckKind; success: boolean; roll?: number } | null;
+  /** `divingTacklerId`: the opponent whose Diving Tackle made a dodge or jump harder. */
+  lastCheck: { kind: CheckKind; success: boolean; roll?: number; divingTacklerId?: string } | null;
   /** Procedure stack; the last element runs. */
   stack: Procedure[];
   /** Every event since the start of the game. */

@@ -677,6 +677,22 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
 const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: "Projectile Vomit" | "Stab") =>
   hasSkill(state.players[proc.playerId]!, skill) ? activationTargets(state, proc) : [];
 
+/**
+ * Diving Tackle: the tackler is placed prone in the square the player left, without an armour roll; a ball they held
+ * bounces (no turnover, it is not their turn). Returns the bounce to push.
+ */
+function diveIn(ctx: Ctx, tackler: PlayerState, square: Square): Procedure[] {
+  const carrying = ctx.state.ball.carried && ballCarrier(ctx.state)?.id === tackler.id;
+  const from = squareOf(ctx, tackler);
+  tackler.at = { ...square };
+  tackler.status = "prone";
+  ctx.emit({ type: "PlayerMoved", playerId: tackler.id, from: { ...from }, to: { ...square } });
+  ctx.emit({ type: "PlayerPlacedProne", playerId: tackler.id });
+  if (!carrying) return [];
+  ctx.state.ball = { square: { ...square }, carried: false };
+  return [{ type: "Bounce", from: { ...square }, kickoff: false, receiving: null }];
+}
+
 /** Step a player (and the ball they carry) to an adjacent square, spending one square of movement. */
 function movePlayer(ctx: Ctx, player: PlayerState, to: Square, squares = 1) {
   const from = squareOf(ctx, player);
@@ -697,12 +713,17 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     const { state } = ctx;
     const player = getPlayer(ctx, proc.playerId);
     const squares = proc.jump ? 2 : 1;
-    const check = (kind: CheckKind, target: number, modifier: number) =>
-      ctx.push({ type: "Check", kind, playerId: player.id, target, modifier, stage: "roll", rerolled: false });
-    /** Step onto the target square; leaving tackle zones (without jumping) gives Shadowing players a chance to follow. */
+    const check = (kind: CheckKind, target: number, modifier: number, leaving?: { from: Square; to: Square }) =>
+      ctx.push({ type: "Check", kind, playerId: player.id, target, modifier, stage: "roll", rerolled: false, ...(leaving ? { leaving } : {}) });
+    /**
+     * Step onto the target square. A diving tackler is then placed prone in the square left; otherwise leaving tackle
+     * zones (without jumping) gives Shadowing players a chance to follow.
+     */
     const step = (): Procedure[] => {
       const from = { ...squareOf(ctx, player) };
       movePlayer(ctx, player, proc.to, proc.hitAndRun ? 0 : squares);
+      const tacklerId = state.lastCheck?.divingTacklerId;
+      if (tacklerId) return diveIn(ctx, getPlayer(ctx, tacklerId), from);
       return proc.jump || proc.hitAndRun || proc.onTheBall === "kickoff" ? [] : [{ type: "Shadow", playerId: player.id, from, stage: "select" }];
     };
     const fall = (inStartSquare = false) => {
@@ -742,10 +763,11 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         if (failed(ctx)) return fall(proc.jump);
         state.lastCheck = null;
         proc.stage = "move";
+        const leaving = { from: { ...squareOf(ctx, player) }, to: { ...proc.to } };
         if (proc.jump) {
-          check("jump", player.ag, jumpModifier(state, player, squareOf(ctx, player), proc.to));
-        } else if (!proc.hitAndRun && tackleZones(state, player.side, squareOf(ctx, player)) > 0) {
-          check("dodge", player.ag, dodgeModifier(state, player, squareOf(ctx, player), proc.to));
+          check("jump", player.ag, jumpModifier(state, player, leaving.from, proc.to), leaving);
+        } else if (!proc.hitAndRun && tackleZones(state, player.side, leaving.from) > 0) {
+          check("dodge", player.ag, dodgeModifier(state, player, leaving.from, proc.to), leaving);
         }
         return "continue";
       case "move":

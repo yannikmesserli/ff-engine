@@ -1,7 +1,7 @@
-import type { Ctx, Handler } from "../context";
+import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
-import { adjacent, hasTackleZone, isOnPitch, playerAt, sameSquare } from "../pitch";
+import { adjacent, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
 import { canTeamReroll, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
 import { injure } from "./injury";
@@ -55,9 +55,53 @@ function skillReroll(state: GameState, proc: P<"Check">, player: PlayerState): s
 /** Skills whose re-roll can only be used once per team turn. */
 const ONCE_PER_TURN_REROLLS = ["Dodge"];
 
+/** Diving Tackle: -2 to the dodge or jump of a player leaving the tackler's tackle zone. */
+export const DIVING_TACKLE_MODIFIER = 2;
+
+/**
+ * Opponents who may use Diving Tackle on this dodge or jump: next to the square left with a tackle zone, not next to the
+ * square moved to, and not the active player (a thrower whose pass is being blocked).
+ */
+export function divingTacklers(state: GameState, proc: P<"Check">, player: PlayerState): PlayerState[] {
+  if (!proc.leaving || proc.divingTacklerId !== undefined) return [];
+  const { from, to } = proc.leaving;
+  return adjacent(from).flatMap((s) => {
+    const p = tackleZoneAt(state, s);
+    if (!p || p.side === player.side || p.id === state.activePlayerId || !hasSkill(p, "Diving Tackle")) return [];
+    return adjacent(to).some((n) => sameSquare(n, s)) ? [] : [p];
+  });
+}
+
+/** The check is over: report it to the procedure that pushed it. */
+function finish(state: GameState, proc: P<"Check">, success: boolean): StepResult {
+  state.lastCheck = { kind: proc.kind, success, roll: proc.roll!, ...(proc.divingTacklerId ? { divingTacklerId: proc.divingTacklerId } : {}) };
+  return "done";
+}
+
+/** After a roll: a skill re-roll, the team re-roll decision, or the result. */
+function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolean): StepResult {
+  const { state } = ctx;
+  // A skill re-roll is used automatically, before any team re-roll; a roll is only ever re-rolled once.
+  const skill = success || proc.rerolled ? null : skillReroll(state, proc, player);
+  if (skill) {
+    if (ONCE_PER_TURN_REROLLS.includes(skill)) player.usedSkills.push(skill);
+    ctx.emit({ type: "SkillUsed", playerId: player.id, skill });
+    proc.rerolled = true;
+    proc.stage = "roll";
+    return "wait";
+  }
+  if (!success && canTeamReroll(state, player.side, proc.rerolled)) {
+    proc.stage = "reroll";
+    return "wait";
+  }
+  return finish(state, proc, success);
+}
+
 /**
  * A single D6 roll against a target (AG for agility rolls), with an optional team re-roll.
  * `modifier` is added to the roll: -1 per tackle zone is the same as +1 to the target.
+ * Diving Tackle: after a successful dodge or jump that -2 would turn into a failure, the opposing coach may pick one
+ * eligible tackler; the roll then fails, and a re-roll keeps the -2.
  * Writes its outcome to `state.lastCheck`.
  */
 export const Check: Handler<P<"Check">> = {
@@ -67,42 +111,39 @@ export const Check: Handler<P<"Check">> = {
     const player = getPlayer(ctx, proc.playerId);
     if (proc.stage === "reroll") {
       const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
-      if (a.type === "DECLINE_REROLL") {
-        state.lastCheck = { kind: proc.kind, success: false, roll: proc.roll! };
-        return "done";
-      }
+      if (a.type === "DECLINE_REROLL") return finish(state, proc, false);
       useTeamReroll(ctx, player.side);
       proc.rerolled = true;
       proc.stage = lonerTarget(player) === null ? "roll" : "loner";
       return "wait";
     }
     if (proc.stage === "loner") {
-      if (!rollLoner(ctx, action, player)) {
-        state.lastCheck = { kind: proc.kind, success: false, roll: proc.roll! };
-        return "done";
-      }
+      if (!rollLoner(ctx, action, player)) return finish(state, proc, false);
       proc.stage = "roll";
       return "wait";
+    }
+    if (proc.stage === "divingTackle") {
+      const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+      const id = playerIds[0];
+      const candidates = divingTacklers(state, proc, player);
+      if (playerIds.length > 1 || (id !== undefined && !candidates.some((c) => c.id === id))) ctx.reject("Invalid diving tackler.");
+      if (id === undefined) return finish(state, proc, true);
+      proc.divingTacklerId = id;
+      proc.modifier -= DIVING_TACKLE_MODIFIER;
+      ctx.emit({ type: "SkillUsed", playerId: id, skill: "Diving Tackle" });
+      ctx.emit({ type: "CheckResult", kind: proc.kind, playerId: player.id, success: false, roll: proc.roll!, target: proc.target - proc.modifier });
+      return settle(ctx, proc, player, false);
     }
     const reason = `${CHECK_NAMES[proc.kind]} ${neededRoll(proc.target, proc.modifier)}+`;
     const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], reason);
     const success = passes(roll!, proc.modifier, proc.target);
     proc.roll = roll!;
     ctx.emit({ type: "CheckResult", kind: proc.kind, playerId: player.id, success, roll: roll!, target: proc.target - proc.modifier });
-    // A skill re-roll is used automatically, before any team re-roll; a roll is only ever re-rolled once.
-    const skill = success || proc.rerolled ? null : skillReroll(state, proc, player);
-    if (skill) {
-      if (ONCE_PER_TURN_REROLLS.includes(skill)) player.usedSkills.push(skill);
-      ctx.emit({ type: "SkillUsed", playerId: player.id, skill });
-      proc.rerolled = true;
+    if (success && divingTacklers(state, proc, player).length > 0 && !passes(roll!, proc.modifier - DIVING_TACKLE_MODIFIER, proc.target)) {
+      proc.stage = "divingTackle";
       return "wait";
     }
-    if (!success && canTeamReroll(state, player.side, proc.rerolled)) {
-      proc.stage = "reroll";
-      return "wait";
-    }
-    state.lastCheck = { kind: proc.kind, success, roll: roll! };
-    return "done";
+    return settle(ctx, proc, player, success);
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
@@ -113,6 +154,10 @@ export const Check: Handler<P<"Check">> = {
       ];
     }
     if (proc.stage === "loner") return [lonerRollTemplate(player)];
+    if (proc.stage === "divingTackle") {
+      const playerIds = divingTacklers(state, proc, player).map((p) => p.id);
+      return [{ type: "SELECT_PLAYERS", side: other(player.side), playerIds, max: 1, reason: `Diving Tackle: choose a player to make ${player.name}'s ${CHECK_NAMES[proc.kind].toLowerCase()} fail` }];
+    }
     const reason = `${CHECK_NAMES[proc.kind]} ${neededRoll(proc.target, proc.modifier)}+ (${player.name})`;
     return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason }];
   },

@@ -1194,6 +1194,33 @@ describe("engine", () => {
       });
     });
 
+    describe("Diving Tackle", () => {
+      const select = (...playerIds: string[]): Action => ({ type: "SELECT_PLAYERS", playerIds });
+      // home-1 dodges from (12,6), next to away-1, to (11,5): a 3+ dodge.
+      const dodge = (value: number) => apply(withSkills(toFirstTurn(), { "away-1": ["Diving Tackle"] }), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(value));
+
+      it("turns a dodge that -2 would fail into a failure; the tackler is placed prone in the square left", () => {
+        let s = dodge(4);
+        expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1"], max: 1 });
+        s = apply(s, select("away-1"));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "away-1", skill: "Diving Tackle" });
+        s = apply(s, { type: "DECLINE_REROLL" });
+        expect(s.players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "prone" });
+        expect(s.players["away-1"]).toMatchObject({ at: { x: 12, y: 6 }, status: "prone" });
+        expect(s.turnover).toBe(true);
+      });
+
+      it("the re-roll keeps the -2; it is not offered when it would not help", () => {
+        const s = apply(dodge(4), select("away-1"), { type: "USE_REROLL" });
+        expect(find(s, "ROLL")?.reason).toBe("Dodge 5+ (Home 1)");
+        const rerolled = apply(s, roll(5));
+        expect(rerolled.players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing" });
+        expect(rerolled.players["away-1"]).toMatchObject({ at: { x: 12, y: 6 }, status: "prone" });
+        expect(types(dodge(5))).not.toContain("SELECT_PLAYERS");
+        expect(apply(dodge(4), select()).players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing" });
+      });
+    });
+
     describe("Hit and Run", () => {
       const runner = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Hit and Run"] });
 

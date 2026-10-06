@@ -183,6 +183,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Hit and Run: after a block (once any Frenzy block is over, during a Blitz too) or a Stab, a standing player with the
   skill may step to a free adjacent square that is not next to any opponent: no Dodge or Rush, no movement spent, a
   pick-up if the ball is there. Not after a turnover.
+- Diving Tackle: after a successful dodge or jump out of the tackle zone of opponents with the skill (who are not next
+  to the square moved to), that -2 would turn into a failure, the opposing coach may pick one of them: the roll fails
+  (a re-roll keeps the -2), and the tackler is placed prone in the square left, without an armour roll.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

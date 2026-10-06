@@ -52,6 +52,7 @@ const SKILL_USES: Record<string, string> = {
   "Strip Ball": "and knocks the ball loose",
   "Safe Pass": "and keeps the ball",
   "Hit and Run": "to step away",
+  "Diving Tackle": "(-2 to the roll) and dives into the square left",
 };
 
 /** Display names of the weather conditions. */
