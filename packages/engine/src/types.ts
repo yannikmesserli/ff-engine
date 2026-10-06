@@ -216,7 +216,8 @@ export type CheckKind =
   | "hunger"
   | "escape"
   | "shadowing"
-  | "savagery";
+  | "savagery"
+  | "appearance";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -345,7 +346,8 @@ export type Procedure =
       dauntless?: boolean;
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
-      stage: "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "brawler" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "followup" | "end";
+      /** "appearance": the defender's Foul Appearance, rolled first. */
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "brawler" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
@@ -368,7 +370,7 @@ export type Procedure =
       attackerId: string;
       defenderId: string;
       blitz: boolean;
-      stage: "rush" | "rushResult" | "roll" | "result" | "armour" | "injury";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "roll" | "result" | "armour" | "injury";
       /** Who the vomit hits: the defender, or the attacker after a failed roll. */
       victimId?: string;
       /** The victim held the ball when placed prone. */

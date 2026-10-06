@@ -24,6 +24,7 @@ const CHECK_NAMES = {
   escape: "escape roll",
   shadowing: "Shadowing roll",
   savagery: "Animal Savagery roll (a failure means lashing out at a team-mate)",
+  appearance: "Foul Appearance roll (a failure wastes the block and ends the action)",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */

@@ -469,7 +469,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       // The attack ends the action, even during a Blitz.
       proc.finished = true;
       const blitz = proc.action === "blitz";
-      ctx.push({ type: "Vomit", skill, attackerId: player.id, defenderId: a.targetId, blitz, stage: blitz ? "rush" : "roll" });
+      ctx.push({ type: "Vomit", skill, attackerId: player.id, defenderId: a.targetId, blitz, stage: "appearance" });
       return "continue";
     }
     if (a.type === "BLOCK") {
@@ -484,7 +484,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         attackerId: player.id,
         defenderId: target.id,
         blitz: proc.action === "blitz",
-        stage: proc.action === "blitz" ? "rush" : "dauntless",
+        stage: "appearance",
         dice,
         rerolled: false,
         chain: [],

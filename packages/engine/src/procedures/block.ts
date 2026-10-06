@@ -152,7 +152,7 @@ function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, 
   if (!adjacent(attacker.at).some((s) => sameSquare(s, defender.at))) return null;
   if (proc.blitz && attacker.movesUsed >= maxMoves(attacker)) return null;
   const dice = blockDice(state, attacker, defender, { blitz: proc.blitz });
-  return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: proc.blitz ? "rush" : "dauntless", dice, rerolled: false, chain: [] };
+  return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: "appearance", dice, rerolled: false, chain: [] };
 }
 
 /**
@@ -207,6 +207,29 @@ function wrestle(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
   }
   const activation = state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === attacker.id);
   if (activation) activation.finished = true;
+}
+
+/** Foul Appearance: a player who wants to block the player (or attack them instead of a block) must roll 2+. */
+export const FOUL_APPEARANCE_TARGET = 2;
+
+/**
+ * Foul Appearance: push the attacker's roll if the defender has the skill (team re-roll allowed); false when there is
+ * none.
+ */
+export function rollFoulAppearance(ctx: Ctx, attacker: PlayerState, defender: PlayerState): boolean {
+  ctx.state.lastCheck = null;
+  if (!hasSkill(defender, "Foul Appearance")) return false;
+  ctx.push({ type: "Check", kind: "appearance", playerId: attacker.id, target: FOUL_APPEARANCE_TARGET, modifier: 0, stage: "roll", rerolled: false });
+  return true;
+}
+
+/** A failed Foul Appearance roll wastes the block, which ends the attacker's action (no turnover). */
+export function revolted(ctx: Ctx, attacker: PlayerState): boolean {
+  const { lastCheck } = ctx.state;
+  if (lastCheck?.kind !== "appearance" || lastCheck.success) return false;
+  const activation = ctx.state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === attacker.id);
+  if (activation) activation.finished = true;
+  return true;
 }
 
 /** Only the attacker's team may re-roll the block dice, once. */
@@ -266,7 +289,7 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
 }
 
 /**
- * One BB2025 block or blitz block: (Rush when blitzing) -> Dauntless -> block dice -> re-roll ->
+ * One BB2025 block or blitz block: Foul Appearance -> (Rush when blitzing) -> Dauntless -> block dice -> re-roll ->
  * choice of die -> pushback -> follow-up -> knock-downs -> loose ball -> touchdown check.
  */
 export const Block: Handler<P<"Block">> = {
@@ -275,6 +298,14 @@ export const Block: Handler<P<"Block">> = {
     const attacker = getPlayer(ctx, proc.attackerId);
     const defender = getPlayer(ctx, proc.defenderId);
     switch (proc.stage) {
+      case "appearance":
+        rollFoulAppearance(ctx, attacker, defender);
+        proc.stage = "appearanceResult";
+        return "continue";
+      case "appearanceResult":
+        if (revolted(ctx, attacker)) return "done";
+        proc.stage = proc.blitz ? "rush" : "dauntless";
+        return "continue";
       case "rush": {
         // Blocking during a Blitz costs one square of movement, which may be a Rush.
         const needsRush = attacker.movesUsed >= attacker.ma;
@@ -554,7 +585,7 @@ export const VOMIT_TARGET = 2;
 const attackName = (proc: P<"Vomit">) => (proc.skill === "Stab" ? "stab" : "vomit");
 
 /**
- * Projectile Vomit or Stab, instead of a block (during a Blitz it costs a square, a Rush if needed). Projectile Vomit
+ * Projectile Vomit or Stab, instead of a block (Foul Appearance first; during a Blitz it costs a square, a Rush if needed). Projectile Vomit
  * hits the defender on 2+, the vomiting player on a failure; Stab always hits the defender. The victim rolls armour
  * without any modifier; if it breaks, they are placed prone and roll for injury (no modifier either). Not a turnover,
  * unless the moving team's ball carrier drops the ball.
@@ -564,6 +595,14 @@ export const Vomit: Handler<P<"Vomit">> = {
     const { state } = ctx;
     const attacker = getPlayer(ctx, proc.attackerId);
     switch (proc.stage) {
+      case "appearance":
+        rollFoulAppearance(ctx, attacker, getPlayer(ctx, proc.defenderId));
+        proc.stage = "appearanceResult";
+        return "continue";
+      case "appearanceResult":
+        if (revolted(ctx, attacker)) return "done";
+        proc.stage = proc.blitz ? "rush" : "roll";
+        return "continue";
       case "rush": {
         const needsRush = attacker.movesUsed >= attacker.ma;
         attacker.movesUsed += 1;

@@ -165,6 +165,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   if that team-mate held the ball. With nobody to lash out at, the action is lost and the player is distracted.
 - Timmm-ber!: +1 to the stand-up roll (MA below 3) per adjacent team-mate with a tackle zone not marked by an
   opponent; a natural 1 still fails.
+- Foul Appearance: a player who wants to block the player (Blitz and Frenzy blocks included) or use Projectile Vomit or
+  Stab on them first rolls 2+ (team re-roll allowed); a 1 wastes the block and ends the action, without a turnover.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

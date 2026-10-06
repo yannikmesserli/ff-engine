@@ -1113,6 +1113,27 @@ describe("engine", () => {
       expect(apply(standUp, roll(2)).players["home-2"]!.status).toBe("standing");
     });
 
+    describe("Foul Appearance", () => {
+      const ugly = (s = toFirstTurn()) => withSkills(s, { "away-2": ["Foul Appearance"] });
+
+      it("the blocker must roll 2+ first; a 1 wastes the block and ends the action, without a turnover", () => {
+        let s = blockAway2(ugly());
+        expect(find(s, "ROLL")?.reason).toBe("Foul Appearance 2+ (Home 2)");
+        expect(find(apply(s, roll(2)), "ROLL")?.reason).toMatch(/^Block/);
+        s = apply(s, roll(1), { type: "DECLINE_REROLL" });
+        expect([s.activePlayerId, s.turnover, top(s).type]).toEqual([null, false, "Turn"]);
+        expect(s.players["home-2"]!.activated).toBe(true);
+      });
+
+      it("comes before the Rush of a Blitz, and before Stab", () => {
+        const blitz = apply(ugly(), declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" });
+        expect(find(blitz, "ROLL")?.reason).toBe("Foul Appearance 2+ (Home 2)");
+        const stab = apply(withSkills(ugly(), { "home-2": ["Stab"] }), declare("home-2", "block"), { type: "STAB", targetId: "away-2" });
+        expect(find(stab, "ROLL")?.reason).toBe("Foul Appearance 2+ (Home 2)");
+        expect(apply(stab, roll(1), { type: "DECLINE_REROLL" }).players["away-2"]!.status).toBe("standing");
+      });
+    });
+
     describe("Animal Savagery", () => {
       const savage = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Animal Savagery", "Mighty Blow(+1)"] });
 
