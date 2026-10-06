@@ -501,4 +501,40 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "bloodlust",
+    title: "Bloodlust: a thirsty vampire bites a Thrall",
+    instructions: [
+      "Home's first turn. Declare a Block with Count Vlad (#1, Vampire Blitzer, Bloodlust(3)): Bloodlust is rolled first, 2+ for a Block or Blitz (3+ otherwise).",
+      "Fail it (Physical dice: 1) and decline the re-roll: Vlad is thirsty. The coach may switch the declared Block to a Move action instead.",
+      "Before the action ends (and before passing, handing off or scoring), Vlad bites a Thrall next to him: pick Igor (#2) or Renfield (#3). The Thrall is placed prone and rolls for injury without armour; biting nobody (Skip) is a turnover.",
+    ],
+    home: {
+      name: "Sylvania Nights",
+      roster: "Vampire",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Count Vlad", position: "Vampire Blitzer" },
+        { number: 2, name: "Igor", position: "Thrall Lineman" },
+        { number: 3, name: "Renfield", position: "Thrall Lineman" },
+        { number: 4, name: "Ludmila", position: "Thrall Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Hunters",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    seed: 12,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 6 }, 3: { x: 11, y: 8 }, 4: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

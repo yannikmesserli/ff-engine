@@ -138,4 +138,13 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "ROLL", values: [1] }, { type: "DECLINE_REROLL" }]);
     expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-2", "home-3"], min: 1, max: 1 });
   });
+
+  it("bloodlust: a failed roll offers a Move instead, then the bite at the end of the action", () => {
+    let s = step(load("bloodlust"), { type: "START_ACTION", playerId: "home-1", action: "block" }).state;
+    expect(find(s, "ROLL")?.reason).toBe("Bloodlust 2+ (Count Vlad)");
+    s = applyActions(s, [{ type: "ROLL", values: [1] }, { type: "DECLINE_REROLL" }]);
+    expect(find(s, "MOVE_INSTEAD")).toBeDefined();
+    s = applyActions(s, [{ type: "MOVE_INSTEAD", move: false }, { type: "END_PLAYER_ACTION" }]);
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-2", "home-3"] });
+  });
 });
