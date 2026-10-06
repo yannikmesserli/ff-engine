@@ -23,6 +23,7 @@ const CHECK_NAMES = {
   hunger: "Always Hungry roll",
   escape: "escape roll",
   shadowing: "Shadowing roll",
+  savagery: "Animal Savagery roll (a failure means lashing out at a team-mate)",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -260,6 +261,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} finds nobody to bite: turnover, and they lose their tackle zone.`;
     case "PlayerRooted":
       return `${who(state, e.playerId)} takes root: they cannot move until knocked down or the drive ends.`;
+    case "LashedOut":
+      return `${who(state, e.playerId)} lashes out at ${who(state, e.victimId)}, and the action ends.`;
     case "ActionLost":
       return `${who(state, e.playerId)} fails the ${e.skill} roll and roars in rage: the action is lost.`;
     case "PlayerRaised":

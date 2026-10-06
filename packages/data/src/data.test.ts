@@ -160,7 +160,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return t.squares.length > 0 && random() < 0.9 ? { type: "MOVE", square: pick(t.squares) } : { type: "END_PLAYER_ACTION" };
     case "SELECT_PLAYERS": {
       const shuffled = [...t.playerIds].sort(() => random() - 0.5);
-      return { type: "SELECT_PLAYERS", playerIds: shuffled.slice(0, Math.floor(random() * (t.max + 1))) };
+      const min = t.min ?? 0;
+      return { type: "SELECT_PLAYERS", playerIds: shuffled.slice(0, min + Math.floor(random() * (t.max - min + 1))) };
     }
     case "SNAP": {
       const m = t.moves.length > 0 && random() < 0.7 ? pick(t.moves) : undefined;

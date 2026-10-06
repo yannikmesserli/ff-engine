@@ -124,6 +124,7 @@ export function ActionPanel(props: ActionPanelProps) {
         {select && (
           <button
             className="bb-confirm"
+            disabled={picked.length < (select.min ?? 0)}
             onClick={() => {
               dispatch({ type: "SELECT_PLAYERS", playerIds: picked });
               setPicked([]);

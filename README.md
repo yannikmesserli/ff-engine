@@ -159,6 +159,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Shadowing: when a player moves (not jumps) out of the tackle zones of opponents with Shadowing, their coach may
   pick one to roll a D6: on 4+ the shadower moves into the vacated square (no roll, no movement spent; as many times per
   turn as their MA).
+- Animal Savagery: rolled when the player is activated, like Unchannelled Fury (2+ for a Block or Blitz, 4+ otherwise,
+  team re-roll allowed). On a failure the player lashes out at an adjacent standing team-mate (the coach picks), who is
+  knocked down (the player's Claws and Mighty Blow count for the armour roll only), and the action ends; a turnover only
+  if that team-mate held the ball. With nobody to lash out at, the action is lost and the player is distracted.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

@@ -31,7 +31,7 @@ export const REALLY_STUPID_TARGET = 4;
 export const REALLY_STUPID_HELPED_TARGET = 2;
 /** Take Root fails on a 1. */
 export const TAKE_ROOT_TARGET = 2;
-/** Unchannelled Fury fails on 1-3, or only on a 1 for a Block or Blitz action (+2 to the roll). */
+/** Animal Savagery and Unchannelled Fury fail on 1-3, or only on a 1 for a Block or Blitz action (+2 to the roll). */
 export const FURY_TARGET = 4;
 export const FURY_BLOCK_TARGET = 2;
 
@@ -268,12 +268,13 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   return actions;
 }
 
-/** The Bone Head, Really Stupid, Unchannelled Fury or Bloodlust roll a player makes when activated, if any. */
+/** The Animal Savagery, Bone Head, Really Stupid, Unchannelled Fury or Bloodlust roll a player makes when activated, if any. */
 function confusionCheck(state: GameState, player: PlayerState & { at: Square }, action: PlayerActionType): P<"Check"> | null {
-  const check = (kind: "bonehead" | "reallystupid" | "fury" | "bloodlust", target: number): P<"Check"> =>
+  const check = (kind: "savagery" | "bonehead" | "reallystupid" | "fury" | "bloodlust", target: number): P<"Check"> =>
     ({ type: "Check", kind, playerId: player.id, target, modifier: 0, stage: "roll", rerolled: false });
-  if (hasSkill(player, "Bone Head")) return check("bonehead", BONE_HEAD_TARGET);
   const blocking = action === "block" || action === "blitz";
+  if (hasSkill(player, "Animal Savagery")) return check("savagery", blocking ? FURY_BLOCK_TARGET : FURY_TARGET);
+  if (hasSkill(player, "Bone Head")) return check("bonehead", BONE_HEAD_TARGET);
   if (hasSkill(player, "Unchannelled Fury")) return check("fury", blocking ? FURY_BLOCK_TARGET : FURY_TARGET);
   // Bloodlust(X): X+, 1 easier (but at least 2+) for a Block or Blitz.
   const bloodlust = skillValue(player, "Bloodlust", 2);
@@ -292,6 +293,9 @@ function confusionCheck(state: GameState, player: PlayerState & { at: Square }, 
  * A failed Bone Head, Really Stupid or Unchannelled Fury roll ends the action (the declared action still counts as used
  * this turn, no turnover): the player stays where they are, prone if they were; Bone Head and Really Stupid also
  * distract them until their next activation.
+ * Animal Savagery (same roll as Unchannelled Fury): on a failure the player lashes out at an adjacent standing team-mate
+ * (the coach picks), who is knocked down, and the action ends; a turnover only if that team-mate held the ball. With
+ * nobody to lash out at, the action is lost and the player is distracted.
  * Take Root (standing players only, 2+): a failure roots the player, who keeps their action but cannot move.
  * Jump Up: stand up for free (no movement spent, no roll); a prone player declaring a Block stands up on an AG roll
  * with +1 instead (a failure ends the action, without a turnover).
@@ -320,19 +324,44 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       if (failed(ctx) && state.lastCheck!.kind === "bloodlust") {
         proc.thirsty = true;
         ctx.emit({ type: "PlayerThirsty", playerId: player.id });
+      } else if (failed(ctx) && state.lastCheck!.kind === "savagery" && lashOutTargets(state, player).length > 0) {
+        proc.stage = "savagery";
+        return "continue";
       } else if (failed(ctx)) {
         const { kind } = state.lastCheck!;
         if (kind === "fury") ctx.emit({ type: "ActionLost", playerId: player.id, skill: "Unchannelled Fury" });
         else {
           player.distracted = true;
-          ctx.emit({ type: "PlayerDistracted", playerId: player.id, skill: kind === "bonehead" ? "Bone Head" : "Really Stupid" });
+          const skill = kind === "bonehead" ? "Bone Head" : kind === "savagery" ? "Animal Savagery" : "Really Stupid";
+          ctx.emit({ type: "PlayerDistracted", playerId: player.id, skill });
         }
-        if (proc.stalling && player.status === "standing" && holdsBall(state, player)) ctx.push({ type: "Stalling", playerId: player.id });
-        state.activePlayerId = null;
-        return "done";
+        return loseAction(ctx, proc, player);
       }
       proc.stage = "thirst";
       return "continue";
+    }
+    if (proc.stage === "savagery") {
+      const victims = lashOutTargets(state, player);
+      let victim = victims[0]!;
+      if (victims.length > 1) {
+        if (action === null) return "wait";
+        const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+        if (playerIds.length !== 1) ctx.reject("Choose one team-mate.");
+        victim = victims.find((v) => v.id === playerIds[0]) ?? ctx.reject("Invalid team-mate.");
+      }
+      ctx.emit({ type: "LashedOut", playerId: player.id, victimId: victim.id });
+      const bonus = skillValue(player, "Mighty Blow", 1);
+      // The knock-down comes first, then any stalling rock.
+      const result = loseAction(ctx, proc, player);
+      ctx.push({
+        type: "KnockDown",
+        playerId: victim.id,
+        turnover: holdsBall(state, victim),
+        stage: "fall",
+        blockerId: player.id,
+        ...(bonus ? { mightyBlow: { playerId: player.id, bonus, armourOnly: true } } : {}),
+      });
+      return result;
     }
     if (proc.stage === "thirst") {
       if (proc.thirsty && (proc.action === "block" || proc.action === "secure")) {
@@ -460,6 +489,10 @@ export const MoveAction: Handler<P<"MoveAction">> = {
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "thirst") return [{ type: "MOVE_INSTEAD", side: player.side, playerId: player.id }];
+    if (proc.stage === "savagery") {
+      const playerIds = lashOutTargets(state, player).map((p) => p.id);
+      return [{ type: "SELECT_PLAYERS", side: player.side, playerIds, max: 1, min: 1, reason: `Animal Savagery: choose a team-mate for ${player.name} to lash out at` }];
+    }
     const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
     const vomits = specialTargets(state, proc, "Projectile Vomit").map((t) => t.id);
     const stabs = specialTargets(state, proc, "Stab").map((t) => t.id);
@@ -484,6 +517,23 @@ export const MoveAction: Handler<P<"MoveAction">> = {
 };
 
 const holdsBall = (state: GameState, player: PlayerState) => ballCarrier(state)?.id === player.id;
+
+/** Animal Savagery: standing team-mates next to the player, one of whom gets lashed out at. */
+export function lashOutTargets(state: GameState, player: PlayerState): PlayerState[] {
+  if (!isOnPitch(player)) return [];
+  return adjacent(player.at).flatMap((s) => {
+    const p = playerAt(state, s);
+    return p && p.side === player.side && p.status === "standing" ? [p] : [];
+  });
+}
+
+/** The action is lost after a failed roll on activation (still used this turn, no turnover); a staller gets a rock. */
+function loseAction(ctx: Ctx, proc: P<"MoveAction">, player: PlayerState) {
+  const { state } = ctx;
+  if (proc.stalling && player.status === "standing" && holdsBall(state, player)) ctx.push({ type: "Stalling", playerId: player.id });
+  state.activePlayerId = null;
+  return "done" as const;
+}
 
 /** Bloodlust: a thirsty player feeds before passing or handing off the ball. */
 function feedFirst(proc: P<"MoveAction">): Procedure[] {

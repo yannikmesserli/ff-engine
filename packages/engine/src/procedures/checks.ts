@@ -31,6 +31,7 @@ const CHECK_NAMES = {
   hunger: "Always Hungry",
   escape: "Escape",
   shadowing: "Shadowing",
+  savagery: "Animal Savagery",
 } as const;
 
 /** The natural d6 result needed, for display ("4+"). */
@@ -119,7 +120,7 @@ export const Check: Handler<P<"Check">> = {
 export const ARMOUR_DICE = [{ kind: "d6", count: 2 }] as const;
 
 /** Mighty Blow's bonus to the injury roll: only when it did not go to the armour roll. */
-const injuryBonus = (proc: P<"KnockDown">) => (proc.mightyBlowOnArmour ? 0 : (proc.mightyBlow?.bonus ?? 0));
+const injuryBonus = (proc: P<"KnockDown">) => (proc.mightyBlowOnArmour || proc.mightyBlow?.armourOnly ? 0 : (proc.mightyBlow?.bonus ?? 0));
 
 /** Name of the Mighty Blow bonus in roll reasons. */
 const mightyBlowNote = (bonus: number) => (bonus > 0 ? ` (+${bonus} Mighty Blow)` : "");

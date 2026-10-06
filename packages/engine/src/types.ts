@@ -215,7 +215,8 @@ export type CheckKind =
   | "landing"
   | "hunger"
   | "escape"
-  | "shadowing";
+  | "shadowing"
+  | "savagery";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -268,10 +269,11 @@ export type Procedure =
       type: "MoveAction";
       playerId: string;
       /**
-       * "confusion": after the Bone Head / Really Stupid / Unchannelled Fury / Bloodlust roll; "thirst": a thirsty player
-       * may take a Move action instead; "root": after the Take Root roll.
+       * "confusion": after the Animal Savagery / Bone Head / Really Stupid / Unchannelled Fury / Bloodlust roll;
+       * "savagery": a failed Animal Savagery roll, lashing out at a team-mate; "thirst": a thirsty player may take a Move
+       * action instead; "root": after the Take Root roll.
        */
-      stage: "start" | "confusion" | "thirst" | "root" | "standup" | "main";
+      stage: "start" | "confusion" | "savagery" | "thirst" | "root" | "standup" | "main";
       /** "block" only allows a single block; "blitz" a move with one block of `targetId` on the way. */
       action: PlayerActionType;
       targetId?: string;
@@ -430,8 +432,11 @@ export type Procedure =
       type: "KnockDown";
       playerId: string;
       turnover: boolean;
-      /** Mighty Blow of the blocker who knocked the player down: added to the armour or the injury roll. */
-      mightyBlow?: { playerId: string; bonus: number };
+      /**
+       * Mighty Blow of the blocker who knocked the player down: added to the armour or the injury roll (only to the
+       * armour roll when `armourOnly`: Animal Savagery).
+       */
+      mightyBlow?: { playerId: string; bonus: number; armourOnly?: boolean };
       /** The opponent whose block knocked the player down (Claws, Plague Ridden). */
       blockerId?: string;
       /** Mighty Blow broke the armour, so it does not apply to the injury roll. */
@@ -565,7 +570,8 @@ export type ActionTemplate =
   | { type: "MOVE_INSTEAD"; side: Side; playerId: string }
   | { type: "END_PLAYER_ACTION"; side: Side }
   | { type: "END_TURN"; side: Side }
-  | { type: "SELECT_PLAYERS"; side: Side; playerIds: string[]; max: number; reason: string }
+  /** `min`: players that must be chosen (none by default). */
+  | { type: "SELECT_PLAYERS"; side: Side; playerIds: string[]; max: number; min?: number; reason: string }
   | { type: "SNAP"; side: Side; moves: Array<{ playerId: string; squares: Square[] }>; remaining: number }
   | { type: "DONE"; side: Side };
 
@@ -648,6 +654,8 @@ export type GameEvent =
   | { type: "FeedingFailed"; playerId: string }
   /** Failed a Take Root roll: the player cannot move until knocked down or the drive ends. */
   | { type: "PlayerRooted"; playerId: string }
+  /** Failed an Animal Savagery roll: `playerId` knocks down the team-mate `victimId`, and the action ends. */
+  | { type: "LashedOut"; playerId: string; victimId: string }
   /** Failed an Unchannelled Fury roll: the action is lost, but the player keeps their tackle zone. */
   | { type: "ActionLost"; playerId: string; skill: string }
   /** Regeneration worked: the casualty heals and the player goes to the reserves. */

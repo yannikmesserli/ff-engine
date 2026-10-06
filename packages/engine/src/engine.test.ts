@@ -1101,6 +1101,46 @@ describe("engine", () => {
       });
     });
 
+    describe("Animal Savagery", () => {
+      const savage = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Animal Savagery", "Mighty Blow(+1)"] });
+
+      it("rolls 2+ for a Block or Blitz, 4+ otherwise", () => {
+        expect(find(apply(savage(), declare("home-2", "block")), "ROLL")?.reason).toBe("Animal Savagery 2+ (Home 2)");
+        expect(find(apply(savage(), startMove("home-2")), "ROLL")?.reason).toBe("Animal Savagery 4+ (Home 2)");
+        const s = apply(savage(), startMove("home-2"), roll(4));
+        expect(find(s, "MOVE")).toBeDefined();
+      });
+
+      it("a failure knocks down a chosen adjacent team-mate (Mighty Blow on the armour only) and ends the action", () => {
+        let s = apply(savage(), startMove("home-2"), roll(3), { type: "DECLINE_REROLL" });
+        // home-1 (12,6) and home-3 (12,8) stand next to home-2 (12,7).
+        expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-1", "home-3"], max: 1, min: 1 });
+        expect(() => apply(s, { type: "SELECT_PLAYERS", playerIds: [] })).toThrow(IllegalActionError);
+        s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-3"] });
+        expect(s.log).toContainEqual({ type: "LashedOut", playerId: "home-2", victimId: "home-3" });
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Home 3) (+1 Mighty Blow)");
+        s = apply(s, roll(4, 4));
+        expect(find(s, "ROLL")?.reason).toBe("Injury");
+        s = apply(s, roll(3, 4));
+        expect(s.players["home-3"]!.status).toBe("stunned");
+        expect([s.activeSide, s.activePlayerId, s.turnover, s.players["home-2"]!.distracted]).toEqual(["home", null, false, false]);
+      });
+
+      it("a turnover if the team-mate held the ball; with nobody next to them, the action is lost", () => {
+        const carrier = edit(savage(), (c) => {
+          c.players["home-3"]!.at = { x: 20, y: 8 };
+          c.ball = { square: { x: 12, y: 6 }, carried: true };
+        });
+        let s = apply(carrier, startMove("home-2"), roll(1), { type: "DECLINE_REROLL" });
+        expect(s.players["home-1"]!.status).toBe("prone");
+        expect(s.turnover).toBe(true);
+        const alone = place(savage(), { "home-1": { x: 20, y: 6 }, "home-3": { x: 20, y: 8 } });
+        s = apply(alone, startMove("home-2"), roll(1), { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "PlayerDistracted", playerId: "home-2", skill: "Animal Savagery" });
+        expect([s.activePlayerId, s.turnover]).toEqual([null, false]);
+      });
+    });
+
     describe("Shadowing", () => {
       const select = (...playerIds: string[]): Action => ({ type: "SELECT_PLAYERS", playerIds });
       // home-1 dodges from (12,6), next to away-1 and away-2, to (11,5).
