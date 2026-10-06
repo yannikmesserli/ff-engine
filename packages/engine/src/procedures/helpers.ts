@@ -1,7 +1,7 @@
 import type { Ctx } from "../context";
 import type { Action, ActionTemplate, GameState, PlayerState, Side, Square, TeamSetup, Weather } from "../types";
 import { hasSkill, skillName } from "../skills";
-import { inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, teamPlayers } from "../pitch";
+import { adjacent, inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, teamPlayers } from "../pitch";
 
 /** The player with this id, or reject the action. */
 export function getPlayer(ctx: Ctx, id: string): PlayerState {
@@ -54,13 +54,25 @@ export interface Landing {
   bounceIfEmpty: boolean;
   /** The ball bounced or scattered: +1 to the catch roll (not for throw-ins). */
   scattered: boolean;
+  /** A kick, pass or throw-in (not a bounce): players with Diving Catch next to the square may try to catch it. */
+  divingCatch?: boolean;
+  /** An accurate pass: +1 to catch it with Diving Catch. */
+  accurate?: boolean;
+}
+
+/** Diving Catch: standing, undistracted players with the skill next to the square where the ball comes down. */
+export function divingCatchers(state: GameState, square: Square): PlayerState[] {
+  return adjacent(square).flatMap((s) => {
+    const p = playerAt(state, s);
+    return p && p.status === "standing" && !p.distracted && hasSkill(p, "Diving Catch") ? [p] : [];
+  });
 }
 
 /**
  * The ball arrives on a square after a kick, bounce or throw-in: touchback, throw-in from `from` when it left the
- * pitch, a catch by a standing player, or a bounce.
+ * pitch, Diving Catch from a next square, a catch by a standing player, or a bounce.
  */
-export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, receiving, bounceIfEmpty, scattered }: Landing) {
+export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, receiving, bounceIfEmpty, scattered, divingCatch = false, accurate = false }: Landing) {
   const { state } = ctx;
   if (kickoff && receiving && !inHalf(receiving, square)) {
     state.ball = { square: null, carried: false };
@@ -73,9 +85,13 @@ export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, rece
     return;
   }
   state.ball = { square, carried: false };
+  if (divingCatch && divingCatchers(state, square).length > 0) {
+    ctx.push({ type: "DivingCatch", square: { ...square }, landing: { kickoff, receiving, scattered, accurate }, stage: "first" });
+    return;
+  }
   const player = playerAt(state, square);
   if (player?.status === "standing") {
-    ctx.push({ type: "Catch", playerId: player.id, kickoff, scattered, stage: "check" });
+    ctx.push({ type: "Catch", playerId: player.id, kickoff, scattered, stage: "check", ...(accurate ? { accurate } : {}) });
   } else if (player || bounceIfEmpty) {
     ctx.push({ type: "Bounce", from: square, kickoff, receiving });
   }

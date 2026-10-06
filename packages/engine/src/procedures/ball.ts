@@ -1,9 +1,9 @@
 import type { Handler } from "../context";
 import type { DiceSpec, GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { SCATTER, isCorner, throwInDirection } from "../dice";
-import { adjacent, inBounds, isOnPitch, offset, playerAt, sameSquare, teamPlayers } from "../pitch";
+import { adjacent, inBounds, isOnPitch, offset, other, playerAt, sameSquare, teamPlayers } from "../pitch";
 import { hasSkill } from "../skills";
-import { checkTouchdown, disturbingPresences, getPlayer, landBall, squareOf, weatherModifier } from "./helpers";
+import { checkTouchdown, disturbingPresences, divingCatchers, getPlayer, landBall, squareOf, weatherModifier } from "./helpers";
 import { markingZones } from "./pass";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -69,7 +69,7 @@ export const ThrowIn: Handler<P<"ThrowIn">> = {
       return "done";
     }
     ctx.emit({ type: "BallThrownIn", to });
-    landBall(ctx, to, to, { kickoff: false, receiving: null, bounceIfEmpty: true, scattered: false });
+    landBall(ctx, to, to, { kickoff: false, receiving: null, bounceIfEmpty: true, scattered: false, divingCatch: true });
     return "done";
   },
   actions(_state, proc) {
@@ -83,7 +83,7 @@ export const catchModifier = (state: GameState, player: PlayerState & { at: Squa
 
 /**
  * A standing player tries to catch the ball on their square (AG, tackle zones unless they have Nerves of Steel, weather,
- * Disturbing Presence); a failure bounces it.
+ * Disturbing Presence, +1 for an accurate pass with Diving Catch); a failure bounces it from their square.
  * A distracted player cannot catch: the ball bounces straight away.
  */
 export const Catch: Handler<P<"Catch">> = {
@@ -104,7 +104,7 @@ export const Catch: Handler<P<"Catch">> = {
         kind: "catch",
         playerId: player.id,
         target: player.ag,
-        modifier: catchModifier(state, { ...player, at: square }, proc.scattered),
+        modifier: catchModifier(state, { ...player, at: square }, proc.scattered) + (proc.accurate && hasSkill(player, "Diving Catch") ? 1 : 0),
         stage: "roll",
         rerolled: false,
       });
@@ -167,5 +167,55 @@ export const SafeHands: Handler<P<"SafeHands">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "ask") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Safe Pair of Hands" }];
     return [{ type: "PLACE_BALL", side: player.side, squares: safeHandsSquares(state, proc.square) }];
+  },
+};
+
+/** The players a team may pick to catch the ball with Diving Catch: its divers, and its standing player in the square. */
+function divingCatchChoices(state: GameState, proc: P<"DivingCatch">, side: Side): PlayerState[] {
+  const direct = playerAt(state, proc.square);
+  return [
+    ...(direct && direct.side === side && direct.status === "standing" ? [direct] : []),
+    ...divingCatchers(state, proc.square).filter((p) => p.side === side),
+  ];
+}
+
+/** The team asked first: the moving team, or the kicking team at the kick-off. */
+const firstSide = (state: GameState, proc: P<"DivingCatch">): Side =>
+  state.activeSide ?? (proc.landing.receiving ? other(proc.landing.receiving) : "home");
+
+/**
+ * Diving Catch: when a kick, pass or throw-in comes down next to players with the skill, the moving team picks one of
+ * its divers (or its own player in the square) to catch it, then the other team; only one catch is tried, from the
+ * catcher's own square. Nobody picked: the ball lands as usual.
+ */
+export const DivingCatch: Handler<P<"DivingCatch">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const side = proc.stage === "first" ? firstSide(state, proc) : other(firstSide(state, proc));
+    const choices = divingCatchChoices(state, proc, side);
+    const next = () => {
+      if (proc.stage === "first") {
+        proc.stage = "second";
+        return "continue" as const;
+      }
+      landBall(ctx, proc.square, proc.square, { ...proc.landing, bounceIfEmpty: true });
+      return "done" as const;
+    };
+    if (choices.length === 0) return next();
+    if (action === null) return "wait";
+    const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+    const id = playerIds[0];
+    if (playerIds.length > 1 || (id !== undefined && !choices.some((c) => c.id === id))) ctx.reject("Invalid catcher.");
+    if (id === undefined) return next();
+    const catcher = getPlayer(ctx, id);
+    if (!sameSquare(squareOf(ctx, catcher), proc.square)) ctx.emit({ type: "SkillUsed", playerId: id, skill: "Diving Catch" });
+    const { kickoff, scattered, accurate } = proc.landing;
+    ctx.push({ type: "Catch", playerId: id, kickoff, scattered, stage: "check", ...(accurate ? { accurate } : {}) });
+    return "done";
+  },
+  actions(state, proc) {
+    const side = proc.stage === "first" ? firstSide(state, proc) : other(firstSide(state, proc));
+    const playerIds = divingCatchChoices(state, proc, side).map((p) => p.id);
+    return [{ type: "SELECT_PLAYERS", side, playerIds, max: 1, reason: "Diving Catch: choose a player to catch the ball" }];
   },
 };

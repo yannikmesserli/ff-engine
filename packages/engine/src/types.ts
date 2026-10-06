@@ -254,6 +254,12 @@ export type Procedure =
   | { type: "Bounce"; from: Square; kickoff: boolean; receiving: Side | null }
   | { type: "ThrowIn"; from: Square }
   /**
+   * Diving Catch: a kicked, thrown or thrown-in ball comes down on `square`, next to players with the skill. The moving
+   * team (the kicking team at the kick-off) may pick one of them, or its player in the square, to catch it; then the
+   * other team ("second"); otherwise it lands as usual.
+   */
+  | { type: "DivingCatch"; square: Square; landing: { kickoff: boolean; receiving: Side | null; scattered: boolean; accurate: boolean }; stage: "first" | "second" }
+  /**
    * Safe Pair of Hands: the player was knocked down or placed prone holding the ball, which lies on `square`; their coach
    * may place it on a free adjacent square instead of letting it bounce.
    */
@@ -264,6 +270,8 @@ export type Procedure =
       kickoff: boolean;
       /** Catching a bouncing or scattered ball is harder (+1 to the target); not a thrown-in one. */
       scattered: boolean;
+      /** An accurate pass to the catcher's square, or the one next to them for Diving Catch (+1 with Diving Catch). */
+      accurate?: boolean;
       stage: "check" | "resolve";
     }
   | { type: "KoRecovery"; playerIds: string[] }

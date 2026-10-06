@@ -347,6 +347,8 @@ export const Pass: Handler<P<"Pass">> = {
             receiving: null,
             bounceIfEmpty: true,
             scattered: proc.result === "inaccurate",
+            divingCatch: true,
+            accurate: proc.result === "accurate",
           });
         }
         proc.stage = "end";

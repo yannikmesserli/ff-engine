@@ -1316,6 +1316,28 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    describe("Diving Catch", () => {
+      // home-4 at (10,4) holds the ball; home-6 at (10,6) has Diving Catch.
+      const diver = edit(withSkills(toFirstTurn(), { "home-6": ["Diving Catch"] }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+      const pass = (square: Square) => apply(diver, declare("home-4", "pass"), { type: "THROW", square }, roll(6));
+
+      it("+1 to catch an accurate pass to the player's square", () => {
+        expect(find(pass({ x: 10, y: 6 }), "ROLL")?.reason).toBe("Catch 2+ (Home 6)");
+      });
+
+      it("may catch a pass coming down next to the player, from their own square", () => {
+        let s = pass({ x: 9, y: 6 });
+        expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-6"], max: 1 });
+        s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-6"] });
+        expect(find(s, "ROLL")?.reason).toBe("Catch 2+ (Home 6)");
+        s = apply(s, roll(2));
+        expect(s.ball).toEqual({ square: { x: 10, y: 6 }, carried: true });
+        expect(s.turnover).toBe(false);
+        // Declined: the ball lands in the empty square and bounces.
+        expect(find(apply(pass({ x: 9, y: 6 }), { type: "SELECT_PLAYERS", playerIds: [] }), "ROLL")?.reason).toBe("Bounce");
+      });
+    });
+
     describe("Safe Pair of Hands", () => {
       it("a ball carrier knocked down may place the ball on a free adjacent square instead of a bounce", () => {
         const s0 = edit(withSkills(toFirstTurn(), { "away-2": ["Safe Pair of Hands"] }), (c) => (c.ball = { square: { x: 13, y: 7 }, carried: true }));

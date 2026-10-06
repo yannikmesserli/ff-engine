@@ -193,7 +193,7 @@ export const Kickoff: Handler<P<"Kickoff">> = {
           state.ball = { square: null, carried: false };
           ctx.push({ type: "Touchback", side: receiving });
         } else {
-          landBall(ctx, proc.landing!, proc.target!, { kickoff: true, receiving, bounceIfEmpty: true, scattered: false });
+          landBall(ctx, proc.landing!, proc.target!, { kickoff: true, receiving, bounceIfEmpty: true, scattered: false, divingCatch: true });
         }
         return "done";
     }

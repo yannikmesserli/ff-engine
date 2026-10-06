@@ -231,6 +231,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Safe Pair of Hands: a ball carrier who is knocked down or placed prone (not one who falls over after a failed dodge,
   jump, Rush or landing), and is not distracted, may place the ball on a free adjacent square instead of letting it
   bounce; turnovers are unchanged.
+- Diving Catch: +1 to catch an accurate pass to the player's square. When a kick-off, pass or throw-in (not a bounce)
+  comes down next to standing players with the skill, the moving team (the kicking team at the kick-off) may pick one
+  of its divers, or its own player in the square, to catch it, then the other team; the catch is rolled from the
+  catcher's square, and a failure bounces from there. Not for bombs.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 
