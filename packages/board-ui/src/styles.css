@@ -75,6 +75,9 @@
 .bb-on-square, .bb-ball { position: absolute; width: var(--bb-square); height: var(--bb-square); pointer-events: none; }
 .bb-on-square > * { pointer-events: auto; }
 .bb-ball { z-index: 3; }
+/* A loose ball about to be caught, bounce or be placed (ballUnsettled). */
+.bb-ball-unsettled { opacity: 0.5; animation: bb-ball-unsettled 0.8s ease-in-out infinite alternate; }
+@keyframes bb-ball-unsettled { from { transform: scale(0.85); } to { transform: scale(1); } }
 
 /* A kicked, thrown or exploding ball or bomb (flightMarkers): aimed (dashed, it may still move), coming down (solid). */
 .bb-flight {

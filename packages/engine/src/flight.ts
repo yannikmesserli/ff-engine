@@ -68,3 +68,10 @@ export function scatterOrigin(state: GameState): Square | null {
       return null;
   }
 }
+
+/** Procedures that still move or pick up a loose ball: a catch roll, Diving Catch, a bounce, Safe Pair of Hands. */
+const UNSETTLED = ["Catch", "DivingCatch", "Bounce", "SafeHands"];
+
+/** The loose ball on the pitch is not settled yet: it is about to be caught, bounce or be placed. */
+export const ballUnsettled = (state: GameState) =>
+  state.ball.square !== null && !state.ball.carried && state.stack.some((p) => UNSETTLED.includes(p.type));

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { interceptionTarget, interceptors } from "./procedures/pass";
 import {
   CASUALTY_DICE,
+  ballUnsettled,
   blockDice,
   flightMarkers,
   scatterOrigin,
@@ -2603,6 +2604,12 @@ describe("engine", () => {
       s = apply(s, roll(7, 1));
       expect(flightMarkers(s)).toEqual([{ kind: "ball", square: { x: 4, y: 1 }, state: "landing" }]);
       expect(flightMarkers(apply(s, QUIET_EVENT, roll(5)))).toEqual([]);
+    });
+
+    it("ballUnsettled: a loose ball about to bounce or be caught", () => {
+      const s = apply(toKick({ x: 5, y: 1 }), roll(7, 1), QUIET_EVENT);
+      expect([s.ball.square, ballUnsettled(s)]).toEqual([{ x: 4, y: 1 }, true]);
+      expect(ballUnsettled(apply(s, roll(5)))).toBe(false);
     });
 
     it("scatterOrigin: the square the next d8 moves from (kick-off deviation, then the bounce)", () => {

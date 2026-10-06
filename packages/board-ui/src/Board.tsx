@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import {
+  ballUnsettled,
   flightMarkers,
   inBounds,
   scatterOrigin,
@@ -230,7 +231,12 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
                 </div>
               ))}
             {state.ball.square && !state.ball.carried && (
-              <img className="bb-ball" src={`${assets}/ball/sball_30x30.png`} alt="ball" style={at(state.ball.square)} />
+              <img
+                className={`bb-ball${ballUnsettled(state) ? " bb-ball-unsettled" : ""}`}
+                src={`${assets}/ball/sball_30x30.png`}
+                alt={ballUnsettled(state) ? "ball (not settled yet)" : "ball"}
+                style={at(state.ball.square)}
+              />
             )}
             {d8Origin &&
               Object.entries(SCATTER).map(([d, dir]) => {

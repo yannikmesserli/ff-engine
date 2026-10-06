@@ -17,4 +17,4 @@ export { CASUALTY_DICE, casualtyFor, injuryOutcome } from "./procedures/injury";
 export { LAST_STALLING_TURN, isStalling } from "./procedures/stalling";
 export { lonerTarget } from "./procedures/helpers";
 export { teamMateTargets, throwableTeamMates } from "./procedures/ttm";
-export { flightMarkers, scatterOrigin, type FlightMarker } from "./flight";
+export { ballUnsettled, flightMarkers, scatterOrigin, type FlightMarker } from "./flight";
