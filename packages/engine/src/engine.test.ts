@@ -1316,6 +1316,25 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    it("Iron Hard Skin: no Claws, no Mighty Blow or Dirty Player on the armour roll, no foul assists", () => {
+      const skin = (skills: string[]) =>
+        edit(withSkills(toFirstTurn(), { "home-2": ["Claws", "Mighty Blow(+1)"], "away-2": skills }), (c) => void (c.players["away-2"]!.av = 9));
+      const armour = (s: GameState) => apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(4, 4));
+      expect(armour(skin([])).log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Claws" });
+      const held = armour(skin(["Iron Hard Skin"]));
+      expect(held.log).toContainEqual({ type: "ArmourHeld", playerId: "away-2", roll: 8 });
+      expect(held.log.filter((e) => e.type === "SkillUsed").map((e) => (e as { skill: string }).skill)).toEqual([]);
+      // home-3 (12,8) and home-1 (12,6), unmarked once away-1 and away-3 are moved away, assist a foul on away-2.
+      const prone = (skills: string[]) =>
+        edit(place(toFirstTurn(), { "away-1": { x: 20, y: 1 }, "away-3": { x: 20, y: 3 } }), (c) => {
+          c.players["away-2"]!.skills = skills;
+          c.players["away-2"]!.status = "prone";
+        });
+      const assists = (s: GameState) => find(apply(s, declare("home-2", "foul")), "FOUL")?.targets.find((t) => t.playerId === "away-2")?.assists;
+      expect(assists(prone([]))).toBe(2);
+      expect(assists(prone(["Iron Hard Skin"]))).toBe(0);
+    });
+
     it("Decay: +1 to the casualty roll", () => {
       const player = toFirstTurn().players["home-1"]!;
       expect(casualtyFor(player, 8, 1)).toEqual({ result: "badly-hurt" });

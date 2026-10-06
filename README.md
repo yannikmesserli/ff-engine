@@ -221,6 +221,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Decay: +1 to the player's casualty rolls (and, as before, a killed Decay player cannot be raised by Plague Ridden).
 - Leap: the player may jump over any adjacent square (empty or occupied) into an empty square, and the Jump roll's
   tackle zone and Prehensile Tail penalty is reduced by 1, but not below -1.
+- Iron Hard Skin: the player's armour rolls cannot be modified: no Claws, no Mighty Blow or Dirty Player on the armour
+  roll (they may still go to the injury roll), no foul assists.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

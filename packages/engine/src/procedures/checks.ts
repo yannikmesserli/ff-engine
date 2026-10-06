@@ -226,9 +226,9 @@ const mightyBlowNote = (bonus: number) => (bonus > 0 ? ` (+${bonus} Mighty Blow)
 /** Claws: an armour roll of 8+ breaks the armour of a player with a higher AV. */
 export const CLAWS_ARMOUR = 8;
 
-/** Claws applies to the knock-down: the blocker has it and the player's AV is above 8+. */
+/** Claws applies to the knock-down: the blocker has it and the player's AV is above 8+ (and no Iron Hard Skin). */
 const clawsApply = (state: GameState, proc: P<"KnockDown">, player: PlayerState) =>
-  proc.blockerId !== undefined && hasSkill(state.players[proc.blockerId]!, "Claws") && player.av > CLAWS_ARMOUR;
+  proc.blockerId !== undefined && hasSkill(state.players[proc.blockerId]!, "Claws") && player.av > CLAWS_ARMOUR && !hasSkill(player, "Iron Hard Skin");
 
 /** Name of Claws in armour roll reasons. */
 const clawsNote = (state: GameState, proc: P<"KnockDown">, player: PlayerState) =>
@@ -243,6 +243,7 @@ export const STEADY_FOOTING_TARGET = 6;
  * Then the player goes prone (a turnover if `turnover`), armour, injury and finally a bounce if they held the ball.
  * Claws (from the blocker): a natural 8+ on the armour roll breaks it, whatever the AV. Otherwise Mighty Blow (+X, from
  * the blocker) goes to the armour roll when it breaks the armour, and to the injury roll if not (they do not stack).
+ * Iron Hard Skin: Claws does not work and the armour roll is never modified.
  */
 export const KnockDown: Handler<P<"KnockDown">> = {
   step(ctx, proc, action) {
@@ -295,7 +296,8 @@ export const KnockDown: Handler<P<"KnockDown">> = {
           proc.stage = "injury";
           return "continue";
         }
-        if (bonus > 0 && roll < player.av && roll + bonus >= player.av) {
+        // Iron Hard Skin: no modifier on the armour roll, so Mighty Blow can only go to the injury roll.
+        if (bonus > 0 && !hasSkill(player, "Iron Hard Skin") && roll < player.av && roll + bonus >= player.av) {
           proc.mightyBlowOnArmour = true;
           roll += bonus;
           ctx.emit({ type: "SkillUsed", playerId: proc.mightyBlow!.playerId, skill: "Mighty Blow" });

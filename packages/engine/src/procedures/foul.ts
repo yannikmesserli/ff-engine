@@ -16,9 +16,10 @@ export const BRIBE_TARGET = 2;
 /**
  * Foul assists: +1 per team-mate next to the victim who is not marked by any
  * opponent, -1 per victim team-mate next to the fouler who is not marked by anyone but the fouler. Only players
- * exerting a tackle zone assist or mark.
+ * exerting a tackle zone assist or mark. None against Iron Hard Skin, whose armour roll cannot be modified.
  */
 export function foulAssists(state: GameState, fouler: PlayerState & { at: Square }, victim: PlayerState & { at: Square }): number {
+  if (hasSkill(victim, "Iron Hard Skin")) return 0;
   const offensive = adjacent(victim.at).filter((s) => {
     const helper = tackleZoneAt(state, s);
     if (!helper || helper.side !== fouler.side || helper.id === fouler.id) return false;
@@ -64,8 +65,8 @@ export const Foul: Handler<P<"Foul">> = {
         if (action === null) return "wait";
         proc.armour = ctx.roll(action, [...ARMOUR_DICE], `Armour ${victim.av}+ (foul)`);
         const unmodified = proc.armour[0]! + proc.armour[1]! + proc.assists;
-        // Dirty Player goes to the armour roll unless the assists alone break it.
-        proc.dirtyPlayerOnArmour = hasSkill(fouler, "Dirty Player") && unmodified < victim.av;
+        // Dirty Player goes to the armour roll unless the assists alone break it (or Iron Hard Skin forbids it).
+        proc.dirtyPlayerOnArmour = hasSkill(fouler, "Dirty Player") && !hasSkill(victim, "Iron Hard Skin") && unmodified < victim.av;
         const roll = unmodified + (proc.dirtyPlayerOnArmour ? 1 : 0);
         const broken = roll >= victim.av;
         ctx.emit(broken ? { type: "ArmourBroken", playerId: victim.id, roll } : { type: "ArmourHeld", playerId: victim.id, roll });
