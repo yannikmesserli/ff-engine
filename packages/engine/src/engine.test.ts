@@ -1243,6 +1243,28 @@ describe("engine", () => {
       });
     });
 
+    describe("Break Tackle", () => {
+      // home-1 dodges from (12,6) to (11,5): a 3+ dodge.
+      const breaker = (skills: string[] = []) => withSkills(toFirstTurn(), { "home-1": ["Break Tackle"], "away-1": skills });
+
+      it("once per turn, adds +1 (ST 3) to a Dodge roll that would fail without it", () => {
+        let s = apply(breaker(), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(2));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-1", skill: "Break Tackle" });
+        expect(s.players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing" });
+        // Back next to away-1 and out again: no Break Tackle left.
+        s = apply(s, ...move({ x: 12, y: 5 }), ...move({ x: 11, y: 4 }), roll(2));
+        expect(types(s)).toContain("USE_REROLL");
+      });
+
+      it("is not used when the roll succeeds anyway, and saves a dodge from Diving Tackle", () => {
+        const s = apply(breaker(), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(3));
+        expect(s.players["home-1"]!.usedSkills).not.toContain("Break Tackle");
+        const tackled = apply(breaker(["Diving Tackle"]), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(4), { type: "SELECT_PLAYERS", playerIds: ["away-1"] });
+        expect(tackled.players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing", usedSkills: ["Break Tackle"] });
+        expect(tackled.players["away-1"]!.status).toBe("prone");
+      });
+    });
+
     describe("Hit and Run", () => {
       const runner = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Hit and Run"] });
 

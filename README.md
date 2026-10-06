@@ -188,6 +188,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   (a re-roll keeps the -2), and the tackler is placed prone in the square left, without an armour roll.
 - Hatred(X): when blocking a player with keyword X (Blitz and Frenzy blocks included), the attacker may re-roll a
   single Skull die instead of the block re-roll, without spending a team re-roll.
+- Break Tackle: once per turn, +1 to a Dodge roll with ST 3 or less, +2 with ST 4, +3 with ST 5 or more, used only when
+  the roll would fail without it (Diving Tackle included).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

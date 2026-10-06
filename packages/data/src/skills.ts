@@ -32,7 +32,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   // Strength
   "Arm Bar": "+1 to the armour or injury roll of an opponent who falls while dodging, jumping or leaping out of this player's tackle zone.",
   Brawler: "When blocking, may re-roll one Both Down result.",
-  "Break Tackle": "Adds to Dodge rolls: +1 with ST 3 or less, +2 with ST 4, +3 with ST 5 or more.",
+  "Break Tackle": "Once per turn, adds to a failed Dodge roll: +1 with ST 3 or less, +2 with ST 4, +3 with ST 5 or more.",
   Bullseye: "When throwing a team-mate, a superb throw lands in the target square without scattering.",
   Grab: "When this player pushes an opponent back with a block, chooses any free adjacent square for them; cancels Sidestep.",
   Guard: "Assists blocks even when marked by other opponents.",

@@ -78,6 +78,31 @@ function finish(state: GameState, proc: P<"Check">, success: boolean): StepResul
   return "done";
 }
 
+/** Break Tackle: +1 to a Dodge roll with ST 3 or less, +2 with ST 4, +3 with ST 5 or more. */
+export const breakTackleBonus = (player: PlayerState) => (player.st <= 3 ? 1 : player.st === 4 ? 2 : 3);
+
+/** The Break Tackle bonus the player can still add to this roll: a dodge, once per turn. */
+const breakTackle = (proc: P<"Check">, player: PlayerState) =>
+  proc.kind === "dodge" && hasSkill(player, "Break Tackle") && !player.usedSkills.includes("Break Tackle") ? breakTackleBonus(player) : 0;
+
+/** Whether the roll succeeds; Break Tackle is only used when it turns a failure into a success. */
+function resolve(proc: P<"Check">, player: PlayerState): { success: boolean; breakTackle: number } {
+  if (passes(proc.roll!, proc.modifier, proc.target)) return { success: true, breakTackle: 0 };
+  const bonus = breakTackle(proc, player);
+  return bonus > 0 && passes(proc.roll!, proc.modifier + bonus, proc.target) ? { success: true, breakTackle: bonus } : { success: false, breakTackle: 0 };
+}
+
+/** Report the roll, with Break Tackle's bonus when it was needed. */
+function report(ctx: Ctx, proc: P<"Check">, player: PlayerState) {
+  const { success, breakTackle } = resolve(proc, player);
+  ctx.emit({ type: "CheckResult", kind: proc.kind, playerId: player.id, success, roll: proc.roll!, target: proc.target - proc.modifier - breakTackle });
+  if (breakTackle > 0) {
+    player.usedSkills.push("Break Tackle");
+    ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Break Tackle" });
+  }
+  return success;
+}
+
 /** After a roll: a skill re-roll, the team re-roll decision, or the result. */
 function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolean): StepResult {
   const { state } = ctx;
@@ -101,7 +126,8 @@ function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolea
  * A single D6 roll against a target (AG for agility rolls), with an optional team re-roll.
  * `modifier` is added to the roll: -1 per tackle zone is the same as +1 to the target.
  * Diving Tackle: after a successful dodge or jump that -2 would turn into a failure, the opposing coach may pick one
- * eligible tackler; the roll then fails, and a re-roll keeps the -2.
+ * eligible tackler; the roll then fails (unless Break Tackle saves it), and a re-roll keeps the -2.
+ * Break Tackle: once per turn, its bonus is added to a Dodge roll that would fail without it.
  * Writes its outcome to `state.lastCheck`.
  */
 export const Check: Handler<P<"Check">> = {
@@ -127,23 +153,22 @@ export const Check: Handler<P<"Check">> = {
       const id = playerIds[0];
       const candidates = divingTacklers(state, proc, player);
       if (playerIds.length > 1 || (id !== undefined && !candidates.some((c) => c.id === id))) ctx.reject("Invalid diving tackler.");
-      if (id === undefined) return finish(state, proc, true);
-      proc.divingTacklerId = id;
-      proc.modifier -= DIVING_TACKLE_MODIFIER;
-      ctx.emit({ type: "SkillUsed", playerId: id, skill: "Diving Tackle" });
-      ctx.emit({ type: "CheckResult", kind: proc.kind, playerId: player.id, success: false, roll: proc.roll!, target: proc.target - proc.modifier });
-      return settle(ctx, proc, player, false);
+      if (id !== undefined) {
+        proc.divingTacklerId = id;
+        proc.modifier -= DIVING_TACKLE_MODIFIER;
+        ctx.emit({ type: "SkillUsed", playerId: id, skill: "Diving Tackle" });
+      }
+      return settle(ctx, proc, player, report(ctx, proc, player));
     }
     const reason = `${CHECK_NAMES[proc.kind]} ${neededRoll(proc.target, proc.modifier)}+`;
     const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], reason);
-    const success = passes(roll!, proc.modifier, proc.target);
     proc.roll = roll!;
-    ctx.emit({ type: "CheckResult", kind: proc.kind, playerId: player.id, success, roll: roll!, target: proc.target - proc.modifier });
-    if (success && divingTacklers(state, proc, player).length > 0 && !passes(roll!, proc.modifier - DIVING_TACKLE_MODIFIER, proc.target)) {
+    // Diving Tackle is decided before the result (and any Break Tackle) is settled.
+    if (resolve(proc, player).success && divingTacklers(state, proc, player).length > 0 && !passes(roll!, proc.modifier - DIVING_TACKLE_MODIFIER, proc.target)) {
       proc.stage = "divingTackle";
       return "wait";
     }
-    return settle(ctx, proc, player, success);
+    return settle(ctx, proc, player, report(ctx, proc, player));
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
