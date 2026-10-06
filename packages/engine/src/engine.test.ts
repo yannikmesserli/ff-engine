@@ -3,6 +3,7 @@ import { interceptionTarget } from "./procedures/pass";
 import {
   CASUALTY_DICE,
   blockDice,
+  flightMarkers,
   IllegalActionError,
   casualtyFor,
   createGame,
@@ -2457,6 +2458,27 @@ describe("engine", () => {
       const stunned = Object.values(s.players).filter((p) => p.status === "stunned");
       expect(stunned).toHaveLength(2);
       expect(stunned.every((p) => p.side === "home")).toBe(true);
+    });
+  });
+
+  describe("flight markers", () => {
+    it("show the kick-off target, then where the ball comes down until it lands", () => {
+      let s = toKick({ x: 5, y: 1 });
+      expect(flightMarkers(s)).toEqual([{ kind: "ball", square: { x: 5, y: 1 }, state: "aimed" }]);
+      s = apply(s, roll(7, 1));
+      expect(flightMarkers(s)).toEqual([{ kind: "ball", square: { x: 4, y: 1 }, state: "landing" }]);
+      expect(flightMarkers(apply(s, QUIET_EVENT, roll(5)))).toEqual([]);
+    });
+
+    it("show a pass target before the throw, and a bomb held, landing or exploding", () => {
+      const passing = edit(toFirstTurn(), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+      const aimed = apply(passing, declare("home-4", "pass"), { type: "THROW", square: { x: 6, y: 4 } });
+      expect(flightMarkers(aimed)).toEqual([{ kind: "ball", square: { x: 6, y: 4 }, state: "aimed" }]);
+      const bomber = edit(toFirstTurn(), (c) => void (c.players["home-4"]!.skills = ["Bombardier"]));
+      const caught = apply(bomber, declare("home-4", "bomb"), { type: "THROW", square: { x: 10, y: 6 } }, roll(6));
+      expect(flightMarkers(caught)).toEqual([{ kind: "bomb", square: { x: 10, y: 6 }, state: "landing" }]);
+      expect(flightMarkers(apply(caught, roll(3)))).toEqual([{ kind: "bomb", square: { x: 10, y: 6 }, state: "held" }]);
+      expect(flightMarkers(apply(caught, roll(1), { type: "DECLINE_REROLL" }))).toContainEqual({ kind: "bomb", square: { x: 10, y: 6 }, state: "exploding" });
     });
   });
 

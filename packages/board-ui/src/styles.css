@@ -76,6 +76,20 @@
 .bb-on-square > * { pointer-events: auto; }
 .bb-ball { z-index: 3; }
 
+/* A kicked, thrown or exploding ball or bomb (flightMarkers): aimed (dashed, it may still move), coming down (solid). */
+.bb-flight {
+  position: absolute; width: var(--bb-square); height: var(--bb-square); pointer-events: none; z-index: 4;
+  display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: 50%;
+}
+.bb-flight img { width: 22px; height: 22px; }
+.bb-flight-aimed { border: 2px dashed #ff8a3d; }
+.bb-flight-aimed img { opacity: 0.55; }
+.bb-flight-landing { border: 2px solid #ff8a3d; animation: bb-flight-pulse 1s ease-in-out infinite alternate; }
+.bb-flight-held { align-items: flex-end; justify-content: flex-end; border-radius: 0; }
+.bb-flight-held img { width: 16px; height: 16px; }
+.bb-flight-exploding { box-shadow: 0 0 10px 6px rgba(255, 112, 32, 0.85); background: rgba(255, 160, 0, 0.35); }
+@keyframes bb-flight-pulse { from { box-shadow: 0 0 0 0 rgba(255, 138, 61, 0.6); } to { box-shadow: 0 0 6px 3px rgba(255, 138, 61, 0.6); } }
+
 .bb-player {
   position: relative; width: var(--bb-square); height: var(--bb-square);
   display: flex; align-items: center; justify-content: center; z-index: 2; touch-action: none;

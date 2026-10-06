@@ -111,7 +111,8 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
   (`other`, `sameSquare`, `offset`, `inBounds`, `inHalf`, `adjacent`, `playerAt`, `teamPlayers`, `tackleZones`,
   `hasTackleZone` (standing and not distracted), `ballCarrier`...).
 - Dice: `DIE_FACES`, `BLOCK_FACES`, `SCATTER`, `isCorner`, `throwInDirection`.
-- Rules helpers for the UI: `setupErrors`, `KICKOFF_TABLE`, `openPlayers`, `weatherFor`, `declarableActions`,
+- Rules helpers for the UI: `flightMarkers` (a kicked, thrown or exploding ball or bomb: aimed square, landing square),
+  `setupErrors`, `KICKOFF_TABLE`, `openPlayers`, `weatherFor`, `declarableActions`,
   `legalMoves`, `adjacentTargets`, `blockDice`, `pushbackSquares`, `foulAssists`, `foulTargets`,
   `RANGE_MODIFIER`, `evaluatePass`, `passRange`, `throwTargets`, `handOffTargets`, `interceptors`, `underRuler`,
   `neededRoll`, `injuryOutcome`, `casualtyFor`, `CASUALTY_DICE`, `hasSkill`, `skillName`, `skillValue`.

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import {
+  flightMarkers,
   PITCH_HEIGHT,
   PITCH_WIDTH,
   isOnPitch,
@@ -57,6 +58,9 @@ interface BoardProps {
   /** Showing the pass range overlay: square clicks throw instead of moving. */
   aiming: boolean;
 }
+
+/** Alt text of the flight markers. */
+const FLIGHT_NAMES = { aimed: "aimed here", landing: "coming down here", held: "to throw again", exploding: "exploding" } as const;
 
 /** "2D" when the attacker picks, "2D!" when the defender picks. */
 const diceLabel = (dice: number) => `${Math.abs(dice)}D${dice < 0 ? "!" : ""}`;
@@ -223,6 +227,11 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
             {state.ball.square && !state.ball.carried && (
               <img className="bb-ball" src={`${assets}/ball/sball_30x30.png`} alt="ball" style={at(state.ball.square)} />
             )}
+            {flightMarkers(state).map((m) => (
+              <div key={`${m.kind}-${m.state}-${squareId(m.square)}`} className={`bb-flight bb-flight-${m.state}`} style={at(m.square)}>
+                <img src={`${assets}/ball/${m.kind === "bomb" ? "sbomb_30x30.png" : "sball_30x30.png"}`} alt={`${m.kind} ${FLIGHT_NAMES[m.state]}`} />
+              </div>
+            ))}
           </div>
           <Dugout side="away" state={state} droppable={placement?.side === "away"} render={token} />
         </div>
