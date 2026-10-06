@@ -79,6 +79,7 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   if (blitzFor) return `click the opponent ${state.players[blitzFor]!.name} will blitz`;
   if (aiming && throwingBomb(state)) return "click a square (or a player) to throw the bomb to";
   if (aiming) return "click a square (or a team-mate) to throw to";
+  if (main.type === "PLACE_BALL" && state.stack.at(-1)?.type === "SafeHands") return "Safe Pair of Hands: click a free square next to the player to place the ball";
   if (main.type === "THROW" && throwingBomb(state)) {
     const top = state.stack.at(-1);
     return top?.type === "Pass" ? `${state.players[top.throwerId]!.name} caught the bomb and must throw it again: aim it` : "aim the bomb (no move before throwing it)";

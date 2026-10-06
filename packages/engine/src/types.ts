@@ -253,6 +253,11 @@ export type Procedure =
   | { type: "Touchback"; side: Side }
   | { type: "Bounce"; from: Square; kickoff: boolean; receiving: Side | null }
   | { type: "ThrowIn"; from: Square }
+  /**
+   * Safe Pair of Hands: the player was knocked down or placed prone holding the ball, which lies on `square`; their coach
+   * may place it on a free adjacent square instead of letting it bounce.
+   */
+  | { type: "SafeHands"; playerId: string; square: Square; stage: "ask" | "place" }
   | {
       type: "Catch";
       playerId: string;
@@ -503,6 +508,8 @@ export type Procedure =
       mightyBlowOnArmour?: boolean;
       /** Steady Footing was offered (and failed or declined). */
       steadied?: boolean;
+      /** The player fell over (a failed dodge, jump, Rush or landing), as opposed to being knocked down: no Safe Pair of Hands. */
+      fallsOver?: boolean;
       stage: "fall" | "steady" | "steadyResult" | "armour" | "injury" | "bounce";
       square?: Square;
       hadBall?: boolean;

@@ -1316,6 +1316,24 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    describe("Safe Pair of Hands", () => {
+      it("a ball carrier knocked down may place the ball on a free adjacent square instead of a bounce", () => {
+        const s0 = edit(withSkills(toFirstTurn(), { "away-2": ["Safe Pair of Hands"] }), (c) => (c.ball = { square: { x: 13, y: 7 }, carried: true }));
+        let s = apply(blockAway2(s0), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(1, 1));
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Safe Pair of Hands" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(find(s, "PLACE_BALL")?.squares).toContainEqual({ x: 15, y: 7 });
+        s = apply(s, { type: "PLACE_BALL", square: { x: 15, y: 7 } });
+        expect(s.ball).toEqual({ square: { x: 15, y: 7 }, carried: false });
+      });
+
+      it("not when the player falls over (a failed dodge): the ball bounces", () => {
+        const s0 = edit(withSkills(toFirstTurn(), { "home-1": ["Safe Pair of Hands"] }), (c) => (c.ball = { square: { x: 12, y: 6 }, carried: true }));
+        const s = apply(s0, startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1), { type: "DECLINE_REROLL" }, roll(1, 1));
+        expect(find(s, "ROLL")?.reason).toBe("Bounce");
+      });
+    });
+
     it("Grab: in a Block action, the attacker may push the defender to any free adjacent square; Sidestep does not work", () => {
       const grab = withSkills(toFirstTurn(), { "home-2": ["Grab"], "away-2": ["Sidestep"] });
       let s = apply(blockAway2(grab), roll(3), pick);

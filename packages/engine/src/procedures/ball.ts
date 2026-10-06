@@ -1,7 +1,8 @@
 import type { Handler } from "../context";
 import type { DiceSpec, GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { SCATTER, isCorner, throwInDirection } from "../dice";
-import { inBounds, isOnPitch, offset, teamPlayers } from "../pitch";
+import { adjacent, inBounds, isOnPitch, offset, playerAt, sameSquare, teamPlayers } from "../pitch";
+import { hasSkill } from "../skills";
 import { checkTouchdown, disturbingPresences, getPlayer, landBall, squareOf, weatherModifier } from "./helpers";
 import { markingZones } from "./pass";
 
@@ -119,4 +120,52 @@ export const Catch: Handler<P<"Catch">> = {
     return "done";
   },
   actions: () => [],
+};
+
+/** Safe Pair of Hands: free squares next to where the ball was dropped. */
+const safeHandsSquares = (state: GameState, square: Square) => adjacent(square).filter((s) => !playerAt(state, s));
+
+/**
+ * What happens to the ball a player drops: it bounces, unless they were knocked down or placed prone (not fell over)
+ * and have Safe Pair of Hands.
+ */
+export function dropBall(player: PlayerState, square: Square, knockedDown = true): Procedure {
+  return knockedDown && hasSkill(player, "Safe Pair of Hands")
+    ? { type: "SafeHands", playerId: player.id, square: { ...square }, stage: "ask" }
+    : { type: "Bounce", from: { ...square }, kickoff: false, receiving: null };
+}
+
+/**
+ * Safe Pair of Hands: a player knocked down or placed prone with the ball (and not distracted) may place it on a free
+ * adjacent square, where it stays, instead of letting it bounce; there is no catch roll.
+ */
+export const SafeHands: Handler<P<"SafeHands">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const player = getPlayer(ctx, proc.playerId);
+    const squares = safeHandsSquares(state, proc.square);
+    if (squares.length === 0 || player.distracted) {
+      ctx.push({ type: "Bounce", from: { ...proc.square }, kickoff: false, receiving: null });
+      return "done";
+    }
+    if (action === null) return "wait";
+    if (proc.stage === "ask") {
+      if (!ctx.expect(action, "USE_SKILL").use) {
+        ctx.push({ type: "Bounce", from: { ...proc.square }, kickoff: false, receiving: null });
+        return "done";
+      }
+      proc.stage = "place";
+      return "wait";
+    }
+    const { square } = ctx.expect(action, "PLACE_BALL");
+    if (!squares.some((s) => sameSquare(s, square))) ctx.reject("The ball must be placed on a free adjacent square.");
+    state.ball = { square: { ...square }, carried: false };
+    ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Safe Pair of Hands" });
+    return "done";
+  },
+  actions(state, proc) {
+    const player = state.players[proc.playerId]!;
+    if (proc.stage === "ask") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Safe Pair of Hands" }];
+    return [{ type: "PLACE_BALL", side: player.side, squares: safeHandsSquares(state, proc.square) }];
+  },
 };

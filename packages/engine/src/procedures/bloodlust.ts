@@ -3,6 +3,7 @@ import type { GameState, PlayerState, Procedure } from "../types";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, playerAt } from "../pitch";
 import { ARMOUR_DICE } from "./checks";
 import { injure } from "./injury";
+import { dropBall } from "./ball";
 import { getPlayer, squareOf } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -66,7 +67,7 @@ export const Feed: Handler<P<"Feed">> = {
     const victim = getPlayer(ctx, proc.victimId!);
     const square = squareOf(ctx, victim);
     const [a, b] = ctx.roll(action, [...ARMOUR_DICE], "Injury (bitten)");
-    if (proc.dropped) ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+    if (proc.dropped) ctx.push(dropBall(victim, square));
     injure(ctx, victim, a! + b!, { bitten: true });
     const activation = state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === player.id);
     if (activation) activation.thirsty = false;

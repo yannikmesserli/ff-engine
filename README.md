@@ -228,6 +228,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Not for a failed Rush, nor against Iron Hard Skin.
 - Grab: in a Block action (not a Blitz), the attacker may push the defender to any free square next to them, besides
   the usual three, and the defender's Sidestep does not work.
+- Safe Pair of Hands: a ball carrier who is knocked down or placed prone (not one who falls over after a failed dodge,
+  jump, Rush or landing), and is not distracted, may place the ball on a free adjacent square instead of letting it
+  bounce; turnovers are unchanged.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

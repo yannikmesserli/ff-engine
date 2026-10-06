@@ -3,6 +3,7 @@ import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
+import { dropBall } from "./ball";
 import { hasSkill, skillName, skillValue } from "../skills";
 import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proTemplate, proTemplates, rushModifier, squareOf, stepPro, useTeamReroll } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
@@ -212,7 +213,7 @@ function wrestle(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
     if (!carrying) continue;
     state.ball.carried = false;
     if (player.side === state.activeSide) state.turnover = true;
-    ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+    ctx.push(dropBall(player, square));
   }
   const activation = state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === attacker.id);
   if (activation) activation.finished = true;
@@ -388,7 +389,7 @@ export const Block: Handler<P<"Block">> = {
       }
       case "rushResult":
         // The block goes on after the fall only if Steady Footing kept the attacker on their feet.
-        if (state.lastCheck?.success === false) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+        if (state.lastCheck?.success === false) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall", fallsOver: true });
         proc.stage = "dauntless";
         return "continue";
       case "dauntless": {
@@ -752,7 +753,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         return "continue";
       }
       case "rushResult":
-        if (state.lastCheck?.success === false) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+        if (state.lastCheck?.success === false) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall", fallsOver: true });
         proc.stage = "roll";
         return "continue";
       case "roll":
@@ -800,7 +801,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         const square = squareOf(ctx, victim);
         const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury");
         // The ball bounces once the injury is resolved.
-        if (proc.dropped) ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+        if (proc.dropped) ctx.push(dropBall(victim, square));
         injure(ctx, victim, a! + b!);
         return "done";
       }

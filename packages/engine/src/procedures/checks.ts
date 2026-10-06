@@ -5,6 +5,7 @@ import { adjacent, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackle
 import { hasSkill } from "../skills";
 import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollsLeft, rollLoner, squareOf, stepPro, useTeamReroll } from "./helpers";
 import { injure } from "./injury";
+import { dropBall } from "./ball";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -243,7 +244,8 @@ export const STEADY_FOOTING_TARGET = 6;
 /**
  * Steady Footing first: a standing, undistracted player with the skill may roll a D6 (team re-roll allowed in their own
  * turn); on a 6 they stay on their feet, holding the ball, and there is no turnover.
- * Then the player goes prone (a turnover if `turnover`), armour, injury and finally a bounce if they held the ball.
+ * Then the player goes prone (a turnover if `turnover`), armour, injury and finally a bounce if they held the ball
+ * (Safe Pair of Hands may place it instead, unless they fell over).
  * Claws (from the blocker): a natural 8+ on the armour roll breaks it, whatever the AV. Otherwise Mighty Blow (+X, from
  * the blocker) goes to the armour roll when it breaks the armour, and to the injury roll if not (they do not stack).
  * Iron Hard Skin: Claws does not work and the armour roll is never modified.
@@ -326,7 +328,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         return "continue";
       }
       case "bounce":
-        if (proc.hadBall) ctx.push({ type: "Bounce", from: proc.square!, kickoff: false, receiving: null });
+        if (proc.hadBall) ctx.push(dropBall(player, proc.square!, !proc.fallsOver));
         return "done";
     }
   },

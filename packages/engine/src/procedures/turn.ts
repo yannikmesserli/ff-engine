@@ -2,6 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, revolted, rollFoulAppearance } from "./block";
+import { dropBall } from "./ball";
 import { handOffTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
@@ -722,7 +723,7 @@ function diveIn(ctx: Ctx, tackler: PlayerState, square: Square): Procedure[] {
   ctx.emit({ type: "PlayerPlacedProne", playerId: tackler.id });
   if (!carrying) return [];
   ctx.state.ball = { square: { ...square }, carried: false };
-  return [{ type: "Bounce", from: { ...square }, kickoff: false, receiving: null }];
+  return [dropBall(tackler, square)];
 }
 
 /**
@@ -780,6 +781,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         playerId: player.id,
         turnover: !proc.onTheBall,
         stage: "fall",
+        fallsOver: true,
         ...(bar ? { mightyBlow: { playerId: bar.id, bonus: 1, skill: "Arm Bar" } } : {}),
       });
       proc.stage = "fell";

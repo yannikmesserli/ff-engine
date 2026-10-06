@@ -41,7 +41,7 @@ function setDown(ctx: Ctx, player: PlayerState, at: Square) {
 
 /** A failed landing: knocked down where they came down, a turnover only if they held the ball. */
 const fall = (ctx: Ctx, player: PlayerState) =>
-  ctx.push({ type: "KnockDown", playerId: player.id, turnover: ballCarrier(ctx.state)?.id === player.id, stage: "fall" });
+  ctx.push({ type: "KnockDown", playerId: player.id, turnover: ballCarrier(ctx.state)?.id === player.id, stage: "fall", fallsOver: true });
 
 /** Always Hungry: the thrower throws on 2+; otherwise the team-mate escapes (thrown as a fumble) on 2+, or is eaten. */
 export const HUNGER_TARGET = 2;
