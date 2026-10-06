@@ -70,4 +70,28 @@ describe("scenarios", () => {
     expect(s.players["home-1"]).toMatchObject({ at: { x: 11, y: 7 }, status: "standing", usedSkills: ["Break Tackle"] });
     expect(s.players["away-1"]).toMatchObject({ at: { x: 12, y: 7 }, status: "prone" });
   });
+
+  it("block-followups: Fend, the blitzing Juggernaut, then Sidestep, Taunt and Hit and Run", () => {
+    const start = load("block-followups");
+    const block = (s: GameState, attacker: string, defender: string, face: number, blitz = false) =>
+      applyActions(s, [
+        blitz ? { type: "START_ACTION", playerId: attacker, action: "blitz", targetId: defender } : { type: "START_ACTION", playerId: attacker, action: "block" },
+        { type: "BLOCK", targetId: defender },
+        { type: "ROLL", values: [face] },
+        { type: "CHOOSE_BLOCK_DIE", index: 0 },
+      ]);
+    let s = block(start, "home-1", "away-1", 3);
+    s = step(s, { type: "PUSH", square: { x: 14, y: 4 } }).state;
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "away", skill: "Fend" });
+    s = block(start, "home-2", "away-2", 3, true);
+    s = step(s, { type: "PUSH", square: { x: 14, y: 7 } }).state;
+    expect(find(s, "FOLLOW_UP")).toBeDefined();
+    s = block(start, "home-3", "away-3", 3);
+    expect(find(s, "PUSH")).toMatchObject({ side: "away" });
+    s = step(s, { type: "PUSH", square: { x: 13, y: 11 } }).state;
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "away", skill: "Taunt" });
+    s = step(s, { type: "USE_SKILL", use: false }).state;
+    s = step(s, { type: "FOLLOW_UP", follow: false }).state;
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "home", skill: "Hit and Run" });
+  });
 });

@@ -261,4 +261,40 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "block-followups",
+    title: "Follow-ups: Frenzy, Fend, Juggernaut, Stand Firm, Sidestep, Taunt, Hit and Run",
+    instructions: [
+      "Three one-die blocks across the line of scrimmage: enter the block die by hand (Physical dice) and pick the result: 3 or 4 is a Push, 6 a Defender Down.",
+      "Top: Hans (#1, Frenzy) blocks Grishnak (#1, Fend). On a push the away coach may use Fend: Hans then cannot follow up (Frenzy included) and gets no second block. Without Fend, Frenzy must follow up and blocks again.",
+      "Middle: Otto (#2, Juggernaut) declares a Blitz on Ugluk (#2, Stand Firm and Fend): Juggernaut cancels both, so Ugluk is pushed and Otto may follow up. Declared as a plain Block instead, Ugluk may stand firm or fend.",
+      "Bottom: Fritz (#3, Block, Hit and Run) blocks Snaga (#3, Sidestep, Taunt): the away coach picks any free square for the push (Sidestep), then may force Fritz to follow up (Taunt). Afterwards Fritz may step to a free square away from opponents (Hit and Run).",
+    ],
+    home: {
+      name: "Altdorf Shovers",
+      roster: "Human",
+      rerolls: 3,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman", skills: ["Frenzy"] },
+        { number: 2, name: "Otto", position: "Human Lineman", skills: ["Juggernaut"] },
+        { number: 3, name: "Fritz", position: "Human Lineman", skills: ["Block", "Hit and Run"] },
+      ],
+    },
+    away: {
+      name: "Stubborn Gits",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman", skills: ["Fend"] },
+        { number: 2, name: "Ugluk", position: "Orc Lineman", skills: ["Stand Firm", "Fend"] },
+        { number: 3, name: "Snaga", position: "Orc Lineman", skills: ["Sidestep", "Taunt"] },
+      ],
+    },
+    seed: 6,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 4 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 4 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 10 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];
