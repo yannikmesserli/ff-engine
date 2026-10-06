@@ -114,7 +114,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   Swoop: "When thrown, may move in a straight line instead of scattering, and re-roll the landing.",
   "Take Root": "After declaring an action, roll a D6: on a 1 the player is rooted (cannot move or be pushed) for the rest of the drive.",
   "Throw Team-mate": "Once per turn, may throw an adjacent team-mate with Right Stuff to a Quick or Short square.",
-  "Timmm-ber!": "Standing up with MA 2 or less: +1 to the roll per adjacent standing team-mate.",
+  "Timmm-ber!": "Standing up with MA 2 or less: +1 to the roll per adjacent standing team-mate not marked by an opponent (a 1 still fails).",
   Titchy: "+1 to Dodge rolls, but opponents ignore this player's tackle zone when dodging into it.",
   Trickster: "When about to be blocked, may first move to another free square next to the attacker.",
   "Unchannelled Fury": "After declaring an action, roll a D6 (+2 for a Block or Blitz): on 1-3 the action is lost.",

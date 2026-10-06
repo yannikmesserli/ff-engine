@@ -1101,6 +1101,18 @@ describe("engine", () => {
       });
     });
 
+    it("Timmm-ber!: +1 to stand up per adjacent team-mate not marked by an opponent", () => {
+      // home-2 lies at (11,8), next to home-3 (12,8, marked by away-2 and away-3) and home-8 (10,8).
+      const s = edit(withSkills(toFirstTurn(), { "home-2": ["Timmm-ber!"] }), (c) => {
+        Object.assign(c.players["home-2"]!, { ma: 2, status: "prone", at: { x: 11, y: 8 } });
+      });
+      expect(find(apply(s, startMove("home-2")), "ROLL")?.reason).toBe("Stand up 3+ (Home 2)");
+      const standUp = apply(place(s, { "away-2": { x: 20, y: 7 }, "away-3": { x: 20, y: 8 } }), startMove("home-2"));
+      expect(find(standUp, "ROLL")?.reason).toBe("Stand up 2+ (Home 2)");
+      expect(apply(standUp, roll(1), { type: "DECLINE_REROLL" }).players["home-2"]!.status).toBe("prone");
+      expect(apply(standUp, roll(2)).players["home-2"]!.status).toBe("standing");
+    });
+
     describe("Animal Savagery", () => {
       const savage = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Animal Savagery", "Mighty Blow(+1)"] });
 

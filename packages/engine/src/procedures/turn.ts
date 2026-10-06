@@ -268,6 +268,14 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   return actions;
 }
 
+/** Timmm-ber!: +1 to the stand-up roll per adjacent team-mate with a tackle zone who is not marked by an opponent. */
+function standUpAssists(state: GameState, player: PlayerState & { at: Square }): number {
+  return adjacent(player.at).filter((s) => {
+    const helper = tackleZoneAt(state, s);
+    return helper !== undefined && helper.side === player.side && tackleZones(state, player.side, s) === 0;
+  }).length;
+}
+
 /** The Animal Savagery, Bone Head, Really Stupid, Unchannelled Fury or Bloodlust roll a player makes when activated, if any. */
 function confusionCheck(state: GameState, player: PlayerState & { at: Square }, action: PlayerActionType): P<"Check"> | null {
   const check = (kind: "savagery" | "bonehead" | "reallystupid" | "fury" | "bloodlust", target: number): P<"Check"> =>
@@ -296,6 +304,7 @@ function confusionCheck(state: GameState, player: PlayerState & { at: Square }, 
  * Animal Savagery (same roll as Unchannelled Fury): on a failure the player lashes out at an adjacent standing team-mate
  * (the coach picks), who is knocked down, and the action ends; a turnover only if that team-mate held the ball. With
  * nobody to lash out at, the action is lost and the player is distracted.
+ * Standing up with MA below 3 takes a 4+ roll (Timmm-ber!: +1 per unmarked team-mate next to the player; a 1 always fails).
  * Take Root (standing players only, 2+): a failure roots the player, who keeps their action but cannot move.
  * Jump Up: stand up for free (no movement spent, no roll); a prone player declaring a Block stands up on an AG roll
  * with +1 instead (a failure ends the action, without a turnover).
@@ -387,7 +396,8 @@ export const MoveAction: Handler<P<"MoveAction">> = {
           ctx.push({ type: "Check", kind: "jumpup", playerId: player.id, target: player.ag, modifier: JUMP_UP_MODIFIER, stage: "roll", rerolled: false });
         }
       } else if (player.status === "prone" && player.ma < STAND_UP_COST) {
-        ctx.push({ type: "Check", kind: "standup", playerId: player.id, target: STAND_UP_TARGET, modifier: 0, stage: "roll", rerolled: false });
+        const modifier = hasSkill(player, "Timmm-ber!") ? standUpAssists(state, { ...player, at: squareOf(ctx, player) }) : 0;
+        ctx.push({ type: "Check", kind: "standup", playerId: player.id, target: STAND_UP_TARGET, modifier, stage: "roll", rerolled: false });
       }
       return "continue";
     }
