@@ -494,9 +494,9 @@ export type Procedure =
       turnover: boolean;
       /**
        * Mighty Blow of the blocker who knocked the player down: added to the armour or the injury roll (only to the
-       * armour roll when `armourOnly`: Animal Savagery).
+       * armour roll when `armourOnly`: Animal Savagery). `skill` names it when it is another skill (Arm Bar).
        */
-      mightyBlow?: { playerId: string; bonus: number; armourOnly?: boolean };
+      mightyBlow?: { playerId: string; bonus: number; armourOnly?: boolean; skill?: string };
       /** The opponent whose block knocked the player down (Claws, Plague Ridden). */
       blockerId?: string;
       /** Mighty Blow broke the armour, so it does not apply to the injury roll. */

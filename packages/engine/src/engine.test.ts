@@ -1316,6 +1316,16 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    it("Arm Bar: +1 to the armour (or injury) roll of a player falling after a dodge out of the tackle zone", () => {
+      // home-1 dodges from (12,6), next to away-1, to (11,5) and fails.
+      const s = apply(withSkills(toFirstTurn(), { "away-1": ["Arm Bar"] }), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1), { type: "DECLINE_REROLL" });
+      expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Home 1) (+1 Arm Bar)");
+      expect(apply(s, roll(3, 4)).log).toContainEqual({ type: "SkillUsed", playerId: "away-1", skill: "Arm Bar" });
+      // Not for a failed Rush.
+      const rush = apply(withSkills(toFirstTurn(), { "away-1": ["Arm Bar"] }), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH, roll(1), { type: "DECLINE_REROLL" });
+      expect(find(rush, "ROLL")?.reason).toBe("Armour 8+ (Home 11)");
+    });
+
     it("Iron Hard Skin: no Claws, no Mighty Blow or Dirty Player on the armour roll, no foul assists", () => {
       const skin = (skills: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Claws", "Mighty Blow(+1)"], "away-2": skills }), (c) => void (c.players["away-2"]!.av = 9));

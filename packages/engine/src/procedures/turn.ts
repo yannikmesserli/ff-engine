@@ -725,6 +725,20 @@ function diveIn(ctx: Ctx, tackler: PlayerState, square: Square): Procedure[] {
   return [{ type: "Bounce", from: { ...square }, kickoff: false, receiving: null }];
 }
 
+/**
+ * Arm Bar: an opponent with the skill and a tackle zone next to the square a player left (or the diving tackler who
+ * took it) when they fall after a failed dodge or jump; +1 to their armour or injury roll. Not against Iron Hard Skin.
+ */
+function armBarrer(state: GameState, player: PlayerState, from: Square): PlayerState | undefined {
+  if (hasSkill(player, "Iron Hard Skin")) return undefined;
+  const tackler = state.lastCheck?.divingTacklerId ? state.players[state.lastCheck.divingTacklerId] : undefined;
+  const markers = adjacent(from).flatMap((s) => {
+    const p = tackleZoneAt(state, s);
+    return p && p.side !== player.side ? [p] : [];
+  });
+  return [...markers, ...(tackler ? [tackler] : [])].find((p) => hasSkill(p, "Arm Bar"));
+}
+
 /** Step a player (and the ball they carry) to an adjacent square, spending one square of movement. */
 function movePlayer(ctx: Ctx, player: PlayerState, to: Square, squares = 1) {
   const from = squareOf(ctx, player);
@@ -758,8 +772,16 @@ export const MoveStep: Handler<P<"MoveStep">> = {
       if (tacklerId) return diveIn(ctx, getPlayer(ctx, tacklerId), from);
       return proc.jump || proc.hitAndRun || proc.onTheBall === "kickoff" ? [] : [{ type: "Shadow", playerId: player.id, from, stage: "select" }];
     };
-    const fall = (inStartSquare = false) => {
-      ctx.push(...(inStartSquare ? [] : step()), { type: "KnockDown", playerId: player.id, turnover: !proc.onTheBall, stage: "fall" });
+    /** Falling after a failed dodge or jump (`armBar`) or a failed Rush, in the target square or the starting one. */
+    const fall = (inStartSquare = false, armBar = false) => {
+      const bar = armBar && !inStartSquare ? armBarrer(state, player, squareOf(ctx, player)) : undefined;
+      ctx.push(...(inStartSquare ? [] : step()), {
+        type: "KnockDown",
+        playerId: player.id,
+        turnover: !proc.onTheBall,
+        stage: "fall",
+        ...(bar ? { mightyBlow: { playerId: bar.id, bonus: 1, skill: "Arm Bar" } } : {}),
+      });
       proc.stage = "fell";
       proc.fellInPlace = inStartSquare;
       return "continue" as const;
@@ -803,7 +825,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         }
         return "continue";
       case "move":
-        if (failed(ctx)) return fall(proc.jump && state.lastCheck?.roll === 1);
+        if (failed(ctx)) return fall(proc.jump && state.lastCheck?.roll === 1, true);
         ctx.push(...step());
         proc.stage = "arrive";
         return "continue";

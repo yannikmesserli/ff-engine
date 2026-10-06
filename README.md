@@ -223,6 +223,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   tackle zone and Prehensile Tail penalty is reduced by 1, but not below -1.
 - Iron Hard Skin: the player's armour rolls cannot be modified: no Claws, no Mighty Blow or Dirty Player on the armour
   roll (they may still go to the injury roll), no foul assists.
+- Arm Bar: when an opponent falls after a failed dodge or jump out of the player's tackle zone (or after the player
+  dived into their square with Diving Tackle), +1 to their armour roll if that breaks it, otherwise to the injury roll.
+  Not for a failed Rush, nor against Iron Hard Skin.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

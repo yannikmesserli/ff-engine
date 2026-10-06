@@ -37,6 +37,7 @@ const SKILL_USES: Record<string, string> = {
   "Sure Hands": "to re-roll the pick-up",
   Catch: "to re-roll the catch",
   "Sure Feet": "to re-roll the rush",
+  "Arm Bar": "",
   Pass: "to re-roll the pass",
   "Mighty Blow": "",
   Claws: "to break the armour",
