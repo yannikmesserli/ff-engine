@@ -36,6 +36,7 @@ export function createPlayer(side: Side, p: TeamSetup["players"][number]): Playe
     distracted: false,
     played: false,
     rooted: false,
+    gouged: false,
   };
 }
 
@@ -146,6 +147,7 @@ export function resetForKickoff(ctx: Ctx) {
     p.movesUsed = 0;
     p.distracted = false;
     p.rooted = false;
+    p.gouged = false;
   }
   state.ball = { square: null, carried: false };
   state.activeSide = null;

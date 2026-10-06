@@ -54,6 +54,7 @@ const SKILL_USES: Record<string, string> = {
   Taunt: "and makes the attacker follow up",
   Fend: "and keeps the attacker away",
   Pro: "to try a re-roll",
+  "Eye Gouge": "(no block assists until their next action)",
   "Steady Footing": "and stays on their feet",
   Shadowing: "and follows into the vacated square",
   "Strip Ball": "and knocks the ball loose",

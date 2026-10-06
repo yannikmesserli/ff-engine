@@ -94,6 +94,8 @@ export interface PlayerState {
    * activation once down) or the end of the drive. See `isRooted`.
    */
   rooted: boolean;
+  /** Pushed back by a player with Eye Gouge: cannot assist blocks until the player's next activation. */
+  gouged: boolean;
   /** Was on the pitch for the current drive's kick-off (Secret Weapon players are sent off when the drive ends). */
   played: boolean;
 }

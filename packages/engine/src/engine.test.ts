@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { interceptionTarget } from "./procedures/pass";
 import {
   CASUALTY_DICE,
+  blockDice,
   IllegalActionError,
   casualtyFor,
   createGame,
@@ -1261,6 +1262,18 @@ describe("engine", () => {
       jumped = apply(jumped, roll(3));
       expect(types(jumped)).not.toContain("SELECT_PLAYERS");
       expect(jumped.players["home-2"]).toMatchObject({ at: { x: 10, y: 7 }, status: "standing" });
+    });
+
+    it("Eye Gouge: an opponent pushed back cannot assist blocks until their next activation", () => {
+      let s = apply(blockAway2(withSkills(toFirstTurn(), { "home-2": ["Eye Gouge"] })), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      expect(s.players["away-2"]!.gouged).toBe(true);
+      // Away from everyone else: away-2 next to home-1 would give away-1 a defensive assist.
+      const corner = place(s, { "home-1": { x: 3, y: 3 }, "away-1": { x: 4, y: 3 }, "away-2": { x: 3, y: 4 } });
+      const dice = (c: GameState) => blockDice(c, c.players["home-1"]!, c.players["away-1"]!);
+      expect(dice(corner)).toBe(1);
+      expect(dice(edit(corner, (c) => void (c.players["away-2"]!.gouged = false)))).toBe(-2);
+      s = apply(s, { type: "END_TURN" }, declare("away-2", "move"));
+      expect(s.players["away-2"]!.gouged).toBe(false);
     });
 
     describe("Pro", () => {

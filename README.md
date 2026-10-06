@@ -206,6 +206,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Pro: once per turn, the active player (standing, in their team's turn) may roll a D6 instead of using a team re-roll
   on one of their failed rolls (single-D6 checks and passes): on 3+ the die is re-rolled, otherwise the first result
   stands. Not yet for block dice.
+- Eye Gouge: an opponent the player pushes back with a block cannot give block assists (offensive or defensive) until
+  their next activation (or the end of the drive).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

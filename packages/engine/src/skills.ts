@@ -21,5 +21,5 @@ export const IMPLEMENTED_SKILLS: readonly string[] = [
   "Throw Team-mate", "Right Stuff", "Always Hungry", "Unchannelled Fury",
   "Disturbing Presence", "Secret Weapon", "Claws", "Titchy", "Stab", "Prehensile Tail", "Strong Arm", "Take Root",
   "Plague Ridden", "Bloodlust", "Defensive", "Brawler", "Nerves of Steel", "Steady Footing",
-  "Shadowing", "Animal Savagery", "Timmm-ber!", "Foul Appearance", "Strip Ball", "Hypnotic Gaze", "On the Ball", "Safe Pass", "Hit and Run", "Diving Tackle", "Hatred", "Break Tackle", "My Ball", "Bombardier", "Pogo", "Taunt", "Fend", "Pro",
+  "Shadowing", "Animal Savagery", "Timmm-ber!", "Foul Appearance", "Strip Ball", "Hypnotic Gaze", "On the Ball", "Safe Pass", "Hit and Run", "Diving Tackle", "Hatred", "Break Tackle", "My Ball", "Bombardier", "Pogo", "Taunt", "Fend", "Pro", "Eye Gouge",
 ];

@@ -35,12 +35,13 @@ function guardCancelled(state: GameState, helper: PlayerState & { at: Square }):
 
 /**
  * Assists for `side` against the opponent standing on `target`: team-mates next to it exerting a tackle zone (except
- * `excludeId`) that are not marked by any other opponent, or that have Guard (unless Defensive cancels it).
+ * `excludeId`, and Eye Gouged players) that are not marked by any other opponent, or that have Guard (unless Defensive
+ * cancels it).
  */
 function assists(state: GameState, side: Side, target: Square, opponentId: string, excludeId: string): number {
   return adjacent(target).filter((s) => {
     const helper = tackleZoneAt(state, s);
-    if (!helper || helper.side !== side || helper.id === excludeId) return false;
+    if (!helper || helper.side !== side || helper.id === excludeId || helper.gouged) return false;
     if (hasSkill(helper, "Guard") && !guardCancelled(state, { ...helper, at: s })) return true;
     return adjacent(s).every((n) => {
       const marker = tackleZoneAt(state, n);
@@ -550,6 +551,11 @@ export const Block: Handler<P<"Block">> = {
           }
         }
         const knock = proc.knockDefender && isOnPitch(defender);
+        // Eye Gouge: an opponent pushed back by the attacker cannot assist until their next activation.
+        if (hasSkill(attacker, "Eye Gouge") && defender.side !== attacker.side && proc.chain.some((c) => c.playerId === defender.id)) {
+          defender.gouged = true;
+          ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Eye Gouge" });
+        }
         if (strips(state, proc, attacker, defender)) {
           ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Strip Ball" });
           state.ball.carried = false;

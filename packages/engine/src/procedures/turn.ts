@@ -331,6 +331,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       player.activated = true;
       player.movesUsed = 0;
       player.distracted = false;
+      player.gouged = false;
       // Take Root ends when the player is knocked down or placed prone.
       if (player.status !== "standing") player.rooted = false;
       if (isStalling(state, player)) {
