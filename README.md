@@ -167,6 +167,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   opponent; a natural 1 still fails.
 - Foul Appearance: a player who wants to block the player (Blitz and Frenzy blocks included) or use Projectile Vomit or
   Stab on them first rolls 2+ (team re-roll allowed); a 1 wastes the block and ends the action, without a turnover.
+- Strip Ball: an opponent holding the ball who is pushed back by the player (Push, or a Stumble saved by Dodge) without
+  being knocked down drops it in the square they were pushed to, where it bounces; not when they have Sure Hands (and a
+  tackle zone), stand firm or are rooted.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

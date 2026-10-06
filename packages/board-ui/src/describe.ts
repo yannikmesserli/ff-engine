@@ -48,6 +48,7 @@ const SKILL_USES: Record<string, string> = {
   Brawler: "to re-roll a Both Down",
   "Steady Footing": "and stays on their feet",
   Shadowing: "and follows into the vacated square",
+  "Strip Ball": "and knocks the ball loose",
 };
 
 /** Display names of the weather conditions. */

@@ -268,6 +268,17 @@ function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
   proc.stage = lonerTarget(attacker) === null ? "roll" : "loner";
 }
 
+/**
+ * Strip Ball: an opponent the attacker pushed back (Push, or a Stumble saved by Dodge) without knocking them down drops
+ * the ball in the square they were pushed to, unless they have Sure Hands and a tackle zone. Not when they did not move
+ * (Stand Firm, Take Root).
+ */
+function strips(state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState): boolean {
+  if (proc.knockDefender || !hasSkill(attacker, "Strip Ball") || attacker.side === defender.side) return false;
+  if (!isOnPitch(defender) || ballCarrier(state)?.id !== defender.id || !proc.chain.some((c) => c.playerId === defender.id)) return false;
+  return !(hasSkill(defender, "Sure Hands") && hasTackleZone(defender));
+}
+
 /** Move every pushed player, last of the chain first, carrying the ball along; off the pitch means the crowd. */
 function applyPushes(ctx: Ctx, proc: P<"Block">) {
   const { state } = ctx;
@@ -290,7 +301,7 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
 
 /**
  * One BB2025 block or blitz block: Foul Appearance -> (Rush when blitzing) -> Dauntless -> block dice -> re-roll ->
- * choice of die -> pushback -> follow-up -> knock-downs -> loose ball -> touchdown check.
+ * choice of die -> pushback -> follow-up -> Strip Ball -> knock-downs -> loose ball -> touchdown check.
  */
 export const Block: Handler<P<"Block">> = {
   step(ctx, proc, action) {
@@ -495,7 +506,12 @@ export const Block: Handler<P<"Block">> = {
           }
         }
         const knock = proc.knockDefender && isOnPitch(defender);
-        // A loose ball under a pushed player bounces once the knock-downs are resolved.
+        if (strips(state, proc, attacker, defender)) {
+          ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Strip Ball" });
+          state.ball.carried = false;
+          proc.bounceFrom = { ...squareOf(ctx, defender) };
+        }
+        // A loose ball under a pushed player (or stripped from them) bounces once the knock-downs are resolved.
         ctx.push(
           ...(knock ? [knockDownDefender(attacker, defender)] : []),
           ...(proc.bounceFrom ? [{ type: "Bounce" as const, from: proc.bounceFrom, kickoff: false, receiving: null }] : []),

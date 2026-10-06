@@ -1113,6 +1113,26 @@ describe("engine", () => {
       expect(apply(standUp, roll(2)).players["home-2"]!.status).toBe("standing");
     });
 
+    describe("Strip Ball", () => {
+      // away-2 at (13,7) holds the ball; home-2 blocks them from (12,7) and rolls a Push.
+      const carrier = (skills: string[] = []) =>
+        edit(withSkills(toFirstTurn(), { "home-2": ["Strip Ball"], "away-2": skills }), (c) => (c.ball = { square: { x: 13, y: 7 }, carried: true }));
+      const push = (s: GameState) => apply(blockAway2(s), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+
+      it("a pushed ball carrier drops the ball in the square they are pushed to", () => {
+        const s = push(carrier());
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Strip Ball" });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Bounce/);
+        expect(apply(s, roll(3)).ball).toEqual({ square: { x: 15, y: 7 }, carried: false });
+      });
+
+      it("does not work against Sure Hands, nor when the carrier stands firm", () => {
+        expect(push(carrier(["Sure Hands"])).ball).toEqual({ square: { x: 14, y: 7 }, carried: true });
+        const firm = apply(blockAway2(carrier(["Stand Firm"])), roll(3), pick, { type: "USE_SKILL", use: true });
+        expect(firm.ball).toEqual({ square: { x: 13, y: 7 }, carried: true });
+      });
+    });
+
     describe("Foul Appearance", () => {
       const ugly = (s = toFirstTurn()) => withSkills(s, { "away-2": ["Foul Appearance"] });
 
