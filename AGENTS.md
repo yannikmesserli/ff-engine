@@ -8,6 +8,7 @@ README of the package you touch:
 - `packages/board-ui` (`@bb/board-ui`): the `<BloodBowlGame>` React component.
 - `apps/playground`: Vite app hosting the component (online games and hot-seat).
 - `apps/relay`: WebSocket relay for online games (Node, `ws`), no storage.
+- `apps/scenarios`: Vite app starting games from prepared positions (`src/scenarios.ts`), to try a rule in the browser.
 
 ## Commands (run from `frontend/`)
 
@@ -16,6 +17,7 @@ pnpm test        # vitest: engine unit tests + 40 full random games (data.test.t
 pnpm typecheck   # tsc in every package
 pnpm build       # playground production build
 pnpm dev         # playground on http://localhost:5173 (?seed=42 replays the same dice) + relay on :8787
+pnpm scenarios   # prepared positions on http://localhost:5174 (?scenario=<id>)
 ```
 
 Run `pnpm typecheck && pnpm test` before reporting any change as done.

@@ -8,7 +8,8 @@
     "test": "vitest run",
     "typecheck": "pnpm -r typecheck",
     "fetch-rosters": "pnpm --filter @bb/data fetch-rosters",
-    "relay": "pnpm --filter relay start"
+    "relay": "pnpm --filter relay start",
+    "scenarios": "pnpm --filter scenarios dev"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",

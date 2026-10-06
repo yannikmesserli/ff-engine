@@ -18,6 +18,8 @@ pnpm dev                # Vite on http://localhost:5173 (run it in the backgroun
 - `pnpm build` makes a production build. It catches errors that `pnpm typecheck` misses in the app entry.
 
 To reach a game situation faster than clicking through, reproduce it in an engine test
-(`packages/engine/src/engine.test.ts`) with fixed dice. Use the browser only to check the UI.
+(`packages/engine/src/engine.test.ts`) with fixed dice. To check it in the browser, add a scenario to
+`apps/scenarios/src/scenarios.ts` (teams plus the actions leading there) and run `pnpm scenarios`
+(http://localhost:5174/?scenario=<id>).
 
 Stop the dev server when done.

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IMPLEMENTED_SKILLS,
   IllegalActionError,
+  applyActions,
   createGame,
   getAvailableActions,
   skillName,
@@ -30,6 +31,8 @@ export interface BloodBowlGameProps {
   assetsUrl?: string;
   /** RNG seed, to replay the same dice. Random when omitted. */
   seed?: number;
+  /** Actions applied right after the game is created, to start from a prepared position; undo stops there. */
+  actions?: readonly Action[];
   /** Called with the new state after every successful action. */
   onChange?(state: GameState): void;
   /** Play online against another browser instead of hot-seat (see {@link OnlineControl}). */
@@ -52,17 +55,20 @@ export const decider = (state: GameState, template: ActionTemplate): Side => tem
 
 const AUTO_ROLL_DELAY_MS = 350;
 
-/** A complete hot-seat Blood Bowl game between two teams; restarts when `home`, `away` or `seed` change. */
-export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, onChange, online }: BloodBowlGameProps) {
+/** Default for `actions`: a stable empty list, so the game is not recreated on every render. */
+const NO_ACTIONS: readonly Action[] = [];
+
+/** A complete hot-seat Blood Bowl game between two teams; restarts when `home`, `away`, `seed` or `actions` change. */
+export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, actions = NO_ACTIONS, onChange, online }: BloodBowlGameProps) {
   const initial = useMemo(() => {
     try {
-      return { state: createGame(resolveTeam(home), resolveTeam(away), { seed }) };
+      return { state: applyActions(createGame(resolveTeam(home), resolveTeam(away), { seed }), actions) };
     } catch (e) {
       return { error: (e as Error).message };
     }
-  }, [home, away, seed]);
+  }, [home, away, seed, actions]);
   if ("error" in initial) return <div className="bb-game bb-error">{initial.error}</div>;
-  return <Game key={JSON.stringify([home, away, seed])} initial={initial.state} assets={assetsUrl} onChange={onChange} online={online} />;
+  return <Game key={JSON.stringify([home, away, seed, actions])} initial={initial.state} assets={assetsUrl} onChange={onChange} online={online} />;
 }
 
 /** The state after applying the batches of actions in order; a batch that is not legal is skipped as a whole. */

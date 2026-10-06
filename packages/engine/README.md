@@ -103,7 +103,8 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
 ## Public API (`src/index.ts`)
 
 - Game: `createGame(home, away, { seed })`, `getAvailableActions(state)`, `step(state, action)` returning
-  `{ state, events }`, `IllegalActionError`.
+  `{ state, events }`, `applyActions(state, actions)` (successive steps, e.g. to reach a prepared position),
+  `IllegalActionError`.
 - Types: everything in `types.ts` (`GameState`, `Action`, `ActionTemplate`, `GameEvent`, `TeamSetup`, `Procedure`...),
   `GameOptions`, `StepResult`.
 - Pitch (`pitch.ts`): constants (`PITCH_WIDTH`, `PITCH_HEIGHT`, line of scrimmage, wide zones) and helpers

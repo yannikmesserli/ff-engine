@@ -5,6 +5,7 @@ A browser-only Blood Bowl engine and game component, following the **BB2025** ru
 ```
 pnpm install
 pnpm dev          # playground at http://localhost:5173, with the relay for online games on :8787
+pnpm scenarios    # prepared positions to try a rule in the browser, on http://localhost:5174
 pnpm test         # engine + data tests (incl. full random games)
 pnpm typecheck
 pnpm fetch-rosters    # download the BB2025 rosters from FUMBBL (ruleset 2014) into packages/data/src/generated
@@ -19,6 +20,7 @@ pnpm fetch-rosters    # download the BB2025 rosters from FUMBBL (ruleset 2014) i
 | `packages/board-ui` (`@bb/board-ui`) | React `<BloodBowlGame home={teamJson} away={teamJson} />` component. |
 | `apps/playground` | Vite app hosting the component: online games through the relay, or hot-seat. |
 | `apps/relay` | Node WebSocket relay for online games: forwards each player's actions, stores nothing. |
+| `apps/scenarios` | Vite app starting games from prepared positions (teams plus the actions leading there), to try a rule. |
 
 Each package has its own README (engine model and how to add a rule, data formats and scripts, UI file map).
 `AGENTS.md` holds the conventions for coding agents, and `.claude/skills/` has the workflows for adding a rule and running

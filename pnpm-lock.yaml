@@ -68,6 +68,40 @@ importers:
         specifier: ^8.18.2
         version: 8.18.2
 
+  apps/scenarios:
+    dependencies:
+      '@bb/board-ui':
+        specifier: workspace:*
+        version: link:../../packages/board-ui
+      '@bb/data':
+        specifier: workspace:*
+        version: link:../../packages/data
+      '@bb/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
+      react:
+        specifier: ^19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.3.0
+        version: 19.3.0(react@19.3.0)
+    devDependencies:
+      '@types/node':
+        specifier: ^26.6.4
+        version: 26.6.4
+      '@types/react':
+        specifier: ^19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: ^6.1.1
+        version: 6.1.1(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(tsx@4.23.15))
+      vite:
+        specifier: ^8.3.2
+        version: 8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(tsx@4.23.15)
+
   packages/board-ui:
     dependencies:
       '@bb/data':

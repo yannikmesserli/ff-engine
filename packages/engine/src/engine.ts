@@ -74,6 +74,14 @@ export function createGame(home: TeamSetup, away: TeamSetup, options: GameOption
   });
 }
 
+/**
+ * Apply actions in order, as successive `step`s would: replays a saved game, or reaches a prepared position (a test
+ * scenario). Throws IllegalActionError at the first action that is not legal.
+ */
+export function applyActions(state: GameState, actions: readonly Action[]): GameState {
+  return actions.reduce((s, a) => step(s, a).state, state);
+}
+
 /** Everything the current decision maker may do. Empty when the game is over. */
 export function getAvailableActions(state: GameState): ActionTemplate[] {
   const top = state.stack.at(-1);

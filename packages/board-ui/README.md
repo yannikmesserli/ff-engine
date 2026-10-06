@@ -18,10 +18,11 @@ import { BloodBowlGame } from "@bb/board-ui";
 | `home`, `away` | `unknown` | Team files in `@bb/data`'s format (see `packages/data/README.md`), validated by `resolveTeam()`. Invalid teams render the error message. |
 | `assetsUrl` | `string` | Base URL of the image folder. Default `"/img"`. |
 | `seed` | `number` | RNG seed, to replay the same dice. Random when omitted. |
+| `actions` | `Action[]` | Applied right after the game is created (`applyActions`), to start from a prepared position (`apps/scenarios`). Undo stops there; an illegal action renders the error message. |
 | `onChange` | `(state: GameState) => void` | Called with the new state after every successful action. |
 | `online` | `OnlineControl` | Online play: `{ side, actions, send }`. The component only offers `side`'s decisions (`decider()`), sends actions with `send` instead of applying them, and plays the batches in `actions` (both players', in the relay's order). No undo. |
 
-Changing `home`, `away` or `seed` starts a new game. The stylesheet (`styles.css`, all classes prefixed `bb-`) is
+Changing `home`, `away`, `seed` or `actions` starts a new game. The stylesheet (`styles.css`, all classes prefixed `bb-`) is
 imported by the component.
 
 ## How it drives the engine

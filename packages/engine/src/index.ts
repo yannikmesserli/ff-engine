@@ -1,7 +1,7 @@
 /** Public API of @bb/engine: the game functions, state and action types, and rule helpers used by the UI. */
 export * from "./types";
 export * from "./pitch";
-export { createGame, getAvailableActions, step } from "./engine";
+export { applyActions, createGame, getAvailableActions, step } from "./engine";
 export type { GameOptions, StepResult } from "./engine";
 export { IllegalActionError } from "./context";
 export { BLOCK_FACES, DIE_FACES, SCATTER, isCorner, throwInDirection } from "./dice";
