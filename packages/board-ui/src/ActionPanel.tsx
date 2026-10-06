@@ -55,11 +55,12 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   SNAP: "Quick Snap: click an open player, then an adjacent square",
 };
 
-/** Buttons of the re-roll skills offered next to another decision (block dice, team re-roll). */
-const REROLL_SKILLS: Record<string, string> = {
+/** Buttons of the skills offered next to another decision (block dice, a team re-roll, a move). */
+const SKILL_BUTTONS: Record<string, string> = {
   Brawler: "Re-roll a Both Down (Brawler)",
   Hatred: "Re-roll a Skull (Hatred)",
   Pro: "Re-roll with Pro (3+)",
+  Fumblerooski: "Drop the ball on the next step (Fumblerooski)",
 };
 
 /** Short pass range names for the legend, shortest first. */
@@ -79,6 +80,8 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   if (blitzFor) return `click the opponent ${state.players[blitzFor]!.name} will blitz`;
   if (aiming && throwingBomb(state)) return "click a square (or a player) to throw the bomb to";
   if (aiming) return "click a square (or a team-mate) to throw to";
+  const top = state.stack.at(-1);
+  if (main.type === "MOVE" && top?.type === "MoveAction" && top.fumblerooski) return "move: the ball stays in the square you leave (Fumblerooski)";
   if (main.type === "PLACE_BALL" && state.stack.at(-1)?.type === "SafeHands") return "Safe Pair of Hands: click a free square next to the player to place the ball";
   if (main.type === "THROW" && throwingBomb(state)) {
     const top = state.stack.at(-1);
@@ -208,9 +211,9 @@ export function ActionPanel(props: ActionPanelProps) {
           <button onClick={() => dispatch({ type: "USE_REROLL" })}>Re-roll the dice</button>
         )}
         {templates.map((t) =>
-          t.type === "USE_SKILL" && t !== main && REROLL_SKILLS[t.skill] ? (
+          t.type === "USE_SKILL" && t !== main && SKILL_BUTTONS[t.skill] ? (
             <button key={t.skill} onClick={() => dispatch({ type: "USE_SKILL", use: true, skill: t.skill })}>
-              {REROLL_SKILLS[t.skill]}
+              {SKILL_BUTTONS[t.skill]}
             </button>
           ) : null,
         )}

@@ -237,6 +237,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   catcher's square, and a failure bounces from there. Not for bombs.
 - Insignificant: a team-building rule, checked by `resolveTeam`: a team may not have more players with the trait than
   players without it. It has no effect during the game.
+- Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
+  without bouncing, in the square they leave on their next step, and it is not a turnover. Not with My Ball.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

@@ -41,6 +41,7 @@ const SKILL_USES: Record<string, string> = {
   Grab: "to push the opponent where they want",
   "Safe Pair of Hands": "to place the ball",
   "Diving Catch": "to catch the ball next to them",
+  Fumblerooski: "and leaves the ball behind",
   Pass: "to re-roll the pass",
   "Mighty Blow": "",
   Claws: "to break the armour",

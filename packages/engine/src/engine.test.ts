@@ -1318,6 +1318,19 @@ describe("engine", () => {
       expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
     });
 
+    it("Fumblerooski: a moving ball carrier may leave the ball in the square they leave, without a bounce or a turnover", () => {
+      const s0 = edit(withSkills(toFirstTurn(), { "home-4": ["Fumblerooski"] }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+      let s = apply(s0, startMove("home-4"));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-4", skill: "Fumblerooski" });
+      s = apply(s, { type: "USE_SKILL", use: true, skill: "Fumblerooski" }, ...move({ x: 9, y: 4 }));
+      expect(s.ball).toEqual({ square: { x: 10, y: 4 }, carried: false });
+      expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-4", skill: "Fumblerooski" });
+      s = apply(s, { type: "END_PLAYER_ACTION" });
+      expect([s.turnover, top(s).type]).toEqual([false, "Turn"]);
+      // Not with My Ball.
+      expect(find(apply(withSkills(s0, { "home-4": ["Fumblerooski", "My Ball"] }), startMove("home-4")), "USE_SKILL")).toBeUndefined();
+    });
+
     describe("Diving Catch", () => {
       // home-4 at (10,4) holds the ball; home-6 at (10,6) has Diving Catch.
       const diver = edit(withSkills(toFirstTurn(), { "home-6": ["Diving Catch"] }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));

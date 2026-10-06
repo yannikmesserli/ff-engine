@@ -306,6 +306,8 @@ export type Procedure =
       thirsty?: boolean;
       /** The Bloodlust feeding has been resolved (or is under way). */
       fed?: boolean;
+      /** Fumblerooski: the player drops the ball in the square they leave on their next step. */
+      fumblerooski?: boolean;
     }
   | {
       type: "Pass";

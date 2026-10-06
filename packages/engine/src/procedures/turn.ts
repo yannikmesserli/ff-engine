@@ -460,7 +460,12 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         ttmOptions(state, proc).length === 0);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "USE_SKILL", "END_PLAYER_ACTION");
+    if (a.type === "USE_SKILL") {
+      if (!canFumblerooski(state, proc)) ctx.reject("Fumblerooski cannot be used now.");
+      if (a.use) proc.fumblerooski = true;
+      return "wait";
+    }
     if (a.type === "END_PLAYER_ACTION") return endActivation(ctx, proc, player);
     if (a.type === "THROW" && proc.action === "bomb") {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
@@ -560,6 +565,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
       ...(fouls.length > 0 ? [{ type: "FOUL" as const, side: player.side, playerId: player.id, targets: fouls }] : []),
       ...(gazes.length > 0 ? [{ type: "GAZE" as const, side: player.side, playerId: player.id, targetIds: gazes }] : []),
+      ...(canFumblerooski(state, proc) ? [{ type: "USE_SKILL" as const, side: player.side, playerId: player.id, skill: "Fumblerooski" }] : []),
       ...(throwable.length > 0
         ? [{ type: "THROW_TEAM_MATE" as const, side: player.side, playerId: player.id, playerIds: throwable, squares: teamMateTargets(state, player) }]
         : []),
@@ -659,6 +665,16 @@ function endActivation(ctx: Ctx, proc: P<"MoveAction">, player: PlayerState) {
   return "done" as const;
 }
 
+/**
+ * Fumblerooski: a standing ball carrier with the skill (not My Ball) whose action lets them move may drop the ball in the
+ * square they leave on their next step: it does not bounce, and it is not a turnover.
+ */
+function canFumblerooski(state: GameState, proc: P<"MoveAction">): boolean {
+  const player = state.players[proc.playerId]!;
+  if (proc.fumblerooski || !hasSkill(player, "Fumblerooski") || hasSkill(player, "My Ball") || !holdsBall(state, player)) return false;
+  return activationMoves(state, proc).length > 0;
+}
+
 /** Team-mates the active player may throw now (a Throw Team-mate action, standing, not thrown yet). */
 const ttmOptions = (state: GameState, proc: P<"MoveAction">) => {
   const player = state.players[proc.playerId]!;
@@ -744,7 +760,13 @@ function armBarrer(state: GameState, player: PlayerState, from: Square): PlayerS
 function movePlayer(ctx: Ctx, player: PlayerState, to: Square, squares = 1) {
   const from = squareOf(ctx, player);
   const { ball } = ctx.state;
-  if (ball.carried && ball.square && sameSquare(ball.square, from)) ball.square = { ...to };
+  const moving = activation(ctx.state);
+  if (ball.carried && ball.square && sameSquare(ball.square, from) && moving?.fumblerooski && moving.playerId === player.id) {
+    // Fumblerooski: the ball stays in the square left, without bouncing.
+    ball.carried = false;
+    moving.fumblerooski = false;
+    ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Fumblerooski" });
+  } else if (ball.carried && ball.square && sameSquare(ball.square, from)) ball.square = { ...to };
   player.at = { ...to };
   player.movesUsed += squares;
   ctx.emit({ type: "PlayerMoved", playerId: player.id, from: { ...from }, to: { ...to } });
