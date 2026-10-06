@@ -7,6 +7,7 @@ import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
 import { checkTouchdown, getPlayer, inScoringPosition, squareOf, weatherModifier } from "./helpers";
 import { isStalling } from "./stalling";
+import { TURNS_PER_HALF } from "./game";
 import { teamMateTargets, throwableTeamMates } from "./ttm";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -137,6 +138,12 @@ function endTurn(ctx: Ctx, proc: P<"Turn">) {
   // Shadowing is counted per turn of the moving team.
   for (const p of teamPlayers(state, other(side))) p.usedSkills = p.usedSkills.filter((s) => s !== "Shadowing");
   ctx.emit(proc.charge ? { type: "ChargeEnded", side } : { type: "TurnEnded", side, turnover: state.turnover });
+  // Pick-me-up, unless a touchdown ends the drive or the half is over.
+  const halfOver = state.teams.home.turn >= TURNS_PER_HALF && state.teams.away.turn >= TURNS_PER_HALF;
+  const pickUps = pickMeUpCandidates(state, other(side));
+  if (!proc.charge && state.touchdown === null && !halfOver && pickUps.length > 0) {
+    ctx.push({ type: "PickMeUp", side: other(side), playerIds: pickUps, selected: [], stage: "select" });
+  }
   state.activeSide = null;
   state.activePlayerId = null;
   state.turnover = false;
@@ -995,5 +1002,57 @@ export const OnTheBall: Handler<P<"OnTheBall">> = {
     const when = proc.kickoff ? "the kick-off" : "the pass";
     const playerIds = onTheBallPlayers(state, proc).map((p) => p.id);
     return [{ type: "SELECT_PLAYERS", side: proc.side, playerIds, max: 1, reason: `On the Ball: choose a player to move up to 3 squares before ${when}` }];
+  },
+};
+
+/** Pick-me-up stands a prone player up on 5+. */
+export const PICK_ME_UP_TARGET = 5;
+
+/** Pick-me-up: prone (not stunned) players of `side` within 3 squares of a standing team-mate with the skill. */
+function pickMeUpCandidates(state: GameState, side: Side): string[] {
+  const helpers = teamPlayers(state, side).filter((p) => isOnPitch(p) && hasTackleZone(p) && hasSkill(p, "Pick-me-up"));
+  return teamPlayers(state, side)
+    .filter((p): p is PlayerState & { at: Square } => isOnPitch(p) && p.status === "prone")
+    .filter((p) => helpers.some((h) => isOnPitch(h) && Math.max(Math.abs(h.at.x - p.at.x), Math.abs(h.at.y - p.at.y)) <= 3))
+    .map((p) => p.id);
+}
+
+/**
+ * Pick-me-up: at the end of the opposing team's turn (not after a touchdown or the last turn of the half), the coach
+ * chooses any of their prone players within 3 squares of a standing team-mate with the skill; each rolls a D6 and stands
+ * up on 5+. The coach may choose again among the others until they choose nobody.
+ */
+export const PickMeUp: Handler<P<"PickMeUp">> = {
+  step(ctx, proc, action) {
+    if (proc.stage === "select" && proc.playerIds.length === 0) return "done";
+    if (action === null) return "wait";
+    if (proc.stage === "select") {
+      const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+      if (playerIds.some((id) => !proc.playerIds.includes(id)) || new Set(playerIds).size !== playerIds.length) ctx.reject("Invalid player.");
+      if (playerIds.length === 0) return "done";
+      proc.selected = [...playerIds];
+      proc.playerIds = proc.playerIds.filter((id) => !playerIds.includes(id));
+      proc.stage = "roll";
+      return "wait";
+    }
+    const rolls = ctx.roll(action, [{ kind: "d6", count: proc.selected.length }], `Pick-me-up ${PICK_ME_UP_TARGET}+`);
+    proc.selected.forEach((id, i) => {
+      const player = getPlayer(ctx, id);
+      const success = rolls[i]! >= PICK_ME_UP_TARGET;
+      ctx.emit({ type: "CheckResult", kind: "pickmeup", playerId: id, success, roll: rolls[i]!, target: PICK_ME_UP_TARGET });
+      if (success && player.status === "prone") {
+        player.status = "standing";
+        ctx.emit({ type: "PlayerStoodUp", playerId: id });
+      }
+    });
+    proc.selected = [];
+    proc.stage = "select";
+    return proc.playerIds.length === 0 ? "done" : "wait";
+  },
+  actions(_state, proc) {
+    if (proc.stage === "roll") {
+      return [{ type: "ROLL", side: proc.side, dice: [{ kind: "d6", count: proc.selected.length }], reason: `Pick-me-up ${PICK_ME_UP_TARGET}+` }];
+    }
+    return [{ type: "SELECT_PLAYERS", side: proc.side, playerIds: proc.playerIds, max: proc.playerIds.length, reason: "Pick-me-up: choose prone players to try to stand up (5+)" }];
   },
 };

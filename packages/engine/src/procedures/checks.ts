@@ -36,6 +36,7 @@ const CHECK_NAMES = {
   gaze: "Hypnotic Gaze",
   bombcatch: "Catch (bomb)",
   pro: "Pro",
+  pickmeup: "Pick-me-up",
 } as const;
 
 /** The natural d6 result needed, for display ("4+"). */

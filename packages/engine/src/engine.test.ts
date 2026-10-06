@@ -1276,6 +1276,23 @@ describe("engine", () => {
       expect(s.players["away-2"]!.gouged).toBe(false);
     });
 
+    it("Pick-me-up: at the end of the opponent's turn, prone players near a team-mate with the skill stand up on 5+", () => {
+      const s = edit(withSkills(toFirstTurn(), { "away-5": ["Pick-me-up"] }), (c) => {
+        c.players["away-1"]!.status = "prone";
+        c.players["away-3"]!.status = "prone";
+        c.players["away-4"]!.status = "stunned";
+      });
+      // away-5 at (15,7) is within 3 squares of away-1 (13,6) and away-3 (13,8); stunned players do not count.
+      const near = place(s, { "away-5": { x: 15, y: 7 } });
+      let ended = apply(near, { type: "END_TURN" });
+      expect(find(ended, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1", "away-3"], max: 2 });
+      ended = apply(ended, { type: "SELECT_PLAYERS", playerIds: ["away-1", "away-3"] });
+      expect(find(ended, "ROLL")?.dice).toEqual([{ kind: "d6", count: 2 }]);
+      ended = apply(ended, roll(5, 4));
+      expect([ended.players["away-1"]!.status, ended.players["away-3"]!.status]).toEqual(["standing", "prone"]);
+      expect(ended.log.at(-1)).toMatchObject({ type: "TurnStarted", side: "away" });
+    });
+
     describe("Pro", () => {
       // home-1 dodges from (12,6) to (11,5).
       const dodge = (value: number) => apply(withSkills(toFirstTurn(), { "home-1": ["Pro"] }), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(value));

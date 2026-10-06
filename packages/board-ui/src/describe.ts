@@ -28,6 +28,7 @@ const CHECK_NAMES = {
   gaze: "Hypnotic Gaze roll",
   bombcatch: "catch of the bomb",
   pro: "Pro roll (a failure keeps the first result)",
+  pickmeup: "Pick-me-up roll",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */

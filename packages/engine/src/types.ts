@@ -222,7 +222,8 @@ export type CheckKind =
   | "appearance"
   | "gaze"
   | "bombcatch"
-  | "pro";
+  | "pro"
+  | "pickmeup";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -412,6 +413,11 @@ export type Procedure =
   | { type: "BombLanding"; square: Square; scattered: boolean; bounced: boolean; stage: "land" | "catch"; catcherId?: string }
   /** A bomb explodes: the player on `square` is hit, each player next to it on a 4+; `targets` are still to resolve. */
   | { type: "Explosion"; square: Square; targets: string[]; stage: "explode" | "next" | "roll" }
+  /**
+   * Pick-me-up: at the end of the opponent's turn, prone players of `side` within 3 squares of a standing team-mate
+   * with the skill (`playerIds`, still to choose from) may try to stand up; `selected` are rolling now.
+   */
+  | { type: "PickMeUp"; side: Side; playerIds: string[]; selected: string[]; stage: "select" | "roll" }
   /** Hit and Run: after their block (or Stab), the player may step to a free square away from any opponent. */
   | { type: "HitAndRun"; playerId: string; stage: "ask" | "move" }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */

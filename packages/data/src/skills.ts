@@ -101,7 +101,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   Loner: "Using a team re-roll needs a {X}+ on a D6 first; otherwise the re-roll is lost.",
   "My Ball": "Cannot give the ball up voluntarily (no pass or hand-off).",
   "No Ball": "Cannot catch, pick up, intercept or hold the ball.",
-  "Pick-me-up": "Each turn, roll a D6 for each prone team-mate within 3 squares: on 5+ they stand up.",
+  "Pick-me-up": "At the end of the opponent's turn, prone team-mates within 3 squares of this (standing) player may roll a D6: on 5+ they stand up.",
   "Plague Ridden": "Once per game, an opponent this player kills can join the team as a lineman.",
   Pogo: "May jump over any adjacent square, empty or not, ignoring tackle zones and Prehensile Tail; Diving Tackle does not work on its jumps.",
   "Projectile Vomit": "Instead of a block: on 2+, an adjacent opponent rolls armour with no modifier and is placed prone if it breaks; on a 1, this player does.",
