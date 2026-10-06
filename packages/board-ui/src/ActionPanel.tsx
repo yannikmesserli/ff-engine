@@ -65,13 +65,24 @@ const REROLL_SKILLS: Record<string, string> = {
 /** Short pass range names for the legend, shortest first. */
 const RANGE_LEGEND: Record<PassRange, string> = { quick: "Quick", short: "Short", long: "Long", bomb: "Bomb" };
 
+/** The THROW template is for a bomb: a Throw Bomb action, or a player who caught one and must throw it again. */
+function throwingBomb(state: GameState) {
+  const top = state.stack.at(-1);
+  return (top?.type === "MoveAction" && top.action === "bomb") || (top?.type === "Pass" && top.bomb === true);
+}
+
 /** The prompt line, from the main template and the board's interaction mode. */
 function promptText(state: GameState, templates: ActionTemplate[], main: ActionTemplate, blitzFor: string | null, aiming: boolean) {
   const roll = findTemplate(templates, "ROLL");
   const select = findTemplate(templates, "SELECT_PLAYERS");
   const snap = findTemplate(templates, "SNAP");
   if (blitzFor) return `click the opponent ${state.players[blitzFor]!.name} will blitz`;
+  if (aiming && throwingBomb(state)) return "click a square (or a player) to throw the bomb to";
   if (aiming) return "click a square (or a team-mate) to throw to";
+  if (main.type === "THROW" && throwingBomb(state)) {
+    const top = state.stack.at(-1);
+    return top?.type === "Pass" ? `${state.players[top.throwerId]!.name} caught the bomb and must throw it again: aim it` : "aim the bomb (no move before throwing it)";
+  }
   if (roll) return `roll for ${roll.reason}`;
   if (select) return `${select.reason} (click players)`;
   if (snap) return `${PROMPTS.SNAP} (${snap.remaining} left)`;
