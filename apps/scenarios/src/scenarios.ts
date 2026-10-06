@@ -642,4 +642,45 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 12, y: 7 },
     }),
   },
+  {
+    id: "diving-catch",
+    title: "Diving Catch: catch a ball coming down next to the player",
+    instructions: [
+      "Home's first turn: Ludwig (#1) holds the ball and has declared a Pass. In the bottom wide zone, Kurt (#4, Diving Catch) and the orc Gorbag (#4, Diving Catch) stand on either side of the empty square (13, 11).",
+      "Click \"Throw…\" and pick that empty square (a short pass). Once the pass comes down there, home picks first: Kurt dives for it from his own square (+1 for an accurate pass). Skip, and the away coach may send Gorbag instead. Nobody: the ball lands and bounces.",
+      "A failed diving catch bounces from the diver's square. Undo and throw straight to Kurt: Diving Catch gives +1 to catch an accurate pass.",
+    ],
+    home: {
+      name: "Altdorf Divers",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Ludwig", position: "Human Thrower" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Kurt", position: "Human Catcher", skills: ["Diving Catch"] },
+        { number: 5, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+        { number: 4, name: "Gorbag", position: "Orc Lineman", skills: ["Diving Catch"] },
+      ],
+    },
+    seed: 16,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 8, y: 8 }, 2: { x: 12, y: 5 }, 3: { x: 12, y: 7 }, 4: { x: 12, y: 11 }, 5: { x: 12, y: 9 } },
+        away: { 1: { x: 13, y: 5 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 9 }, 4: { x: 14, y: 11 } },
+        ball: { x: 8, y: 8 },
+      }),
+      { type: "START_ACTION", playerId: "home-1", action: "pass" },
+    ],
+  },
 ];

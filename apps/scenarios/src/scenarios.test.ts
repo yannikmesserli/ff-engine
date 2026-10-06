@@ -196,4 +196,13 @@ describe("scenarios", () => {
     ]);
     expect(find(fell, "ROLL")?.reason).toBe("Bounce");
   });
+
+  it("diving-catch: home picks its diver first, then the away coach may send theirs", () => {
+    let s = applyActions(load("diving-catch"), [{ type: "THROW", square: { x: 13, y: 11 } }, { type: "ROLL", values: [6] }]);
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", playerIds: ["home-4"], reason: "Diving Catch: choose a player to catch the ball" });
+    const away = step(s, { type: "SELECT_PLAYERS", playerIds: [] }).state;
+    expect(find(away, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-4"] });
+    s = step(s, { type: "SELECT_PLAYERS", playerIds: ["home-4"] }).state;
+    expect(find(s, "ROLL")?.reason).toBe("Catch 2+ (Kurt)");
+  });
 });
