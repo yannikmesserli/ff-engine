@@ -4,7 +4,7 @@ import { SCATTER, passes } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName } from "../skills";
 import { explosion, rethrow } from "./bomb";
-import { canTeamReroll, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, proRollTemplate, proTemplate, rollPro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -203,19 +203,24 @@ export const Pass: Handler<P<"Pass">> = {
         proc.roll = roll!;
         proc.result = evaluatePass(thrower, roll!, modifiers);
         ctx.emit({ type: "PassResult", playerId: thrower.id, result: proc.result });
-        const canReroll = passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled);
+        const canReroll = passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
         proc.stage = proc.result !== "accurate" && canReroll ? "reroll" : "outcome";
         return "continue";
       }
       case "reroll": {
         if (action === null) return "wait";
-        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
-        if (a.type === "USE_REROLL" && passSkillReroll(thrower, proc)) {
+        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
+        if (a.type === "USE_SKILL" && a.use) {
+          if (!canUsePro(state, thrower, proc.rerolled)) ctx.reject("Pro cannot be used now.");
+          proc.rerolled = true;
+          proc.stage = "pro";
+        } else if (a.type === "USE_REROLL" && passSkillReroll(thrower, proc)) {
           // A skill re-roll: no team re-roll is spent, so Loner does not apply.
           ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Pass" });
           proc.rerolled = true;
           proc.stage = "roll";
         } else if (a.type === "USE_REROLL") {
+          if (!canTeamReroll(state, thrower.side, proc.rerolled)) ctx.reject("No re-roll available.");
           useTeamReroll(ctx, thrower.side);
           proc.rerolled = true;
           proc.stage = lonerTarget(thrower) === null ? "roll" : "loner";
@@ -226,6 +231,10 @@ export const Pass: Handler<P<"Pass">> = {
         if (action === null) return "wait";
         // A failed Loner roll keeps the first pass result.
         proc.stage = rollLoner(ctx, action, thrower) ? "roll" : "outcome";
+        return "continue";
+      case "pro":
+        if (action === null) return "wait";
+        proc.stage = rollPro(ctx, action, thrower) ? "roll" : "outcome";
         return "continue";
       case "outcome":
         if (proc.result === "fumble" && proc.roll === 1 && hasSkill(thrower, "Safe Pass")) {
@@ -350,11 +359,16 @@ export const Pass: Handler<P<"Pass">> = {
       }
       case "reroll":
         return [
-          { type: "USE_REROLL", side: thrower.side, available: rerollsLeft(state, thrower.side), ...(passSkillReroll(thrower, proc) ? { skill: "Pass" } : {}) },
+          ...(passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled)
+            ? [{ type: "USE_REROLL" as const, side: thrower.side, available: rerollsLeft(state, thrower.side), ...(passSkillReroll(thrower, proc) ? { skill: "Pass" } : {}) }]
+            : []),
+          ...proTemplate(state, thrower, proc.rerolled),
           { type: "DECLINE_REROLL", side: thrower.side },
         ];
       case "loner":
         return [lonerRollTemplate(thrower)];
+      case "pro":
+        return [proRollTemplate(thrower)];
       case "safePass":
         return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Safe Pass" }];
       case "scatter":

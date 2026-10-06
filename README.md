@@ -203,6 +203,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   up (not a rooted attacker).
 - Fend: when the player (with a tackle zone) is pushed back by a block, even if knocked down, their coach may stop the
   attacker from following up (Frenzy included); a blitzing Juggernaut ignores it.
+- Pro: once per turn, the active player (standing, in their team's turn) may roll a D6 instead of using a team re-roll
+  on one of their failed rolls (single-D6 checks and passes): on 3+ the die is re-rolled, otherwise the first result
+  stands. Not yet for block dice.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

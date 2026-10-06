@@ -3,7 +3,7 @@ import type { GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, proRollTemplate, proTemplate, rerollsLeft, rollLoner, rollPro, squareOf, useTeamReroll } from "./helpers";
 import { injure } from "./injury";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -35,6 +35,7 @@ const CHECK_NAMES = {
   appearance: "Foul Appearance",
   gaze: "Hypnotic Gaze",
   bombcatch: "Catch (bomb)",
+  pro: "Pro",
 } as const;
 
 /** The natural d6 result needed, for display ("4+"). */
@@ -117,7 +118,7 @@ function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolea
     proc.stage = "roll";
     return "wait";
   }
-  if (!success && canTeamReroll(state, player.side, proc.rerolled)) {
+  if (!success && (canTeamReroll(state, player.side, proc.rerolled) || canUsePro(state, player, proc.rerolled))) {
     proc.stage = "reroll";
     return "wait";
   }
@@ -130,6 +131,7 @@ function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolea
  * Diving Tackle: after a successful dodge or jump that -2 would turn into a failure, the opposing coach may pick one
  * eligible tackler; the roll then fails (unless Break Tackle saves it), and a re-roll keeps the -2.
  * Break Tackle: once per turn, its bonus is added to a Dodge roll that would fail without it.
+ * Pro: instead of a team re-roll, once per turn the active player may roll a D6: on 3+ the die is re-rolled.
  * Writes its outcome to `state.lastCheck`.
  */
 export const Check: Handler<P<"Check">> = {
@@ -138,15 +140,23 @@ export const Check: Handler<P<"Check">> = {
     const { state } = ctx;
     const player = getPlayer(ctx, proc.playerId);
     if (proc.stage === "reroll") {
-      const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
-      if (a.type === "DECLINE_REROLL") return finish(state, proc, false);
+      const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
+      if (a.type === "DECLINE_REROLL" || (a.type === "USE_SKILL" && !a.use)) return finish(state, proc, false);
+      if (a.type === "USE_SKILL") {
+        if (!canUsePro(state, player, proc.rerolled)) ctx.reject("Pro cannot be used now.");
+        proc.rerolled = true;
+        proc.stage = "pro";
+        return "wait";
+      }
+      if (!canTeamReroll(state, player.side, proc.rerolled)) ctx.reject("No re-roll available.");
       useTeamReroll(ctx, player.side);
       proc.rerolled = true;
       proc.stage = lonerTarget(player) === null ? "roll" : "loner";
       return "wait";
     }
-    if (proc.stage === "loner") {
-      if (!rollLoner(ctx, action, player)) return finish(state, proc, false);
+    if (proc.stage === "loner" || proc.stage === "pro") {
+      // A failed Loner or Pro roll keeps the first result.
+      if (!(proc.stage === "loner" ? rollLoner(ctx, action, player) : rollPro(ctx, action, player))) return finish(state, proc, false);
       proc.stage = "roll";
       return "wait";
     }
@@ -176,11 +186,13 @@ export const Check: Handler<P<"Check">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "reroll") {
       return [
-        { type: "USE_REROLL", side: player.side, available: rerollsLeft(state, player.side) },
+        ...(canTeamReroll(state, player.side, proc.rerolled) ? [{ type: "USE_REROLL" as const, side: player.side, available: rerollsLeft(state, player.side) }] : []),
+        ...proTemplate(state, player, proc.rerolled),
         { type: "DECLINE_REROLL", side: player.side },
       ];
     }
     if (proc.stage === "loner") return [lonerRollTemplate(player)];
+    if (proc.stage === "pro") return [proRollTemplate(player)];
     if (proc.stage === "divingTackle") {
       const playerIds = divingTacklers(state, proc, player).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: other(player.side), playerIds, max: 1, reason: `Diving Tackle: choose a player to make ${player.name}'s ${CHECK_NAMES[proc.kind].toLowerCase()} fail` }];

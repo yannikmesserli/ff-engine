@@ -27,6 +27,7 @@ const CHECK_NAMES = {
   appearance: "Foul Appearance roll (a failure wastes the block and ends the action)",
   gaze: "Hypnotic Gaze roll",
   bombcatch: "catch of the bomb",
+  pro: "Pro roll (a failure keeps the first result)",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -52,6 +53,7 @@ const SKILL_USES: Record<string, string> = {
   "Break Tackle": "to dodge free",
   Taunt: "and makes the attacker follow up",
   Fend: "and keeps the attacker away",
+  Pro: "to try a re-roll",
   "Steady Footing": "and stays on their feet",
   Shadowing: "and follows into the vacated square",
   "Strip Ball": "and knocks the ball loose",

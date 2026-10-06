@@ -219,7 +219,8 @@ export type CheckKind =
   | "savagery"
   | "appearance"
   | "gaze"
-  | "bombcatch";
+  | "bombcatch"
+  | "pro";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -300,7 +301,7 @@ export type Procedure =
       /** "animosity": the thrower may first have to roll for Animosity towards the receiver. */
       /** "safePass": a natural 1 may be saved by Safe Pass. */
       /** "aim": a player who caught a bomb picks where to throw it again. */
-      stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
+      stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "pro" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
       rerolled: boolean;
       result?: PassResult;
       /** The natural D6 of the pass roll. */
@@ -458,8 +459,11 @@ export type Procedure =
       /** Value the d6 (after modifiers) must reach. */
       target: number;
       modifier: number;
-      /** "loner": a Loner player rolls to use the team re-roll; "divingTackle": an opponent may use Diving Tackle. */
-      stage: "roll" | "reroll" | "loner" | "divingTackle";
+      /**
+       * "loner": a Loner player rolls to use the team re-roll; "pro": the Pro roll to re-roll; "divingTackle": an
+       * opponent may use Diving Tackle.
+       */
+      stage: "roll" | "reroll" | "loner" | "pro" | "divingTackle";
       rerolled: boolean;
       /** The natural roll, kept when the re-roll is declined or lost. */
       roll?: number;

@@ -168,6 +168,36 @@ export const canTeamReroll = (state: GameState, side: Side, rerolled: boolean) =
 const movingAtKickoff = (state: GameState, side: Side) =>
   state.stack.some((p) => p.type === "OnTheBall" && p.kickoff && p.side === side);
 
+/** Pro: a D6 of 3+ lets the player re-roll the die. */
+export const PRO_TARGET = 3;
+
+/** Pro: once per turn, the active player, standing, in their team's turn, may try to re-roll one of their own dice. */
+export const canUsePro = (state: GameState, player: PlayerState, rerolled: boolean) =>
+  !rerolled && hasSkill(player, "Pro") && !player.usedSkills.includes("Pro") && state.activePlayerId === player.id &&
+  state.activeSide === player.side && player.status === "standing";
+
+/** The USE_SKILL template offering Pro, if it can be used. */
+export const proTemplate = (state: GameState, player: PlayerState, rerolled: boolean): ActionTemplate[] =>
+  canUsePro(state, player, rerolled) ? [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Pro" }] : [];
+
+/** Use Pro: roll the D6 that decides whether the re-roll happens. */
+export function rollPro(ctx: Ctx, action: Action, player: PlayerState): boolean {
+  player.usedSkills.push("Pro");
+  ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Pro" });
+  const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Pro ${PRO_TARGET}+`);
+  const success = roll! >= PRO_TARGET;
+  ctx.emit({ type: "CheckResult", kind: "pro", playerId: player.id, success, roll: roll!, target: PRO_TARGET });
+  return success;
+}
+
+/** The ROLL template of a Pro roll. */
+export const proRollTemplate = (player: PlayerState): ActionTemplate => ({
+  type: "ROLL",
+  side: player.side,
+  dice: [{ kind: "d6", count: 1 }],
+  reason: `Pro ${PRO_TARGET}+ (${player.name})`,
+});
+
 /** Spend a team re-roll, drive re-rolls first. */
 export function useTeamReroll(ctx: Ctx, side: Side) {
   const team = ctx.state.teams[side];

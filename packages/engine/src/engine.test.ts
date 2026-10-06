@@ -1263,6 +1263,31 @@ describe("engine", () => {
       expect(jumped.players["home-2"]).toMatchObject({ at: { x: 10, y: 7 }, status: "standing" });
     });
 
+    describe("Pro", () => {
+      // home-1 dodges from (12,6) to (11,5).
+      const dodge = (value: number) => apply(withSkills(toFirstTurn(), { "home-1": ["Pro"] }), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(value));
+
+      it("once per turn, a D6 of 3+ re-rolls one of the player's own dice instead of a team re-roll", () => {
+        let s = dodge(1);
+        expect(types(s)).toEqual(["USE_REROLL", "USE_SKILL", "DECLINE_REROLL"]);
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(find(s, "ROLL")?.reason).toBe("Pro 3+ (Home 1)");
+        s = apply(s, roll(3), roll(6));
+        expect(s.players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing" });
+        expect(s.teams.home.rerolls).toBe(1);
+        // Back next to away-1 and out again: Pro is used up for this turn.
+        s = apply(s, ...move({ x: 12, y: 5 }), ...move({ x: 11, y: 4 }), roll(1));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+      });
+
+      it("a failed Pro roll keeps the first result; it works for passes too", () => {
+        expect(apply(dodge(1), { type: "USE_SKILL", use: true }, roll(2)).players["home-1"]!.status).toBe("prone");
+        const passer = edit(withSkills(toFirstTurn(), { "home-4": ["Pro"] }), (c) => (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+        const s = apply(passer, declare("home-4", "pass"), { type: "THROW", square: { x: 6, y: 4 } }, roll(2));
+        expect(find(s, "USE_SKILL")?.skill).toBe("Pro");
+      });
+    });
+
     describe("Fend", () => {
       const fender = (attacker: string[] = []) => withSkills(toFirstTurn(), { "away-2": ["Fend"], "home-2": attacker });
 

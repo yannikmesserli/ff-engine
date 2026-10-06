@@ -22,7 +22,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   Fend: "When pushed back by a block (even if knocked down), may stop the attacker from following up; not against a blitzing Juggernaut.",
   Frenzy: "Must follow up. After a Push or a dodged Stumble, must block the same player again if both still stand next to each other.",
   Kick: "When kicking off, may halve the kick deviation (D3 instead of D6).",
-  Pro: "Once per activation, may roll a D6 to re-roll one die: on 3+ the die is re-rolled. Not for armour, injury or casualty rolls.",
+  Pro: "Once per turn, in their own action, may roll a D6 to re-roll one of their failed rolls: on 3+ the die is re-rolled. Not for armour, injury or casualty rolls.",
   "Steady Footing": "When knocked down or placed prone, roll a D6: on 6 the player stays standing.",
   "Strip Ball": "When this player pushes back the ball carrier with a block, the ball is dropped and bounces.",
   "Sure Hands": "May re-roll a failed pick-up. Strip Ball does not work against this player.",
