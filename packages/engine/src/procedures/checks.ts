@@ -30,6 +30,7 @@ const CHECK_NAMES = {
   landing: "Landing",
   hunger: "Always Hungry",
   escape: "Escape",
+  shadowing: "Shadowing",
 } as const;
 
 /** The natural d6 result needed, for display ("4+"). */

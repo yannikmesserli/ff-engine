@@ -127,6 +127,8 @@ function endTurn(ctx: Ctx, proc: P<"Turn">) {
   const { side } = proc;
   // Cheering Fans only lasts until the end of the team's next turn.
   if (!proc.charge) state.teams[side].extraAssist = false;
+  // Shadowing is counted per turn of the moving team.
+  for (const p of teamPlayers(state, other(side))) p.usedSkills = p.usedSkills.filter((s) => s !== "Shadowing");
   ctx.emit(proc.charge ? { type: "ChargeEnded", side } : { type: "TurnEnded", side, turnover: state.turnover });
   state.activeSide = null;
   state.activePlayerId = null;
@@ -577,9 +579,14 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     const squares = proc.jump ? 2 : 1;
     const check = (kind: CheckKind, target: number, modifier: number) =>
       ctx.push({ type: "Check", kind, playerId: player.id, target, modifier, stage: "roll", rerolled: false });
+    /** Step onto the target square; leaving tackle zones (without jumping) gives Shadowing players a chance to follow. */
+    const step = (): Procedure[] => {
+      const from = { ...squareOf(ctx, player) };
+      movePlayer(ctx, player, proc.to, squares);
+      return proc.jump ? [] : [{ type: "Shadow", playerId: player.id, from, stage: "select" }];
+    };
     const fall = (inStartSquare = false) => {
-      if (!inStartSquare) movePlayer(ctx, player, proc.to, squares);
-      ctx.push({ type: "KnockDown", playerId: player.id, turnover: true, stage: "fall" });
+      ctx.push(...(inStartSquare ? [] : step()), { type: "KnockDown", playerId: player.id, turnover: true, stage: "fall" });
       proc.stage = "fell";
       proc.fellInPlace = inStartSquare;
       return "continue" as const;
@@ -621,11 +628,14 @@ export const MoveStep: Handler<P<"MoveStep">> = {
           check("dodge", player.ag, dodgeModifier(state, player, squareOf(ctx, player), proc.to));
         }
         return "continue";
-      case "move": {
+      case "move":
         if (failed(ctx)) return fall(proc.jump && state.lastCheck?.roll === 1);
-        movePlayer(ctx, player, proc.to, squares);
-        return arrive();
-      }
+        ctx.push(...step());
+        proc.stage = "arrive";
+        return "continue";
+      case "arrive":
+        // A shadowing ball carrier may have scored for the other team.
+        return state.touchdown === null ? arrive() : "done";
       case "fell":
         // Steady Footing kept the player up: the move goes on from where they are.
         if (player.status !== "standing" || proc.fellInPlace) return "done";
@@ -647,4 +657,63 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     }
   },
   actions: () => [],
+};
+
+/** Shadowing succeeds on 4+. */
+export const SHADOWING_TARGET = 4;
+
+/**
+ * Opponents who may shadow a player who left `from`: standing next to it with a tackle zone and Shadowing, not rooted,
+ * and not yet used it as many times this turn as their MA.
+ */
+export function shadowers(state: GameState, mover: PlayerState, from: Square): PlayerState[] {
+  if (playerAt(state, from)) return [];
+  return adjacent(from).flatMap((s) => {
+    const p = tackleZoneAt(state, s);
+    if (!p || p.side === mover.side || !hasSkill(p, "Shadowing") || isRooted(p)) return [];
+    return p.usedSkills.filter((u) => u === "Shadowing").length < p.ma ? [p] : [];
+  });
+}
+
+/**
+ * Shadowing: when a player moves out of tackle zones of opponents with the skill, their coach may pick one of them to
+ * roll a D6; on 4+ the shadower moves into the square left, without any roll and without using their own movement.
+ */
+export const Shadow: Handler<P<"Shadow">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const mover = getPlayer(ctx, proc.playerId);
+    if (proc.stage === "result") {
+      if (state.lastCheck?.kind !== "shadowing" || !state.lastCheck.success) return "done";
+      const shadower = getPlayer(ctx, proc.shadowerId!);
+      ctx.emit({ type: "SkillUsed", playerId: shadower.id, skill: "Shadowing" });
+      const from = squareOf(ctx, shadower);
+      const { ball } = state;
+      if (ball.carried && ball.square && sameSquare(ball.square, from)) ball.square = { ...proc.from };
+      shadower.at = { ...proc.from };
+      ctx.emit({ type: "PlayerMoved", playerId: shadower.id, from: { ...from }, to: { ...proc.from } });
+      checkTouchdown(ctx, shadower);
+      return "done";
+    }
+    const candidates = shadowers(state, mover, proc.from);
+    if (candidates.length === 0) return "done";
+    if (action === null) return "wait";
+    const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+    const id = playerIds[0];
+    if (playerIds.length > 1 || (id !== undefined && !candidates.some((c) => c.id === id))) ctx.reject("Invalid shadower.");
+    if (id === undefined) return "done";
+    const shadower = getPlayer(ctx, id);
+    shadower.usedSkills.push("Shadowing");
+    proc.shadowerId = id;
+    proc.stage = "result";
+    state.lastCheck = null;
+    ctx.push({ type: "Check", kind: "shadowing", playerId: id, target: SHADOWING_TARGET, modifier: 0, stage: "roll", rerolled: false });
+    return "continue";
+  },
+  actions(state, proc) {
+    if (proc.stage !== "select") return [];
+    const mover = state.players[proc.playerId]!;
+    const playerIds = shadowers(state, mover, proc.from).map((p) => p.id);
+    return [{ type: "SELECT_PLAYERS", side: other(mover.side), playerIds, max: 1, reason: `Shadowing: choose a player to follow ${mover.name}` }];
+  },
 };

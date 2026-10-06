@@ -22,6 +22,7 @@ const CHECK_NAMES = {
   landing: "landing",
   hunger: "Always Hungry roll",
   escape: "escape roll",
+  shadowing: "Shadowing roll",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -44,6 +45,7 @@ const SKILL_USES: Record<string, string> = {
   "Take Root": "and cannot be pushed",
   Brawler: "to re-roll a Both Down",
   "Steady Footing": "and stays on their feet",
+  Shadowing: "and follows into the vacated square",
 };
 
 /** Display names of the weather conditions. */

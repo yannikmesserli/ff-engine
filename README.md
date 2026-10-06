@@ -156,6 +156,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Steady Footing: whenever the player (standing and not distracted) would be knocked down or fall over, their coach may
   roll a D6 (team re-roll allowed in their own turn): on a 6 they stay on their feet with the ball, without a turnover,
   and the action goes on (a failed Rush before a Blitz block still leads to the block).
+- Shadowing: when a player moves (not jumps) out of the tackle zones of opponents with Shadowing, their coach may
+  pick one to roll a D6: on 4+ the shadower moves into the vacated square (no roll, no movement spent; as many times per
+  turn as their MA).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

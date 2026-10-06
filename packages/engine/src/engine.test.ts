@@ -1101,6 +1101,37 @@ describe("engine", () => {
       });
     });
 
+    describe("Shadowing", () => {
+      const select = (...playerIds: string[]): Action => ({ type: "SELECT_PLAYERS", playerIds });
+      // home-1 dodges from (12,6), next to away-1 and away-2, to (11,5).
+      const dodgeAway = (s: GameState) => apply(s, startMove("home-1"), ...move({ x: 11, y: 5 }), roll(6));
+
+      it("on 4+ the chosen shadower moves into the square the player left", () => {
+        let s = dodgeAway(withSkills(toFirstTurn(), { "away-1": ["Shadowing"], "away-2": ["Shadowing"] }));
+        expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1", "away-2"], max: 1 });
+        s = apply(s, select("away-1"));
+        expect(find(s, "ROLL")?.reason).toBe("Shadowing 4+ (Away 1)");
+        s = apply(s, roll(4));
+        expect(s.players["away-1"]!.at).toEqual({ x: 12, y: 6 });
+        expect(s.players["home-1"]!.at).toEqual({ x: 11, y: 5 });
+        expect(find(s, "MOVE")).toBeDefined();
+      });
+
+      it("a failure or no choice leaves the shadower in place", () => {
+        const s = dodgeAway(withSkills(toFirstTurn(), { "away-1": ["Shadowing"] }));
+        expect(apply(s, select("away-1"), roll(3)).players["away-1"]!.at).toEqual({ x: 13, y: 6 });
+        expect(apply(s, select()).players["away-1"]!.at).toEqual({ x: 13, y: 6 });
+      });
+
+      it("works as many times per turn as the shadower's MA", () => {
+        let s = edit(withSkills(toFirstTurn(), { "away-1": ["Shadowing"] }), (c) => void (c.players["away-1"]!.ma = 1));
+        s = apply(dodgeAway(s), select("away-1"), roll(4));
+        s = apply(s, ...move({ x: 10, y: 5 }), roll(6));
+        expect(types(s)).not.toContain("SELECT_PLAYERS");
+        expect(s.players["home-1"]!.at).toEqual({ x: 10, y: 5 });
+      });
+    });
+
     describe("Take Root", () => {
       const rooted = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Take Root"] });
 

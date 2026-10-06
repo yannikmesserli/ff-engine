@@ -214,7 +214,8 @@ export type CheckKind =
   | "animosity"
   | "landing"
   | "hunger"
-  | "escape";
+  | "escape"
+  | "shadowing";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -378,6 +379,8 @@ export type Procedure =
   | { type: "SecretWeapon"; playerIds: string[]; stage: "argue" | "argueRoll" | "bribe" | "bribeRoll" }
   /** Bloodlust: the thirsty player bites an adjacent Thrall team-mate, or fails to feed. */
   | { type: "Feed"; playerId: string; stage: "select" | "injury"; victimId?: string; dropped?: boolean }
+  /** Shadowing: an opponent may follow the player who just left `from`, out of their tackle zone. */
+  | { type: "Shadow"; playerId: string; from: Square; stage: "select" | "result"; shadowerId?: string }
   /** The crowd throws a rock at a stalling ball carrier. */
   | { type: "Stalling"; playerId: string }
   | {
@@ -405,7 +408,8 @@ export type Procedure =
       /** Jumping over a prone or stunned player: two squares, a Jump roll instead of a Dodge. */
       jump?: boolean;
       /** "fell": after the knock-down of a failed roll, which Steady Footing may have avoided. */
-      stage: "rush" | "rush2" | "dodge" | "move" | "fell" | "pickup";
+      /** "arrive": after the step (and any Shadowing), pick up the ball or score. */
+      stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup";
       /** The failed roll left the player in the starting square. */
       fellInPlace?: boolean;
     }
