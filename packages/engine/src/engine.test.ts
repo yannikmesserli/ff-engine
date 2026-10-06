@@ -1263,6 +1263,27 @@ describe("engine", () => {
       expect(jumped.players["home-2"]).toMatchObject({ at: { x: 10, y: 7 }, status: "standing" });
     });
 
+    describe("Fend", () => {
+      const fender = (attacker: string[] = []) => withSkills(toFirstTurn(), { "away-2": ["Fend"], "home-2": attacker });
+
+      it("the pushed player's coach may stop the follow-up, even when knocked down", () => {
+        const pushed = apply(blockAway2(fender()), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } });
+        expect(find(pushed, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Fend" });
+        const s = apply(pushed, { type: "USE_SKILL", use: true });
+        expect(types(s)).not.toContain("FOLLOW_UP");
+        expect(s.players["home-2"]!.at).toEqual({ x: 12, y: 7 });
+        expect(types(apply(pushed, { type: "USE_SKILL", use: false }))).toEqual(["FOLLOW_UP"]);
+      });
+
+      it("Frenzy does not follow up, and a blitzing Juggernaut ignores Fend", () => {
+        const frenzy = apply(blockAway2(fender(["Frenzy"])), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "USE_SKILL", use: true });
+        expect(frenzy.players["home-2"]!.at).toEqual({ x: 12, y: 7 });
+        expect(types(frenzy)).not.toContain("ROLL");
+        const blitz = apply(fender(["Juggernaut"]), declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" }, roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } });
+        expect(types(blitz)).toEqual(["FOLLOW_UP"]);
+      });
+    });
+
     it("Taunt: the pushed player's coach may force the attacker to follow up", () => {
       const s = apply(blockAway2(withSkills(toFirstTurn(), { "away-2": ["Taunt"] })), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } });
       expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Taunt" });

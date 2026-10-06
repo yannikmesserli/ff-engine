@@ -350,6 +350,8 @@ export type Procedure =
       blitz: boolean;
       /** Frenzy's second block against the same defender: there is no third one. */
       second?: boolean;
+      /** Fend: the defender's coach chose whether to stop the follow-up. */
+      fended?: boolean;
       /** Taunt: the defender's coach chose whether to force the follow-up. */
       taunted?: boolean;
       /** The skill re-rolling a single die (Brawler: a Both Down, Hatred: a Skull). */
@@ -359,7 +361,7 @@ export type Procedure =
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
       /** "appearance": the defender's Foul Appearance, rolled first. */
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "singleDie" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "taunt" | "followup" | "end";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "singleDie" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];

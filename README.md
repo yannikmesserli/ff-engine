@@ -201,6 +201,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   square; the Jump roll ignores tackle zones and Prehensile Tail, and Diving Tackle does not work on it.
 - Taunt: when the player is pushed back by a block (and not distracted), their coach may force the attacker to follow
   up (not a rooted attacker).
+- Fend: when the player (with a tackle zone) is pushed back by a block, even if knocked down, their coach may stop the
+  attacker from following up (Frenzy included); a blitzing Juggernaut ignores it.
 
 Not yet: most other skills (Kick...), inducements, overtime.
 

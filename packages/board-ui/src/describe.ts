@@ -51,6 +51,7 @@ const SKILL_USES: Record<string, string> = {
   Hatred: "to re-roll a Skull",
   "Break Tackle": "to dodge free",
   Taunt: "and makes the attacker follow up",
+  Fend: "and keeps the attacker away",
   "Steady Footing": "and stays on their feet",
   Shadowing: "and follows into the vacated square",
   "Strip Ball": "and knocks the ball loose",

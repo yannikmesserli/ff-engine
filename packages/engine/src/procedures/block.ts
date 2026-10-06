@@ -292,6 +292,13 @@ function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
   proc.stage = lonerTarget(attacker) === null ? "roll" : "loner";
 }
 
+/**
+ * Fend: the pushed defender (with a tackle zone, even if knocked down) may stop the attacker from following up; a
+ * blitzing Juggernaut ignores it.
+ */
+const canFend = (proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
+  isOnPitch(defender) && hasSkill(defender, "Fend") && hasTackleZone(defender) && !juggernaut(proc, attacker);
+
 /** Taunt: a pushed defender who is not distracted may force the attacker to follow up. */
 const canTaunt = (defender: PlayerState) => isOnPitch(defender) && hasSkill(defender, "Taunt") && !defender.distracted;
 
@@ -328,7 +335,7 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
 
 /**
  * One BB2025 block or blitz block: Foul Appearance -> (Rush when blitzing) -> Dauntless -> block dice -> re-roll ->
- * choice of die -> pushback -> follow-up -> Strip Ball -> knock-downs -> loose ball -> touchdown check.
+ * choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs -> loose ball -> touchdown check.
  */
 export const Block: Handler<P<"Block">> = {
   step(ctx, proc, action) {
@@ -517,8 +524,12 @@ export const Block: Handler<P<"Block">> = {
         return "continue";
       }
       case "followup": {
-        // A rooted attacker cannot follow up.
-        const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !isRooted(attacker) && !playerAt(state, proc.vacated);
+        // A rooted attacker cannot follow up, nor one held off by Fend.
+        const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !isRooted(attacker) && !playerAt(state, proc.vacated) && proc.fended !== true;
+        if (canFollow && proc.fended === undefined && canFend(proc, attacker, defender)) {
+          proc.stage = "fend";
+          return "continue";
+        }
         // Frenzy: the attacker must follow up.
         const frenzy = canFollow && hasSkill(attacker, "Frenzy");
         // Taunt: the pushed defender's coach may make the attacker follow up.
@@ -552,6 +563,12 @@ export const Block: Handler<P<"Block">> = {
         proc.stage = "end";
         return "continue";
       }
+      case "fend":
+        if (action === null) return "wait";
+        proc.fended = ctx.expect(action, "USE_SKILL").use;
+        if (proc.fended) ctx.emit({ type: "SkillUsed", playerId: defender.id, skill: "Fend" });
+        proc.stage = "followup";
+        return "continue";
       case "taunt":
         if (action === null) return "wait";
         proc.taunted = ctx.expect(action, "USE_SKILL").use;
@@ -609,6 +626,8 @@ export const Block: Handler<P<"Block">> = {
         const { side, squares } = pushChoice(state, proc);
         return [{ type: "PUSH", side, playerId: proc.pushing!.playerId, squares }];
       }
+      case "fend":
+        return [{ type: "USE_SKILL", side: defender.side, playerId: defender.id, skill: "Fend" }];
       case "taunt":
         return [{ type: "USE_SKILL", side: defender.side, playerId: defender.id, skill: "Taunt" }];
       case "followup":
