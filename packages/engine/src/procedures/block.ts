@@ -252,20 +252,21 @@ export function hates(attacker: PlayerState, defender: PlayerState): boolean {
 }
 
 /**
- * The skill that may re-roll a single die instead of the block re-roll, if any: Brawler a Both Down (once per
- * activation, not during a Blitz), Hatred(X) a Skull when blocking a player with keyword X.
+ * The skills that may re-roll a single die instead of the block re-roll: Brawler a Both Down (once per activation, not
+ * during a Blitz), Hatred(X) a Skull when blocking a player with keyword X.
  */
-function singleDieSkill(proc: P<"Block">, attacker: PlayerState, defender: PlayerState): SingleDieSkill | null {
-  if (proc.rerolled) return null;
+function singleDieSkills(proc: P<"Block">, attacker: PlayerState, defender: PlayerState): SingleDieSkill[] {
+  if (proc.rerolled) return [];
   const brawler = !proc.blitz && hasSkill(attacker, "Brawler") && !attacker.usedSkills.includes("Brawler");
-  if (brawler && proc.results!.includes(BOTH_DOWN_FACE)) return "Brawler";
-  if (hates(attacker, defender) && proc.results!.includes(SKULL_FACE)) return "Hatred";
-  return null;
+  return [
+    ...(brawler && proc.results!.includes(BOTH_DOWN_FACE) ? (["Brawler"] as const) : []),
+    ...(hates(attacker, defender) && proc.results!.includes(SKULL_FACE) ? (["Hatred"] as const) : []),
+  ];
 }
 
 /** Any re-roll the attacker could use on the block dice now (team re-roll, Brawler, Hatred, Pro). */
 const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
-  canReroll(state, proc, attacker) || singleDieSkill(proc, attacker, defender) !== null || canUsePro(state, attacker, proc.rerolled);
+  canReroll(state, proc, attacker) || singleDieSkills(proc, attacker, defender).length > 0 || canUsePro(state, attacker, proc.rerolled);
 
 /** The re-roll skills offered on the block dice now, as USE_SKILL templates. */
 const skillTemplates = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) => [
@@ -278,21 +279,18 @@ function useSkill(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: P
   const offered = skillTemplates(ctx.state, proc, attacker, defender).map((t) => t.skill);
   const chosen = skill ?? offered[0];
   if (chosen === undefined || !offered.includes(chosen)) ctx.reject("This skill cannot be used now.");
-  if (chosen !== "Pro") return useSingleDie(ctx, proc, attacker, defender);
+  if (chosen !== "Pro") return useSingleDie(ctx, proc, attacker, chosen as SingleDieSkill);
   // Pro: the coach picks the die, then rolls for it.
   proc.rerolled = true;
   proc.stage = "proDie";
 }
 
-/** The USE_SKILL template offering a single-die re-roll skill, if one can be used. */
-function singleDieTemplate(proc: P<"Block">, attacker: PlayerState, defender: PlayerState) {
-  const skill = singleDieSkill(proc, attacker, defender);
-  return skill ? [{ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill }] : [];
-}
+/** The USE_SKILL templates offering the single-die re-roll skills that can be used. */
+const singleDieTemplate = (proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
+  singleDieSkills(proc, attacker, defender).map((skill) => ({ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill }));
 
 /** Use Brawler or Hatred: the re-roll of one die comes next. */
-function useSingleDie(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) {
-  const skill = singleDieSkill(proc, attacker, defender) ?? ctx.reject("No single-die re-roll available.");
+function useSingleDie(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, skill: SingleDieSkill) {
   if (skill === "Brawler") attacker.usedSkills.push("Brawler");
   ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill });
   proc.rerolled = true;

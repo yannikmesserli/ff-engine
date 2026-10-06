@@ -1069,6 +1069,17 @@ describe("engine", () => {
         expect(find(blitz, "USE_SKILL")?.skill).toBe("Hatred");
       });
 
+      it("is offered next to Brawler when both a Skull and a Both Down are rolled", () => {
+        const strong = edit(toFirstTurn(team("Home", { st: 4 }), team("Away")), (c) => {
+          c.players["home-2"]!.skills = ["Hatred(troll)", "Brawler"];
+          c.players["away-2"]!.keywords = ["troll"];
+        });
+        const s = apply(blockAway2(strong), roll(1, 2));
+        expect(getAvailableActions(s).flatMap((t) => (t.type === "USE_SKILL" ? [t.skill] : []))).toEqual(["Brawler", "Hatred"]);
+        const hated = apply(s, { type: "USE_SKILL", use: true, skill: "Hatred" }, roll(6));
+        expect(find(hated, "CHOOSE_BLOCK_DIE")?.results).toEqual([6, 2]);
+      });
+
       it("not against other players, nor on other faces", () => {
         expect(find(apply(blockAway2(hater(["lineman"])), roll(1)), "USE_SKILL")).toBeUndefined();
         expect(find(apply(blockAway2(hater(["troll"])), roll(2)), "USE_SKILL")).toBeUndefined();
