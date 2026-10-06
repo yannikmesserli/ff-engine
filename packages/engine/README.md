@@ -116,7 +116,9 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
   `legalMoves`, `adjacentTargets`, `blockDice`, `pushbackSquares`, `foulAssists`, `foulTargets`,
   `RANGE_MODIFIER`, `evaluatePass`, `passRange`, `throwTargets`, `handOffTargets`, `interceptors`, `underRuler`,
   `neededRoll`, `injuryOutcome`, `casualtyFor`, `CASUALTY_DICE`, `hasSkill`, `skillName`, `skillValue`.
-- Skills: automatic skill re-rolls (Dodge, Sure Hands, Catch) live in `skillReroll` (`procedures/checks.ts`). An
+- Skills: automatic skill re-rolls (Dodge, Sure Hands, Catch) live in `skillReroll` (`procedures/checks.ts`). The
+  rules make them optional ("may re-roll"), but they are used without asking: keeping a failed dodge, pick-up or
+  catch almost never helps, and a prompt on each one would slow the game down. An
   optional skill the coach decides on is a `USE_SKILL` template (`{ skill, playerId }`) answered by
   `{ type: "USE_SKILL", use }` (Stand Firm); a skill re-roll offered instead of a team re-roll is a `USE_REROLL`
   template with `skill` set (Pass).

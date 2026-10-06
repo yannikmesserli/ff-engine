@@ -45,6 +45,8 @@ export const neededRoll = (target: number, modifier: number) => Math.min(6, Math
 /**
  * The skill that re-rolls a failed check of this kind, if the player can use it now: Sure Hands for a pick-up, Catch
  * for a catch, Dodge once per turn and not when dodging away from an opponent with Tackle.
+ * The rules say the player "may" re-roll, but these re-rolls are used without asking: there is almost never a reason
+ * to keep a failed dodge, pick-up or catch, and a prompt on each of them would slow the game down.
  */
 function skillReroll(state: GameState, proc: P<"Check">, player: PlayerState): string | null {
   if (proc.kind === "pickup") return hasSkill(player, "Sure Hands") ? "Sure Hands" : null;

@@ -96,7 +96,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Stand Firm: the pushed player's coach may refuse the push (also when chain-pushed: then nobody in the chain moves);
   no follow-up, and a knock-down happens in place.
 - Sidestep: the pushed player's coach picks any free adjacent square instead of the usual three (when one is free).
-- Sure Hands, Catch: automatic re-roll of a failed pick-up or catch (hand-offs too). Pass: the coach may re-roll an
+- Sure Hands, Catch: automatic re-roll of a failed pick-up or catch (hand-offs too). Like Dodge's, these optional
+  re-rolls are used without asking: declining one almost never helps, and skipping the prompt keeps the game moving. Pass: the coach may re-roll an
   inaccurate pass or a fumble with the skill instead of a team re-roll.
 - Bone Head (2+) and Really Stupid (4+, or 2+ next to a standing team-mate without Really Stupid): rolled when the
   player is activated, team re-roll allowed. A failure ends the action (the declared action still counts as used, no
