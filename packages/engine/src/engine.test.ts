@@ -1263,6 +1263,13 @@ describe("engine", () => {
       expect(jumped.players["home-2"]).toMatchObject({ at: { x: 10, y: 7 }, status: "standing" });
     });
 
+    it("Taunt: the pushed player's coach may force the attacker to follow up", () => {
+      const s = apply(blockAway2(withSkills(toFirstTurn(), { "away-2": ["Taunt"] })), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } });
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Taunt" });
+      expect(apply(s, { type: "USE_SKILL", use: true }).players["home-2"]!.at).toEqual({ x: 13, y: 7 });
+      expect(types(apply(s, { type: "USE_SKILL", use: false }))).toEqual(["FOLLOW_UP"]);
+    });
+
     describe("Bombardier", () => {
       const bomber = (s = toFirstTurn()) => withSkills(s, { "home-4": ["Bombardier"] });
       const throwBomb = (s: GameState, square: Square) => apply(s, declare("home-4", "bomb"), { type: "THROW", square });

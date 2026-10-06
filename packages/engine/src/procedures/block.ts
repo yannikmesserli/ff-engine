@@ -292,6 +292,9 @@ function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
   proc.stage = lonerTarget(attacker) === null ? "roll" : "loner";
 }
 
+/** Taunt: a pushed defender who is not distracted may force the attacker to follow up. */
+const canTaunt = (defender: PlayerState) => isOnPitch(defender) && hasSkill(defender, "Taunt") && !defender.distracted;
+
 /**
  * Strip Ball: an opponent the attacker pushed back (Push, or a Stumble saved by Dodge) without knocking them down drops
  * the ball in the square they were pushed to, unless they have Sure Hands and a tackle zone. Not when they did not move
@@ -518,9 +521,15 @@ export const Block: Handler<P<"Block">> = {
         const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !isRooted(attacker) && !playerAt(state, proc.vacated);
         // Frenzy: the attacker must follow up.
         const frenzy = canFollow && hasSkill(attacker, "Frenzy");
-        if (canFollow && !frenzy && action === null) return "wait";
+        // Taunt: the pushed defender's coach may make the attacker follow up.
+        if (canFollow && !frenzy && proc.taunted === undefined && canTaunt(defender)) {
+          proc.stage = "taunt";
+          return "continue";
+        }
+        const forced = frenzy || proc.taunted === true;
+        if (canFollow && !forced && action === null) return "wait";
         if (canFollow) {
-          const follow = frenzy || ctx.expect(action, "FOLLOW_UP").follow;
+          const follow = forced || ctx.expect(action, "FOLLOW_UP").follow;
           if (follow) {
             const from = squareOf(ctx, attacker);
             const { ball } = state;
@@ -543,6 +552,12 @@ export const Block: Handler<P<"Block">> = {
         proc.stage = "end";
         return "continue";
       }
+      case "taunt":
+        if (action === null) return "wait";
+        proc.taunted = ctx.expect(action, "USE_SKILL").use;
+        if (proc.taunted) ctx.emit({ type: "SkillUsed", playerId: defender.id, skill: "Taunt" });
+        proc.stage = "followup";
+        return "continue";
       case "end": {
         const carrier = ballCarrier(state);
         if (carrier) checkTouchdown(ctx, carrier);
@@ -594,6 +609,8 @@ export const Block: Handler<P<"Block">> = {
         const { side, squares } = pushChoice(state, proc);
         return [{ type: "PUSH", side, playerId: proc.pushing!.playerId, squares }];
       }
+      case "taunt":
+        return [{ type: "USE_SKILL", side: defender.side, playerId: defender.id, skill: "Taunt" }];
       case "followup":
         return [{ type: "FOLLOW_UP", side: attacker.side, playerId: attacker.id, square: proc.vacated! }];
       default:

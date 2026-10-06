@@ -199,6 +199,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   the moving team), prone or stunned ones roll armour, without modifiers.
 - Pogo: the player may jump over any adjacent square (empty or occupied, standing players included) into an empty
   square; the Jump roll ignores tackle zones and Prehensile Tail, and Diving Tackle does not work on it.
+- Taunt: when the player is pushed back by a block (and not distracted), their coach may force the attacker to follow
+  up (not a rooted attacker).
 
 Not yet: most other skills (Kick...), inducements, overtime.
 
