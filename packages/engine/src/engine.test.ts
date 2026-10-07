@@ -2007,6 +2007,30 @@ describe("engine", () => {
       });
     });
 
+    describe("Give and Go", () => {
+      /** home-5 has the skill and picks up the ball at (4,2), with two squares left; home-4 waits at (6,2). */
+      const ready = (action: PlayerActionType) =>
+        apply(place(withSkills(toFirstTurn(), { "home-5": ["Give and Go"] }), { "home-4": { x: 6, y: 2 } }), declare("home-5", action), ...TO_BALL, roll(3));
+
+      it("after a completed Quick pass, the thrower may move on with the squares left", () => {
+        let s = apply(ready("pass"), { type: "THROW", square: { x: 6, y: 2 } }, roll(6), roll(6));
+        expect(s.ball).toEqual({ square: { x: 6, y: 2 }, carried: true });
+        expect(top(s)).toMatchObject({ type: "MoveAction", playerId: "home-5" });
+        expect(types(s)).toEqual(["MOVE", "END_PLAYER_ACTION"]);
+        s = apply(s, ...move({ x: 4, y: 3 }, { x: 4, y: 4 }));
+        // The pass did not cost any square: the next one is a Rush.
+        expect([s.players["home-5"]!.at, s.players["home-5"]!.movesUsed]).toEqual([{ x: 4, y: 4 }, 6]);
+        expect(find(s, "THROW")).toBeUndefined();
+      });
+
+      it("after a hand-off too, but not after a longer pass", () => {
+        const handOff = apply(ready("handoff"), ...move({ x: 5, y: 2 }), { type: "HAND_OFF", targetId: "home-4" }, roll(6));
+        expect(types(handOff)).toContain("MOVE");
+        const s = apply(ready("pass"), { type: "THROW", square: { x: 10, y: 4 } }, roll(6), roll(6));
+        expect(top(s).type).toBe("Turn");
+      });
+    });
+
     describe("Hail Mary Pass", () => {
       /** home-5 picks up the ball at (4,2) during a Pass action. */
       const thrower = (s = toFirstTurn()) => apply(withSkills(s, { "home-5": ["Hail Mary Pass"] }), declare("home-5", "pass"), ...TO_BALL, roll(3));

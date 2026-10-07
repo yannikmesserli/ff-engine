@@ -310,6 +310,8 @@ export type Procedure =
       fed?: boolean;
       /** Fumblerooski: the player drops the ball in the square they leave on their next step. */
       fumblerooski?: boolean;
+      /** Give and Go: the ball was passed or handed off, and the player moves on (no second throw). */
+      released?: boolean;
     }
   | {
       type: "Pass";

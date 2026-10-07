@@ -63,6 +63,7 @@ const SKILL_USES: Record<string, string> = {
   "Break Tackle": "to dodge free",
   Taunt: "and makes the attacker follow up",
   Trickster: "and slips to another square",
+  "Give and Go": "and keeps moving",
   Tentacles: "and holds the moving player in place",
   Fend: "and keeps the attacker away",
   Pro: "to try a re-roll",

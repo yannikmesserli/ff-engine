@@ -731,7 +731,7 @@ const foulOptions = (state: GameState, proc: P<"MoveAction">) =>
 /** The active player, if this activation still lets them throw or hand off the ball they are holding. */
 function releasingBall(state: GameState, proc: P<"MoveAction">, action: "pass" | "handoff") {
   const player = state.players[proc.playerId]!;
-  return proc.action === action && !proc.finished && player.status === "standing" && holdsBall(state, player) ? player : null;
+  return proc.action === action && !proc.finished && !proc.released && player.status === "standing" && holdsBall(state, player) ? player : null;
 }
 
 /** Squares the player may throw the ball (Pass) or a bomb (Throw Bomb, standing, without moving first) to. */

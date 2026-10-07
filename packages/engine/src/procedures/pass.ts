@@ -166,6 +166,20 @@ function endBallAction(ctx: Ctx, thrower: PlayerState, dumpOff = false) {
   if (!dumpOff && (!carrier || carrier.side !== thrower.side)) ctx.state.turnover = true;
 }
 
+/**
+ * Give and Go: after a Quick pass that was not fumbled, or a hand-off, without a turnover, the thrower's action goes on
+ * as a move with the squares left.
+ */
+function giveAndGo(ctx: Ctx, thrower: PlayerState) {
+  const { state } = ctx;
+  if (state.turnover || state.touchdown !== null || !hasSkill(thrower, "Give and Go")) return;
+  const activation = state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === thrower.id);
+  if (!activation) return;
+  activation.finished = false;
+  activation.released = true;
+  ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Give and Go" });
+}
+
 /** Where the thrower may aim: Quick passes only for a Dump-off. */
 const aimTargets = (state: GameState, thrower: PlayerState, proc: P<"Pass">) =>
   throwTargets(state, thrower).filter((s) => !proc.dumpOff || s.range === "quick");
@@ -373,6 +387,7 @@ export const Pass: Handler<P<"Pass">> = {
       case "end":
         // A bomb only causes a turnover by knocking down the team's players.
         if (!proc.bomb) endBallAction(ctx, thrower, proc.dumpOff);
+        if (!proc.bomb && !proc.dumpOff && !proc.hailMary && proc.range === "quick" && proc.result !== "fumble") giveAndGo(ctx, thrower);
         return "done";
     }
   },
@@ -488,6 +503,7 @@ export const HandOff: Handler<P<"HandOff">> = {
       return "continue";
     }
     endBallAction(ctx, thrower);
+    giveAndGo(ctx, thrower);
     return "done";
   },
   actions: () => [],

@@ -47,7 +47,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   Cannoneer: "+1 to Long passes and Long Bombs.",
   "Cloud Burster": "This player's passes cannot be intercepted (except by a player with Very Long Legs).",
   "Dump-off": "When targeted by a block or a special action while holding the ball, may first make a Quick pass; nobody's turn ends because of it.",
-  "Give and Go": "After a successful Quick pass or hand-off, may keep moving.",
+  "Give and Go": "After a Quick pass that is not fumbled, or a hand-off, without a turnover, may move on with the squares left.",
   "Hail Mary Pass": "May throw to any square of the pitch; it is never accurate and cannot be intercepted.",
   Leader: "The team gets an extra re-roll each half while this player is on the pitch.",
   "Nerves of Steel": "Ignores tackle zones when passing, catching or intercepting.",
