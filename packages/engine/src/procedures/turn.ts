@@ -1,5 +1,6 @@
 import type { Ctx, Handler, StepResult } from "../context";
-import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
+import type { Action, CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
+import { templateDirection } from "../dice";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
 import { dropBall } from "./ball";
@@ -114,6 +115,8 @@ export function legalMoves(state: GameState, player: PlayerState): Array<Square 
   if (!isOnPitch(player) || player.status !== "standing" || isRooted(player)) return [];
   const left = maxMoves(player) - player.movesUsed;
   if (left <= 0) return [];
+  // Ball & Chain: one of the four squares next to the player (occupied or not) gives the side the template faces.
+  if (hasSkill(player, "Ball & Chain")) return chainSides(player).map((s) => ({ ...s, rolls: player.movesUsed >= player.ma ? ["rush" as const] : [] }));
   const { ball } = state;
   const pickup = (s: Square): CheckKind[] => (ball.square && !ball.carried && sameSquare(ball.square, s) ? ["pickup"] : []);
   const rushes = (squares: number): CheckKind[] =>
@@ -273,6 +276,8 @@ const keepsBall = (player: PlayerState) => ["My Ball", "No Ball", "Ball & Chain"
 export function declarableActions(state: GameState, proc: P<"Turn">, player: PlayerState): PlayerActionType[] {
   if (!canAct(player)) return [];
   const actions: PlayerActionType[] = ["move"];
+  // Ball & Chain: a Move action only.
+  if (hasSkill(player, "Ball & Chain")) return actions;
   const free = (a: PlayerActionType) => !proc.used.includes(a);
   // Jump Up: a prone player may declare a Block, standing up with an AG roll.
   const canBlock = player.status === "standing" || hasSkill(player, "Jump Up");
@@ -837,9 +842,11 @@ function movePlayer(ctx: Ctx, player: PlayerState, to: Square, squares = 1) {
  * square, any other failed Jump in the target square.
  */
 export const MoveStep: Handler<P<"MoveStep">> = {
-  step(ctx, proc) {
+  step(ctx, proc, action) {
     const { state } = ctx;
     const player = getPlayer(ctx, proc.playerId);
+    if (proc.stage === "rush" && hasSkill(player, "Ball & Chain")) proc.stage = "chain";
+    if (proc.stage === "chain" || proc.stage === "chainBlock" || proc.stage === "chainArrive") return chainStep(ctx, proc, action, player);
     const squares = proc.jump ? 2 : 1;
     const check = (kind: CheckKind, target: number, modifier: number, leaving?: { from: Square; to: Square }) =>
       ctx.push({ type: "Check", kind, playerId: player.id, target, modifier, stage: "roll", rerolled: false, ...(leaving ? { leaving } : {}) });
@@ -943,8 +950,71 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         return "done";
     }
   },
-  actions: () => [],
+  actions(state, proc) {
+    if (proc.stage !== "chain") return [];
+    const player = state.players[proc.playerId]!;
+    return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `Ball & Chain direction (${player.name})` }];
+  },
 };
+
+/** Ball & Chain: the four squares next to the player (not diagonally) on the pitch. */
+const chainSides = (player: PlayerState & { at: Square }) =>
+  [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }].map((d) => ({ x: player.at.x + d.x, y: player.at.y + d.y })).filter(inBounds);
+
+/**
+ * Ball & Chain: each step, the coach picks a side; a D6 on the throw-in template facing it gives the square the player
+ * goes to, ignoring tackle zones (no dodge, Tentacles, Diving Tackle or Shadowing). Into a player of either team: a
+ * block from where the player stands (a Rush first if needed; a failed one is a fall, a turnover). Into an empty
+ * square: the player moves, then rolls any Rush (falling there on a failure, a turnover); a loose ball there bounces,
+ * without a turnover (the player never picks it up). Off the pitch: the crowd, a turnover.
+ */
+function chainStep(ctx: Ctx, proc: P<"MoveStep">, action: Action | null, player: PlayerState): StepResult {
+  const { state } = ctx;
+  const from = squareOf(ctx, player);
+  if (proc.stage === "chain") {
+    if (action === null) return "wait";
+    const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], "Ball & Chain direction");
+    const dir = templateDirection({ x: Math.sign(proc.to.x - from.x), y: Math.sign(proc.to.y - from.y) }, roll!);
+    const to = { x: from.x + dir.x, y: from.y + dir.y };
+    proc.to = { ...to };
+    const rush = player.movesUsed >= player.ma;
+    if (!inBounds(to)) {
+      // Into the crowd: an injury roll, a turnover.
+      player.movesUsed += 1;
+      player.at = "reserves";
+      ctx.emit({ type: "PlayerPushed", playerId: player.id, from: { ...from }, to: null });
+      ctx.push({ type: "Crowd", playerId: player.id, from: { ...from }, hadBall: false });
+      state.turnover = true;
+      return "done";
+    }
+    state.lastCheck = null;
+    const occupant = playerAt(state, to);
+    if (occupant) {
+      proc.stage = "chainBlock";
+      if (rush) ctx.push({ type: "Check", kind: "rush", playerId: player.id, target: RUSH_TARGET, modifier: rushModifier(state, player), stage: "roll", rerolled: false });
+      return "continue";
+    }
+    movePlayer(ctx, player, to, 1);
+    proc.stage = "chainArrive";
+    if (rush) ctx.push({ type: "Check", kind: "rush", playerId: player.id, target: RUSH_TARGET, modifier: rushModifier(state, player), stage: "roll", rerolled: false });
+    return "continue";
+  }
+  if (failed(ctx)) {
+    ctx.push({ type: "KnockDown", playerId: player.id, turnover: true, stage: "fall", fallsOver: true });
+    return "done";
+  }
+  if (proc.stage === "chainBlock") {
+    player.movesUsed += 1;
+    const defender = playerAt(state, proc.to)!;
+    const dice = blockDice(state, player, defender);
+    ctx.emit({ type: "BlockDeclared", attackerId: player.id, defenderId: defender.id, dice });
+    ctx.push({ type: "Block", attackerId: player.id, defenderId: defender.id, blitz: false, stage: "appearance", dice, rerolled: false, chain: [], ballAndChain: true });
+    return "done";
+  }
+  const { ball } = state;
+  if (ball.square && !ball.carried && sameSquare(ball.square, proc.to)) ctx.push({ type: "Bounce", from: { ...proc.to }, kickoff: false, receiving: null });
+  return "done";
+}
 
 /** Tentacles: D6 + the Tentacles player's ST - the mover's ST must reach 6. */
 export const TENTACLES_TARGET = 6;

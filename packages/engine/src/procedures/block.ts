@@ -77,6 +77,11 @@ export function dauntlessTarget(attacker: PlayerState, defender: PlayerState): n
 /** Number of block dice: positive when the attacker chooses, negative when the defender does. */
 export function blockDice(state: GameState, attacker: PlayerState, defender: PlayerState, context: BlockContext = {}): number {
   if (!isOnPitch(attacker) || !isOnPitch(defender)) return 0;
+  // Ball & Chain into a team-mate: no assists, and the attacker's coach always picks the die.
+  if (attacker.side === defender.side) {
+    const [a, d] = [attackerStrength(attacker, defender, context), defender.st];
+    return a > 2 * d || 2 * a < d ? 3 : a !== d ? 2 : 1;
+  }
   const extra = (context.extraAssist ?? state.teams[attacker.side].extraAssist) ? 1 : 0;
   const a = attackerStrength(attacker, defender, context) + assists(state, attacker.side, defender.at, defender.id, attacker.id) + extra;
   const d = defender.st + assists(state, defender.side, attacker.at, attacker.id, defender.id);
@@ -138,14 +143,17 @@ const pushStage = (state: GameState, proc: P<"Block">) => {
   return hasSkill(player, "Stand Firm") && hasTackleZone(player) ? "standFirm" : "push";
 };
 
-/** The attacker's Mighty Blow, Claws and Plague Ridden, for a knock-down of an opponent caused by the block. */
+/**
+ * The attacker's Mighty Blow, Claws and Plague Ridden, for a knock-down of an opponent caused by the block. Knocking
+ * down a standing team-mate (Ball & Chain) is a turnover.
+ */
 function knockDownDefender(attacker: PlayerState, defender: PlayerState): P<"KnockDown"> {
   const opponent = attacker.side !== defender.side;
   const bonus = opponent ? skillValue(attacker, "Mighty Blow", 1) : null;
   return {
     type: "KnockDown",
     playerId: defender.id,
-    turnover: false,
+    turnover: !opponent && defender.status === "standing",
     stage: "fall",
     ...(bonus ? { mightyBlow: { playerId: attacker.id, bonus } } : {}),
     ...(opponent ? { blockerId: attacker.id } : {}),
@@ -208,6 +216,11 @@ function bothDown(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
 function wrestle(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
   const { state } = ctx;
   for (const player of [defender, attacker]) {
+    // Ball & Chain: placed prone means an injury roll (the armour breaks without a roll).
+    if (hasSkill(player, "Ball & Chain")) {
+      ctx.push({ type: "KnockDown", playerId: player.id, turnover: false, stage: "fall" });
+      continue;
+    }
     const square = squareOf(ctx, player);
     const carrying = ballCarrier(state)?.id === player.id;
     player.status = "prone";
@@ -230,14 +243,16 @@ export const FOUL_APPEARANCE_TARGET = 2;
  */
 export function rollFoulAppearance(ctx: Ctx, attacker: PlayerState, defender: PlayerState): boolean {
   ctx.state.lastCheck = null;
-  if (!hasSkill(defender, "Foul Appearance")) return false;
+  // Ball & Chain ignores Foul Appearance.
+  if (!hasSkill(defender, "Foul Appearance") || hasSkill(attacker, "Ball & Chain")) return false;
   ctx.push({ type: "Check", kind: "appearance", playerId: attacker.id, target: FOUL_APPEARANCE_TARGET, modifier: 0, stage: "roll", rerolled: false });
   return true;
 }
 
 /** Trickster: the free squares next to the attacker where the defender (with a tackle zone) may move before being hit. */
 export function tricksterSquares(state: GameState, attacker: PlayerState, defender: PlayerState): Square[] {
-  if (!hasSkill(defender, "Trickster") || !hasTackleZone(defender) || !isOnPitch(attacker) || !isOnPitch(defender)) return [];
+  // Ball & Chain ignores Trickster.
+  if (!hasSkill(defender, "Trickster") || !hasTackleZone(defender) || !isOnPitch(attacker) || !isOnPitch(defender) || hasSkill(attacker, "Ball & Chain")) return [];
   return adjacent(attacker.at).filter((s) => !playerAt(state, s));
 }
 
@@ -398,7 +413,7 @@ function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
  * blitzing Juggernaut ignores it.
  */
 const canFend = (proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
-  isOnPitch(defender) && hasSkill(defender, "Fend") && hasTackleZone(defender) && !juggernaut(proc, attacker);
+  isOnPitch(defender) && hasSkill(defender, "Fend") && hasTackleZone(defender) && !juggernaut(proc, attacker) && !proc.ballAndChain;
 
 /** Taunt: a pushed defender who is not distracted may force the attacker to follow up. */
 const canTaunt = (defender: PlayerState) => isOnPitch(defender) && hasSkill(defender, "Taunt") && !defender.distracted;
@@ -438,6 +453,8 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
  * One BB2025 block or blitz block: Foul Appearance -> Dump-off (Block action) or Rush (Blitz) -> Dauntless -> Trickster
  * -> block dice -> re-roll -> choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs ->
  * loose ball -> touchdown check.
+ * Ball & Chain (a player running into another, either team): no Foul Appearance, Trickster or Fend, a forced
+ * follow-up; a prone or stunned defender is pushed back and rolls armour without block dice, and no turnover.
  */
 export const Block: Handler<P<"Block">> = {
   step(ctx, proc, action) {
@@ -493,6 +510,13 @@ export const Block: Handler<P<"Block">> = {
         proc.stage = "roll";
         return "continue";
       case "roll": {
+        // Ball & Chain into a prone or stunned player: no dice, pushed back and an armour roll, no turnover.
+        if (proc.ballAndChain && defender.status !== "standing") {
+          proc.hitOnGround = true;
+          proc.face = PUSH_FACE;
+          proc.stage = "resolve";
+          return "continue";
+        }
         if (action === null) return "wait";
         proc.results = ctx.roll(action, [{ kind: "block", count: Math.abs(proc.dice) }], "Block");
         // The attacker may re-roll from the choice of die; when the defender chooses, the re-roll is decided first.
@@ -580,7 +604,7 @@ export const Block: Handler<P<"Block">> = {
           return "continue";
         }
         const dodges = result === "defender_stumbles" && hasSkill(defender, "Dodge") && !hasSkill(attacker, "Tackle");
-        proc.knockDefender = result === "defender_down" || (result === "defender_stumbles" && !dodges);
+        proc.knockDefender = result === "defender_down" || (result === "defender_stumbles" && !dodges) || proc.hitOnGround === true;
         const from = squareOf(ctx, defender);
         const at = squareOf(ctx, attacker);
         proc.vacated = { ...from };
@@ -664,8 +688,8 @@ export const Block: Handler<P<"Block">> = {
           proc.stage = "fend";
           return "continue";
         }
-        // Frenzy: the attacker must follow up.
-        const frenzy = canFollow && hasSkill(attacker, "Frenzy");
+        // Frenzy and Ball & Chain: the attacker must follow up.
+        const frenzy = canFollow && (hasSkill(attacker, "Frenzy") || proc.ballAndChain === true);
         // Taunt: the pushed defender's coach may make the attacker follow up.
         if (canFollow && !frenzy && proc.taunted === undefined && canTaunt(defender)) {
           proc.stage = "taunt";
@@ -898,15 +922,17 @@ export const Vomit: Handler<P<"Vomit">> = {
         proc.stage = "armour";
         return "continue";
       case "armour": {
-        if (action === null) return "wait";
         const victim = getPlayer(ctx, proc.victimId!);
-        const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], `Armour ${victim.av}+ (${attackName(proc)})`);
+        // Ball & Chain: the armour breaks without a roll.
+        const chained = hasSkill(victim, "Ball & Chain");
+        if (!chained && action === null) return "wait";
+        const [a, b] = chained ? [0, 0] : ctx.roll(action!, [{ kind: "d6", count: 2 }], `Armour ${victim.av}+ (${attackName(proc)})`);
         const roll = a! + b! + (proc.skill === "Chainsaw" ? chainsawArmour(victim) : 0);
-        if (roll < victim.av) {
+        if (!chained && roll < victim.av) {
           ctx.emit({ type: "ArmourHeld", playerId: victim.id, roll });
           return "done";
         }
-        ctx.emit({ type: "ArmourBroken", playerId: victim.id, roll });
+        ctx.emit(chained ? { type: "ArmourBroken", playerId: victim.id } : { type: "ArmourBroken", playerId: victim.id, roll });
         const carrying = ballCarrier(state)?.id === victim.id;
         victim.status = "prone";
         ctx.emit({ type: "PlayerPlacedProne", playerId: victim.id });
@@ -949,6 +975,9 @@ function breatheFire(ctx: Ctx, proc: P<"Vomit">, attacker: PlayerState): StepRes
   if (!check.success) {
     ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
   } else if (natural === 6) {
+    ctx.push({ type: "KnockDown", playerId: defender.id, turnover: false, stage: "fall" });
+  } else if (roll >= BREATHE_FIRE_PRONE && hasSkill(defender, "Ball & Chain")) {
+    // Placed prone, a Ball & Chain player rolls for injury.
     ctx.push({ type: "KnockDown", playerId: defender.id, turnover: false, stage: "fall" });
   } else if (roll >= BREATHE_FIRE_PRONE) {
     const square = squareOf(ctx, defender);

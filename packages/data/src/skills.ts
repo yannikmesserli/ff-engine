@@ -87,7 +87,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Always Hungry": "Before throwing a team-mate, roll a D6: on a 1 the team-mate must escape (2+), or be eaten.",
   "Animal Savagery": "After declaring an action, roll a D6 (+2 for a Block or Blitz): on 1-3 the player lashes out at an adjacent team-mate, or loses the action.",
   Animosity: "Before passing or handing off to {X}, roll a D6: on a 1 the player refuses and the action ends.",
-  "Ball & Chain": "Can only take a Ball & Chain move: moves randomly, blocking whoever is in the way.",
+  "Ball & Chain": "Move action only: each step goes where a D6 on the throw-in template says, blocking whoever is there (team-mates too). Knocked down: armour broken, Stunned is KO'd.",
   Bombardier: "Once per turn, a Throw Bomb special action (no move first): thrown like a pass, the bomb explodes where it stops, hitting the player there and those around it on 4+.",
   "Bone Head": "After declaring an action, roll a D6: on a 1 the action is lost and the player is distracted (no tackle zone) until their next activation.",
   "Breathe Fire": "Instead of a block: roll a D6 (-1 against ST 5+), re-rollable: 6 knocks the opponent down, 4+ places them prone, a 1 knocks this player down (turnover).",

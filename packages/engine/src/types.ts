@@ -409,6 +409,10 @@ export type Procedure =
       dauntless?: boolean;
       /** Cheering Fans: the extra assist counted for this block (kept when the dice are worked out again). */
       extraAssist?: boolean;
+      /** A Ball & Chain player ran into the defender: forced follow-up, and a prone defender is hit on the ground. */
+      ballAndChain?: boolean;
+      /** Ball & Chain against a prone or stunned player: no dice, pushed back and an armour roll, no turnover. */
+      hitOnGround?: boolean;
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
       /** "appearance": the defender's Foul Appearance, rolled first. */
@@ -532,7 +536,8 @@ export type Procedure =
       hitAndRun?: boolean;
       /** "fell": after the knock-down of a failed roll, which Steady Footing may have avoided. */
       /** "arrive": after the step (and any Shadowing), pick up the ball or score. */
-      stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup";
+      /** "chain*": a Ball & Chain step (direction on the throw-in template, a block or a move, then any Rush). */
+      stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup" | "chain" | "chainBlock" | "chainArrive";
       /** The failed roll left the player in the starting square. */
       fellInPlace?: boolean;
       /** Tentacles: the opponents were asked; `held`: a Tentacles player kept the mover in the starting square. */
@@ -811,7 +816,8 @@ export type GameEvent =
   | { type: "PlayerKnockedDown"; playerId: string }
   /** Placed prone without an armour roll (Wrestle). */
   | { type: "PlayerPlacedProne"; playerId: string }
-  | { type: "ArmourBroken"; playerId: string; roll: number }
+  /** `roll` is missing when the armour breaks without a roll (Ball & Chain). */
+  | { type: "ArmourBroken"; playerId: string; roll?: number }
   | { type: "ArmourHeld"; playerId: string; roll: number }
   | { type: "PlayerInjured"; playerId: string; result: "stunned" | "ko" | "cas" }
   /** `roll` is the D16 plus Niggling Injuries. */

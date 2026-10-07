@@ -2285,6 +2285,75 @@ describe("engine", () => {
       });
     });
 
+    describe("Ball & Chain", () => {
+      /** home-5 (8,5) has Ball & Chain. */
+      const fanatic = (squares: Record<string, Square> = {}, ma = 6) =>
+        edit(place(withSkills(toFirstTurn(), { "home-5": ["Ball & Chain", "No Ball"] }), squares), (c) => {
+          c.players["home-5"]!.ma = ma;
+        });
+      const step = (s: GameState, square: Square, ...rolls: Action[]) => apply(s, { type: "MOVE", square }, ...rolls);
+
+      it("only moves: a side, then a D6 on the throw-in template picks the square, tackle zones ignored", () => {
+        expect(actionsOf(fanatic(), "home-5")).toEqual(["move"]);
+        let s = apply(fanatic({ "away-4": { x: 9, y: 4 } }), declare("home-5", "move"));
+        expect(find(s, "MOVE")?.squares).toEqual([
+          { x: 8, y: 4, rolls: [] },
+          { x: 9, y: 5, rolls: [] },
+          { x: 8, y: 6, rolls: [] },
+          { x: 7, y: 5, rolls: [] },
+        ]);
+        s = step(s, { x: 7, y: 5 });
+        expect(find(s, "ROLL")?.reason).toBe("Ball & Chain direction (Home 5)");
+        // Facing west, 5-6 veers north-west; no dodge away from away-4.
+        s = apply(s, roll(5));
+        expect(s.players["home-5"]!.at).toEqual({ x: 7, y: 4 });
+        expect(types(s)).toContain("MOVE");
+      });
+
+      it("into a player: a block from where it stands, with a forced follow-up", () => {
+        let s = apply(fanatic({ "away-4": { x: 9, y: 5 } }), declare("home-5", "move"));
+        s = step(s, { x: 9, y: 5 }, roll(3));
+        expect(s.log).toContainEqual(expect.objectContaining({ type: "BlockDeclared", attackerId: "home-5", defenderId: "away-4" }));
+        const dice = find(s, "ROLL")!.dice[0]!.count;
+        s = apply(s, roll(...Array.from({ length: dice }, () => 6)));
+        if (types(s).includes("CHOOSE_BLOCK_DIE")) s = apply(s, { type: "CHOOSE_BLOCK_DIE", index: 0 });
+        // (10,5) is the only free square to push to; the follow-up is not asked.
+        expect(types(s)).not.toContain("FOLLOW_UP");
+        expect(s.players["away-4"]!.at).toEqual({ x: 10, y: 5 });
+        expect(s.players["home-5"]!.at).toEqual({ x: 9, y: 5 });
+      });
+
+      it("a prone player is hit on the ground: pushed back and an armour roll, without block dice", () => {
+        const down = edit(fanatic({ "away-4": { x: 9, y: 5 } }), (c) => {
+          c.players["away-4"]!.status = "prone";
+        });
+        let s = step(apply(down, declare("home-5", "move")), { x: 9, y: 5 }, roll(3));
+        expect(s.log.some((e) => e.type === "BlockResult")).toBe(false);
+        expect(s.players["away-4"]!.at).toEqual({ x: 10, y: 5 });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour 8\+ \(Away 4\)/);
+        s = apply(s, roll(1, 1));
+        expect([s.turnover, s.players["home-5"]!.at]).toEqual([false, { x: 9, y: 5 }]);
+      });
+
+      it("knocked down: the armour breaks without a roll, Stunned is KO'd; a failed Rush is a fall", () => {
+        let s = apply(fanatic({}, 1), declare("home-5", "move"));
+        s = step(s, { x: 7, y: 5 }, roll(3));
+        s = step(s, { x: 6, y: 5 }, roll(3));
+        expect(find(s, "ROLL")?.reason).toMatch(/^Rush/);
+        s = apply(s, roll(1), { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: "home-5" });
+        s = apply(s, roll(3, 3));
+        expect(s.players["home-5"]!.at).toBe("ko");
+        expect(s.activeSide).toBe("away");
+      });
+
+      it("off the pitch: the crowd, a turnover", () => {
+        const s = step(apply(fanatic({ "home-5": { x: 8, y: 0 } }), declare("home-5", "move")), { x: 9, y: 0 }, roll(1));
+        expect(s.players["home-5"]!.at).toBe("reserves");
+        expect(find(s, "ROLL")?.reason).toMatch(/^Injury/);
+      });
+    });
+
     describe("Chainsaw", () => {
       const sawyer = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Chainsaw", "Mighty Blow"] });
       const saw = (s = sawyer()) => apply(s, declare("home-2", "block"), { type: "CHAINSAW", targetId: "away-2" });

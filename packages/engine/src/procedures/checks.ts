@@ -266,6 +266,8 @@ export const STEADY_FOOTING_TARGET = 6;
  * the blocker) goes to the armour roll when it breaks the armour, and to the injury roll if not (they do not stack).
  * Iron Hard Skin: Claws does not work and the armour roll is never modified.
  * Chainsaw: a knocked-down chainsaw player always gets +3 against them on the armour roll.
+ * Ball & Chain: the player's armour breaks without a roll, a Stunned result is a KO and a KO gets no apothecary.
+ * A stunned player knocked down (hit on the ground by a Ball & Chain) stays stunned if the armour holds.
  */
 export const KnockDown: Handler<P<"KnockDown">> = {
   step(ctx, proc, action) {
@@ -282,7 +284,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         proc.square = { ...square };
         proc.hadBall = ball.carried && ball.square !== null && sameSquare(ball.square, square);
         if (proc.hadBall) ball.carried = false;
-        player.status = "prone";
+        if (player.status !== "stunned") player.status = "prone";
         if (proc.turnover) state.turnover = true;
         ctx.emit({ type: "PlayerKnockedDown", playerId: player.id });
         proc.stage = "armour";
@@ -308,6 +310,12 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         proc.stage = "fall";
         return "continue";
       case "armour": {
+        // Ball & Chain: the armour of the player breaks without a roll.
+        if (hasSkill(player, "Ball & Chain")) {
+          ctx.emit({ type: "ArmourBroken", playerId: player.id });
+          proc.stage = "injury";
+          return "continue";
+        }
         if (action === null) return "wait";
         const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Armour ${player.av}+${mightyBlowNote(proc.mightyBlow?.bonus ?? 0, proc)}${clawsNote(state, proc, player)}${chainsawNote(player)}`);
         let roll = a! + b!;

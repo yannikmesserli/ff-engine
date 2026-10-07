@@ -89,7 +89,9 @@ export interface InjuryCause {
 /** Resolve an injury roll total on `player`: emits the table result and pushes the casualty / apothecary follow-up. */
 export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = false, attackerId, bitten = false, stunnedIsKo = false }: InjuryCause = {}) {
   const rolled = injuryOutcome(player, total);
-  const outcome = bitten && rolled === "casualty" ? "badly-hurt" : stunnedIsKo && rolled === "stunned" ? "ko" : rolled;
+  // Ball & Chain: a Stunned result is always a KO.
+  const stunnedKo = stunnedIsKo || hasSkill(player, "Ball & Chain");
+  const outcome = bitten && rolled === "casualty" ? "badly-hurt" : stunnedKo && rolled === "stunned" ? "ko" : rolled;
   ctx.emit({ type: "PlayerInjured", playerId: player.id, result: outcome === "stunned" ? "stunned" : outcome === "ko" ? "ko" : "cas" });
   ctx.push({
     type: "Injury",
@@ -144,7 +146,8 @@ export const Injury: Handler<P<"Injury">> = {
         return "continue";
       }
       case "apothecary": {
-        if (proc.outcome === "stunned" || team.apothecaries === 0) {
+        // Ball & Chain: no apothecary for a KO.
+        if (proc.outcome === "stunned" || team.apothecaries === 0 || (proc.outcome === "ko" && hasSkill(player, "Ball & Chain"))) {
           proc.stage = "place";
           return "continue";
         }

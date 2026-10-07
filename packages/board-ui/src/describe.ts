@@ -67,6 +67,7 @@ const SKILL_USES: Record<string, string> = {
   Trickster: "and slips to another square",
   "Give and Go": "and keeps moving",
   Swoop: "and swoops instead of scattering",
+  "Ball & Chain": "",
   Tentacles: "and holds the moving player in place",
   Fend: "and keeps the attacker away",
   Pro: "to try a re-roll",
@@ -284,7 +285,7 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     case "PlayerKnockedDown":
       return `${who(state, e.playerId)} goes down!`;
     case "ArmourBroken":
-      return `${who(state, e.playerId)}'s armour is broken (${e.roll}).`;
+      return e.roll === undefined ? `${who(state, e.playerId)}'s armour is broken (no roll for a Ball & Chain player).` : `${who(state, e.playerId)}'s armour is broken (${e.roll}).`;
     case "ArmourHeld":
       return `${who(state, e.playerId)}'s armour holds (${e.roll}).`;
     case "PlayerInjured":

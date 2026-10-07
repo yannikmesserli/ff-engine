@@ -227,6 +227,14 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Break Tackle: once per turn, +1 to a Dodge roll with ST 3 or less, +2 with ST 4, +3 with ST 5 or more, used only when
   the roll would fail without it (Diving Tackle included).
 - My Ball: the player cannot declare a Pass or Hand-off action (nor can No Ball or Ball & Chain players).
+- Ball & Chain: a Move action only. Each step, the coach picks a side and a D6 on the throw-in template facing it
+  gives the square, tackle zones ignored (no dodge, Tentacles, Diving Tackle, Shadowing or jump); MA and two Rushes.
+  Into a player of either team, a block from where the player stands (a Rush first if needed): no assists and the
+  attacker's choice against a team-mate, a forced follow-up, no Foul Appearance, Trickster or Fend, and a prone or
+  stunned player is pushed back and rolls armour without dice; knocking down a standing team-mate is a turnover. Into
+  an empty square, the move, then any Rush; a loose ball there bounces (never picked up, no turnover). Off the pitch,
+  the crowd and a turnover. When the player is knocked down or placed prone, the armour breaks without a roll, a
+  Stunned result is a KO, and a KO gets no apothecary.
 - Bombardier: a once-per-turn Throw Bomb special action, without moving first. The bomb is thrown like a pass (range,
   PA roll, Pass and team re-rolls, Safe Pass, interception; no Animosity or On the Ball). A fumble explodes on the
   thrower; a bomb leaving the pitch is lost; on an empty square it bounces once. A standing player where it comes down

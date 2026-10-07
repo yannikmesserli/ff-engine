@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DIE_FACES, type Action, type ActionTemplate, type GameState, type PassRange, type Side } from "@bb/engine";
+import { DIE_FACES, hasSkill, type Action, type ActionTemplate, type GameState, type PassRange, type Side } from "@bb/engine";
 import { formationActions, formations } from "@bb/data";
 import { DieFace } from "./Dice";
 import { blockFaceName, casualtyName } from "./describe";
@@ -90,6 +90,9 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   if (aiming && findTemplate(templates, "PUNT")) return "click a square next to the punter (not diagonally) to punt towards it";
   if (aiming) return "click a square (or a team-mate) to throw to";
   const top = state.stack.at(-1);
+  if (main.type === "MOVE" && hasSkill(state.players[main.playerId]!, "Ball & Chain")) {
+    return "Ball & Chain: click a side; a D6 on the throw-in template picks the square, and anyone there gets blocked";
+  }
   if (main.type === "MOVE" && top?.type === "MoveAction" && top.fumblerooski) return "move: the ball stays in the square you leave (Fumblerooski)";
   if (main.type === "PLACE_BALL" && state.stack.at(-1)?.type === "SafeHands") return "Safe Pair of Hands: click a free square next to the player to place the ball";
   if (main.type === "THROW" && top?.type === "Pass" && top.dumpOff) return `Dump-off: aim a Quick pass for ${state.players[top.throwerId]!.name} before the block`;
