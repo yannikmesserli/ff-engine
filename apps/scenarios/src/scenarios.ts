@@ -1220,7 +1220,7 @@ export const SCENARIOS: Scenario[] = [
     title: "Inducements: Team Mascot and Weather Mage",
     instructions: [
       "Home's first turn. The home team bought a Team Mascot, a Weather Mage and two Bribes (the team file's inducements in src/scenarios.ts).",
-      "Before anyone acts, click \"Weather Mage\": a 2D6, then pick the weather for the total or up to 2 away.",
+      "Before anyone acts, click \"Weather Mage\": a 2D6 on the weather table, then apply a modifier of -2 to +2 (or none); each button shows the total and the weather it gives.",
       "Move Wilhelm (#1) away from the orc and fail the dodge with \"Physical dice\": the re-roll offers \"Team Mascot (4+)\", which spends no team re-roll; on a failure a team re-roll is used instead.",
     ],
     home: {

@@ -254,36 +254,34 @@ export const Turn: Handler<P<"Turn">> = {
 const weatherMageAvailable = (state: GameState, proc: P<"Turn">) =>
   !proc.charge && !proc.acted && inducementsLeft(state.teams[proc.side], "weatherMage") > 0;
 
-/** Weather Mage: the totals within 2 of the roll, on the 2D6 weather table. */
-const WEATHER_MAGE_RANGE = 2;
+/** Weather Mage: the modifiers the coach may apply to the roll (none included). */
+export const WEATHER_MAGE_MODIFIERS = [-2, -1, 0, 1, 2];
+
+/** Weather Mage: each modifier, the modified total and the weather it gives on the weather table. */
+const weatherMageOptions = (roll: number) =>
+  WEATHER_MAGE_MODIFIERS.map((modifier) => ({ modifier, total: roll + modifier, weather: weatherFor(roll + modifier) }));
 
 /**
- * Weather Mage: the team rolls 2D6; its coach picks the weather for the total or a total up to 2 away (2 to 12). If
- * they all give the same weather, it is set straight away. The new weather stays until it changes again.
+ * Weather Mage: the team rolls 2D6 on the weather table, and its coach may apply a modifier of +1 or +2, or -1 or -2
+ * (or none). The new weather stays until it changes again.
  */
 export const WeatherMage: Handler<P<"WeatherMage">> = {
   step(ctx, proc, action) {
-    const { state } = ctx;
     if (action === null) return "wait";
     if (proc.stage === "roll") {
       const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Weather Mage");
-      const totals = Array.from({ length: 2 * WEATHER_MAGE_RANGE + 1 }, (_, i) => a! + b! - WEATHER_MAGE_RANGE + i).filter((t) => t >= 2 && t <= 12);
-      proc.options = [...new Set(totals.map(weatherFor))];
-      if (proc.options.length > 1) {
-        proc.stage = "choose";
-        return "wait";
-      }
-      setWeather(ctx, proc.options[0]!);
-      return "done";
+      proc.roll = a! + b!;
+      proc.stage = "choose";
+      return "wait";
     }
-    const { weather } = ctx.expect(action, "CHOOSE_WEATHER");
-    if (!proc.options!.includes(weather)) ctx.reject("This weather is not on offer.");
-    setWeather(ctx, weather);
+    const { modifier } = ctx.expect(action, "CHOOSE_WEATHER");
+    const option = weatherMageOptions(proc.roll!).find((o) => o.modifier === modifier) ?? ctx.reject("The modifier must be from -2 to +2.");
+    setWeather(ctx, option.weather);
     return "done";
   },
   actions(state, proc) {
     if (proc.stage === "roll") return [{ type: "ROLL", side: proc.side, dice: [{ kind: "d6", count: 2 }], reason: `Weather Mage (${state.teams[proc.side].name})` }];
-    return [{ type: "CHOOSE_WEATHER", side: proc.side, options: proc.options! }];
+    return [{ type: "CHOOSE_WEATHER", side: proc.side, roll: proc.roll!, options: weatherMageOptions(proc.roll!) }];
   },
 };
 

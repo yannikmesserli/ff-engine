@@ -3352,24 +3352,35 @@ describe("engine", () => {
   });
 
   describe("Weather Mage", () => {
-    it("once per game, at the start of the team's turn: 2D6, then the weather for the total or up to 2 away", () => {
+    it("once per game, at the start of the team's turn: 2D6 on the weather table, with a modifier of -2 to +2 if desired", () => {
       let s = toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } });
       expect(types(s)).toContain("WEATHER_MAGE");
       s = apply(s, { type: "WEATHER_MAGE" });
       expect(find(s, "ROLL")?.reason).toBe("Weather Mage (Home)");
-      // 10: 8 to 12, nice to blizzard.
       s = apply(s, roll(6, 4));
-      expect(find(s, "CHOOSE_WEATHER")?.options).toEqual(["nice", "pouring-rain", "blizzard"]);
-      s = apply(s, { type: "CHOOSE_WEATHER", weather: "blizzard" });
+      expect(find(s, "CHOOSE_WEATHER")).toEqual({
+        type: "CHOOSE_WEATHER",
+        side: "home",
+        roll: 10,
+        options: [
+          { modifier: -2, total: 8, weather: "nice" },
+          { modifier: -1, total: 9, weather: "nice" },
+          { modifier: 0, total: 10, weather: "nice" },
+          { modifier: 1, total: 11, weather: "pouring-rain" },
+          { modifier: 2, total: 12, weather: "blizzard" },
+        ],
+      });
+      expect(() => step(s, { type: "CHOOSE_WEATHER", modifier: 3 })).toThrow(/-2 to \+2/);
+      s = apply(s, { type: "CHOOSE_WEATHER", modifier: 2 });
       expect(s.weather).toBe("blizzard");
       expect(types(s)).not.toContain("WEATHER_MAGE");
     });
 
-    it("not once a player has acted; a roll with only one weather in reach sets it", () => {
+    it("not once a player has acted; no modifier keeps the weather of the roll", () => {
       const s = apply(toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } }), startMove("home-11"));
       expect(types(apply(s, { type: "END_PLAYER_ACTION" }))).not.toContain("WEATHER_MAGE");
-      const nice = apply(toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } }), { type: "WEATHER_MAGE" }, roll(3, 4));
-      expect([nice.weather, types(nice)]).toEqual(["nice", expect.arrayContaining(["START_ACTION"])]);
+      const sunny = apply(toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } }), { type: "WEATHER_MAGE" }, roll(1, 2), { type: "CHOOSE_WEATHER", modifier: 0 });
+      expect([sunny.weather, types(sunny)]).toEqual(["very-sunny", expect.arrayContaining(["START_ACTION"])]);
     });
   });
 

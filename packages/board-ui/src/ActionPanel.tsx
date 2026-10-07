@@ -38,7 +38,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   START_ACTION: "click a player to declare an action",
   BLOCK: "click a highlighted opponent to block (2D: you pick, 2D!: the defender picks)",
   PUSH: "click a square to push the player to",
-  CHOOSE_WEATHER: "Weather Mage: choose the weather",
+  CHOOSE_WEATHER: "Weather Mage: apply a modifier to the roll on the weather table",
   CHOOSE_SKILL: "Intensive Training: choose the skill the player gains",
   THROW_A_ROCK: "Throw a Rock (once per game): a random standing opponent is knocked down on 4+",
   SWOOP: "Swoop: click a square next to the target to face the throw-in template that way, or scatter as usual",
@@ -299,9 +299,9 @@ export function ActionPanel(props: ActionPanelProps) {
           </>
         )}
         {has("WEATHER_MAGE") && <button onClick={() => dispatch({ type: "WEATHER_MAGE" })}>Weather Mage</button>}
-        {findTemplate(templates, "CHOOSE_WEATHER")?.options.map((w) => (
-          <button key={w} onClick={() => dispatch({ type: "CHOOSE_WEATHER", weather: w })}>
-            {WEATHER_NAMES[w]}
+        {findTemplate(templates, "CHOOSE_WEATHER")?.options.map((o) => (
+          <button key={o.modifier} onClick={() => dispatch({ type: "CHOOSE_WEATHER", modifier: o.modifier })}>
+            {o.modifier === 0 ? "No modifier" : `${o.modifier > 0 ? "+" : ""}${o.modifier}`}: {o.total}, {WEATHER_NAMES[o.weather]}
           </button>
         ))}
         {has("SWOOP") && <button onClick={() => dispatch({ type: "SWOOP", square: null })}>Scatter as usual</button>}

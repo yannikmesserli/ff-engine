@@ -194,7 +194,7 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
     case "WEATHER_MAGE":
       return { type: "WEATHER_MAGE" };
     case "CHOOSE_WEATHER":
-      return { type: "CHOOSE_WEATHER", weather: pick(t.options) };
+      return { type: "CHOOSE_WEATHER", modifier: pick(t.options).modifier };
     case "SWOOP":
       return { type: "SWOOP", square: random() < 0.3 ? null : pick(t.squares) };
     case "TRICKSTER":

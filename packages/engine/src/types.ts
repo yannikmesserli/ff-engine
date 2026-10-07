@@ -380,8 +380,8 @@ export type Procedure =
       /** A player was activated: too late for the Weather Mage. */
       acted?: boolean;
     }
-  /** Weather Mage: 2D6, then the coach picks the weather for the total or up to 2 away from it. */
-  | { type: "WeatherMage"; side: Side; stage: "roll" | "choose"; options?: Weather[] }
+  /** Weather Mage: 2D6 on the weather table (`roll`), then the coach applies a modifier of -2 to +2, or none. */
+  | { type: "WeatherMage"; side: Side; stage: "roll" | "choose"; roll?: number }
   | {
       type: "MoveAction";
       playerId: string;
@@ -789,8 +789,8 @@ export type Action =
   | { type: "THROW_A_ROCK"; use: boolean }
   /** Use the Weather Mage at the start of the team's turn. */
   | { type: "WEATHER_MAGE" }
-  /** Weather Mage: the weather to set, among the options offered. */
-  | { type: "CHOOSE_WEATHER"; weather: Weather }
+  /** Weather Mage: the modifier applied to the roll (-2 to +2, 0 for none). */
+  | { type: "CHOOSE_WEATHER"; modifier: number }
   /** Punt towards the orthogonally adjacent `square`, or into the crowd (null) from a sideline or an end zone. */
   | { type: "PUNT"; square: Square | null }
   /** The referee spotted the foul: argue the call (6: the fouler stays, but it is still a turnover)? */
@@ -843,7 +843,8 @@ export type ActionTemplate =
   | { type: "THROW_A_ROCK"; side: Side }
   /** Intensive Training: the skills `playerId` may gain. */
   | { type: "CHOOSE_SKILL"; side: Side; playerId: string; skills: string[] }
-  | { type: "CHOOSE_WEATHER"; side: Side; options: Weather[] }
+  /** Weather Mage: the 2D6 rolled, and the weather each modifier gives. */
+  | { type: "CHOOSE_WEATHER"; side: Side; roll: number; options: Array<{ modifier: number; total: number; weather: Weather }> }
   /** Swoop: the squares next to the target square (not diagonally) that give the side the template faces. */
   | { type: "SWOOP"; side: Side; playerId: string; squares: Square[] }
   /** Trickster: free squares next to the attacker; `ball`: the one with a loose ball, if any. */
