@@ -5,12 +5,13 @@ import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, 
 import { hasSkill } from "../skills";
 import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollsLeft, rollLoner, squareOf, stepPro, useTeamReroll } from "./helpers";
 import { evaluatePass, passModifiers, passRange, shownNeeded } from "./pass";
+import { injure } from "./injury";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
-/** Team-mates with Right Stuff next to the thrower, who can be thrown (even prone, but not rooted). */
-export function throwableTeamMates(state: GameState, thrower: PlayerState): PlayerState[] {
-  if (!isOnPitch(thrower) || !hasSkill(thrower, "Throw Team-mate")) return [];
+/** Team-mates with Right Stuff next to the thrower (or kicker), who can be thrown (even prone, but not rooted). */
+export function throwableTeamMates(state: GameState, thrower: PlayerState, kick = false): PlayerState[] {
+  if (!isOnPitch(thrower) || !hasSkill(thrower, kick ? "Kick Team-mate" : "Throw Team-mate")) return [];
   return adjacent(thrower.at)
     .map((s) => playerAt(state, s))
     .filter((p): p is PlayerState => p !== undefined && p.side === thrower.side && hasSkill(p, "Right Stuff") && !isRooted(p));
@@ -107,7 +108,7 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         }
         // The team-mate wriggles free: it is thrown as a fumble.
         proc.result = "fumble";
-        ctx.emit({ type: "TeamMateThrown", playerId: thrower.id, thrownId: thrown.id, result: "fumble" });
+        ctx.emit({ type: "TeamMateThrown", playerId: thrower.id, thrownId: thrown.id, result: "fumble", ...(proc.kicked ? { kicked: true } : {}) });
         proc.stage = "scatter";
         return "continue";
       case "roll": {
@@ -115,10 +116,10 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         if (thrower.pa === null) proc.result = "fumble";
         else {
           if (action === null) return "wait";
-          const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Throw team-mate ${shownNeeded(thrower, modifiers)}+`);
+          const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `${proc.kicked ? "Kick" : "Throw"} team-mate ${shownNeeded(thrower, modifiers)}+`);
           proc.result = evaluatePass(thrower, roll!, modifiers);
         }
-        ctx.emit({ type: "TeamMateThrown", playerId: thrower.id, thrownId: thrown.id, result: proc.result });
+        ctx.emit({ type: "TeamMateThrown", playerId: thrower.id, thrownId: thrown.id, result: proc.result, ...(proc.kicked ? { kicked: true } : {}) });
         const canReroll = canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
         proc.stage = proc.result !== "accurate" && canReroll ? "reroll" : "scatter";
         return "continue";
@@ -153,6 +154,11 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       }
       case "scatter":
       case "bounce": {
+        // A fumbled kick does not scatter: the kicked player is hurt.
+        if (proc.stage === "scatter" && proc.kicked && proc.result === "fumble") {
+          proc.stage = "fumbled";
+          return "continue";
+        }
         if (action === null) return "wait";
         const dice = proc.stage === "bounce" ? [{ kind: "d8" as const, count: 1 }] : scatterDice(proc);
         const start = proc.stage === "bounce" ? proc.at! : proc.result === "fumble" ? squareOf(ctx, thrown) : proc.target;
@@ -168,6 +174,20 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         proc.at = { ...at };
         proc.stage = "land";
         return "continue";
+      }
+      case "fumbled": {
+        if (action === null) return "wait";
+        const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury (fumbled kick)");
+        const square = squareOf(ctx, thrown);
+        const carrying = ballCarrier(state)?.id === thrown.id;
+        // The ball bounces once the injury is resolved, a turnover.
+        if (carrying) {
+          state.ball = { square: { ...square }, carried: false };
+          state.turnover = true;
+          ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+        }
+        injure(ctx, thrown, a! + b!, { stunnedIsKo: true });
+        return "done";
       }
       case "land": {
         if (proc.crowdFrom) {
@@ -218,7 +238,7 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
     switch (proc.stage) {
       case "roll": {
         const needed = shownNeeded(thrower, throwModifiers(state, thrower, proc.range));
-        return [{ type: "ROLL", side: thrower.side, dice: [{ kind: "d6", count: 1 }], reason: `Throw team-mate ${needed}+ (${proc.range})` }];
+        return [{ type: "ROLL", side: thrower.side, dice: [{ kind: "d6", count: 1 }], reason: `${proc.kicked ? "Kick" : "Throw"} team-mate ${needed}+ (${proc.range})` }];
       }
       case "reroll":
         return [
@@ -233,7 +253,10 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       case "proLoner":
         return proTemplates(state, proc.stage, thrower);
       case "scatter":
+        if (proc.kicked && proc.result === "fumble") return [];
         return [{ type: "ROLL", side: null, dice: scatterDice(proc), reason: "Thrown player scatters" }];
+      case "fumbled":
+        return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason: `Injury (${state.players[proc.thrownId]!.name}, fumbled kick)` }];
       case "bounce":
         return [{ type: "ROLL", side: null, dice: [{ kind: "d8", count: 1 }], reason: "Thrown player bounces" }];
       default:

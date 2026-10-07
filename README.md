@@ -147,6 +147,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   down (a turnover if they are a team-mate) and scatters on; off the pitch means the crowd and a turnover. Landing
   roll on AG (-1 subpar or fumble, -1 per tackle zone), failing after hitting someone or for a prone or distracted
   player; a failed landing is a turnover only with the ball. The thrown player may still act.
+- Kick Team-mate: a once-per-turn action of its own, played like Throw Team-mate, except that a fumbled kick does
+  not scatter: the kicked player rolls for injury (a Stunned result counts as KO'd), and a ball they held bounces (a
+  turnover).
 
 - Always Hungry: before throwing a team-mate, 2+ (team re-roll allowed) or the team-mate must escape on 2+ (then
   thrown as a fumble) or be eaten: dead without apothecary or Regeneration, a turnover only with the ball.

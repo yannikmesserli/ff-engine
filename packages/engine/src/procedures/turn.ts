@@ -38,7 +38,7 @@ export const FURY_TARGET = 4;
 export const FURY_BLOCK_TARGET = 2;
 
 /** Team actions that can only be declared once per turn. */
-const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure", "ttm", "bomb", "punt"];
+const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure", "ttm", "ktm", "bomb", "punt"];
 
 /** The innermost player activation on the stack. */
 const activation = (state: GameState) => state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction");
@@ -284,9 +284,10 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   // Punt: a special action of a standing player with the skill.
   if (free("punt") && hasSkill(player, "Punt") && player.status === "standing" && ballAvailable(state, player) && !keepsBall(player)) actions.push("punt");
   if (free("secure") && canSecure(state, player)) actions.push("secure");
-  // Throw Team-mate: a standing thrower, with a team-mate with Right Stuff on the pitch to throw.
+  // Throw (or Kick) Team-mate: a standing thrower, with a team-mate with Right Stuff on the pitch to throw.
   const throwable = teamPlayers(state, player.side).some((p) => p.id !== player.id && isOnPitch(p) && hasSkill(p, "Right Stuff"));
   if (free("ttm") && player.status === "standing" && hasSkill(player, "Throw Team-mate") && throwable) actions.push("ttm");
+  if (free("ktm") && player.status === "standing" && hasSkill(player, "Kick Team-mate") && throwable) actions.push("ktm");
   // A Foul can be declared as long as an opponent is prone or stunned somewhere on the pitch.
   const foulable = teamPlayers(state, other(player.side)).some((o) => isOnPitch(o) && o.status !== "standing");
   if (free("foul") && foulable) actions.push("foul");
@@ -496,7 +497,8 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const square = teamMateTargets(state, player).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
       // The thrower's action ends with the throw.
       proc.finished = true;
-      ctx.push({ type: "ThrowTeamMate", throwerId: player.id, thrownId: a.targetId, target: { x: square.x, y: square.y }, range: square.range, stage: "hunger", rerolled: false });
+      const kicked = proc.action === "ktm";
+      ctx.push({ type: "ThrowTeamMate", throwerId: player.id, thrownId: a.targetId, target: { x: square.x, y: square.y }, range: square.range, stage: "hunger", rerolled: false, ...(kicked ? { kicked } : {}) });
       return "continue";
     }
     if (a.type === "PUNT") {
@@ -716,7 +718,8 @@ function canFumblerooski(state: GameState, proc: P<"MoveAction">): boolean {
 /** Team-mates the active player may throw now (a Throw Team-mate action, standing, not thrown yet). */
 const ttmOptions = (state: GameState, proc: P<"MoveAction">) => {
   const player = state.players[proc.playerId]!;
-  return proc.action === "ttm" && !proc.finished && player.status === "standing" ? throwableTeamMates(state, player) : [];
+  if (proc.action !== "ttm" && proc.action !== "ktm") return [];
+  return !proc.finished && player.status === "standing" ? throwableTeamMates(state, player, proc.action === "ktm") : [];
 };
 
 /** Hypnotic Gaze: any standing opponent next to the (standing) player, once the action allows it. */

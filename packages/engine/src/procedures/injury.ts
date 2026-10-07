@@ -82,12 +82,14 @@ export interface InjuryCause {
   attackerId?: string;
   /** Bitten by a Bloodlust player: a casualty is only Badly Hurt. */
   bitten?: boolean;
+  /** A Stunned result counts as KO'd (a fumbled Kick Team-mate). */
+  stunnedIsKo?: boolean;
 }
 
 /** Resolve an injury roll total on `player`: emits the table result and pushes the casualty / apothecary follow-up. */
-export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = false, attackerId, bitten = false }: InjuryCause = {}) {
+export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = false, attackerId, bitten = false, stunnedIsKo = false }: InjuryCause = {}) {
   const rolled = injuryOutcome(player, total);
-  const outcome = bitten && rolled === "casualty" ? "badly-hurt" : rolled;
+  const outcome = bitten && rolled === "casualty" ? "badly-hurt" : stunnedIsKo && rolled === "stunned" ? "ko" : rolled;
   ctx.emit({ type: "PlayerInjured", playerId: player.id, result: outcome === "stunned" ? "stunned" : outcome === "ko" ? "ko" : "cas" });
   ctx.push({
     type: "Injury",

@@ -188,7 +188,7 @@ export interface DiceRoll {
 }
 
 /** Actions a player can declare when activated. */
-export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm" | "gaze" | "bomb" | "punt";
+export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm" | "ktm" | "gaze" | "bomb" | "punt";
 
 /** BB2025 range bands: Quick, Short, Long, Long Bomb. */
 export type PassRange = "quick" | "short" | "long" | "bomb";
@@ -348,7 +348,10 @@ export type Procedure =
       target: Square;
       range: PassRange;
       /** "hunger": Always Hungry, rolled before the throw. */
-      stage: "hunger" | "hungerResult" | "escapeResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "scatter" | "land" | "bounce" | "landed";
+      /** "fumbled": a fumbled kick, the kicked player rolls for injury. */
+      stage: "hunger" | "hungerResult" | "escapeResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "scatter" | "fumbled" | "land" | "bounce" | "landed";
+      /** Kick Team-mate: the same as a throw, but a fumble injures the kicked player. */
+      kicked?: boolean;
       rerolled: boolean;
       /** A team re-roll was spent on a failed Pro roll. */
       proRetried?: boolean;
@@ -767,7 +770,7 @@ export type GameEvent =
   | { type: "BombHit"; playerId: string }
   | { type: "PassResult"; playerId: string; result: PassResult }
   /** `result`: "accurate" is a superb throw, "inaccurate" a subpar one. */
-  | { type: "TeamMateThrown"; playerId: string; thrownId: string; result: PassResult }
+  | { type: "TeamMateThrown"; playerId: string; thrownId: string; result: PassResult; kicked?: boolean }
   | { type: "Intercepted"; playerId: string }
   | { type: "InterceptionFailed"; playerId: string }
   | { type: "HandedOff"; playerId: string; targetId: string }

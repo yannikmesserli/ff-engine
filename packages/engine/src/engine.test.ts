@@ -2442,6 +2442,30 @@ describe("engine", () => {
       });
     });
 
+    describe("Kick Team-mate", () => {
+      /** home-4 at (10,4) can kick home-5, who has Right Stuff, from (10,5). */
+      const kicker = (s = toFirstTurn()) => withSkills(place(s, { "home-5": { x: 10, y: 5 } }), { "home-4": ["Kick Team-mate"], "home-5": ["Right Stuff"] });
+      const kickTo = (square: Square) => ({ type: "THROW_TEAM_MATE", targetId: "home-5", square }) as const;
+
+      it("a once-per-turn action of its own, kicked like a throw to Quick or Short range", () => {
+        expect(actionsOf(kicker(), "home-4")).toEqual(expect.arrayContaining(["ktm"]));
+        expect(actionsOf(kicker(), "home-4")).not.toContain("ttm");
+        let s = apply(kicker(), declare("home-4", "ktm"), kickTo({ x: 7, y: 4 }));
+        expect(find(s, "ROLL")?.reason).toBe("Kick team-mate 4+ (quick)");
+        s = apply(s, roll(4), roll(1, 5, 3), roll(3));
+        expect(s.players["home-5"]).toMatchObject({ at: { x: 8, y: 4 }, status: "standing" });
+        expect(actionsOf(s, "home-6")).not.toContain("ktm");
+      });
+
+      it("a fumble does not scatter: the kicked player rolls for injury, a Stunned result counts as KO'd", () => {
+        let s = apply(kicker(), declare("home-4", "ktm"), kickTo({ x: 7, y: 4 }), roll(1), { type: "DECLINE_REROLL" });
+        expect(find(s, "ROLL")?.reason).toBe("Injury (Home 5, fumbled kick)");
+        s = apply(s, roll(3, 3));
+        expect(s.players["home-5"]!.at).toBe("ko");
+        expect([s.turnover, s.activeSide]).toEqual([false, "home"]);
+      });
+    });
+
     describe("Always Hungry", () => {
       const hungry = (s = toFirstTurn()) =>
         withSkills(place(s, { "home-5": { x: 10, y: 5 } }), { "home-4": ["Throw Team-mate", "Always Hungry"], "home-5": ["Right Stuff"] });

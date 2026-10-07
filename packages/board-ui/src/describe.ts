@@ -110,6 +110,7 @@ export const ACTION_NAMES: Record<PlayerActionType, string> = {
   foul: "Foul",
   secure: "Secure the Ball",
   ttm: "Throw Team-mate",
+  ktm: "Kick Team-mate",
   gaze: "Hypnotic Gaze",
   bomb: "Throw Bomb",
   punt: "Punt",
@@ -236,7 +237,7 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     case "PassResult":
       return `The pass is ${e.result === "fumble" ? "fumbled!" : e.result}.`;
     case "TeamMateThrown":
-      return `${who(state, e.playerId)} throws ${who(state, e.thrownId)}: ${{ accurate: "a superb throw", inaccurate: "a subpar throw", fumble: "fumbled!" }[e.result]}`;
+      return `${who(state, e.playerId)} ${e.kicked ? "kicks" : "throws"} ${who(state, e.thrownId)}: ${{ accurate: e.kicked ? "a superb kick" : "a superb throw", inaccurate: e.kicked ? "a subpar kick" : "a subpar throw", fumble: "fumbled!" }[e.result]}`;
     case "Intercepted":
       return `${who(state, e.playerId)} intercepts the ball!`;
     case "InterceptionFailed":
