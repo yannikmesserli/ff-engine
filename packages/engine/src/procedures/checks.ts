@@ -27,6 +27,7 @@ const CHECK_NAMES = {
   steadyfooting: "Steady Footing",
   dauntless: "Dauntless",
   vomit: "Projectile Vomit",
+  breathefire: "Breathe Fire",
   animosity: "Animosity",
   landing: "Landing",
   hunger: "Always Hungry",
@@ -112,6 +113,12 @@ function report(ctx: Ctx, proc: P<"Check">, player: PlayerState) {
   return success;
 }
 
+/** The result kept when a re-roll is declined or lost: a failure, unless it was offered on a success (`rerollBelow`). */
+const kept = (proc: P<"Check">) => proc.rerollBelow !== undefined && passes(proc.roll!, proc.modifier, proc.target);
+
+/** A re-roll is wanted: after a failure, or a success below `rerollBelow`. */
+const wantsReroll = (proc: P<"Check">, success: boolean) => !success || (proc.rerollBelow !== undefined && proc.roll! < proc.rerollBelow);
+
 /** After a roll: a skill re-roll, the team re-roll decision, or the result. */
 function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolean): StepResult {
   const { state } = ctx;
@@ -124,7 +131,7 @@ function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolea
     proc.stage = "roll";
     return "wait";
   }
-  if (!success && (canTeamReroll(state, player.side, proc.rerolled) || canUsePro(state, player, proc.rerolled))) {
+  if (wantsReroll(proc, success) && (canTeamReroll(state, player.side, proc.rerolled) || canUsePro(state, player, proc.rerolled))) {
     proc.stage = "reroll";
     return "wait";
   }
@@ -148,7 +155,7 @@ export const Check: Handler<P<"Check">> = {
     const player = getPlayer(ctx, proc.playerId);
     if (proc.stage === "reroll") {
       const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
-      if (a.type === "DECLINE_REROLL" || (a.type === "USE_SKILL" && !a.use)) return finish(state, proc, false);
+      if (a.type === "DECLINE_REROLL" || (a.type === "USE_SKILL" && !a.use)) return finish(state, proc, kept(proc));
       if (a.type === "USE_SKILL") {
         if ((a.skill ?? "Pro") !== "Pro" || !canUsePro(state, player, proc.rerolled)) ctx.reject("Pro cannot be used now.");
         proc.rerolled = true;
@@ -163,13 +170,13 @@ export const Check: Handler<P<"Check">> = {
     }
     if (proc.stage === "loner") {
       // A failed Loner roll keeps the first result.
-      if (!rollLoner(ctx, action, player)) return finish(state, proc, false);
+      if (!rollLoner(ctx, action, player)) return finish(state, proc, kept(proc));
       proc.stage = "roll";
       return "wait";
     }
     if (proc.stage === "pro" || proc.stage === "proTeam" || proc.stage === "proLoner") {
       const pro = stepPro(ctx, proc, action, player);
-      if (pro === "stands") return finish(state, proc, false);
+      if (pro === "stands") return finish(state, proc, kept(proc));
       if (pro === "reroll") proc.stage = "roll";
       return "wait";
     }

@@ -1,4 +1,4 @@
-import type { Ctx, Handler } from "../context";
+import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { BLOCK_FACES } from "../dice";
@@ -723,11 +723,21 @@ export const VOMIT_TARGET = 2;
 /** The attack in armour roll reasons. */
 const attackName = (proc: P<"Vomit">) => (proc.skill === "Stab" ? "stab" : "vomit");
 
+/** Breathe Fire avoids a turnover on 2+, knocks the target down on a natural 6 and places them prone on 4+. */
+export const BREATHE_FIRE_TARGET = 2;
+export const BREATHE_FIRE_PRONE = 4;
+
+/** Breathe Fire: -1 to the roll against a target with ST 5 or more. */
+export const breatheFireModifier = (target: PlayerState) => (target.st >= 5 ? -1 : 0);
+
 /**
- * Projectile Vomit or Stab, instead of a block (Foul Appearance first; during a Blitz it costs a square, a Rush if needed). Projectile Vomit
- * hits the defender on 2+, the vomiting player on a failure; Stab always hits the defender. The victim rolls armour
- * without any modifier; if it breaks, they are placed prone and roll for injury (no modifier either). Not a turnover,
- * unless the moving team's ball carrier drops the ball.
+ * Projectile Vomit, Stab or Breathe Fire, instead of a block (Foul Appearance first; during a Blitz it costs a square,
+ * a Rush if needed). Projectile Vomit hits the defender on 2+, the vomiting player on a failure; Stab always hits the
+ * defender. The victim rolls armour without any modifier; if it breaks, they are placed prone and roll for injury (no
+ * modifier either). Not a turnover, unless the moving team's ball carrier drops the ball.
+ * Breathe Fire rolls a D6, -1 against ST 5 or more, and the coach may re-roll anything but a 6: a natural 6 knocks the
+ * target down (armour and injury without modifiers), 4+ places them prone, 2+ does nothing, and a 1 knocks the
+ * fire-breather down instead (armour without modifiers), a turnover.
  */
 export const Vomit: Handler<P<"Vomit">> = {
   step(ctx, proc, action) {
@@ -765,11 +775,17 @@ export const Vomit: Handler<P<"Vomit">> = {
           return "continue";
         }
         state.lastCheck = null;
-        ctx.push({ type: "Check", kind: "vomit", playerId: attacker.id, target: VOMIT_TARGET, modifier: 0, stage: "roll", rerolled: false });
+        if (proc.skill === "Breathe Fire") {
+          const modifier = breatheFireModifier(getPlayer(ctx, proc.defenderId));
+          ctx.push({ type: "Check", kind: "breathefire", playerId: attacker.id, target: BREATHE_FIRE_TARGET, modifier, stage: "roll", rerolled: false, rerollBelow: 6 });
+        } else {
+          ctx.push({ type: "Check", kind: "vomit", playerId: attacker.id, target: VOMIT_TARGET, modifier: 0, stage: "roll", rerolled: false });
+        }
         proc.stage = "result";
         return "continue";
       case "result":
-        ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Projectile Vomit" });
+        ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: proc.skill });
+        if (proc.skill === "Breathe Fire") return breatheFire(ctx, proc, attacker);
         proc.victimId = state.lastCheck?.success ? proc.defenderId : attacker.id;
         state.lastCheck = null;
         proc.stage = "armour";
@@ -814,3 +830,28 @@ export const Vomit: Handler<P<"Vomit">> = {
     return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason }];
   },
 };
+
+/** The Breathe Fire result, from the roll kept by the check. */
+function breatheFire(ctx: Ctx, proc: P<"Vomit">, attacker: PlayerState): StepResult {
+  const { state } = ctx;
+  const check = state.lastCheck!;
+  state.lastCheck = null;
+  const defender = getPlayer(ctx, proc.defenderId);
+  const natural = check.roll!;
+  const roll = natural + breatheFireModifier(defender);
+  if (!check.success) {
+    ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+  } else if (natural === 6) {
+    ctx.push({ type: "KnockDown", playerId: defender.id, turnover: false, stage: "fall" });
+  } else if (roll >= BREATHE_FIRE_PRONE) {
+    const square = squareOf(ctx, defender);
+    const carrying = ballCarrier(state)?.id === defender.id;
+    defender.status = "prone";
+    ctx.emit({ type: "PlayerPlacedProne", playerId: defender.id });
+    if (carrying) {
+      state.ball.carried = false;
+      ctx.push(dropBall(defender, square));
+    }
+  }
+  return "done";
+}

@@ -90,7 +90,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Ball & Chain": "Can only take a Ball & Chain move: moves randomly, blocking whoever is in the way.",
   Bombardier: "Once per turn, a Throw Bomb special action (no move first): thrown like a pass, the bomb explodes where it stops, hitting the player there and those around it on 4+.",
   "Bone Head": "After declaring an action, roll a D6: on a 1 the action is lost and the player is distracted (no tackle zone) until their next activation.",
-  "Breathe Fire": "Special action: breathes fire on an adjacent opponent, who may be knocked down or placed prone.",
+  "Breathe Fire": "Instead of a block: roll a D6 (-1 against ST 5+), re-rollable: 6 knocks the opponent down, 4+ places them prone, a 1 knocks this player down (turnover).",
   Chainsaw: "Special action: a chainsaw attack on an adjacent opponent, +3 to the armour roll; a 1 hurts this player instead.",
   Decay: "Casualty rolls against this player are +1.",
   Drunkard: "-1 to Rush rolls.",

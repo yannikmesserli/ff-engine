@@ -1956,6 +1956,57 @@ describe("engine", () => {
       });
     });
 
+    describe("Breathe Fire", () => {
+      const breather = (st = 3) =>
+        edit(withSkills(toFirstTurn(), { "home-2": ["Breathe Fire"] }), (c) => {
+          c.players["away-2"]!.st = st;
+        });
+      const fire = (s: GameState) => apply(s, declare("home-2", "block"), { type: "BREATHE_FIRE", targetId: "away-2" });
+
+      it("replaces a block: a 6 knocks the target down, armour and injury without modifiers", () => {
+        let s = apply(breather(), declare("home-2", "block"));
+        expect(find(s, "BREATHE_FIRE")?.targetIds).toEqual(["away-1", "away-2", "away-3"]);
+        s = apply(s, { type: "BREATHE_FIRE", targetId: "away-2" });
+        expect(find(s, "ROLL")?.reason).toBe("Breathe Fire 2+ (Home 2)");
+        s = apply(s, roll(6));
+        expect(s.players["away-2"]!.status).toBe("prone");
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 2)");
+        s = apply(s, roll(4, 4), roll(2, 3));
+        expect(s.players["away-2"]).toMatchObject({ at: { x: 13, y: 7 }, status: "stunned" });
+        expect([s.activeSide, top(s).type]).toEqual(["home", "Turn"]);
+      });
+
+      it("4+ places the target prone without an armour roll, after the coach may re-roll", () => {
+        let s = apply(fire(breather()), roll(4));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        s = apply(s, { type: "DECLINE_REROLL" });
+        expect(s.players["away-2"]!.status).toBe("prone");
+        expect([s.activeSide, top(s).type]).toEqual(["home", "Turn"]);
+      });
+
+      it("a re-roll replaces a weak result", () => {
+        const s = apply(fire(breather()), roll(2), { type: "USE_REROLL" }, roll(5));
+        expect(s.players["away-2"]!.status).toBe("prone");
+        expect(s.teams.home.rerolls).toBe(0);
+      });
+
+      it("2 or 3 does nothing, -1 against ST 5 or more", () => {
+        let s = apply(fire(breather(5)), roll(4), { type: "DECLINE_REROLL" });
+        expect(s.players["away-2"]!.status).toBe("standing");
+        expect([s.activeSide, top(s).type]).toEqual(["home", "Turn"]);
+        s = apply(fire(breather(5)), roll(5), { type: "DECLINE_REROLL" });
+        expect(s.players["away-2"]!.status).toBe("prone");
+      });
+
+      it("a failure knocks the fire-breather down: armour roll and a turnover", () => {
+        let s = apply(fire(breather(5)), roll(2), { type: "DECLINE_REROLL" });
+        expect(s.players["home-2"]!.status).toBe("prone");
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Home 2)");
+        s = apply(s, roll(2, 2));
+        expect(s.activeSide).toBe("away");
+      });
+    });
+
     describe("Stab", () => {
       const stabber = (skills = ["Stab"]) => withSkills(toFirstTurn(), { "home-2": skills });
 

@@ -213,6 +213,7 @@ export type CheckKind =
   | "steadyfooting"
   | "dauntless"
   | "vomit"
+  | "breathefire"
   | "animosity"
   | "landing"
   | "hunger"
@@ -402,10 +403,10 @@ export type Procedure =
       bounceFrom?: Square;
     }
   | { type: "Crowd"; playerId: string; from: Square; hadBall: boolean }
-  /** Projectile Vomit or Stab on an adjacent opponent, instead of a block. */
+  /** Projectile Vomit, Stab or Breathe Fire on an adjacent opponent, instead of a block. */
   | {
       type: "Vomit";
-      skill: "Projectile Vomit" | "Stab";
+      skill: "Projectile Vomit" | "Stab" | "Breathe Fire";
       attackerId: string;
       defenderId: string;
       blitz: boolean;
@@ -502,6 +503,8 @@ export type Procedure =
       leaving?: { from: Square; to: Square };
       /** The opponent who used Diving Tackle on this roll (-2 from then on, re-roll included). */
       divingTacklerId?: string;
+      /** A re-roll is also offered after a success below this natural roll (Breathe Fire short of a 6). */
+      rerollBelow?: number;
     }
   | {
       type: "KnockDown";
@@ -579,6 +582,8 @@ export type Action =
   | { type: "VOMIT"; targetId: string }
   /** Stab an adjacent opponent instead of blocking them. */
   | { type: "STAB"; targetId: string }
+  /** Breathe Fire on an adjacent opponent instead of blocking them. */
+  | { type: "BREATHE_FIRE"; targetId: string }
   /** Pick one of the rolled block dice (index into the results). */
   | { type: "CHOOSE_BLOCK_DIE"; index: number }
   | { type: "PUSH"; square: Square }
@@ -633,6 +638,7 @@ export type ActionTemplate =
   | { type: "BLOCK"; side: Side; playerId: string; targets: Array<{ playerId: string; dice: number }> }
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
+  | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
   | { type: "CHOOSE_BLOCK_DIE"; side: Side; results: number[] }
   | { type: "REROLL_BLOCK_DIE"; side: Side; results: number[]; skill: string }
   | { type: "PUSH"; side: Side; playerId: string; squares: Square[] }

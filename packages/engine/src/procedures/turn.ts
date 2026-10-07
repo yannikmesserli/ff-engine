@@ -460,7 +460,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         ttmOptions(state, proc).length === 0);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "USE_SKILL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "USE_SKILL", "END_PLAYER_ACTION");
     if (a.type === "USE_SKILL") {
       if (!canFumblerooski(state, proc)) ctx.reject("Fumblerooski cannot be used now.");
       if (a.use) proc.fumblerooski = true;
@@ -507,8 +507,8 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ctx.push(...feedFirst(proc), { type: "HandOff", throwerId: player.id, catcherId: a.targetId, stage: "animosity" });
       return "continue";
     }
-    if (a.type === "VOMIT" || a.type === "STAB") {
-      const skill = a.type === "VOMIT" ? "Projectile Vomit" : "Stab";
+    if (a.type === "VOMIT" || a.type === "STAB" || a.type === "BREATHE_FIRE") {
+      const skill = SPECIAL_ATTACKS[a.type];
       if (!specialTargets(state, proc, skill).some((t) => t.id === a.targetId)) ctx.reject(`Cannot use ${skill} on this player.`);
       proc.blocked = true;
       // The attack ends the action, even during a Blitz (but Hit and Run may follow a Stab).
@@ -551,6 +551,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
     const vomits = specialTargets(state, proc, "Projectile Vomit").map((t) => t.id);
     const stabs = specialTargets(state, proc, "Stab").map((t) => t.id);
+    const fires = specialTargets(state, proc, "Breathe Fire").map((t) => t.id);
     const throws = throwOptions(state, proc);
     const handOffs = handOffOptions(state, proc).map((p) => p.id);
     const fouls = foulOptions(state, proc);
@@ -561,6 +562,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(targets.length > 0 ? [{ type: "BLOCK" as const, side: player.side, playerId: player.id, targets }] : []),
       ...(vomits.length > 0 ? [{ type: "VOMIT" as const, side: player.side, playerId: player.id, targetIds: vomits }] : []),
       ...(stabs.length > 0 ? [{ type: "STAB" as const, side: player.side, playerId: player.id, targetIds: stabs }] : []),
+      ...(fires.length > 0 ? [{ type: "BREATHE_FIRE" as const, side: player.side, playerId: player.id, targetIds: fires }] : []),
       ...(throws.length > 0 ? [{ type: "THROW" as const, side: player.side, playerId: player.id, squares: throws }] : []),
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
       ...(fouls.length > 0 ? [{ type: "FOUL" as const, side: player.side, playerId: player.id, targets: fouls }] : []),
@@ -722,8 +724,11 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
   return adjacentTargets(state, player).filter((t) => t.id === proc.targetId);
 }
 
-/** Projectile Vomit and Stab can replace any block the player could make now. */
-const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: "Projectile Vomit" | "Stab") =>
+/** The skill behind each attack made instead of a block. */
+const SPECIAL_ATTACKS = { VOMIT: "Projectile Vomit", STAB: "Stab", BREATHE_FIRE: "Breathe Fire" } as const;
+
+/** Projectile Vomit, Stab and Breathe Fire can replace any block the player could make now. */
+const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: P<"Vomit">["skill"]) =>
   hasSkill(state.players[proc.playerId]!, skill) ? activationTargets(state, proc) : [];
 
 /**

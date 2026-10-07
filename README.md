@@ -116,6 +116,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Projectile Vomit: instead of a block (a Blitz pays the square), 2+ hits the opponent, a failure the vomiting
   player (team re-roll allowed); armour without modifiers, placed prone and injury if broken; the action ends, no
   turnover unless the moving team's ball carrier drops the ball.
+- Breathe Fire: instead of a block (a Blitz pays the square), a D6, -1 against ST 5 or more; the coach may re-roll
+  anything but a 6 (team re-roll). A natural 6 knocks the opponent down (armour and injury without modifiers), 4+
+  places them prone, 2+ does nothing, and a 1 knocks the fire-breather down (armour without modifiers), a turnover.
 - Animosity(X): before a pass or hand-off to a team-mate with keyword X (plain Animosity: any team-mate), 2+ (team
   re-roll allowed); a failure keeps the ball and ends the action, without a turnover.
 - Throw Team-mate / Right Stuff: a once-per-turn action; the thrower may move, then throws an adjacent team-mate with

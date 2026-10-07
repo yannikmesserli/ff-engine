@@ -146,6 +146,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "VOMIT", targetId: pick(t.targetIds) };
     case "STAB":
       return { type: "STAB", targetId: pick(t.targetIds) };
+    case "BREATHE_FIRE":
+      return { type: "BREATHE_FIRE", targetId: pick(t.targetIds) };
     case "GAZE":
       return { type: "GAZE", targetId: pick(t.targetIds) };
     case "CHOOSE_BLOCK_DIE":

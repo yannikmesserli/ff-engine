@@ -268,6 +268,11 @@ export function ActionPanel(props: ActionPanelProps) {
             Stab {state.players[id]!.name}
           </button>
         ))}
+        {findTemplate(templates, "BREATHE_FIRE")?.targetIds.map((id) => (
+          <button key={id} onClick={() => dispatch({ type: "BREATHE_FIRE", targetId: id })}>
+            Breathe fire on {state.players[id]!.name}
+          </button>
+        ))}
         {has("END_PLAYER_ACTION") && <button onClick={() => dispatch({ type: "END_PLAYER_ACTION" })}>End action</button>}
         {(has("END_TURN") || has("END_PLAYER_ACTION")) && (
           <button
