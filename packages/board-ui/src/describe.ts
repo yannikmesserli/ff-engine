@@ -304,6 +304,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${e.playerIds.length} Riotous Rookies join ${sideName(state, e.side)} for the game.`;
     case "RerollsStolen":
       return `${sideName(state, e.side)}'s Halfling Master Chef steals ${e.count} re-roll${e.count === 1 ? "" : "s"} for the half.`;
+    case "SpecialRuleUsed":
+      return `${sideName(state, e.side)} uses ${e.rule}.`;
     case "InducementUsed":
       return `${sideName(state, e.side)} uses ${INDUCEMENT_NAMES[e.inducement]}.`;
     case "BallCaught":

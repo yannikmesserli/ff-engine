@@ -12,6 +12,17 @@ type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 /** Argue the call succeeds on a 6; a natural 1 bans the coach. */
 export const ARGUE_THE_CALL_TARGET = 6;
 
+/**
+ * Bribery and Corruption (a team special rule): once per game, a natural 1 on Argue the Call is re-rolled, so the coach
+ * is not banned yet. True when the argue is rolled again.
+ */
+function briberyReroll(ctx: Ctx, team: TeamState): boolean {
+  if (!team.specialRules.includes("Bribery and Corruption") || team.briberyRerollUsed) return false;
+  team.briberyRerollUsed = true;
+  ctx.emit({ type: "SpecialRuleUsed", side: team.side, rule: "Bribery and Corruption" });
+  return true;
+}
+
 /** Biased Referee: spots an opposing foul the referee missed on 5+. */
 export const BIASED_REFEREE_TARGET = 5;
 
@@ -158,6 +169,7 @@ export const Foul: Handler<P<"Foul">> = {
           proc.stage = "end";
           return "continue";
         }
+        if (roll === 1 && briberyReroll(ctx, team)) return "wait";
         if (roll === 1) team.coachBanned = true;
         ctx.emit({ type: "ArgueTheCall", foulerId: fouler.id, result: roll === 1 ? "coach-banned" : "failed" });
         proc.stage = "bribe";
@@ -275,6 +287,7 @@ export const SecretWeapon: Handler<P<"SecretWeapon">> = {
           ctx.emit({ type: "ArgueTheCall", foulerId: player.id, result: "success" });
           return next();
         }
+        if (roll === 1 && briberyReroll(ctx, team)) return "wait";
         if (roll === 1) team.coachBanned = true;
         ctx.emit({ type: "ArgueTheCall", foulerId: player.id, result: roll === 1 ? "coach-banned" : "failed" });
         proc.stage = "bribe";

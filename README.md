@@ -44,7 +44,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 ## Implemented so far (BB2025)
 
 - Inducements: listed in the team file (no pre-game shop yet) and checked against the BB2025 limits and the team's
-  special rules. Bribes: one each to keep a fouler (or a Secret Weapon) on the pitch on 2+. Part-time Assistant
+  special rules. Bribes: one each to keep a fouler (or a Secret Weapon) on the pitch on 2+ (Bribery and Corruption
+  teams may also re-roll a natural 1 on Argue the Call, once per game). Part-time Assistant
   Coaches and Temp Agency Cheerleaders: added to the team's own for Brilliant Coaching and Cheering Fans. Blitzer's
   Best Kegs: +1 each to the team's KO recovery rolls (a natural 1 still fails). Biased Referee: an opposing foul the
   referee missed is spotted on a D6 of 5+, and the team's own arguments get +1 (a natural 1 still bans the coach).

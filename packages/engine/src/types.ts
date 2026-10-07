@@ -128,6 +128,8 @@ export interface TeamState {
   journeymanPosition: PositionStats | null;
   /** Inducements bought for this game; what is left of them is tracked where they are used. */
   inducements: Inducements;
+  /** Bribery and Corruption (a team special rule): its once-per-game re-roll of an Argue the Call 1 was used. */
+  briberyRerollUsed?: boolean;
   /** Prayers to Nuffle granted to the team for the game. */
   prayers: Prayer[];
   /** How many of each inducement were used up (the once-per-game ones: Plague Doctor, Mortuary Assistant...). */
@@ -935,6 +937,8 @@ export type GameEvent =
   | { type: "PrayerGranted"; side: Side; prayer: Prayer; playerIds: string[] }
   /** Riotous Rookies: `playerIds` joined `side`'s reserves for the game. */
   | { type: "RookiesJoined"; side: Side; playerIds: string[] }
+  /** A team special rule was used (Bribery and Corruption's re-roll...). */
+  | { type: "SpecialRuleUsed"; side: Side; rule: string }
   /** An inducement bought for the game was used (the Team Mascot was tried...). */
   | { type: "InducementUsed"; side: Side; inducement: InducementId }
   | { type: "BallCaught"; playerId: string }

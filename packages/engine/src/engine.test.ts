@@ -3031,6 +3031,16 @@ describe("engine", () => {
       expect(find(apply(foul(friends), roll(2, 2), { type: "ARGUE_THE_CALL", argue: true }), "ROLL")?.reason).toBe("Argue the call 5+");
     });
 
+    it("Bribery and Corruption re-rolls a natural 1 on Argue the Call, once per game", () => {
+      const corrupt = edit(fouling(), (c) => {
+        c.teams.home.specialRules = ["Bribery and Corruption"];
+      });
+      let s = apply(foul(corrupt), roll(2, 2), { type: "ARGUE_THE_CALL", argue: true }, roll(1));
+      expect([s.teams.home.coachBanned, find(s, "ROLL")?.reason]).toEqual([false, "Argue the call 6+"]);
+      s = apply(s, roll(1));
+      expect(s.teams.home.coachBanned).toBe(true);
+    });
+
     it("a double on the armour roll is spotted: arguing the call on a 6 keeps the fouler, but it is a turnover", () => {
       let s = apply(foul(fouling()), roll(2, 2));
       expect(types(s)).toEqual(["ARGUE_THE_CALL"]);
