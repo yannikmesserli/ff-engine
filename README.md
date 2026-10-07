@@ -118,7 +118,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   turnover unless the moving team's ball carrier drops the ball.
 - Dump-off: when targeted by a block (not Frenzy's second one) or by Projectile Vomit, Stab, Breathe Fire or
   Hypnotic Gaze, after any Foul Appearance roll, the ball carrier's coach may first make a Quick pass with them (no
-  team re-roll, no On the Ball); neither team's turn ends because of it, then the action goes on.
+  team re-roll, no On the Ball); neither team's turn ends because of it, then the action goes on. The target of a
+  Blitz decides as soon as the Blitz is declared, before the blitzer moves (a blitzer still down has no tackle zone).
 - Punt: a once-per-turn action of a standing player with the skill, who may move first: the coach picks a square
   next to the punter (not diagonally); a D6 on the throw-in template facing it gives the direction, then the ball
   travels D6 squares (a team re-roll or Pro on each roll). Off the pitch, a throw-in from the last square and a

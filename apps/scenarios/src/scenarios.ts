@@ -767,6 +767,7 @@ export const SCENARIOS: Scenario[] = [
       "Declare a Block with Grishnak on Kaelith: before the block dice, the home coach is asked whether to use Dump-off.",
       "Use it, click \"Throw…\" and pick a Quick square, e.g. Malus (#2): only Quick passes are offered, there is no team re-roll and no On the Ball move. Whatever happens to the ball, nobody's turn ends, and Grishnak's block goes on.",
       "Undo and decline: the block goes on with Kaelith still holding the ball.",
+      "Undo and declare a Blitz on Kaelith with Ugluk (#2) instead: Dump-off is offered right away, before Ugluk moves, and not again at the block.",
     ],
     home: {
       name: "Naggaroth Nightblades",

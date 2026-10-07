@@ -2053,6 +2053,25 @@ describe("engine", () => {
         expect(find(blocked(distracted), "ROLL")?.reason).toMatch(/^Block/);
       });
 
+      it("a Blitz target decides when the Blitz is declared, before the blitzer moves, and not again at the block", () => {
+        let s = apply(dumper(), declare("home-2", "blitz", "away-2"));
+        expect(getAvailableActions(s)).toEqual([{ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Dump-off" }]);
+        s = apply(s, { type: "USE_SKILL", use: false });
+        expect(types(s)).toContain("MOVE");
+        s = apply(s, { type: "BLOCK", targetId: "away-2" });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Block/);
+      });
+
+      it("a blitzer still down when declaring gives no tackle zone on the pass", () => {
+        const down = edit(dumper(), (c) => {
+          c.players["home-2"]!.status = "prone";
+          c.players["away-2"]!.pa = 2;
+        });
+        const s = apply(down, declare("home-2", "blitz", "away-2"), { type: "USE_SKILL", use: true }, { type: "THROW", square: { x: 15, y: 6 } });
+        // Marked by home-1 and home-3 only: PA 2+, +2.
+        expect(find(s, "ROLL")?.reason).toBe("Pass 4+ (quick)");
+      });
+
       it("also before a special action such as Projectile Vomit", () => {
         const s = apply(withSkills(dumper(), { "home-2": ["Projectile Vomit"] }), declare("home-2", "block"), { type: "VOMIT", targetId: "away-2" });
         expect(find(s, "USE_SKILL")?.skill).toBe("Dump-off");

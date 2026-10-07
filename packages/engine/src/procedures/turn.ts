@@ -214,7 +214,9 @@ export const Turn: Handler<P<"Turn">> = {
     if (ONCE_PER_TURN.includes(a.action)) proc.used.push(a.action);
     state.activePlayerId = player.id;
     ctx.emit({ type: "ActionDeclared", playerId: player.id, action: a.action, ...(a.targetId ? { targetId: a.targetId } : {}) });
-    ctx.push({
+    // Dump-off: the Blitz target may pass as soon as they are named, before the blitzer does anything.
+    const dumpOff: Procedure[] = a.action === "blitz" ? [{ type: "DumpOff", attackerId: player.id, defenderId: a.targetId!, declared: true }] : [];
+    ctx.push(...dumpOff, {
       type: "MoveAction",
       playerId: player.id,
       stage: "start",

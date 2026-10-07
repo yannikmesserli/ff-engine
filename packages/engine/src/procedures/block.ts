@@ -236,9 +236,12 @@ export function rollFoulAppearance(ctx: Ctx, attacker: PlayerState, defender: Pl
 /** A failed Rush before a block: the attacker falls over, a turnover. */
 const fall = (attacker: PlayerState): Procedure => ({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall", fallsOver: true });
 
-/** Dump-off, once the attacker is ready to block (not before Frenzy's second block): it checks whether it applies. */
-export const dumpOff = (proc: { attackerId: string; defenderId: string; second?: boolean }): Procedure[] =>
-  proc.second ? [] : [{ type: "DumpOff", attackerId: proc.attackerId, defenderId: proc.defenderId }];
+/**
+ * Dump-off, once the attacker is ready to block (not before Frenzy's second block, nor in a Blitz, where it came when
+ * the Blitz was declared): it checks whether it applies.
+ */
+export const dumpOff = (proc: { attackerId: string; defenderId: string; second?: boolean; blitz?: boolean }): Procedure[] =>
+  proc.second || proc.blitz ? [] : [{ type: "DumpOff", attackerId: proc.attackerId, defenderId: proc.defenderId }];
 
 /** A failed Foul Appearance roll wastes the block, which ends the attacker's action (no turnover). */
 export function revolted(ctx: Ctx, attacker: PlayerState): boolean {
@@ -366,9 +369,9 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
 }
 
 /**
- * One BB2025 block or blitz block: Foul Appearance -> (Rush when blitzing) -> Dump-off -> Dauntless -> block dice ->
- * re-roll -> choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs -> loose ball ->
- * touchdown check.
+ * One BB2025 block or blitz block: Foul Appearance -> Dump-off (Block action) or Rush (Blitz) -> Dauntless -> block
+ * dice -> re-roll -> choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs -> loose ball
+ * -> touchdown check.
  */
 export const Block: Handler<P<"Block">> = {
   step(ctx, proc, action) {
@@ -383,7 +386,7 @@ export const Block: Handler<P<"Block">> = {
       case "appearanceResult":
         if (revolted(ctx, attacker)) return "done";
         proc.stage = proc.blitz ? "rush" : "dauntless";
-        if (!proc.blitz) ctx.push(...dumpOff(proc));
+        ctx.push(...dumpOff(proc));
         return "continue";
       case "rush": {
         // Blocking during a Blitz costs one square of movement, which may be a Rush.
@@ -398,8 +401,7 @@ export const Block: Handler<P<"Block">> = {
       }
       case "rushResult":
         // The block goes on after the fall only if Steady Footing kept the attacker on their feet.
-        // The Dump-off runs after any fall, and only if the attacker is still standing.
-        ctx.push(...(state.lastCheck?.success === false ? [fall(attacker)] : []), ...dumpOff(proc));
+        if (state.lastCheck?.success === false) ctx.push(fall(attacker));
         proc.stage = "dauntless";
         return "continue";
       case "dauntless": {
@@ -762,7 +764,7 @@ export const Vomit: Handler<P<"Vomit">> = {
       case "appearanceResult":
         if (revolted(ctx, attacker)) return "done";
         proc.stage = proc.blitz ? "rush" : "roll";
-        if (!proc.blitz) ctx.push(...dumpOff(proc));
+        ctx.push(...dumpOff(proc));
         return "continue";
       case "rush": {
         const needsRush = attacker.movesUsed >= attacker.ma;
@@ -775,8 +777,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         return "continue";
       }
       case "rushResult":
-        // The Dump-off runs after any fall, and only if the attacker is still standing.
-        ctx.push(...(state.lastCheck?.success === false ? [fall(attacker)] : []), ...dumpOff(proc));
+        if (state.lastCheck?.success === false) ctx.push(fall(attacker));
         proc.stage = "roll";
         return "continue";
       case "roll":

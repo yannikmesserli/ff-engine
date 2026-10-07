@@ -241,6 +241,11 @@ describe("scenarios", () => {
     expect([s.activeSide, s.turnover, find(s, "ROLL")?.reason]).toEqual(["away", false, "Block (1 die)"]);
   });
 
+  it("dump-off: a Blitz target is asked when the Blitz is declared", () => {
+    const s = applyActions(load("dump-off"), [{ type: "START_ACTION", playerId: "away-2", action: "blitz", targetId: "home-1" }]);
+    expect(find(s, "USE_SKILL")?.skill).toBe("Dump-off");
+  });
+
   it("punt: 3 and 4 put the ball on Malus; from the sideline the crowd is offered", () => {
     const start = applyActions(load("punt"), [{ type: "START_ACTION", playerId: "home-1", action: "punt" }]);
     let s = applyActions(start, [

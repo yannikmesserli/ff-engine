@@ -411,18 +411,19 @@ export const Pass: Handler<P<"Pass">> = {
   },
 };
 
-/** Dump-off: the defender holds the ball, is not distracted, and the attacker is still on their feet. */
+/** Dump-off: the defender holds the ball and is not distracted; the attacker is still on their feet (but a blitzer may be down when declaring). */
 function canDumpOff(state: GameState, proc: P<"DumpOff">) {
   const attacker = state.players[proc.attackerId]!;
   const defender = state.players[proc.defenderId]!;
-  if (state.turnover || state.touchdown !== null || attacker.status !== "standing") return false;
+  if (state.turnover || state.touchdown !== null || (!proc.declared && attacker.status !== "standing")) return false;
   return hasSkill(defender, "Dump-off") && ballCarrier(state)?.id === defender.id && hasTackleZone(defender);
 }
 
 /**
  * Dump-off: when the ball carrier is targeted by a block (not Frenzy's second one) or a special action that targets
  * them (Projectile Vomit, Stab, Breathe Fire, Hypnotic Gaze), after any Foul Appearance roll, their coach may first make
- * a Quick pass with them. The normal passing rules apply (no team re-roll: it is not their turn), except that there is
+ * a Quick pass with them. A Blitz target decides as soon as the Blitz is declared, before the blitzer moves (or rolls
+ * for Bone Head and the like), and not again when the block comes. The normal passing rules apply (no team re-roll: it is not their turn), except that there is
  * no On the Ball move and neither team's turn ends because of the pass. Then the attacker's action goes on.
  */
 export const DumpOff: Handler<P<"DumpOff">> = {

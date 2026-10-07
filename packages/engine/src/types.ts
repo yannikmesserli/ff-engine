@@ -466,7 +466,13 @@ export type Procedure =
       catcherId?: string;
     }
   /** Dump-off: the ball carrier about to be blocked (or targeted by a special action) may first make a Quick pass. */
-  | { type: "DumpOff"; attackerId: string; defenderId: string }
+  | {
+      type: "DumpOff";
+      attackerId: string;
+      defenderId: string;
+      /** Named as the target of a Blitz being declared: the blitzer may not be standing yet. */
+      declared?: boolean;
+    }
   /** Shadowing: an opponent may follow the player who just left `from`, out of their tackle zone. */
   | { type: "Shadow"; playerId: string; from: Square; stage: "select" | "result"; shadowerId?: string }
   /** The crowd throws a rock at a stalling ball carrier. */
