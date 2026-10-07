@@ -61,6 +61,7 @@ const SKILL_USES: Record<string, string> = {
   Hatred: "to re-roll a Skull",
   "Break Tackle": "to dodge free",
   Taunt: "and makes the attacker follow up",
+  Trickster: "and slips to another square",
   Fend: "and keeps the attacker away",
   Pro: "to try a re-roll",
   "Eye Gouge": "(no block assists until their next action)",

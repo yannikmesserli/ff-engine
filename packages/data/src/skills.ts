@@ -116,7 +116,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Throw Team-mate": "Once per turn, may throw an adjacent team-mate with Right Stuff to a Quick or Short square.",
   "Timmm-ber!": "Standing up with MA 2 or less: +1 to the roll per adjacent standing team-mate not marked by an opponent (a 1 still fails).",
   Titchy: "+1 to Dodge rolls, but opponents ignore this player's tackle zone when dodging into it.",
-  Trickster: "When about to be blocked, may first move to another free square next to the attacker.",
+  Trickster: "When about to be blocked (or hit by an attack replacing a block), may first move to a free square next to the attacker, with the ball.",
   "Unchannelled Fury": "After declaring an action, roll a D6 (+2 for a Block or Blitz): on 1-3 the action is lost.",
   Unsteady: "Cannot declare Secure the Ball.",
 };

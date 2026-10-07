@@ -390,10 +390,12 @@ export type Procedure =
       singleDie?: "Brawler" | "Hatred";
       /** Dauntless worked: the attacker's ST matches the defender's for this block. */
       dauntless?: boolean;
+      /** Cheering Fans: the extra assist counted for this block (kept when the dice are worked out again). */
+      extraAssist?: boolean;
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
       /** "appearance": the defender's Foul Appearance, rolled first. */
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "pro" | "proTeam" | "proLoner" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "trickster" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "pro" | "proTeam" | "proLoner" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
@@ -416,7 +418,7 @@ export type Procedure =
       attackerId: string;
       defenderId: string;
       blitz: boolean;
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "roll" | "result" | "armour" | "injury";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "trickster" | "roll" | "result" | "armour" | "injury";
       /** Who the vomit hits: the defender, or the attacker after a failed roll. */
       victimId?: string;
       /** The victim held the ball when placed prone. */
@@ -450,6 +452,8 @@ export type Procedure =
   | { type: "HitAndRun"; playerId: string; stage: "ask" | "move" }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
   | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "gaze" | "result" }
+  /** Trickster: the defender may move next to the attacker before the block or attack; "pickup": onto the loose ball. */
+  | { type: "Trickster"; attackerId: string; defenderId: string; stage: "choose" | "pickup"; square?: Square }
   /** Punt: the ball is kicked from the punter's square, on the throw-in template facing `facing`, D6 squares away. */
   | {
       type: "Punt";
@@ -628,6 +632,8 @@ export type Action =
   | { type: "FOUL"; targetId: string }
   /** Hypnotic Gaze: distract the adjacent opponent `targetId`. */
   | { type: "GAZE"; targetId: string }
+  /** Trickster: move to `square` before being hit (null: stay); `pickUp`: try to pick up a loose ball there. */
+  | { type: "TRICKSTER"; square: Square | null; pickUp?: boolean }
   /** Punt towards the orthogonally adjacent `square`, or into the crowd (null) from a sideline or an end zone. */
   | { type: "PUNT"; square: Square | null }
   /** The referee spotted the foul: argue the call (6: the fouler stays, but it is still a turnover)? */
@@ -674,6 +680,8 @@ export type ActionTemplate =
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
+  /** Trickster: free squares next to the attacker; `ball`: the one with a loose ball, if any. */
+  | { type: "TRICKSTER"; side: Side; playerId: string; squares: Square[]; ball: Square | null }
   /** Hail Mary Pass to any square of the pitch but the thrower's; `needed`: the roll that avoids a fumble. */
   | { type: "HAIL_MARY_PASS"; side: Side; playerId: string; needed: number }
   /** `crowd`: the punter stands on a sideline or in an end zone and may punt into the crowd. */

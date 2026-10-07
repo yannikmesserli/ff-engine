@@ -2042,6 +2042,54 @@ describe("engine", () => {
       });
     });
 
+    describe("Trickster", () => {
+      /** away-2 (13,7) has Trickster; home-4 waits at (10,7), next to the square behind the attacker. */
+      const trickster = (s = toFirstTurn()) => place(withSkills(s, { "away-2": ["Trickster"] }), { "home-4": { x: 10, y: 7 } });
+      const blocked = (s = trickster()) => apply(s, declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" });
+
+      it("moves the defender next to the attacker before the dice, which are worked out again", () => {
+        let s = blocked();
+        expect(find(s, "TRICKSTER")).toEqual({ type: "TRICKSTER", side: "away", playerId: "away-2", squares: [{ x: 11, y: 6 }, { x: 11, y: 7 }, { x: 11, y: 8 }], ball: null });
+        expect(top(s)).toMatchObject({ type: "Trickster" });
+        expect(s.stack.findLast((p) => p.type === "Block")).toMatchObject({ dice: 1 });
+        s = apply(s, { type: "TRICKSTER", square: { x: 11, y: 7 } });
+        expect(s.players["away-2"]!.at).toEqual({ x: 11, y: 7 });
+        // home-4 now gives an assist: two dice.
+        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "block", count: 2 }] });
+      });
+
+      it("staying changes nothing; the ball goes with the defender", () => {
+        expect(find(apply(blocked(), { type: "TRICKSTER", square: null }), "ROLL")).toMatchObject({ dice: [{ kind: "block", count: 1 }] });
+        const holding = edit(trickster(), (c) => {
+          c.ball = { square: { x: 13, y: 7 }, carried: true };
+        });
+        const s = apply(blocked(holding), { type: "TRICKSTER", square: { x: 11, y: 8 } });
+        expect(s.ball).toEqual({ square: { x: 11, y: 8 }, carried: true });
+      });
+
+      it("onto a loose ball: a pick-up roll, or a bounce", () => {
+        const loose = edit(trickster(), (c) => {
+          c.ball = { square: { x: 11, y: 6 }, carried: false };
+        });
+        expect(find(blocked(loose), "TRICKSTER")?.ball).toEqual({ x: 11, y: 6 });
+        let s = apply(blocked(loose), { type: "TRICKSTER", square: { x: 11, y: 6 }, pickUp: true });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Pick-up/);
+        s = apply(s, roll(6));
+        expect(s.ball).toEqual({ square: { x: 11, y: 6 }, carried: true });
+        s = apply(blocked(loose), { type: "TRICKSTER", square: { x: 11, y: 6 }, pickUp: false });
+        expect(find(s, "ROLL")?.reason).toBe("Bounce");
+      });
+
+      it("before a special action too; not without a tackle zone", () => {
+        const s = apply(withSkills(trickster(), { "home-2": ["Stab"] }), declare("home-2", "block"), { type: "STAB", targetId: "away-2" });
+        expect(types(s)).toEqual(["TRICKSTER"]);
+        const distracted = edit(trickster(), (c) => {
+          c.players["away-2"]!.distracted = true;
+        });
+        expect(types(blocked(distracted))).not.toContain("TRICKSTER");
+      });
+    });
+
     describe("Dump-off", () => {
       /** away-2 (13,7) holds the ball, marked by home-1, home-2 and home-3; away-6 stands free at (15,6). */
       const dumper = (skills = ["Dump-off"]) =>

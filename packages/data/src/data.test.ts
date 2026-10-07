@@ -153,6 +153,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "VOMIT", targetId: pick(t.targetIds) };
     case "STAB":
       return { type: "STAB", targetId: pick(t.targetIds) };
+    case "TRICKSTER":
+      return random() < 0.3 ? { type: "TRICKSTER", square: null } : { type: "TRICKSTER", square: pick(t.squares), pickUp: random() < 0.5 };
     case "PUNT":
       return random() < 0.8 || !t.crowd ? { type: "PUNT", square: pick(t.squares) } : { type: "PUNT", square: null };
     case "BREATHE_FIRE":

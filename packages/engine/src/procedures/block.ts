@@ -1,11 +1,11 @@
 import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
-import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, playerAt, sameSquare, tackleZoneAt } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, playerAt, sameSquare, tackleZoneAt, tackleZones } from "../pitch";
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { dropBall } from "./ball";
 import { hasSkill, skillName, skillValue } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proTemplate, proTemplates, rushModifier, squareOf, stepPro, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proTemplate, proTemplates, rushModifier, squareOf, stepPro, useTeamReroll, weatherModifier } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -55,6 +55,8 @@ function assists(state: GameState, side: Side, target: Square, opponentId: strin
 export interface BlockContext {
   blitz?: boolean;
   dauntless?: boolean;
+  /** Cheering Fans' extra assist, when it is no longer in the team state (the dice are worked out again). */
+  extraAssist?: boolean;
 }
 
 /** The attacker's strength before assists: Dauntless raises it to the defender's ST, then Horns +1 during a Blitz. */
@@ -75,7 +77,7 @@ export function dauntlessTarget(attacker: PlayerState, defender: PlayerState): n
 /** Number of block dice: positive when the attacker chooses, negative when the defender does. */
 export function blockDice(state: GameState, attacker: PlayerState, defender: PlayerState, context: BlockContext = {}): number {
   if (!isOnPitch(attacker) || !isOnPitch(defender)) return 0;
-  const extra = state.teams[attacker.side].extraAssist ? 1 : 0;
+  const extra = (context.extraAssist ?? state.teams[attacker.side].extraAssist) ? 1 : 0;
   const a = attackerStrength(attacker, defender, context) + assists(state, attacker.side, defender.at, defender.id, attacker.id) + extra;
   const d = defender.st + assists(state, defender.side, attacker.at, attacker.id, defender.id);
   if (a > 2 * d) return 3;
@@ -233,6 +235,70 @@ export function rollFoulAppearance(ctx: Ctx, attacker: PlayerState, defender: Pl
   return true;
 }
 
+/** Trickster: the free squares next to the attacker where the defender (with a tackle zone) may move before being hit. */
+export function tricksterSquares(state: GameState, attacker: PlayerState, defender: PlayerState): Square[] {
+  if (!hasSkill(defender, "Trickster") || !hasTackleZone(defender) || !isOnPitch(attacker) || !isOnPitch(defender)) return [];
+  return adjacent(attacker.at).filter((s) => !playerAt(state, s));
+}
+
+/** Trickster, pushed before the block dice or the attack roll; it checks whether it applies. */
+const trickster = (attacker: PlayerState, defender: PlayerState): Procedure[] =>
+  hasSkill(defender, "Trickster") ? [{ type: "Trickster", attackerId: attacker.id, defenderId: defender.id, stage: "choose" }] : [];
+
+/**
+ * Trickster: before being blocked (or hit by a special action replacing a block), after any Dump-off and Dauntless,
+ * a player with a tackle zone may move to any free square next to the attacker, taking the ball with them. Onto a loose
+ * ball, their coach chooses between a pick-up roll (no team re-roll: it is not their turn) and letting it bounce. The
+ * block dice are then worked out again.
+ */
+export const Trickster: Handler<P<"Trickster">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const attacker = getPlayer(ctx, proc.attackerId);
+    const defender = getPlayer(ctx, proc.defenderId);
+    if (proc.stage === "pickup") {
+      if (state.lastCheck?.success) {
+        state.ball.carried = true;
+        ctx.emit({ type: "BallPickedUp", playerId: defender.id });
+      } else ctx.push({ type: "Bounce", from: { ...proc.square! }, kickoff: false, receiving: null });
+      return "done";
+    }
+    const squares = tricksterSquares(state, attacker, defender);
+    if (action === null) return squares.length > 0 ? "wait" : "done";
+    const a = ctx.expect(action, "TRICKSTER");
+    if (a.square === null) return "done";
+    const to = squares.find((s) => sameSquare(s, a.square!)) ?? ctx.reject("Trickster moves next to the attacker, onto a free square.");
+    const from = squareOf(ctx, defender);
+    const carrying = ballCarrier(state)?.id === defender.id;
+    defender.at = { x: to.x, y: to.y };
+    ctx.emit({ type: "SkillUsed", playerId: defender.id, skill: "Trickster" });
+    ctx.emit({ type: "PlayerMoved", playerId: defender.id, from: { ...from }, to: { ...defender.at } });
+    if (carrying) state.ball.square = { ...defender.at };
+    const block = state.stack.findLast((p): p is P<"Block"> => p.type === "Block" && p.defenderId === defender.id);
+    if (block) block.dice = blockDice(state, attacker, defender, { blitz: block.blitz, dauntless: block.dauntless, extraAssist: block.extraAssist });
+    const { ball } = state;
+    if (carrying || !ball.square || ball.carried || !sameSquare(ball.square, to)) return "done";
+    proc.square = { x: to.x, y: to.y };
+    if (!a.pickUp) {
+      ctx.push({ type: "Bounce", from: { ...proc.square }, kickoff: false, receiving: null });
+      return "done";
+    }
+    state.lastCheck = null;
+    ctx.push({ type: "Check", kind: "pickup", playerId: defender.id, target: defender.ag, modifier: -tackleZones(state, defender.side, to) + weatherModifier(state, "pickup"), stage: "roll", rerolled: false });
+    proc.stage = "pickup";
+    return "continue";
+  },
+  actions(state, proc) {
+    const attacker = state.players[proc.attackerId]!;
+    const defender = state.players[proc.defenderId]!;
+    if (proc.stage !== "choose") return [];
+    const squares = tricksterSquares(state, attacker, defender);
+    const { ball } = state;
+    const loose = !ball.carried && ball.square ? squares.find((s) => sameSquare(s, ball.square!)) ?? null : null;
+    return [{ type: "TRICKSTER", side: defender.side, playerId: defender.id, squares, ball: loose ? { ...loose } : null }];
+  },
+};
+
 /** A failed Rush before a block: the attacker falls over, a turnover. */
 const fall = (attacker: PlayerState): Procedure => ({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall", fallsOver: true });
 
@@ -369,9 +435,9 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
 }
 
 /**
- * One BB2025 block or blitz block: Foul Appearance -> Dump-off (Block action) or Rush (Blitz) -> Dauntless -> block
- * dice -> re-roll -> choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs -> loose ball
- * -> touchdown check.
+ * One BB2025 block or blitz block: Foul Appearance -> Dump-off (Block action) or Rush (Blitz) -> Dauntless -> Trickster
+ * -> block dice -> re-roll -> choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs ->
+ * loose ball -> touchdown check.
  */
 export const Block: Handler<P<"Block">> = {
   step(ctx, proc, action) {
@@ -416,9 +482,14 @@ export const Block: Handler<P<"Block">> = {
       case "dauntlessResult":
         if (state.lastCheck?.kind === "dauntless" && state.lastCheck.success) {
           proc.dauntless = true;
-          proc.dice = blockDice(state, attacker, defender, { blitz: proc.blitz, dauntless: true });
+          proc.dice = blockDice(state, attacker, defender, { blitz: proc.blitz, dauntless: true, extraAssist: proc.extraAssist });
           ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Dauntless" });
         }
+        proc.stage = "trickster";
+        return "continue";
+      case "trickster":
+        // Trickster updates the block dice if the defender moves.
+        ctx.push(...trickster(attacker, defender));
         proc.stage = "roll";
         return "continue";
       case "roll": {
@@ -763,7 +834,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         return "continue";
       case "appearanceResult":
         if (revolted(ctx, attacker)) return "done";
-        proc.stage = proc.blitz ? "rush" : "roll";
+        proc.stage = proc.blitz ? "rush" : "trickster";
         ctx.push(...dumpOff(proc));
         return "continue";
       case "rush": {
@@ -778,6 +849,11 @@ export const Vomit: Handler<P<"Vomit">> = {
       }
       case "rushResult":
         if (state.lastCheck?.success === false) ctx.push(fall(attacker));
+        proc.stage = "trickster";
+        return "continue";
+      case "trickster":
+        if (attacker.status !== "standing" || state.touchdown !== null) return "done";
+        ctx.push(...trickster(attacker, getPlayer(ctx, proc.defenderId)));
         proc.stage = "roll";
         return "continue";
       case "roll":

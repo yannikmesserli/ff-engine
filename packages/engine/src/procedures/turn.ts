@@ -552,6 +552,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       proc.blocked = true;
       const dice = blockDice(state, player, target, { blitz: proc.action === "blitz" });
       // Cheering Fans: the extra assist is used up by the team's first block.
+      const extraAssist = state.teams[player.side].extraAssist;
       state.teams[player.side].extraAssist = false;
       ctx.emit({ type: "BlockDeclared", attackerId: player.id, defenderId: target.id, dice });
       ctx.push({
@@ -561,6 +562,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         blitz: proc.action === "blitz",
         stage: "appearance",
         dice,
+        ...(extraAssist ? { extraAssist } : {}),
         rerolled: false,
         chain: [],
       }, ...hitAndRun(player, true));

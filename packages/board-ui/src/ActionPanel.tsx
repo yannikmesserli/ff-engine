@@ -38,6 +38,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   START_ACTION: "click a player to declare an action",
   BLOCK: "click a highlighted opponent to block (2D: you pick, 2D!: the defender picks)",
   PUSH: "click a square to push the player to",
+  TRICKSTER: "Trickster: click a square next to the attacker to move to before being hit, or stay",
   FOLLOW_UP: "follow up into the vacated square?",
   CHOOSE_BLOCK_DIE: "pick a block die",
   REROLL_BLOCK_DIE: "pick the block die to re-roll",
@@ -272,6 +273,16 @@ export function ActionPanel(props: ActionPanelProps) {
             dispatch={dispatch}
             formations={state.stack.at(-1)?.type === "Setup"}
           />
+        )}
+        {has("TRICKSTER") && (
+          <>
+            <button onClick={() => dispatch({ type: "TRICKSTER", square: null })}>Stay</button>
+            {findTemplate(templates, "TRICKSTER")!.ball && (
+              <button onClick={() => dispatch({ type: "TRICKSTER", square: findTemplate(templates, "TRICKSTER")!.ball, pickUp: false })}>
+                Move onto the ball without picking it up
+              </button>
+            )}
+          </>
         )}
         {findTemplate(templates, "VOMIT")?.targetIds.map((id) => (
           <button key={id} onClick={() => dispatch({ type: "VOMIT", targetId: id })}>
