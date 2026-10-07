@@ -720,4 +720,43 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 12, y: 8 },
     }),
   },
+  {
+    id: "breathe-fire",
+    title: "Breathe Fire: a fiery attack instead of a block",
+    instructions: [
+      "Home's first turn: Zharrak (#1, Flamesmith) stands on the line of scrimmage, next to the orc lineman Grishnak (#1) and the Troll (#4, ST 5).",
+      "Declare a Block with Zharrak and click \"Breathe fire on Grishnak\": a D6 needing 2+. A natural 6 knocks him down (armour and injury without modifiers), 4+ places him prone, 2 or 3 does nothing; anything but a 6 can be re-rolled with a team re-roll.",
+      "Undo and breathe fire on the Troll instead: -1 to the roll against ST 5 or more, so a 2 knocks Zharrak down, a turnover (enter it with \"Physical dice\").",
+      "Undo and declare a Blitz on Snaga (#3) with Drazhoath (#2, Flamesmith): move next to him, then breathe fire; it costs a square and ends the action.",
+    ],
+    home: {
+      name: "Zharr-Naggrund Furnace",
+      roster: "Chaos Dwarf",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Zharrak", position: "Flamesmith" },
+        { number: 2, name: "Drazhoath", position: "Flamesmith" },
+        { number: 3, name: "Gorbad", position: "Hobgoblin Lineman" },
+        { number: 4, name: "Snikkit", position: "Hobgoblin Lineman" },
+        { number: 5, name: "Rykarth", position: "Hobgoblin Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+        { number: 4, name: "Troll", position: "Troll" },
+      ],
+    },
+    seed: 23,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 10, y: 11 }, 3: { x: 12, y: 4 }, 4: { x: 12, y: 10 }, 5: { x: 5, y: 7 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 14, y: 11 }, 4: { x: 13, y: 8 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

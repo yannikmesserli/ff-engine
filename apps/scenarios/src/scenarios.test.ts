@@ -218,4 +218,14 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "START_ACTION", playerId: "home-4", action: "move" }, { type: "MOVE", square: { x: 11, y: 8 } }, { type: "MOVE", square: { x: 12, y: 8 } }]);
     expect(find(s, "ROLL")?.reason).toMatch(/^Pick-up/);
   });
+
+  it("breathe-fire: 4+ places the target prone, a failure against the Troll is a turnover", () => {
+    const start = applyActions(load("breathe-fire"), [{ type: "START_ACTION", playerId: "home-1", action: "block" }]);
+    expect(find(start, "BREATHE_FIRE")?.targetIds).toEqual(["away-1", "away-4"]);
+    let s = applyActions(start, [{ type: "BREATHE_FIRE", targetId: "away-1" }, { type: "ROLL", values: [4] }, { type: "DECLINE_REROLL" }]);
+    expect(s.players["away-1"]!.status).toBe("prone");
+    s = applyActions(start, [{ type: "BREATHE_FIRE", targetId: "away-4" }, { type: "ROLL", values: [2] }, { type: "DECLINE_REROLL" }]);
+    expect(s.players["home-1"]!.status).toBe("prone");
+    expect(s.turnover).toBe(true);
+  });
 });
