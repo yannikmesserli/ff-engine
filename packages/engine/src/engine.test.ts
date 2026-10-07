@@ -3307,6 +3307,18 @@ describe("engine", () => {
       expect(types(s)).not.toContain("THROW_A_ROCK");
     });
 
+    it("Treacherous Trapdoor: entering (6,1) or (19,13), a 1 drops the player off the pitch, a turnover", () => {
+      // Either team's prayer opens the trapdoors for everyone.
+      const s = apply(place(withPrayer(toFirstTurn(), "away", "treacherous-trapdoor"), { "home-5": { x: 7, y: 2 } }), startMove("home-5"), ...move({ x: 6, y: 1 }));
+      expect(find(s, "ROLL")?.reason).toBe("Trapdoor 2+ (Home 5)");
+      expect(apply(s, roll(2)).players["home-5"]!.at).toEqual({ x: 6, y: 1 });
+      let fell = apply(s, roll(1), { type: "DECLINE_REROLL" });
+      expect(find(fell, "ROLL")?.reason).toBe("Injury (Home 5, trapdoor)");
+      fell = apply(fell, roll(3, 3));
+      expect(fell.log).toContainEqual({ type: "FellThroughTrapdoor", playerId: "home-5" });
+      expect([fell.players["home-5"]!.at, fell.activeSide]).toEqual(["reserves", "away"]);
+    });
+
     it("Moles under the Pitch: -1 to the opponents' Rush rolls", () => {
       const s = apply(withPrayer(toFirstTurn(), "away", "moles-under-the-pitch"), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
       expect(find(s, "ROLL")?.reason).toMatch(/^Rush 3\+/);

@@ -20,6 +20,7 @@ const CHECK_NAMES = {
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
   chainsaw: "Chainsaw roll (a failure kicks back: the chainsaw player is knocked down)",
   mascot: "Team Mascot roll (a failure spends a team re-roll instead, if any is left)",
+  trapdoor: "Trapdoor roll (a 1 falls through)",
   tentacles: "Tentacles roll (a success holds the moving player in place)",
   breathefire: "Breathe Fire roll (6 knocks the target down, 4+ places them prone, a failure knocks the fire-breather down)",
   animosity: "Animosity roll (a failure keeps the ball and ends the action)",
@@ -297,6 +298,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       const players = e.playerIds.map((id) => who(state, id)).join(", ");
       return `${sideName(state, e.side)} prays to Nuffle: ${PRAYER_NAMES[e.prayer]}${players ? ` (${players})` : ""}.`;
     }
+    case "FellThroughTrapdoor":
+      return `${who(state, e.playerId)} falls through the trapdoor!`;
     case "RookiesJoined":
       return `${e.playerIds.length} Riotous Rookies join ${sideName(state, e.side)} for the game.`;
     case "RerollsStolen":

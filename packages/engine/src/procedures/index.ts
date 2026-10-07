@@ -7,7 +7,7 @@ import { Foul, SecretWeapon } from "./foul";
 import { Feed } from "./bloodlust";
 import { Check, KnockDown } from "./checks";
 import { Injury } from "./injury";
-import { Prayers } from "./prayers";
+import { Prayers, Trapdoor } from "./prayers";
 import { Stalling } from "./stalling";
 import { CoinToss, Game, Half, KoRecovery, MasterChef, ThrowRock } from "./game";
 import { Charge, HighKick, Kickoff, KickoffEvent, Pregame, QuickSnap, SolidDefence, SwelteringHeat } from "./kickoff";
@@ -20,6 +20,7 @@ export const handlers: HandlerMap = {
   Game,
   Pregame,
   Prayers,
+  Trapdoor,
   CoinToss,
   SwelteringHeat,
   Half,

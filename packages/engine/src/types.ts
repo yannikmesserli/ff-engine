@@ -280,6 +280,7 @@ export type CheckKind =
   | "vomit"
   | "breathefire"
   | "tentacles"
+  | "trapdoor"
   | "mascot"
   | "chainsaw"
   | "animosity"
@@ -311,6 +312,8 @@ export type Procedure =
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
   /** `drives`: kick-offs so far in this half; `turnPlayed`: a team turn just ended (time for Throw a Rock). */
   | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number; turnPlayed?: boolean }
+  /** Treacherous Trapdoor (a prayer): the player entered a trapdoor and falls through on a 1. */
+  | { type: "Trapdoor"; playerId: string; stage: "roll" | "result" | "injury" }
   /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
   /** Halfling Master Chef: each team with one rolls 3D6 (`sides` still to roll); every 4+ steals a team re-roll. */
@@ -926,6 +929,8 @@ export type GameEvent =
   | { type: "RerollUsed"; side: Side }
   /** Halfling Master Chef: `side` stole `count` team re-rolls from the opponents for the half. */
   | { type: "RerollsStolen"; side: Side; count: number }
+  /** Treacherous Trapdoor: the player fell through the trapdoor (off the pitch, an injury roll follows). */
+  | { type: "FellThroughTrapdoor"; playerId: string }
   /** A Prayer to Nuffle was granted to `side`; `playerIds`: the players it changed, if any. */
   | { type: "PrayerGranted"; side: Side; prayer: Prayer; playerIds: string[] }
   /** Riotous Rookies: `playerIds` joined `side`'s reserves for the game. */

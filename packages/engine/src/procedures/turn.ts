@@ -2,6 +2,7 @@ import type { Ctx, Handler, StepResult } from "../context";
 import type { Action, CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square, Weather } from "../types";
 import { templateDirection } from "../dice";
 import { weatherFor } from "./kickoff";
+import { trapdoor } from "./prayers";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
 import { dropBall } from "./ball";
@@ -909,9 +910,11 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     const step = (): Procedure[] => {
       const from = { ...squareOf(ctx, player) };
       movePlayer(ctx, player, proc.to, proc.hitAndRun ? 0 : squares);
+      // Treacherous Trapdoor: rolled as soon as the player is in the square.
+      const fall = trapdoor(state, player, proc.to);
       const tacklerId = state.lastCheck?.divingTacklerId;
-      if (tacklerId) return diveIn(ctx, getPlayer(ctx, tacklerId), from);
-      return proc.jump || proc.hitAndRun || proc.onTheBall === "kickoff" ? [] : [{ type: "Shadow", playerId: player.id, from, stage: "select" }];
+      if (tacklerId) return [...fall, ...diveIn(ctx, getPlayer(ctx, tacklerId), from)];
+      return [...fall, ...(proc.jump || proc.hitAndRun || proc.onTheBall === "kickoff" ? [] : [{ type: "Shadow" as const, playerId: player.id, from, stage: "select" as const }])];
     };
     /** Falling after a failed dodge or jump (`armBar`) or a failed Rush, in the target square or the starting one. */
     const fall = (inStartSquare = false, armBar = false) => {
@@ -980,8 +983,8 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         proc.stage = "arrive";
         return "continue";
       case "arrive":
-        // A shadowing ball carrier may have scored for the other team.
-        return state.touchdown === null ? arrive() : "done";
+        // A shadowing ball carrier may have scored for the other team; a trapdoor may have swallowed the player.
+        return state.touchdown === null && isOnPitch(player) ? arrive() : "done";
       case "fell":
         // Steady Footing kept the player up: the move goes on from where they are.
         if (player.status !== "standing" || proc.fellInPlace) return "done";
@@ -1047,6 +1050,7 @@ function chainStep(ctx: Ctx, proc: P<"MoveStep">, action: Action | null, player:
       return "continue";
     }
     movePlayer(ctx, player, to, 1);
+    ctx.push(...trapdoor(state, player, to));
     proc.stage = "chainArrive";
     if (rush) ctx.push({ type: "Check", kind: "rush", playerId: player.id, target: RUSH_TARGET, modifier: rushModifier(state, player), stage: "roll", rerolled: false });
     return "continue";
@@ -1064,7 +1068,7 @@ function chainStep(ctx: Ctx, proc: P<"MoveStep">, action: Action | null, player:
     return "done";
   }
   const { ball } = state;
-  if (ball.square && !ball.carried && sameSquare(ball.square, proc.to)) ctx.push({ type: "Bounce", from: { ...proc.to }, kickoff: false, receiving: null });
+  if (isOnPitch(player) && ball.square && !ball.carried && sameSquare(ball.square, proc.to)) ctx.push({ type: "Bounce", from: { ...proc.to }, kickoff: false, receiving: null });
   return "done";
 }
 

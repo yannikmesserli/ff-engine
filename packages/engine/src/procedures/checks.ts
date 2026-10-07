@@ -29,6 +29,7 @@ const CHECK_NAMES = {
   vomit: "Projectile Vomit",
   breathefire: "Breathe Fire",
   tentacles: "Tentacles",
+  trapdoor: "Trapdoor",
   mascot: "Team Mascot",
   chainsaw: "Chainsaw",
   animosity: "Animosity",

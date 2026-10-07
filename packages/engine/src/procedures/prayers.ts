@@ -1,9 +1,10 @@
 import type { Ctx, Handler } from "../context";
-import type { GameState, PlayerState, Prayer, Procedure, Side } from "../types";
+import type { GameState, PlayerState, Prayer, Procedure, Side, Square } from "../types";
 import { PRAYERS } from "../types";
-import { other, teamPlayers } from "../pitch";
+import { ballCarrier, isOnPitch, other, sameSquare, teamPlayers } from "../pitch";
 import { SKILL_CATEGORIES, hasSkill } from "../skills";
-import { getPlayer } from "./helpers";
+import { getPlayer, squareOf } from "./helpers";
+import { injure } from "./injury";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -156,3 +157,62 @@ function next(ctx: Ctx, proc: P<"Prayers">, side: Side, players: PlayerState[]) 
   proc.stage = "draw";
   return "continue" as const;
 }
+
+/** Treacherous Trapdoor (a prayer of either team): the two trapdoor squares. */
+export const TRAPDOORS = [
+  { x: 6, y: 1 },
+  { x: 19, y: 13 },
+];
+
+/** A player entering a trapdoor falls through on a 1. */
+export const TRAPDOOR_TARGET = 2;
+
+/** The Trapdoor roll due for a player who just entered `square`, if it is a trapdoor and a team prayed for them. */
+export function trapdoor(state: GameState, player: PlayerState, square: Square): Procedure[] {
+  if (!Object.values(state.teams).some((t) => t.prayers.includes("treacherous-trapdoor"))) return [];
+  return TRAPDOORS.some((t) => sameSquare(t, square)) ? [{ type: "Trapdoor", playerId: player.id, stage: "roll" }] : [];
+}
+
+/**
+ * Treacherous Trapdoor (a prayer; it affects both teams): a player who moves, is pushed or follows up into a trapdoor
+ * rolls a D6 (team re-roll in their turn) and falls through on a 1: off the pitch, an injury roll without armour (as for
+ * the crowd), the ball they held bounces from the trapdoor, and it is a turnover if they are of the moving team.
+ */
+export const Trapdoor: Handler<P<"Trapdoor">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const player = getPlayer(ctx, proc.playerId);
+    if (proc.stage === "roll") {
+      if (!isOnPitch(player)) return "done";
+      state.lastCheck = null;
+      ctx.push({ type: "Check", kind: "trapdoor", playerId: player.id, target: TRAPDOOR_TARGET, modifier: 0, stage: "roll", rerolled: false });
+      proc.stage = "result";
+      return "continue";
+    }
+    if (proc.stage === "result") {
+      const safe = state.lastCheck?.kind !== "trapdoor" || state.lastCheck.success;
+      state.lastCheck = null;
+      if (safe) return "done";
+      proc.stage = "injury";
+      return "wait";
+    }
+    if (action === null) return "wait";
+    const square = squareOf(ctx, player);
+    const carrying = ballCarrier(state)?.id === player.id;
+    const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury (trapdoor)");
+    player.at = "reserves";
+    ctx.emit({ type: "FellThroughTrapdoor", playerId: player.id });
+    if (player.side === state.activeSide) state.turnover = true;
+    // The ball bounces once the injury is resolved.
+    if (carrying) {
+      state.ball = { square: { ...square }, carried: false };
+      ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+    }
+    injure(ctx, player, a! + b!, { crowd: true });
+    return "done";
+  },
+  actions(state, proc) {
+    if (proc.stage !== "injury") return [];
+    return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason: `Injury (${state.players[proc.playerId]!.name}, trapdoor)` }];
+  },
+};

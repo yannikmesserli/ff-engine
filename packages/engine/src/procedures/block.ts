@@ -4,6 +4,7 @@ import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, pl
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { dropBall } from "./ball";
+import { trapdoor } from "./prayers";
 import { hasSkill, skillName, skillValue } from "../skills";
 import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, useTeamReroll, weatherModifier } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
@@ -446,6 +447,7 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
     }
     p.at = { ...to };
     if (carrying) ball.square = { ...to };
+    ctx.push(...trapdoor(state, p, to));
   }
 }
 
@@ -705,6 +707,7 @@ export const Block: Handler<P<"Block">> = {
             if (ball.carried && ball.square && sameSquare(ball.square, from)) ball.square = { ...proc.vacated! };
             attacker.at = { ...proc.vacated! };
             ctx.emit({ type: "FollowedUp", playerId: attacker.id, to: { ...proc.vacated! } });
+            ctx.push(...trapdoor(state, attacker, proc.vacated!));
           }
         }
         const knock = proc.knockDefender && isOnPitch(defender);
