@@ -917,4 +917,41 @@ export const SCENARIOS: Scenario[] = [
       { type: "END_TURN" },
     ],
   },
+  {
+    id: "tentacles",
+    title: "Tentacles: hold a player dodging away",
+    instructions: [
+      "Home's first turn: Wilhelm (#1, Human Lineman) holds the ball on the line of scrimmage, next to the Rotspawn Gloop (#1, ST 5, Tentacles).",
+      "Declare a Move with Wilhelm and step back west: before the dodge, the away coach may pick Gloop to try to hold him: a D6 + 5 - 3 needing 6, so 4+.",
+      "On a success Wilhelm stays where he is and his action ends, but it is no turnover: move another player. On a failure, Wilhelm rolls his dodge as usual.",
+      "Undo and move Klaus (#4, Human Blitzer) away from the Rotter Bilge (#3) instead: no Tentacles there, just the dodge.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Wilhelm", position: "Human Lineman" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Klaus", position: "Human Blitzer" },
+      ],
+    },
+    away: {
+      name: "Rotting Hope",
+      roster: "Nurgle",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Gloop", position: "Rotspawn" },
+        { number: 2, name: "Mucus", position: "Rotter Lineman" },
+        { number: 3, name: "Bilge", position: "Rotter Lineman" },
+      ],
+    },
+    seed: 43,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 }, 4: { x: 12, y: 11 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 12, y: 7 },
+    }),
+  },
 ];

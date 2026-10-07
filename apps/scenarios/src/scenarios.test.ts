@@ -278,4 +278,15 @@ describe("scenarios", () => {
     expect(s.players["home-1"]!.at).toEqual({ x: 14, y: 7 });
     expect(s.ball).toEqual({ square: { x: 14, y: 7 }, carried: true });
   });
+
+  it("tentacles: the Rotspawn may hold the ball carrier stepping away (4+)", () => {
+    let s = applyActions(load("tentacles"), [
+      { type: "START_ACTION", playerId: "home-1", action: "move" },
+      { type: "MOVE", square: { x: 11, y: 7 } },
+      { type: "SELECT_PLAYERS", playerIds: ["away-1"] },
+    ]);
+    expect(find(s, "ROLL")?.reason).toBe("Tentacles 4+ (Gloop)");
+    s = applyActions(s, [{ type: "ROLL", values: [4] }]);
+    expect([s.players["home-1"]!.at, s.turnover]).toEqual([{ x: 12, y: 7 }, false]);
+  });
 });
