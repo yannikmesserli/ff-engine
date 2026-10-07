@@ -2218,6 +2218,21 @@ describe("engine", () => {
         expect(actionsOf(s, "home-6")).not.toContain("ttm");
       });
 
+      it("Pro may re-roll the throw and the thrower's Always Hungry roll, not the thrown player's rolls", () => {
+        const pros = (s: GameState, thrower: string[]) => withSkills(s, { "home-4": ["Throw Team-mate", "Pro", ...thrower], "home-5": ["Right Stuff", "Pro"] });
+        let s = apply(declared(pros(ttmTeam(), [])), throwTo({ x: 7, y: 4 }), roll(2));
+        expect(types(s)).toEqual(["USE_REROLL", "USE_SKILL", "DECLINE_REROLL"]);
+        s = apply(s, { type: "USE_SKILL", use: true, skill: "Pro" });
+        expect(find(s, "ROLL")?.reason).toBe("Pro 3+ (Home 4)");
+        s = apply(s, roll(3), roll(4));
+        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 3 }] });
+        // A failed landing: the thrown player is not the active player, so only the team re-roll is offered.
+        s = apply(s, roll(1, 5, 3), roll(1));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        s = apply(declared(pros(ttmTeam(), ["Always Hungry"])), throwTo({ x: 7, y: 4 }), roll(1));
+        expect(types(s)).toContain("USE_SKILL");
+      });
+
       it("a subpar throw or a fumble makes the landing 1 harder; a fumble scatters once from the thrown player", () => {
         const subpar = apply(declared(), throwTo({ x: 7, y: 4 }), roll(2), { type: "DECLINE_REROLL" }, roll(1, 5, 3));
         expect(find(subpar, "ROLL")?.reason).toMatch(/^Landing 4\+/);

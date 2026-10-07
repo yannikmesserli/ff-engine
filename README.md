@@ -130,7 +130,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Animosity(X): before a pass or hand-off to a team-mate with keyword X (plain Animosity: any team-mate), 2+ (team
   re-roll allowed); a failure keeps the ball and ends the action, without a turnover.
 - Throw Team-mate / Right Stuff: a once-per-turn action; the thrower may move, then throws an adjacent team-mate with
-  Right Stuff to a Quick or Short square (PA roll like a pass, team re-roll, no interception). A superb or subpar
+  Right Stuff to a Quick or Short square (PA roll like a pass, team re-roll or Pro, no interception). A superb or subpar
   throw scatters three times from the target, a fumble once from the thrown player. Landing on a player knocks them
   down (a turnover if they are a team-mate) and scatters on; off the pitch means the crowd and a turnover. Landing
   roll on AG (-1 subpar or fumble, -1 per tackle zone), failing after hitting someone or for a prone or distracted
@@ -218,9 +218,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Fend: when the player (with a tackle zone) is pushed back by a block, even if knocked down, their coach may stop the
   attacker from following up (Frenzy included); a blitzing Juggernaut ignores it.
 - Pro: once per turn, the active player (standing, in their team's turn) may roll a D6 instead of using a team re-roll
-  on one of their failed rolls (single-D6 checks and passes) or a punt roll: on 3+ the die is re-rolled, otherwise the first result
-  stands, unless the coach spends a team re-roll (Loner applies) to roll Pro once more. On block dice, the coach first
-  picks the one die to re-roll.
+  on one of their failed rolls (single-D6 checks, passes, throws of a team-mate) or a punt roll: on 3+ the die is
+  re-rolled, otherwise the first result stands, unless the coach spends a team re-roll (Loner applies) to roll Pro once
+  more. On block dice, the coach first picks the one die to re-roll.
 - Eye Gouge: an opponent the player pushes back with a block cannot give block assists (offensive or defensive) until
   their next activation (or the end of the drive).
 - Pick-me-up: at the end of the opposing team's turn (not after a touchdown or the last turn of the half), the coach

@@ -3,7 +3,7 @@ import type { GameState, PassRange, PlayerState, Procedure, Square } from "../ty
 import { SCATTER } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, offset, playerAt, sameSquare, tackleZones } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollsLeft, rollLoner, squareOf, stepPro, useTeamReroll } from "./helpers";
 import { evaluatePass, passModifiers, passRange, shownNeeded } from "./pass";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -67,7 +67,7 @@ const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count:
 
 /**
  * Throw Team-mate: the throw is rolled like a pass (PA, range, tackle zones on the thrower, Very Sunny, Disturbing
- * Presence, +1 for Strong Arm; team re-roll, no interception). A superb or subpar throw scatters three times from the target square, a fumble once from the
+ * Presence, +1 for Strong Arm; team re-roll or Pro, no interception). A superb or subpar throw scatters three times from the target square, a fumble once from the
  * thrown player's square. Landing on a player knocks them down (a turnover if they are the thrower's team-mate) and
  * the thrown player scatters on; leaving the pitch means the crowd (always a turnover). The landing roll is on AG,
  * -1 for a subpar throw, -1 for a fumble and -1 per tackle zone; it fails without a roll after landing on someone,
@@ -119,13 +119,19 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
           proc.result = evaluatePass(thrower, roll!, modifiers);
         }
         ctx.emit({ type: "TeamMateThrown", playerId: thrower.id, thrownId: thrown.id, result: proc.result });
-        proc.stage = proc.result !== "accurate" && canTeamReroll(state, thrower.side, proc.rerolled) ? "reroll" : "scatter";
+        const canReroll = canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
+        proc.stage = proc.result !== "accurate" && canReroll ? "reroll" : "scatter";
         return "continue";
       }
       case "reroll": {
         if (action === null) return "wait";
-        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
-        if (a.type === "USE_REROLL") {
+        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
+        if (a.type === "USE_SKILL" && a.use) {
+          if ((a.skill ?? "Pro") !== "Pro" || !canUsePro(state, thrower, proc.rerolled)) ctx.reject("Pro cannot be used now.");
+          proc.rerolled = true;
+          proc.stage = "pro";
+        } else if (a.type === "USE_REROLL") {
+          if (!canTeamReroll(state, thrower.side, proc.rerolled)) ctx.reject("No re-roll available.");
           useTeamReroll(ctx, thrower.side);
           proc.rerolled = true;
           proc.stage = lonerTarget(thrower) === null ? "roll" : "loner";
@@ -136,6 +142,15 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         if (action === null) return "wait";
         proc.stage = rollLoner(ctx, action, thrower) ? "roll" : "scatter";
         return "continue";
+      case "pro":
+      case "proTeam":
+      case "proLoner": {
+        if (action === null) return "wait";
+        // A failed Pro roll keeps the first throw.
+        const pro = stepPro(ctx, proc, action, thrower);
+        if (pro !== "wait") proc.stage = pro === "reroll" ? "roll" : "scatter";
+        return "continue";
+      }
       case "scatter":
       case "bounce": {
         if (action === null) return "wait";
@@ -207,11 +222,16 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       }
       case "reroll":
         return [
-          { type: "USE_REROLL", side: thrower.side, available: rerollsLeft(state, thrower.side) },
+          ...(canTeamReroll(state, thrower.side, proc.rerolled) ? [{ type: "USE_REROLL" as const, side: thrower.side, available: rerollsLeft(state, thrower.side) }] : []),
+          ...proTemplate(state, thrower, proc.rerolled),
           { type: "DECLINE_REROLL", side: thrower.side },
         ];
       case "loner":
         return [lonerRollTemplate(thrower)];
+      case "pro":
+      case "proTeam":
+      case "proLoner":
+        return proTemplates(state, proc.stage, thrower);
       case "scatter":
         return [{ type: "ROLL", side: null, dice: scatterDice(proc), reason: "Thrown player scatters" }];
       case "bounce":

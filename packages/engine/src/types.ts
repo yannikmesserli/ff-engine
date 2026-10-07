@@ -343,8 +343,10 @@ export type Procedure =
       target: Square;
       range: PassRange;
       /** "hunger": Always Hungry, rolled before the throw. */
-      stage: "hunger" | "hungerResult" | "escapeResult" | "roll" | "reroll" | "loner" | "scatter" | "land" | "bounce" | "landed";
+      stage: "hunger" | "hungerResult" | "escapeResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "scatter" | "land" | "bounce" | "landed";
       rerolled: boolean;
+      /** A team re-roll was spent on a failed Pro roll. */
+      proRetried?: boolean;
       /** "accurate" is a superb throw, "inaccurate" a subpar one. */
       result?: PassResult;
       /** Where the thrown player comes down. */
