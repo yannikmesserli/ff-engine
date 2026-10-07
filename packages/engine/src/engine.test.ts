@@ -3281,6 +3281,20 @@ describe("engine", () => {
         c.teams[side].prayers = [prayer as never];
       });
 
+    it("Throw a Rock: once per game, between turns, a random standing opponent is knocked down on 4+", () => {
+      let s = apply(withPrayer(toFirstTurn(), "home", "throw-a-rock"), { type: "END_TURN" });
+      expect(getAvailableActions(s)).toEqual([{ type: "THROW_A_ROCK", side: "home" }]);
+      // Kept: asked again after the next turn.
+      s = apply(s, { type: "THROW_A_ROCK", use: false }, { type: "END_TURN" });
+      expect(types(s)).toEqual(["THROW_A_ROCK"]);
+      s = apply(s, { type: "THROW_A_ROCK", use: true }, roll(4));
+      const hit = s.log.findLast((e) => e.type === "RockThrown");
+      expect(hit).toMatchObject({ roll: 4, hit: true, playerId: expect.stringMatching(/^away-/) });
+      expect(find(s, "ROLL")?.reason).toMatch(/^Armour/);
+      s = apply(s, roll(1, 1), { type: "END_TURN" });
+      expect(types(s)).not.toContain("THROW_A_ROCK");
+    });
+
     it("Moles under the Pitch: -1 to the opponents' Rush rolls", () => {
       const s = apply(withPrayer(toFirstTurn(), "away", "moles-under-the-pitch"), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
       expect(find(s, "ROLL")?.reason).toMatch(/^Rush 3\+/);

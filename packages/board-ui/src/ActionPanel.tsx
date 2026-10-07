@@ -39,6 +39,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   BLOCK: "click a highlighted opponent to block (2D: you pick, 2D!: the defender picks)",
   PUSH: "click a square to push the player to",
   CHOOSE_WEATHER: "Weather Mage: choose the weather",
+  THROW_A_ROCK: "Throw a Rock (once per game): a random standing opponent is knocked down on 4+",
   SWOOP: "Swoop: click a square next to the target to face the throw-in template that way, or scatter as usual",
   TRICKSTER: "Trickster: click a square next to the attacker to move to before being hit, or stay",
   FOLLOW_UP: "follow up into the vacated square?",
@@ -284,6 +285,12 @@ export function ActionPanel(props: ActionPanelProps) {
             dispatch={dispatch}
             formations={state.stack.at(-1)?.type === "Setup"}
           />
+        )}
+        {has("THROW_A_ROCK") && (
+          <>
+            <button onClick={() => dispatch({ type: "THROW_A_ROCK", use: true })}>Throw a Rock</button>
+            <button onClick={() => dispatch({ type: "THROW_A_ROCK", use: false })}>Keep it for later</button>
+          </>
         )}
         {has("WEATHER_MAGE") && <button onClick={() => dispatch({ type: "WEATHER_MAGE" })}>Weather Mage</button>}
         {findTemplate(templates, "CHOOSE_WEATHER")?.options.map((w) => (

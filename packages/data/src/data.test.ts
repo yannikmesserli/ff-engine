@@ -187,6 +187,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "VOMIT", targetId: pick(t.targetIds) };
     case "STAB":
       return { type: "STAB", targetId: pick(t.targetIds) };
+    case "THROW_A_ROCK":
+      return { type: "THROW_A_ROCK", use: random() < 0.3 };
     case "WEATHER_MAGE":
       return { type: "WEATHER_MAGE" };
     case "CHOOSE_WEATHER":

@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, HalfNumber, PlayerState, Procedure, Side } from "../types";
-import { other } from "../pitch";
+import { isOnPitch, other, teamPlayers } from "../pitch";
 import { endDrive, resetForKickoff } from "./helpers";
 import { secretWeapons } from "./foul";
 
@@ -146,13 +146,63 @@ export const Half: Handler<P<"Half">> = {
     if (state.touchdown) {
       proc.kicking = state.touchdown;
       proc.stage = "driveEnd";
+      proc.turnPlayed = false;
       return "continue";
+    }
+    // Throw a Rock (a prayer): between two turns of a drive.
+    if (proc.turnPlayed) {
+      proc.turnPlayed = false;
+      const rocks = throwRocks(state);
+      if (rocks.length > 0) {
+        ctx.push(...rocks);
+        return "continue";
+      }
     }
     ctx.push({ type: "Turn", side: proc.nextSide, stage: "start", used: [] });
     proc.nextSide = other(proc.nextSide);
+    proc.turnPlayed = true;
     return "continue";
   },
   actions: () => [],
+};
+
+/** Throw a Rock: the teams that still have the prayer, each asked in turn. */
+const throwRocks = (state: GameState): Procedure[] =>
+  (["home", "away"] as const).filter((side) => state.teams[side].prayers.includes("throw-a-rock")).map((side) => ({ type: "ThrowRock", side, stage: "ask" }));
+
+/** Throw a Rock: the opponents standing on the pitch, one of whom is hit at random. */
+const rockTargets = (state: GameState, side: Side) => teamPlayers(state, other(side)).filter((p) => isOnPitch(p) && p.status === "standing");
+
+/** Throw a Rock hits on 4+. */
+export const THROW_A_ROCK_TARGET = 4;
+
+/**
+ * Throw a Rock (a prayer, once per game): between two turns of a drive, the team's coach may have the crowd throw a
+ * rock at a random opponent standing on the pitch: on a D6 of 4+ they are knocked down (armour and injury as usual).
+ */
+export const ThrowRock: Handler<P<"ThrowRock">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const team = state.teams[proc.side];
+    if (action === null) return "wait";
+    if (proc.stage === "ask") {
+      if (!ctx.expect(action, "THROW_A_ROCK").use) return "done";
+      team.prayers = team.prayers.filter((p) => p !== "throw-a-rock");
+      proc.stage = "roll";
+      return rockTargets(state, proc.side).length > 0 ? "wait" : "done";
+    }
+    const targets = rockTargets(state, proc.side);
+    const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Throw a Rock ${THROW_A_ROCK_TARGET}+`);
+    const target = targets[ctx.random(targets.length)]!;
+    const hit = roll! >= THROW_A_ROCK_TARGET;
+    ctx.emit({ type: "RockThrown", playerId: target.id, roll: roll!, hit });
+    if (hit) ctx.push({ type: "KnockDown", playerId: target.id, turnover: false, stage: "fall" });
+    return "done";
+  },
+  actions(state, proc) {
+    if (proc.stage === "ask") return [{ type: "THROW_A_ROCK", side: proc.side }];
+    return [{ type: "ROLL", side: proc.side, dice: [{ kind: "d6", count: 1 }], reason: `Throw a Rock ${THROW_A_ROCK_TARGET}+ (a random standing opponent)` }];
+  },
 };
 
 /** Halfling Master Chef: each of the 3D6 steals a team re-roll on 4+. */

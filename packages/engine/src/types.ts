@@ -305,8 +305,10 @@ export type Procedure =
    */
   | { type: "Prayers"; draws: Side[]; stage: "draw" | "choose" | "badHabits"; prayer?: Prayer }
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
-  /** `drives`: kick-offs so far in this half. */
-  | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number }
+  /** `drives`: kick-offs so far in this half; `turnPlayed`: a team turn just ended (time for Throw a Rock). */
+  | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number; turnPlayed?: boolean }
+  /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
+  | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
   /** Halfling Master Chef: each team with one rolls 3D6 (`sides` still to roll); every 4+ steals a team re-roll. */
   | { type: "MasterChef"; sides: Side[]; stolen: Partial<Record<Side, number>> }
   | { type: "SwelteringHeat" }
@@ -760,6 +762,8 @@ export type Action =
   | { type: "SWOOP"; square: Square | null }
   /** Trickster: move to `square` before being hit (null: stay); `pickUp`: try to pick up a loose ball there. */
   | { type: "TRICKSTER"; square: Square | null; pickUp?: boolean }
+  /** Throw a Rock (a prayer): throw it now or keep it. */
+  | { type: "THROW_A_ROCK"; use: boolean }
   /** Use the Weather Mage at the start of the team's turn. */
   | { type: "WEATHER_MAGE" }
   /** Weather Mage: the weather to set, among the options offered. */
@@ -813,6 +817,7 @@ export type ActionTemplate =
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
   | { type: "CHAINSAW"; side: Side; playerId: string; targetIds: string[] }
   | { type: "WEATHER_MAGE"; side: Side }
+  | { type: "THROW_A_ROCK"; side: Side }
   | { type: "CHOOSE_WEATHER"; side: Side; options: Weather[] }
   /** Swoop: the squares next to the target square (not diagonally) that give the side the template faces. */
   | { type: "SWOOP"; side: Side; playerId: string; squares: Square[] }

@@ -9,7 +9,7 @@ import { Check, KnockDown } from "./checks";
 import { Injury } from "./injury";
 import { Prayers } from "./prayers";
 import { Stalling } from "./stalling";
-import { CoinToss, Game, Half, KoRecovery, MasterChef } from "./game";
+import { CoinToss, Game, Half, KoRecovery, MasterChef, ThrowRock } from "./game";
 import { Charge, HighKick, Kickoff, KickoffEvent, Pregame, QuickSnap, SolidDefence, SwelteringHeat } from "./kickoff";
 import { Setup } from "./setup";
 import { ThrowTeamMate } from "./ttm";
@@ -25,6 +25,7 @@ export const handlers: HandlerMap = {
   Half,
   KoRecovery,
   MasterChef,
+  ThrowRock,
   Setup,
   Kickoff,
   KickoffEvent,
