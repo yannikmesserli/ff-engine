@@ -196,8 +196,8 @@ export const Pass: Handler<P<"Pass">> = {
   step(ctx, proc, action) {
     const { state } = ctx;
     const thrower = getPlayer(ctx, proc.throwerId);
-    const at = squareOf(ctx, thrower);
-    const modifiers = passModifiers(state, { ...thrower, at }, proc.range);
+    // Looked up only while the thrower is on the pitch: a fumbled bomb may have taken them off it by the end.
+    const throwerSquare = () => squareOf(ctx, thrower);
     switch (proc.stage) {
       case "aim": {
         // The player who caught the bomb throws it again straight away.
@@ -231,6 +231,8 @@ export const Pass: Handler<P<"Pass">> = {
           return "continue";
         }
         if (action === null) return "wait";
+        const at = throwerSquare();
+        const modifiers = passModifiers(state, { ...thrower, at }, proc.range);
         const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], proc.hailMary ? `Hail Mary Pass ${hailMaryNeeded(state, { ...thrower, at })}+` : `Pass ${shownNeeded(thrower, modifiers)}+`);
         proc.roll = roll!;
         proc.result = evaluatePass(thrower, roll!, modifiers);
@@ -282,12 +284,13 @@ export const Pass: Handler<P<"Pass">> = {
         }
         if (proc.result === "fumble" && proc.bomb) {
           // A fumbled bomb explodes in the thrower's square.
-          ctx.push(explosion(state, at));
+          ctx.push(explosion(state, throwerSquare()));
           proc.stage = "end";
           return "continue";
         }
         if (proc.result === "fumble") {
           // The ball bounces from the thrower's square.
+          const at = throwerSquare();
           state.ball = { square: { ...at }, carried: false };
           if (!proc.dumpOff) state.turnover = true;
           ctx.push({ type: "Bounce", from: { ...at }, kickoff: false, receiving: null });

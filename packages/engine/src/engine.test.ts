@@ -1557,6 +1557,13 @@ describe("engine", () => {
         expect([s.players["home-4"]!.status, s.turnover]).toEqual(["prone", true]);
       });
 
+      it("a thrower killed by their own fumbled bomb leaves the pitch, and the turn ends", () => {
+        // Armour broken, a casualty, then a dead result on the casualty roll.
+        const s = apply(throwBomb(bomber(), { x: 6, y: 4 }), roll(1), { type: "DECLINE_REROLL" }, roll(6, 6), roll(6, 5), roll(15, 1));
+        expect(s.players["home-4"]!.at).toBe("cas");
+        expect(s.activeSide).toBe("away");
+      });
+
       it("a player who catches the bomb must throw it again; a failed catch sets it off", () => {
         // home-6 stands at (10,6).
         let s = apply(throwBomb(bomber(), { x: 10, y: 6 }), roll(6));
