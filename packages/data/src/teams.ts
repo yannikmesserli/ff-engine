@@ -1,4 +1,4 @@
-import type { PositionStats, TeamSetup } from "@bb/engine";
+import type { InducementId, PositionStats, TeamSetup } from "@bb/engine";
 import rosterData from "./generated/rosters.json";
 import teamData from "./teams.json";
 import { RosterSchema, TeamFileSchema, type Characteristic, type Roster, type TeamFile, type TeamPlayer } from "./schemas";
@@ -47,6 +47,43 @@ const positionStats = (position: Roster["positions"][number]): PositionStats => 
   keywords: position.keywords,
 });
 
+/**
+ * BB2025 inducements: the most a team may buy, the special rule it needs, a special rule (or roster keyword) that
+ * raises the limit or lowers the cost, and the cost in gold pieces (for reference: the team file lists what was bought).
+ */
+export const INDUCEMENT_RULES: Record<InducementId, { max: number; cost: number; requires?: string; discount?: { rule: string; cost: number; max?: number } }> = {
+  bribes: { max: 3, cost: 100_000, discount: { rule: "Bribery and Corruption", cost: 50_000, max: 6 } },
+  teamMascot: { max: 1, cost: 25_000 },
+  partTimeCoaches: { max: 3, cost: 20_000 },
+  tempCheerleaders: { max: 4, cost: 20_000 },
+  blitzersBestKegs: { max: 2, cost: 50_000 },
+  halflingMasterChef: { max: 1, cost: 300_000, discount: { rule: "master chef", cost: 100_000 } },
+  riotousRookies: { max: 1, cost: 100_000, requires: "Low Cost Linemen" },
+  plagueDoctor: { max: 1, cost: 100_000, requires: "Favoured of Nurgle" },
+  mortuaryAssistant: { max: 1, cost: 100_000, requires: "Masters of Undeath" },
+  weatherMage: { max: 1, cost: 30_000 },
+  biasedReferee: { max: 1, cost: 120_000, discount: { rule: "Bribery and Corruption", cost: 80_000 } },
+  prayers: { max: 3, cost: 50_000 },
+};
+
+/** At most 9 assistant coaches (own and part-time) and 16 cheerleaders (own and temporary). */
+const MAX_COACHES = 9;
+const MAX_CHEERLEADERS = 16;
+
+/** Check the inducements a team bought against INDUCEMENT_RULES. */
+function checkInducements(team: TeamFile, roster: Roster) {
+  for (const [id, bought] of Object.entries(team.inducements) as Array<[InducementId, number]>) {
+    if (bought === 0) continue;
+    const rule = INDUCEMENT_RULES[id];
+    const has = (name: string) => (team.specialRules as string[]).includes(name) || roster.keywords.includes(name);
+    if (rule.requires && !has(rule.requires)) throw new TeamError(`Only teams with ${rule.requires} may buy ${id}.`);
+    let max = rule.discount && has(rule.discount.rule) ? (rule.discount.max ?? rule.max) : rule.max;
+    if (id === "partTimeCoaches") max = Math.min(max, MAX_COACHES - team.assistantCoaches);
+    if (id === "tempCheerleaders") max = Math.min(max, MAX_CHEERLEADERS - team.cheerleaders);
+    if (bought > max) throw new TeamError(`At most ${max} ${id} for this team (${bought} bought).`);
+  }
+}
+
 /** A team takes journeymen when it has fewer players than this available for the game. */
 export const JOURNEYMEN_UP_TO = 11;
 
@@ -69,6 +106,7 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
   if (!roster) throw new TeamError(`Unknown roster "${team.roster}".`);
   if (team.rerolls > roster.maxRerolls) throw new TeamError(`${roster.name} can have at most ${roster.maxRerolls} re-rolls.`);
   if (team.apothecary && !roster.apothecary) throw new TeamError(`${roster.name} cannot hire an apothecary.`);
+  checkInducements(team, roster);
   const positionOf = (player: TeamPlayer) => {
     const position = roster.positions.find((pos) => pos.title === player.position);
     if (!position) throw new TeamError(`Unknown position "${player.position}" for ${roster.name}.`);
@@ -98,6 +136,8 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
     dedicatedFans: team.dedicatedFans,
     cheerleaders: team.cheerleaders,
     assistantCoaches: team.assistantCoaches,
+    specialRules: [...team.specialRules],
+    inducements: { ...team.inducements },
     ...(plagueRidden && lineman ? { raisePosition: positionStats(lineman) } : {}),
     players: [...team.players
       .filter((p) => !p.missNextGame)

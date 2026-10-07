@@ -18,6 +18,7 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 | `exampleTeams` | 13 example teams (`src/teams.json`), keyed by name (`"human"`, `"wood-elf"`...). |
 | `formations` | Setups in a text format (`src/formations.json`: `def_boat`, `def_spread`, `def_zone`, `off_line`, `off_wedge`). |
 | `formationActions(state, side, formation)` | `PLACE_PLAYER` actions that clear a side's half and set up a formation. |
+| `INDUCEMENT_RULES` | BB2025 inducement limits, required special rules and costs, by inducement id. |
 | `resolveTeam(json, rosters?)` | Validates a team file against its roster and merges in position stats. Throws `TeamError`. |
 | `TeamFileSchema`, `RosterSchema` | zod schemas (and the `TeamFile`, `Roster` types). |
 | `SKILL_DESCRIPTIONS`, `skillDescription(skill)` | Short BB2025 descriptions of every skill and trait (our own wording), for tooltips; `skillDescription("Loner(4)")` fills in the value. |
@@ -56,6 +57,14 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
 
 - Team: `apothecary` (default `false`), `assistantCoaches` and `cheerleaders` (default 0), `dedicatedFans` 1-7
   (default 1), 1 to 16 players with unique positive `number`s.
+- `specialRules`: the team's special rules as FUMBBL names them (`SPECIAL_RULES`: "Bribery and Corruption", "Favoured
+  of Nurgle", "Low Cost Linemen", "Masters of Undeath"...). Some inducements depend on them.
+- `inducements`: what the team bought for this game, by id (`{ "bribes": 2, "teamMascot": 1 }`). The ids, BB2025
+  limits, special rules needed and costs are in `INDUCEMENT_RULES`: `bribes` (3, or 6 with Bribery and Corruption),
+  `teamMascot` (1), `partTimeCoaches` (3, at most 9 coaches in all), `tempCheerleaders` (4, at most 16 cheerleaders),
+  `blitzersBestKegs` (2), `halflingMasterChef` (1), `riotousRookies` (1, Low Cost Linemen), `plagueDoctor` (1,
+  Favoured of Nurgle), `mortuaryAssistant` (1, Masters of Undeath), `weatherMage` (1), `biasedReferee` (1), `prayers`
+  (3). There is no pre-game shop yet: the team file says what was bought, not how it was paid for.
 - `journeymen` (default `true`): a team with fewer than 11 players left for the game gets journeymen up to 11, from
   the roster's 0-12 or 0-16 lineman position, with Loner (4+), numbered with the smallest free numbers. `false` takes
   none; a position title picks the position when the roster has more than one (Shambling Undead: Skeleton or Zombie

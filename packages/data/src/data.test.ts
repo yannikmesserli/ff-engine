@@ -62,6 +62,19 @@ describe("data", () => {
     expect(() => resolveTeam(short("Ghoul Runner", "Shambling Undead", "Ghoul Runner"))).toThrow(/Journeymen cannot be Ghoul Runner/);
   });
 
+  it("checks the inducements bought against the BB2025 limits and special rules; bribes reach the game", () => {
+    const human = (inducements: Record<string, number>, specialRules: string[] = []) => ({ ...exampleTeams["human"]!, inducements, specialRules });
+    const team = resolveTeam(human({ bribes: 2, teamMascot: 1 }));
+    expect(team.inducements).toEqual({ bribes: 2, teamMascot: 1 });
+    expect(createGame(team, resolveTeam(exampleTeams["orc"]), { seed: 1 }).teams.home.bribes).toBe(2);
+    expect(() => resolveTeam(human({ bribes: 4 }))).toThrow(/At most 3 bribes/);
+    expect(resolveTeam(human({ bribes: 6 }, ["Bribery and Corruption"])).inducements!.bribes).toBe(6);
+    expect(() => resolveTeam(human({ plagueDoctor: 1 }))).toThrow(/Only teams with Favoured of Nurgle/);
+    expect(() => resolveTeam(human({ wizard: 1 }))).toThrow(/Invalid team file/);
+    expect(() => resolveTeam(human({ tempCheerleaders: 4 }))).not.toThrow();
+    expect(() => resolveTeam({ ...human({ partTimeCoaches: 3 }), assistantCoaches: 8 })).toThrow(/At most 1 partTimeCoaches/);
+  });
+
   it("gives teams with Plague Ridden their lineman position for raised players", () => {
     const nurgle = resolveTeam({ name: "N", roster: "Nurgle", rerolls: 0, players: [{ number: 1, name: "A", position: "Rotter Lineman" }] });
     expect(nurgle.raisePosition).toMatchObject({ position: "Rotter Lineman", skills: ["Decay", "Plague Ridden"] });

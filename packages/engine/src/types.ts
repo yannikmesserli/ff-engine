@@ -118,7 +118,12 @@ export interface TeamState {
   fanFactor: number;
   cheerleaders: number;
   assistantCoaches: number;
+  /** Bribes left (bought as inducements, plus Get the Ref). */
   bribes: number;
+  /** Team special rules, e.g. "Bribery and Corruption". */
+  specialRules: string[];
+  /** Inducements bought for this game; what is left of them is tracked where they are used. */
+  inducements: Inducements;
   /** Argued the call and rolled a 1: cannot argue again this game. */
   coachBanned: boolean;
   /** Cheering Fans: one extra offensive block assist this drive. */
@@ -150,6 +155,26 @@ export interface PositionStats {
   keywords?: string[];
 }
 
+/** BB2025 inducements a team can buy before a game (star players and Infamous Coaching Staff aside). */
+export const INDUCEMENTS = [
+  "bribes",
+  "teamMascot",
+  "partTimeCoaches",
+  "tempCheerleaders",
+  "blitzersBestKegs",
+  "halflingMasterChef",
+  "riotousRookies",
+  "plagueDoctor",
+  "mortuaryAssistant",
+  "weatherMage",
+  "biasedReferee",
+  "prayers",
+] as const;
+export type InducementId = (typeof INDUCEMENTS)[number];
+
+/** Inducements bought for the game, by id (missing: none). */
+export type Inducements = Partial<Record<InducementId, number>>;
+
 /** Input shape used to create a game: a fully resolved team (stats already merged from the roster). */
 export interface TeamSetup {
   name: string;
@@ -162,6 +187,10 @@ export interface TeamSetup {
   assistantCoaches: number;
   /** The lineman position an opponent killed by one of the team's Plague Ridden players joins the team as. */
   raisePosition?: PositionStats;
+  /** Team special rules, e.g. "Bribery and Corruption", "Favoured of Nurgle". */
+  specialRules?: string[];
+  /** Inducements bought for this game. */
+  inducements?: Inducements;
   players: Array<
     PositionStats & {
       nr: number;

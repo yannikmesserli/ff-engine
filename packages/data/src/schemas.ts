@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { INDUCEMENTS } from "@bb/engine";
 
 /** Non-negative integer count (staff, re-rolls...). */
 const count = z.number().int().min(0);
@@ -33,6 +34,28 @@ export const TeamPlayerSchema = z.strictObject({
   missNextGame: z.boolean().default(false),
 });
 
+/** Team special rules, as FUMBBL names them (some rosters choose theirs, e.g. a "Favoured of..." rule). */
+export const SPECIAL_RULES = [
+  "Badlands Brawl",
+  "Elven Kingdoms League",
+  "Halfling Thimble Cup",
+  "Lustrian Superleague",
+  "Old World Classic",
+  "Sylvanian Spotlight",
+  "Underworld Challenge",
+  "Worlds Edge Superleague",
+  "Bribery and Corruption",
+  "Favoured of Chaos Undivided",
+  "Favoured of Khorne",
+  "Favoured of Nurgle",
+  "Favoured of Tzeentch",
+  "Favoured of Slaanesh",
+  "Low Cost Linemen",
+  "Swarming",
+  "Masters of Undeath",
+  "Brawlin' Brutes",
+] as const;
+
 /** A BB2025 team: its roster, staff and players. */
 export const TeamFileSchema = z.strictObject({
   name: z.string().min(1),
@@ -49,6 +72,10 @@ export const TeamFileSchema = z.strictObject({
    * position title when the roster has more than one (Shambling Undead).
    */
   journeymen: z.union([z.boolean(), z.string().min(1)]).default(true),
+  /** Team special rules (see SPECIAL_RULES). */
+  specialRules: z.array(z.enum(SPECIAL_RULES)).default([]),
+  /** Inducements bought for this game, by id: how many of each (see INDUCEMENT_RULES for the limits). */
+  inducements: z.partialRecord(z.enum(INDUCEMENTS), count).default({}),
   players: z
     .array(TeamPlayerSchema)
     .min(1)
