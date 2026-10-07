@@ -1119,4 +1119,44 @@ export const SCENARIOS: Scenario[] = [
       roll(1, 1),
     ],
   },
+  {
+    id: "ball-and-chain",
+    title: "Ball & Chain: a random move that blocks whoever is in the way",
+    instructions: [
+      "Home's first turn: the Fanatic Spinna (#1, Ball & Chain, ST 7) stands behind the line of scrimmage. He can only take a Move action.",
+      "Each step, click one of the four squares next to him: a D6 on the throw-in template facing that way picks where he goes (1-2 and 5-6 veer to the sides). No dodges, whatever the tackle zones.",
+      "Heading east, he will hit the Goblin on the line or the orcs: a block from where he stands, with a forced follow-up. A team-mate is blocked too (no assists, your choice of die), and knocking them down is a turnover.",
+      "A player who is already down is not blocked: running into them pushes them back and they roll armour, without block dice. Spinna has MA 3: from the fourth square on, each step needs a Rush, and if he goes down his armour breaks without a roll.",
+    ],
+    home: {
+      name: "Grotty Gits",
+      roster: "Goblin",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Spinna", position: "Fanatic" },
+        { number: 2, name: "Snotling", position: "Goblin Lineman" },
+        { number: 3, name: "Nobbla", position: "Goblin Lineman" },
+        { number: 4, name: "Grotsnik", position: "Goblin Lineman" },
+        { number: 5, name: "Wazzock", position: "Goblin Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 67,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 10, y: 7 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 5 }, 4: { x: 12, y: 9 }, 5: { x: 4, y: 7 } },
+        away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 9 } },
+        ball: { x: 4, y: 7 },
+      }),
+    ],
+  },
 ];

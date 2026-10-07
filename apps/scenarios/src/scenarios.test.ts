@@ -323,4 +323,13 @@ describe("scenarios", () => {
     const s = applyActions(start, [{ type: "START_ACTION", playerId: "home-1", action: "block" }]);
     expect(find(s, "CHAINSAW")?.targetIds).toEqual(["away-1"]);
   });
+
+  it("ball-and-chain: the Fanatic only moves, and a step into a team-mate blocks them", () => {
+    let s = load("ball-and-chain");
+    expect(find(s, "START_ACTION")?.choices.find((c) => c.playerId === "home-1")?.actions).toEqual(["move"]);
+    s = applyActions(s, [{ type: "START_ACTION", playerId: "home-1", action: "move" }, { type: "MOVE", square: { x: 11, y: 7 } }, { type: "ROLL", values: [3] }]);
+    expect(s.players["home-1"]!.at).toEqual({ x: 11, y: 7 });
+    s = applyActions(s, [{ type: "MOVE", square: { x: 12, y: 7 } }, { type: "ROLL", values: [3] }]);
+    expect(s.log).toContainEqual(expect.objectContaining({ type: "BlockDeclared", attackerId: "home-1", defenderId: "home-2" }));
+  });
 });
