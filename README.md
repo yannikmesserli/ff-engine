@@ -59,7 +59,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Prayers to Nuffle (bought as inducements, up to 3): before the coin toss, a D16 each on the BB2025 table, re-rolled
   when the team already has the result; they last the whole game. Stiletto (a random player gains Stab), Iron Man
   (+1 AV, up to 11+, to a player the coach picks), Knuckle Dusters (Mighty Blow, likewise), Bad Habits (D3 random
-  opponents gain Loner (2+)), Greasy Cleats (a random opponent -1 MA), Blessing of Nuffle (a random player gains Pro).
+  opponents gain Loner (2+)), Greasy Cleats (a random opponent -1 MA), Blessing of Nuffle (a random player gains Pro),
+  Friends with the Ref (+1 to the team's arguments), Under Scrutiny (the opponents' fouls that break armour are always
+  spotted), Moles under the Pitch (-1 to the opponents' Rush rolls).
   The four that only award Star Player Points (Perfect Passing, Dazzling Catching, Fan Interaction, Fouling Frenzy) have
   no effect: the engine does not track them.
 - Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls). Journeymen: a team with fewer

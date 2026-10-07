@@ -3019,6 +3019,18 @@ describe("engine", () => {
       expect(apply(s, roll(5)).players["home-4"]!.at).toEqual({ x: 19, y: 2 });
     });
 
+    it("prayers: Under Scrutiny spots a foul that breaks armour, Friends with the Ref argues on 5+", () => {
+      const scrutiny = edit(fouling(), (c) => {
+        c.teams.away.prayers = ["under-scrutiny"];
+      });
+      expect(apply(foul(scrutiny), roll(5, 4), roll(2, 4)).log).toContainEqual({ type: "RefereeCall", foulerId: "home-4", spotted: true });
+      expect(apply(foul(scrutiny), roll(4, 3)).log).toContainEqual({ type: "RefereeCall", foulerId: "home-4", spotted: false });
+      const friends = edit(fouling(), (c) => {
+        c.teams.home.prayers = ["friends-with-the-ref"];
+      });
+      expect(find(apply(foul(friends), roll(2, 2), { type: "ARGUE_THE_CALL", argue: true }), "ROLL")?.reason).toBe("Argue the call 5+");
+    });
+
     it("a double on the armour roll is spotted: arguing the call on a 6 keeps the fouler, but it is a turnover", () => {
       let s = apply(foul(fouling()), roll(2, 2));
       expect(types(s)).toEqual(["ARGUE_THE_CALL"]);
@@ -3260,6 +3272,20 @@ describe("engine", () => {
       const s = apply(praying(2), roll(6), roll(2), roll(7));
       expect(Object.values(s.players).filter((p) => p.skills.includes("Loner(2)")).map((p) => p.side)).toEqual(["away", "away"]);
       expect(Object.values(s.players).filter((p) => p.ma === 5).map((p) => p.side)).toEqual(["away"]);
+    });
+  });
+
+  describe("rule-changing prayers", () => {
+    const withPrayer = (s: GameState, side: Side, prayer: string) =>
+      edit(s, (c) => {
+        c.teams[side].prayers = [prayer as never];
+      });
+
+    it("Moles under the Pitch: -1 to the opponents' Rush rolls", () => {
+      const s = apply(withPrayer(toFirstTurn(), "away", "moles-under-the-pitch"), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
+      expect(find(s, "ROLL")?.reason).toMatch(/^Rush 3\+/);
+      const own = apply(withPrayer(toFirstTurn(), "home", "moles-under-the-pitch"), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
+      expect(find(own, "ROLL")?.reason).toMatch(/^Rush 2\+/);
     });
   });
 

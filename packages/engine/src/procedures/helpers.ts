@@ -151,9 +151,11 @@ export function weatherModifier(state: { weather: Weather }, kind: "rush" | "pic
   return state.weather === "pouring-rain" ? -1 : 0;
 }
 
-/** Rush roll modifier: the weather (Blizzard), and -1 for a Drunkard. */
+/** Rush roll modifier: the weather (Blizzard), -1 for a Drunkard, -1 when the opponents prayed for Moles under the Pitch. */
 export const rushModifier = (state: GameState, player: PlayerState) =>
-  weatherModifier(state, "rush") - (hasSkill(player, "Drunkard") ? 1 : 0);
+  weatherModifier(state, "rush") -
+  (hasSkill(player, "Drunkard") ? 1 : 0) -
+  (state.teams[other(player.side)].prayers.includes("moles-under-the-pitch") ? 1 : 0);
 
 /** Clear the pitch before a kick-off: everyone fit goes back to the reserves. */
 export function resetForKickoff(ctx: Ctx) {

@@ -15,8 +15,9 @@ export const ARGUE_THE_CALL_TARGET = 6;
 /** Biased Referee: spots an opposing foul the referee missed on 5+. */
 export const BIASED_REFEREE_TARGET = 5;
 
-/** Argue the call: 6+, with +1 for the team's Biased Referee. */
-const argueTarget = (team: TeamState) => ARGUE_THE_CALL_TARGET - (team.inducements.biasedReferee ?? 0);
+/** Argue the call: 6+, with +1 for the team's Biased Referee and +1 for Friends with the Ref (a prayer). */
+const argueTarget = (team: TeamState) =>
+  ARGUE_THE_CALL_TARGET - (team.inducements.biasedReferee ?? 0) - (team.prayers.includes("friends-with-the-ref") ? 1 : 0);
 /** A bribe works on 2+. */
 export const BRIBE_TARGET = 2;
 
@@ -61,7 +62,8 @@ const isDouble = (dice: number[] | undefined) => dice !== undefined && dice[0] =
  * Chainsaw: the fouler may use it, rolling for kick-back first (2+, team re-roll): on a 1 they are knocked down (+3 to
  * their armour roll), a turnover, and there is no foul; otherwise the armour roll gets +3 (not against Iron Hard Skin).
  * Biased Referee (bought by the victim's team): a foul the referee missed is spotted anyway on a D6 of 5+; the team's
- * own arguments get +1 (a natural 1 still bans the coach).
+ * own arguments get +1 (a natural 1 still bans the coach). Prayers: Friends with the Ref, +1 to the team's arguments;
+ * Under Scrutiny, the opponents' fouls that break armour are always spotted.
  * A spotted fouler may argue the call (6: stays, still a turnover; 1: coach banned) and then use bribes
  * (2+: stays, no turnover); otherwise they are sent off and it is a turnover.
  */
@@ -120,7 +122,9 @@ export const Foul: Handler<P<"Foul">> = {
       case "referee": {
         // Sneaky Git: a double on the armour roll is not spotted when the armour holds.
         const broken = proc.injury !== undefined;
-        const spotted = (isDouble(proc.armour) && (broken || !hasSkill(fouler, "Sneaky Git"))) || isDouble(proc.injury);
+        // Under Scrutiny (a prayer of the victim's team): a foul that breaks armour is always spotted.
+        const scrutiny = broken && state.teams[victim.side].prayers.includes("under-scrutiny");
+        const spotted = (isDouble(proc.armour) && (broken || !hasSkill(fouler, "Sneaky Git"))) || isDouble(proc.injury) || scrutiny;
         // A missed foul: the victim's team's Biased Referee may still spot it.
         if (!spotted && (state.teams[victim.side].inducements.biasedReferee ?? 0) > 0) {
           proc.stage = "biasedReferee";
