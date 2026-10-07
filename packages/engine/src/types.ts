@@ -215,6 +215,7 @@ export type CheckKind =
   | "vomit"
   | "breathefire"
   | "tentacles"
+  | "chainsaw"
   | "animosity"
   | "landing"
   | "hunger"
@@ -378,7 +379,10 @@ export type Procedure =
       victimId: string;
       /** Offensive minus defensive foul assists, added to the armour roll. */
       assists: number;
-      stage: "armour" | "injury" | "referee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
+      /** "chainsaw": the fouler may use their Chainsaw (a kick-back roll first, then +3 to the armour roll). */
+      stage: "chainsaw" | "kickback" | "armour" | "injury" | "referee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
+      /** The Chainsaw is used for this foul. */
+      chainsaw?: boolean;
       armour?: number[];
       injury?: number[];
       /** Dirty Player's +1 went to the armour roll, so it does not apply to the injury roll. */
@@ -424,10 +428,10 @@ export type Procedure =
       bounceFrom?: Square;
     }
   | { type: "Crowd"; playerId: string; from: Square; hadBall: boolean }
-  /** Projectile Vomit, Stab or Breathe Fire on an adjacent opponent, instead of a block. */
+  /** Projectile Vomit, Stab, Breathe Fire or Chainsaw on an adjacent opponent, instead of a block. */
   | {
       type: "Vomit";
-      skill: "Projectile Vomit" | "Stab" | "Breathe Fire";
+      skill: "Projectile Vomit" | "Stab" | "Breathe Fire" | "Chainsaw";
       attackerId: string;
       defenderId: string;
       blitz: boolean;
@@ -639,6 +643,8 @@ export type Action =
   | { type: "STAB"; targetId: string }
   /** Breathe Fire on an adjacent opponent instead of blocking them. */
   | { type: "BREATHE_FIRE"; targetId: string }
+  /** A Chainsaw attack on an adjacent opponent instead of blocking them. */
+  | { type: "CHAINSAW"; targetId: string }
   /** Pick one of the rolled block dice (index into the results). */
   | { type: "CHOOSE_BLOCK_DIE"; index: number }
   | { type: "PUSH"; square: Square }
@@ -702,6 +708,7 @@ export type ActionTemplate =
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
+  | { type: "CHAINSAW"; side: Side; playerId: string; targetIds: string[] }
   /** Swoop: the squares next to the target square (not diagonally) that give the side the template faces. */
   | { type: "SWOOP"; side: Side; playerId: string; squares: Square[] }
   /** Trickster: free squares next to the attacker; `ball`: the one with a loose ball, if any. */

@@ -296,6 +296,11 @@ export function ActionPanel(props: ActionPanelProps) {
             Gaze at {state.players[id]!.name}
           </button>
         ))}
+        {findTemplate(templates, "CHAINSAW")?.targetIds.map((id) => (
+          <button key={id} onClick={() => dispatch({ type: "CHAINSAW", targetId: id })}>
+            Chainsaw {state.players[id]!.name}
+          </button>
+        ))}
         {findTemplate(templates, "STAB")?.targetIds.map((id) => (
           <button key={id} onClick={() => dispatch({ type: "STAB", targetId: id })}>
             Stab {state.players[id]!.name}

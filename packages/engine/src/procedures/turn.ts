@@ -466,7 +466,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         puntOptions(state, proc) === null);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "CHAINSAW", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
     if (a.type === "USE_SKILL") {
       if (!canFumblerooski(state, proc)) ctx.reject("Fumblerooski cannot be used now.");
       if (a.use) proc.fumblerooski = true;
@@ -523,7 +523,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const target = foulOptions(state, proc).find((t) => t.playerId === a.targetId) ?? ctx.reject("Cannot foul this player.");
       proc.finished = true;
       ctx.emit({ type: "Fouled", foulerId: player.id, victimId: target.playerId, assists: target.assists });
-      ctx.push({ type: "Foul", foulerId: player.id, victimId: target.playerId, assists: target.assists, stage: "armour" });
+      ctx.push({ type: "Foul", foulerId: player.id, victimId: target.playerId, assists: target.assists, stage: "chainsaw" });
       return "continue";
     }
     if (a.type === "GAZE") {
@@ -539,7 +539,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ctx.push(...feedFirst(proc), { type: "HandOff", throwerId: player.id, catcherId: a.targetId, stage: "animosity" });
       return "continue";
     }
-    if (a.type === "VOMIT" || a.type === "STAB" || a.type === "BREATHE_FIRE") {
+    if (a.type === "VOMIT" || a.type === "STAB" || a.type === "BREATHE_FIRE" || a.type === "CHAINSAW") {
       const skill = SPECIAL_ATTACKS[a.type];
       if (!specialTargets(state, proc, skill).some((t) => t.id === a.targetId)) ctx.reject(`Cannot use ${skill} on this player.`);
       proc.blocked = true;
@@ -586,6 +586,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const vomits = specialTargets(state, proc, "Projectile Vomit").map((t) => t.id);
     const stabs = specialTargets(state, proc, "Stab").map((t) => t.id);
     const fires = specialTargets(state, proc, "Breathe Fire").map((t) => t.id);
+    const chainsaws = specialTargets(state, proc, "Chainsaw").map((t) => t.id);
     const throws = throwOptions(state, proc);
     const handOffs = handOffOptions(state, proc).map((p) => p.id);
     const fouls = foulOptions(state, proc);
@@ -599,6 +600,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(vomits.length > 0 ? [{ type: "VOMIT" as const, side: player.side, playerId: player.id, targetIds: vomits }] : []),
       ...(stabs.length > 0 ? [{ type: "STAB" as const, side: player.side, playerId: player.id, targetIds: stabs }] : []),
       ...(fires.length > 0 ? [{ type: "BREATHE_FIRE" as const, side: player.side, playerId: player.id, targetIds: fires }] : []),
+      ...(chainsaws.length > 0 ? [{ type: "CHAINSAW" as const, side: player.side, playerId: player.id, targetIds: chainsaws }] : []),
       ...(throws.length > 0 ? [{ type: "THROW" as const, side: player.side, playerId: player.id, squares: throws }] : []),
       ...(hailMary ? [{ type: "HAIL_MARY_PASS" as const, side: player.side, playerId: player.id, needed: hailMaryNeeded(state, hailMary) }] : []),
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
@@ -777,9 +779,9 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
 }
 
 /** The skill behind each attack made instead of a block. */
-const SPECIAL_ATTACKS = { VOMIT: "Projectile Vomit", STAB: "Stab", BREATHE_FIRE: "Breathe Fire" } as const;
+const SPECIAL_ATTACKS = { VOMIT: "Projectile Vomit", STAB: "Stab", BREATHE_FIRE: "Breathe Fire", CHAINSAW: "Chainsaw" } as const;
 
-/** Projectile Vomit, Stab and Breathe Fire can replace any block the player could make now. */
+/** Projectile Vomit, Stab, Breathe Fire and Chainsaw can replace any block the player could make now. */
 const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: P<"Vomit">["skill"]) =>
   hasSkill(state.players[proc.playerId]!, skill) ? activationTargets(state, proc) : [];
 

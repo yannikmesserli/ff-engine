@@ -805,7 +805,14 @@ export const Crowd: Handler<P<"Crowd">> = {
 export const VOMIT_TARGET = 2;
 
 /** The attack in armour roll reasons. */
-const attackName = (proc: P<"Vomit">) => (proc.skill === "Stab" ? "stab" : "vomit");
+const attackName = (proc: P<"Vomit">) => (proc.skill === "Stab" ? "stab" : proc.skill === "Chainsaw" ? `chainsaw +${CHAINSAW_ARMOUR}` : "vomit");
+
+/** Chainsaw: a kick-back on a 1, +3 to the armour roll of the target (or of a knocked-down chainsaw player). */
+export const CHAINSAW_TARGET = 2;
+export const CHAINSAW_ARMOUR = 3;
+
+/** Chainsaw's +3 to an armour roll against `player`; nothing against Iron Hard Skin. */
+export const chainsawArmour = (player: PlayerState) => (hasSkill(player, "Iron Hard Skin") ? 0 : CHAINSAW_ARMOUR);
 
 /** Breathe Fire avoids a turnover on 2+, knocks the target down on a natural 6 and places them prone on 4+. */
 export const BREATHE_FIRE_TARGET = 2;
@@ -822,6 +829,8 @@ export const breatheFireModifier = (target: PlayerState) => (target.st >= 5 ? -1
  * Breathe Fire rolls a D6, -1 against ST 5 or more, and the coach may re-roll anything but a 6: a natural 6 knocks the
  * target down (armour and injury without modifiers), 4+ places them prone, 2+ does nothing, and a 1 knocks the
  * fire-breather down instead (armour without modifiers), a turnover.
+ * Chainsaw rolls a D6 (team re-roll): on 2+ the target rolls armour with +3 (no Mighty Blow), placed prone and injured
+ * if it breaks; on a 1 it kicks back: the chainsaw player is knocked down (+3 to their armour roll), a turnover.
  */
 export const Vomit: Handler<P<"Vomit">> = {
   step(ctx, proc, action) {
@@ -865,7 +874,9 @@ export const Vomit: Handler<P<"Vomit">> = {
           return "continue";
         }
         state.lastCheck = null;
-        if (proc.skill === "Breathe Fire") {
+        if (proc.skill === "Chainsaw") {
+          ctx.push({ type: "Check", kind: "chainsaw", playerId: attacker.id, target: CHAINSAW_TARGET, modifier: 0, stage: "roll", rerolled: false });
+        } else if (proc.skill === "Breathe Fire") {
           const modifier = breatheFireModifier(getPlayer(ctx, proc.defenderId));
           ctx.push({ type: "Check", kind: "breathefire", playerId: attacker.id, target: BREATHE_FIRE_TARGET, modifier, stage: "roll", rerolled: false, rerollBelow: 6 });
         } else {
@@ -876,6 +887,12 @@ export const Vomit: Handler<P<"Vomit">> = {
       case "result":
         ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: proc.skill });
         if (proc.skill === "Breathe Fire") return breatheFire(ctx, proc, attacker);
+        if (proc.skill === "Chainsaw" && !state.lastCheck?.success) {
+          // Kick-back.
+          state.lastCheck = null;
+          ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+          return "done";
+        }
         proc.victimId = state.lastCheck?.success ? proc.defenderId : attacker.id;
         state.lastCheck = null;
         proc.stage = "armour";
@@ -884,7 +901,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         if (action === null) return "wait";
         const victim = getPlayer(ctx, proc.victimId!);
         const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], `Armour ${victim.av}+ (${attackName(proc)})`);
-        const roll = a! + b!;
+        const roll = a! + b! + (proc.skill === "Chainsaw" ? chainsawArmour(victim) : 0);
         if (roll < victim.av) {
           ctx.emit({ type: "ArmourHeld", playerId: victim.id, roll });
           return "done";

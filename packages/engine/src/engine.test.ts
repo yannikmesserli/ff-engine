@@ -2285,6 +2285,44 @@ describe("engine", () => {
       });
     });
 
+    describe("Chainsaw", () => {
+      const sawyer = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Chainsaw", "Mighty Blow"] });
+      const saw = (s = sawyer()) => apply(s, declare("home-2", "block"), { type: "CHAINSAW", targetId: "away-2" });
+
+      it("replaces a block: on 2+, armour +3 (no Mighty Blow), placed prone and injured if it breaks; no turnover", () => {
+        let s = apply(sawyer(), declare("home-2", "block"));
+        expect(find(s, "CHAINSAW")?.targetIds).toEqual(["away-1", "away-2", "away-3"]);
+        s = apply(s, { type: "CHAINSAW", targetId: "away-2" });
+        expect(find(s, "ROLL")?.reason).toBe("Chainsaw 2+ (Home 2)");
+        s = apply(s, roll(2));
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 2, chainsaw +3)");
+        s = apply(s, roll(3, 2), roll(2, 3));
+        expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: "away-2", roll: 8 });
+        expect(s.players["away-2"]!.status).toBe("stunned");
+        expect([s.turnover, s.activeSide]).toEqual([false, "home"]);
+      });
+
+      it("a kick-back on a 1: the chainsaw player is knocked down, +3 to their armour roll, a turnover", () => {
+        let s = apply(saw(), roll(1), { type: "DECLINE_REROLL" });
+        expect(s.players["home-2"]!.status).toBe("prone");
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Home 2) (+3 Chainsaw)");
+        s = apply(s, roll(2, 2));
+        expect(s.log).toContainEqual({ type: "ArmourHeld", playerId: "home-2", roll: 7 });
+        expect(s.activeSide).toBe("away");
+      });
+
+      it("in a foul: optional, after a kick-back roll, +3 to the armour roll", () => {
+        const down = edit(sawyer(), (c) => {
+          c.players["away-2"]!.status = "prone";
+        });
+        let s = apply(down, declare("home-2", "foul"), { type: "FOUL", targetId: "away-2" });
+        expect(find(s, "USE_SKILL")?.skill).toBe("Chainsaw");
+        s = apply(s, { type: "USE_SKILL", use: true }, roll(4));
+        expect(find(s, "ROLL")?.reason).toMatch(/\+3 Chainsaw/);
+        expect(find(apply(down, declare("home-2", "foul"), { type: "FOUL", targetId: "away-2" }, { type: "USE_SKILL", use: false }), "ROLL")?.reason).not.toMatch(/Chainsaw/);
+      });
+    });
+
     describe("Stab", () => {
       const stabber = (skills = ["Stab"]) => withSkills(toFirstTurn(), { "home-2": skills });
 

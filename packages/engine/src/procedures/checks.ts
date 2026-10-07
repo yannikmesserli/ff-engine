@@ -29,6 +29,7 @@ const CHECK_NAMES = {
   vomit: "Projectile Vomit",
   breathefire: "Breathe Fire",
   tentacles: "Tentacles",
+  chainsaw: "Chainsaw",
   animosity: "Animosity",
   landing: "Landing",
   hunger: "Always Hungry",
@@ -247,6 +248,12 @@ const clawsApply = (state: GameState, proc: P<"KnockDown">, player: PlayerState)
 const clawsNote = (state: GameState, proc: P<"KnockDown">, player: PlayerState) =>
   clawsApply(state, proc, player) ? ` (Claws: ${CLAWS_ARMOUR}+)` : "";
 
+/** Chainsaw: +3 to the armour roll of a knocked-down chainsaw player (not with Iron Hard Skin). */
+const chainsawBonus = (player: PlayerState) => (hasSkill(player, "Chainsaw") && !hasSkill(player, "Iron Hard Skin") ? 3 : 0);
+
+/** Name of the Chainsaw bonus in armour roll reasons. */
+const chainsawNote = (player: PlayerState) => (chainsawBonus(player) > 0 ? " (+3 Chainsaw)" : "");
+
 /** Steady Footing avoids a knock-down on a 6. */
 export const STEADY_FOOTING_TARGET = 6;
 
@@ -258,6 +265,7 @@ export const STEADY_FOOTING_TARGET = 6;
  * Claws (from the blocker): a natural 8+ on the armour roll breaks it, whatever the AV. Otherwise Mighty Blow (+X, from
  * the blocker) goes to the armour roll when it breaks the armour, and to the injury roll if not (they do not stack).
  * Iron Hard Skin: Claws does not work and the armour roll is never modified.
+ * Chainsaw: a knocked-down chainsaw player always gets +3 against them on the armour roll.
  */
 export const KnockDown: Handler<P<"KnockDown">> = {
   step(ctx, proc, action) {
@@ -301,7 +309,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         return "continue";
       case "armour": {
         if (action === null) return "wait";
-        const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Armour ${player.av}+${mightyBlowNote(proc.mightyBlow?.bonus ?? 0, proc)}${clawsNote(state, proc, player)}`);
+        const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Armour ${player.av}+${mightyBlowNote(proc.mightyBlow?.bonus ?? 0, proc)}${clawsNote(state, proc, player)}${chainsawNote(player)}`);
         let roll = a! + b!;
         const bonus = proc.mightyBlow?.bonus ?? 0;
         if (clawsApply(state, proc, player) && roll >= CLAWS_ARMOUR && roll < player.av) {
@@ -310,6 +318,8 @@ export const KnockDown: Handler<P<"KnockDown">> = {
           proc.stage = "injury";
           return "continue";
         }
+        // Chainsaw: a knocked-down chainsaw player always gets +3 against them.
+        roll += chainsawBonus(player);
         // Iron Hard Skin: no modifier on the armour roll, so Mighty Blow can only go to the injury roll.
         if (bonus > 0 && !hasSkill(player, "Iron Hard Skin") && roll < player.av && roll + bonus >= player.av) {
           proc.mightyBlowOnArmour = true;
@@ -347,7 +357,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     const reason =
       proc.stage === "injury"
         ? `Injury${mightyBlowNote(injuryBonus(proc), proc)}`
-        : `Armour ${player.av}+ (${player.name})${mightyBlowNote(proc.mightyBlow?.bonus ?? 0, proc)}${clawsNote(state, proc, player)}`;
+        : `Armour ${player.av}+ (${player.name})${mightyBlowNote(proc.mightyBlow?.bonus ?? 0, proc)}${clawsNote(state, proc, player)}${chainsawNote(player)}`;
     return [{ type: "ROLL", side: null, dice: [...ARMOUR_DICE], reason }];
   },
 };

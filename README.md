@@ -136,6 +136,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   travels D6 squares (a team re-roll or Pro on each roll). Off the pitch, a throw-in from the last square and a
   turnover; otherwise it comes down there, caught by a standing player (an opponent: a turnover) or bouncing, and the
   action ends. From a sideline or an end zone, it may go into the crowd instead (throw-in, turnover).
+- Chainsaw: instead of a block (a Blitz pays the square), a D6 with a team re-roll: on 2+ the opponent rolls armour
+  with +3 (no Mighty Blow), placed prone and injured if it breaks, no turnover; on a 1 it kicks back and the chainsaw
+  player is knocked down, a turnover. It may also be used in a foul (kick-back roll first, then +3 to the armour
+  roll). A knocked-down chainsaw player always gets +3 against them on the armour roll.
 - Breathe Fire: instead of a block (a Blitz pays the square), a D6, -1 against ST 5 or more; the coach may re-roll
   anything but a 6 (team re-roll). A natural 6 knocks the opponent down (armour and injury without modifiers), 4+
   places them prone, 2+ does nothing, and a 1 knocks the fire-breather down (armour without modifiers), a turnover.

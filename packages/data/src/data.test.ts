@@ -159,6 +159,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return random() < 0.3 ? { type: "TRICKSTER", square: null } : { type: "TRICKSTER", square: pick(t.squares), pickUp: random() < 0.5 };
     case "PUNT":
       return random() < 0.8 || !t.crowd ? { type: "PUNT", square: pick(t.squares) } : { type: "PUNT", square: null };
+    case "CHAINSAW":
+      return { type: "CHAINSAW", targetId: pick(t.targetIds) };
     case "BREATHE_FIRE":
       return { type: "BREATHE_FIRE", targetId: pick(t.targetIds) };
     case "GAZE":

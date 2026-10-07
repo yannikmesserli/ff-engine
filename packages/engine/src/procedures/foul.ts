@@ -5,6 +5,7 @@ import { ARMOUR_DICE } from "./checks";
 import { injure } from "./injury";
 import { hasSkill } from "../skills";
 import { getPlayer, squareOf } from "./helpers";
+import { CHAINSAW_TARGET, chainsawArmour } from "./block";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -51,6 +52,8 @@ const isDouble = (dice: number[] | undefined) => dice !== undefined && dice[0] =
 /**
  * BB2025 Foul: armour roll with foul assists and Dirty Player, injury, then the referee spots
  * doubles (Sneaky Git: not on the armour roll if the armour holds).
+ * Chainsaw: the fouler may use it, rolling for kick-back first (2+, team re-roll): on a 1 they are knocked down (+3 to
+ * their armour roll), a turnover, and there is no foul; otherwise the armour roll gets +3 (not against Iron Hard Skin).
  * A spotted fouler may argue the call (6: stays, still a turnover; 1: coach banned) and then use bribes
  * (2+: stays, no turnover); otherwise they are sent off and it is a turnover.
  */
@@ -61,10 +64,36 @@ export const Foul: Handler<P<"Foul">> = {
     const victim = getPlayer(ctx, proc.victimId);
     const team = state.teams[fouler.side];
     switch (proc.stage) {
+      case "chainsaw": {
+        if (!hasSkill(fouler, "Chainsaw")) {
+          proc.stage = "armour";
+          return "continue";
+        }
+        if (action === null) return "wait";
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "armour";
+          return "continue";
+        }
+        proc.chainsaw = true;
+        ctx.emit({ type: "SkillUsed", playerId: fouler.id, skill: "Chainsaw" });
+        state.lastCheck = null;
+        ctx.push({ type: "Check", kind: "chainsaw", playerId: fouler.id, target: CHAINSAW_TARGET, modifier: 0, stage: "roll", rerolled: false });
+        proc.stage = "kickback";
+        return "continue";
+      }
+      case "kickback":
+        if (!state.lastCheck?.success) {
+          state.lastCheck = null;
+          ctx.push({ type: "KnockDown", playerId: fouler.id, turnover: true, stage: "fall" });
+          return "done";
+        }
+        state.lastCheck = null;
+        proc.stage = "armour";
+        return "continue";
       case "armour": {
         if (action === null) return "wait";
-        proc.armour = ctx.roll(action, [...ARMOUR_DICE], `Armour ${victim.av}+ (foul)`);
-        const unmodified = proc.armour[0]! + proc.armour[1]! + proc.assists;
+        proc.armour = ctx.roll(action, [...ARMOUR_DICE], `Armour ${victim.av}+ (foul${proc.chainsaw ? ", chainsaw" : ""})`);
+        const unmodified = proc.armour[0]! + proc.armour[1]! + proc.assists + (proc.chainsaw ? chainsawArmour(victim) : 0);
         // Dirty Player goes to the armour roll unless the assists alone break it (or Iron Hard Skin forbids it).
         proc.dirtyPlayerOnArmour = hasSkill(fouler, "Dirty Player") && !hasSkill(victim, "Iron Hard Skin") && unmodified < victim.av;
         const roll = unmodified + (proc.dirtyPlayerOnArmour ? 1 : 0);
@@ -150,10 +179,13 @@ export const Foul: Handler<P<"Foul">> = {
     const victim = state.players[proc.victimId]!;
     const side = fouler.side;
     switch (proc.stage) {
+      case "chainsaw":
+        return [{ type: "USE_SKILL", side, playerId: fouler.id, skill: "Chainsaw" }];
       case "armour": {
         const mod = proc.assists === 0 ? "" : `, ${proc.assists > 0 ? "+" : ""}${proc.assists} assists`;
         const dirty = hasSkill(fouler, "Dirty Player") ? ", Dirty Player" : "";
-        return [{ type: "ROLL", side, dice: [...ARMOUR_DICE], reason: `Armour ${victim.av}+ (foul on ${victim.name}${mod}${dirty})` }];
+        const chainsaw = proc.chainsaw && chainsawArmour(victim) > 0 ? ", +3 Chainsaw" : "";
+        return [{ type: "ROLL", side, dice: [...ARMOUR_DICE], reason: `Armour ${victim.av}+ (foul on ${victim.name}${mod}${chainsaw}${dirty})` }];
       }
       case "injury":
         return [{ type: "ROLL", side, dice: [...ARMOUR_DICE], reason: injuryModifier(fouler, proc) ? "Injury (+1 Dirty Player)" : "Injury" }];
