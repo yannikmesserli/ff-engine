@@ -3264,9 +3264,10 @@ describe("engine", () => {
       const [stiletto] = granted(s);
       expect(stiletto).toMatchObject({ side: "home", prayer: "stiletto", playerIds: [expect.stringMatching(/^home-/)] });
       expect(s.players[(stiletto as { playerIds: string[] }).playerIds[0]!]!.skills).toContain("Stab");
-      // Stiletto again: rolled again.
+      // Stiletto again: rolled again, and the coach is told why.
       s = apply(s, roll(3));
-      expect(find(s, "ROLL")?.reason).toBe("Prayer to Nuffle (Home)");
+      expect(s.log.at(-1)).toEqual({ type: "PrayerRepeated", side: "home", prayer: "stiletto" });
+      expect(find(s, "ROLL")?.reason).toBe("Prayer to Nuffle (Home): Stiletto again, the team already has it, roll again");
       s = apply(s, roll(2));
       expect([s.teams.home.prayers, types(s)]).toEqual([["stiletto", "friends-with-the-ref"], ["CALL_COIN"]]);
     });

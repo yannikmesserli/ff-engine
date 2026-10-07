@@ -310,7 +310,15 @@ export type Procedure =
    * the team already has the result); "choose": the coach picks the player (Iron Man, Knuckle Dusters); "badHabits":
    * the D3 of Bad Habits.
    */
-  | { type: "Prayers"; draws: Side[]; stage: "draw" | "choose" | "badHabits" | "skill"; prayer?: Prayer; playerId?: string }
+  | {
+      type: "Prayers";
+      draws: Side[];
+      stage: "draw" | "choose" | "badHabits" | "skill";
+      prayer?: Prayer;
+      playerId?: string;
+      /** The last draw was a prayer the team already has: it is rolled again. */
+      repeated?: Prayer;
+    }
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
   /** `drives`: kick-offs so far in this half; `turnPlayed`: a team turn just ended (time for Throw a Rock). */
   | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number; turnPlayed?: boolean }
@@ -946,6 +954,8 @@ export type GameEvent =
   | { type: "RerollsStolen"; side: Side; count: number }
   /** Treacherous Trapdoor: the player fell through the trapdoor (off the pitch, an injury roll follows). */
   | { type: "FellThroughTrapdoor"; playerId: string }
+  /** `side` drew a Prayer to Nuffle it already has: the D16 is rolled again. */
+  | { type: "PrayerRepeated"; side: Side; prayer: Prayer }
   /** A Prayer to Nuffle was granted to `side`; `playerIds`: the players it changed, if any. */
   | { type: "PrayerGranted"; side: Side; prayer: Prayer; playerIds: string[] }
   /** Riotous Rookies: `playerIds` joined `side`'s reserves for the game. */

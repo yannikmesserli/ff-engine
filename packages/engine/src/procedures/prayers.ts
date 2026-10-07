@@ -108,7 +108,12 @@ export const Prayers: Handler<P<"Prayers">> = {
     const [roll] = ctx.roll(action, [{ kind: "d16", count: 1 }], `Prayer to Nuffle (${team.name})`);
     const prayer = PRAYERS[roll! - 1]!;
     // A team never gets the same prayer twice: roll again.
-    if (team.prayers.includes(prayer)) return "wait";
+    if (team.prayers.includes(prayer)) {
+      proc.repeated = prayer;
+      ctx.emit({ type: "PrayerRepeated", side, prayer });
+      return "wait";
+    }
+    delete proc.repeated;
     team.prayers.push(prayer);
     proc.prayer = prayer;
     switch (prayer) {
@@ -144,7 +149,8 @@ export const Prayers: Handler<P<"Prayers">> = {
     }
     if (proc.stage === "skill") return [{ type: "CHOOSE_SKILL", side, playerId: proc.playerId!, skills: trainingSkills(state.players[proc.playerId!]!) }];
     if (proc.stage === "badHabits") return [{ type: "ROLL", side, dice: [{ kind: "d3", count: 1 }], reason: "Bad Habits: D3 opponents gain Loner (2+)" }];
-    return [{ type: "ROLL", side, dice: [{ kind: "d16", count: 1 }], reason: `Prayer to Nuffle (${state.teams[side].name})` }];
+    const again = proc.repeated ? `: ${PRAYER_NAMES[proc.repeated]} again, the team already has it, roll again` : "";
+    return [{ type: "ROLL", side, dice: [{ kind: "d16", count: 1 }], reason: `Prayer to Nuffle (${state.teams[side].name})${again}` }];
   },
 };
 

@@ -294,6 +294,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} ${e.success ? "succeeds" : "fails"} the ${CHECK_NAMES[e.kind]} (${e.roll} vs ${e.target}+).`;
     case "RerollUsed":
       return `${sideName(state, e.side)} uses a team re-roll.`;
+    case "PrayerRepeated":
+      return `${sideName(state, e.side)} drew ${PRAYER_NAMES[e.prayer]} again: a team never gets the same prayer twice, so the D16 is rolled again.`;
     case "PrayerGranted": {
       const players = e.playerIds.map((id) => who(state, id)).join(", ");
       return `${sideName(state, e.side)} prays to Nuffle: ${PRAYER_NAMES[e.prayer]}${players ? ` (${players})` : ""}.`;
