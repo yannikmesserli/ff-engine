@@ -1,13 +1,14 @@
 import type { Ctx, Handler, StepResult } from "../context";
-import type { Action, CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
+import type { Action, CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square, Weather } from "../types";
 import { templateDirection } from "../dice";
+import { weatherFor } from "./kickoff";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
 import { dropBall } from "./ball";
 import { canHailMary, hailMaryNeeded, handOffTargets, puntTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
-import { checkTouchdown, getPlayer, inScoringPosition, rushModifier, squareOf, weatherModifier } from "./helpers";
+import { checkTouchdown, getPlayer, inducementsLeft, inScoringPosition, rushModifier, spendInducement, squareOf, weatherModifier } from "./helpers";
 import { isStalling } from "./stalling";
 import { TURNS_PER_HALF } from "./game";
 import { teamMateTargets, throwableTeamMates } from "./ttm";
@@ -194,7 +195,13 @@ export const Turn: Handler<P<"Turn">> = {
       return "done";
     }
     if (action === null) return "wait";
-    const a = ctx.expect(action, "START_ACTION", "END_TURN");
+    const a = ctx.expect(action, "START_ACTION", "END_TURN", "WEATHER_MAGE");
+    if (a.type === "WEATHER_MAGE") {
+      if (!weatherMageAvailable(state, proc)) ctx.reject("The Weather Mage can only be used at the start of the team's turn.");
+      spendInducement(ctx, proc.side, "weatherMage");
+      ctx.push({ type: "WeatherMage", side: proc.side, stage: "roll" });
+      return "continue";
+    }
     if (a.type === "END_TURN") {
       // Ending the turn without activating a stalling ball carrier also gets them a rock.
       const staller = proc.charge ? undefined : teamPlayers(state, proc.side).find((p) => !p.activated && isStalling(state, p));
@@ -215,6 +222,7 @@ export const Turn: Handler<P<"Turn">> = {
       ctx.reject("A Blitz must name a standing opponent as its target.");
     }
     if (ONCE_PER_TURN.includes(a.action)) proc.used.push(a.action);
+    proc.acted = true;
     state.activePlayerId = player.id;
     ctx.emit({ type: "ActionDeclared", playerId: player.id, action: a.action, ...(a.targetId ? { targetId: a.targetId } : {}) });
     // Dump-off: the Blitz target may pass as soon as they are named, before the blitzer does anything.
@@ -235,10 +243,54 @@ export const Turn: Handler<P<"Turn">> = {
       .filter((c) => c.actions.length > 0);
     return [
       { type: "START_ACTION", side: proc.side, choices, blitzTargets: blitzTargets(state, proc.side).map((p) => p.id) },
+      ...(weatherMageAvailable(state, proc) ? [{ type: "WEATHER_MAGE" as const, side: proc.side }] : []),
       { type: "END_TURN", side: proc.side },
     ];
   },
 };
+
+/** Weather Mage: once per game, at the start of one of the team's own turns (not a Charge). */
+const weatherMageAvailable = (state: GameState, proc: P<"Turn">) =>
+  !proc.charge && !proc.acted && inducementsLeft(state.teams[proc.side], "weatherMage") > 0;
+
+/** Weather Mage: the totals within 2 of the roll, on the 2D6 weather table. */
+const WEATHER_MAGE_RANGE = 2;
+
+/**
+ * Weather Mage: the team rolls 2D6; its coach picks the weather for the total or a total up to 2 away (2 to 12). If
+ * they all give the same weather, it is set straight away. The new weather stays until it changes again.
+ */
+export const WeatherMage: Handler<P<"WeatherMage">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    if (action === null) return "wait";
+    if (proc.stage === "roll") {
+      const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Weather Mage");
+      const totals = Array.from({ length: 2 * WEATHER_MAGE_RANGE + 1 }, (_, i) => a! + b! - WEATHER_MAGE_RANGE + i).filter((t) => t >= 2 && t <= 12);
+      proc.options = [...new Set(totals.map(weatherFor))];
+      if (proc.options.length > 1) {
+        proc.stage = "choose";
+        return "wait";
+      }
+      setWeather(ctx, proc.options[0]!);
+      return "done";
+    }
+    const { weather } = ctx.expect(action, "CHOOSE_WEATHER");
+    if (!proc.options!.includes(weather)) ctx.reject("This weather is not on offer.");
+    setWeather(ctx, weather);
+    return "done";
+  },
+  actions(state, proc) {
+    if (proc.stage === "roll") return [{ type: "ROLL", side: proc.side, dice: [{ kind: "d6", count: 2 }], reason: `Weather Mage (${state.teams[proc.side].name})` }];
+    return [{ type: "CHOOSE_WEATHER", side: proc.side, options: proc.options! }];
+  },
+};
+
+/** Change the weather. */
+function setWeather(ctx: Ctx, weather: Weather) {
+  ctx.state.weather = weather;
+  ctx.emit({ type: "WeatherChanged", weather });
+}
 
 /** Opponents of `side` standing on the pitch. */
 const standingOpponents = (state: GameState, side: Side) =>

@@ -337,7 +337,11 @@ export type Procedure =
       used: PlayerActionType[];
       /** END_TURN was chosen; the turn ends once the forgone stalling rock is resolved. */
       ending?: boolean;
+      /** A player was activated: too late for the Weather Mage. */
+      acted?: boolean;
     }
+  /** Weather Mage: 2D6, then the coach picks the weather for the total or up to 2 away from it. */
+  | { type: "WeatherMage"; side: Side; stage: "roll" | "choose"; options?: Weather[] }
   | {
       type: "MoveAction";
       playerId: string;
@@ -727,6 +731,10 @@ export type Action =
   | { type: "SWOOP"; square: Square | null }
   /** Trickster: move to `square` before being hit (null: stay); `pickUp`: try to pick up a loose ball there. */
   | { type: "TRICKSTER"; square: Square | null; pickUp?: boolean }
+  /** Use the Weather Mage at the start of the team's turn. */
+  | { type: "WEATHER_MAGE" }
+  /** Weather Mage: the weather to set, among the options offered. */
+  | { type: "CHOOSE_WEATHER"; weather: Weather }
   /** Punt towards the orthogonally adjacent `square`, or into the crowd (null) from a sideline or an end zone. */
   | { type: "PUNT"; square: Square | null }
   /** The referee spotted the foul: argue the call (6: the fouler stays, but it is still a turnover)? */
@@ -775,6 +783,8 @@ export type ActionTemplate =
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
   | { type: "CHAINSAW"; side: Side; playerId: string; targetIds: string[] }
+  | { type: "WEATHER_MAGE"; side: Side }
+  | { type: "CHOOSE_WEATHER"; side: Side; options: Weather[] }
   /** Swoop: the squares next to the target square (not diagonally) that give the side the template faces. */
   | { type: "SWOOP"; side: Side; playerId: string; squares: Square[] }
   /** Trickster: free squares next to the attacker; `ball`: the one with a loose ball, if any. */

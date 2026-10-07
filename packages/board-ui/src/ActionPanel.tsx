@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DIE_FACES, hasSkill, type Action, type ActionTemplate, type GameState, type PassRange, type Side } from "@bb/engine";
 import { formationActions, formations } from "@bb/data";
 import { DieFace } from "./Dice";
-import { blockFaceName, casualtyName } from "./describe";
+import { WEATHER_NAMES, blockFaceName, casualtyName } from "./describe";
 import type { Aiming } from "./Board";
 import { findTemplate, type TemplateOf } from "./templates";
 
@@ -38,6 +38,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   START_ACTION: "click a player to declare an action",
   BLOCK: "click a highlighted opponent to block (2D: you pick, 2D!: the defender picks)",
   PUSH: "click a square to push the player to",
+  CHOOSE_WEATHER: "Weather Mage: choose the weather",
   SWOOP: "Swoop: click a square next to the target to face the throw-in template that way, or scatter as usual",
   TRICKSTER: "Trickster: click a square next to the attacker to move to before being hit, or stay",
   FOLLOW_UP: "follow up into the vacated square?",
@@ -284,6 +285,12 @@ export function ActionPanel(props: ActionPanelProps) {
             formations={state.stack.at(-1)?.type === "Setup"}
           />
         )}
+        {has("WEATHER_MAGE") && <button onClick={() => dispatch({ type: "WEATHER_MAGE" })}>Weather Mage</button>}
+        {findTemplate(templates, "CHOOSE_WEATHER")?.options.map((w) => (
+          <button key={w} onClick={() => dispatch({ type: "CHOOSE_WEATHER", weather: w })}>
+            {WEATHER_NAMES[w]}
+          </button>
+        ))}
         {has("SWOOP") && <button onClick={() => dispatch({ type: "SWOOP", square: null })}>Scatter as usual</button>}
         {has("TRICKSTER") && (
           <>

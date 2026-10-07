@@ -12,7 +12,7 @@ import { CoinToss, Game, Half, KoRecovery, MasterChef } from "./game";
 import { Charge, HighKick, Kickoff, KickoffEvent, Pregame, QuickSnap, SolidDefence, SwelteringHeat } from "./kickoff";
 import { Setup } from "./setup";
 import { ThrowTeamMate } from "./ttm";
-import { Gaze, HitAndRun, MoveAction, MoveStep, OnTheBall, PickMeUp, Shadow, Tentacles, Turn } from "./turn";
+import { Gaze, HitAndRun, MoveAction, MoveStep, OnTheBall, PickMeUp, Shadow, Tentacles, Turn, WeatherMage } from "./turn";
 
 /** Every procedure type's handler; `HandlerMap` makes a missing one a type error. */
 export const handlers: HandlerMap = {
@@ -37,6 +37,7 @@ export const handlers: HandlerMap = {
   DivingCatch,
   Catch,
   Turn,
+  WeatherMage,
   MoveAction,
   MoveStep,
   Shadow,

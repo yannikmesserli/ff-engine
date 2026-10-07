@@ -187,6 +187,10 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "VOMIT", targetId: pick(t.targetIds) };
     case "STAB":
       return { type: "STAB", targetId: pick(t.targetIds) };
+    case "WEATHER_MAGE":
+      return { type: "WEATHER_MAGE" };
+    case "CHOOSE_WEATHER":
+      return { type: "CHOOSE_WEATHER", weather: pick(t.options) };
     case "SWOOP":
       return { type: "SWOOP", square: random() < 0.3 ? null : pick(t.squares) };
     case "TRICKSTER":
@@ -320,7 +324,7 @@ describe("random games", () => {
   /** A game takes under a second; the margin keeps a busy or sleeping machine from failing the run. */
   const GAME_TIMEOUT_MS = 30_000;
   /** Inducements any team may buy, for the random games. */
-  const RANDOM_GAME_INDUCEMENTS = { bribes: 1, teamMascot: 1, partTimeCoaches: 1, tempCheerleaders: 1, blitzersBestKegs: 1, biasedReferee: 1, halflingMasterChef: 1, riotousRookies: 1 };
+  const RANDOM_GAME_INDUCEMENTS = { bribes: 1, teamMascot: 1, partTimeCoaches: 1, tempCheerleaders: 1, blitzersBestKegs: 1, biasedReferee: 1, halflingMasterChef: 1, riotousRookies: 1, weatherMage: 1 };
   /** Seed i: every roster plays at home once in 30 seeds (7 and 30 share no factor), against a different one away. */
   const matchup = (seed: number) => [rosters[(7 * seed) % rosters.length]!, rosters[(11 * seed + 3) % rosters.length]!] as const;
   it.each(Array.from({ length: 40 }, (_, i) => [i + 1, ...matchup(i + 1).map((r) => r.name)] as const))("plays a full game with random legal actions (seed %i: %s v %s)", (seed) => {

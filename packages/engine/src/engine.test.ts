@@ -3243,6 +3243,28 @@ describe("engine", () => {
     });
   });
 
+  describe("Weather Mage", () => {
+    it("once per game, at the start of the team's turn: 2D6, then the weather for the total or up to 2 away", () => {
+      let s = toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } });
+      expect(types(s)).toContain("WEATHER_MAGE");
+      s = apply(s, { type: "WEATHER_MAGE" });
+      expect(find(s, "ROLL")?.reason).toBe("Weather Mage (Home)");
+      // 10: 8 to 12, nice to blizzard.
+      s = apply(s, roll(6, 4));
+      expect(find(s, "CHOOSE_WEATHER")?.options).toEqual(["nice", "pouring-rain", "blizzard"]);
+      s = apply(s, { type: "CHOOSE_WEATHER", weather: "blizzard" });
+      expect(s.weather).toBe("blizzard");
+      expect(types(s)).not.toContain("WEATHER_MAGE");
+    });
+
+    it("not once a player has acted; a roll with only one weather in reach sets it", () => {
+      const s = apply(toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } }), startMove("home-11"));
+      expect(types(apply(s, { type: "END_PLAYER_ACTION" }))).not.toContain("WEATHER_MAGE");
+      const nice = apply(toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } }), { type: "WEATHER_MAGE" }, roll(3, 4));
+      expect([nice.weather, types(nice)]).toEqual(["nice", expect.arrayContaining(["START_ACTION"])]);
+    });
+  });
+
   describe("Halfling Master Chef", () => {
     it("before the first kick-off of each half, 3D6: every 4+ steals a team re-roll for the half", () => {
       const chef = { ...team("Home"), inducements: { halflingMasterChef: 1 } };
