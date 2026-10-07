@@ -267,4 +267,15 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "HAIL_MARY_PASS", square: { x: 20, y: 7 } }, { type: "ROLL", values: [6] }]);
     expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
   });
+
+  it("trickster: the Illusionist moves next to the attacker with the ball", () => {
+    let s = applyActions(load("trickster"), [
+      { type: "START_ACTION", playerId: "away-1", action: "block" },
+      { type: "BLOCK", targetId: "home-1" },
+    ]);
+    expect(find(s, "TRICKSTER")?.squares).toContainEqual({ x: 14, y: 7 });
+    s = applyActions(s, [{ type: "TRICKSTER", square: { x: 14, y: 7 } }]);
+    expect(s.players["home-1"]!.at).toEqual({ x: 14, y: 7 });
+    expect(s.ball).toEqual({ square: { x: 14, y: 7 }, carried: true });
+  });
 });

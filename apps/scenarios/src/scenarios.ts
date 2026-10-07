@@ -877,4 +877,44 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 3, y: 7 },
     }),
   },
+  {
+    id: "trickster",
+    title: "Trickster: slip next to the attacker before the hit",
+    instructions: [
+      "Away's first turn: the Gnome Illusionist Fizzwick (#1, Trickster) holds the ball on the line of scrimmage, next to Grishnak (#1).",
+      "Declare a Block with Grishnak on Fizzwick: before the dice, the home coach may click a free square next to Grishnak to move Fizzwick there, ball included, or click \"Stay\".",
+      "Move him behind Grishnak, e.g. (14,7): the block dice are worked out again from the new square, and a push now sends him further into the orcs' half, away from his team-mates.",
+      "Undo and let Ugluk (#2) Blitz him instead: Trickster is offered once Ugluk is next to him, before the dice.",
+    ],
+    home: {
+      name: "Glimmerwood Tricksters",
+      roster: "Gnome",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Fizzwick", position: "Gnome Illusionist" },
+        { number: 2, name: "Tumblewort", position: "Gnome Lineman" },
+        { number: 3, name: "Pipkin", position: "Gnome Lineman" },
+        { number: 4, name: "Bramble", position: "Gnome Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 41,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 6 }, 3: { x: 12, y: 8 }, 4: { x: 8, y: 7 } },
+        away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+        ball: { x: 12, y: 7 },
+      }),
+      { type: "END_TURN" },
+    ],
+  },
 ];
