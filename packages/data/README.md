@@ -56,6 +56,10 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
 
 - Team: `apothecary` (default `false`), `assistantCoaches` and `cheerleaders` (default 0), `dedicatedFans` 1-7
   (default 1), 1 to 16 players with unique positive `number`s.
+- `journeymen` (default `true`): a team with fewer than 11 players left for the game gets journeymen up to 11, from
+  the roster's 0-12 or 0-16 lineman position, with Loner (4+), numbered with the smallest free numbers. `false` takes
+  none; a position title picks the position when the roster has more than one (Shambling Undead: Skeleton or Zombie
+  Lineman).
 - `skills`: skills gained on top of the position's skills.
 - `improvements`: characteristic improvements per characteristic (`ma`, `st`, `ag`, `pa`, `av`). Each one is +1 to MA,
   ST or AV; for AG and PA, which are target numbers, each one lowers the target by 1 (AG 3+ becomes 2+).

@@ -44,6 +44,11 @@ export const TeamFileSchema = z.strictObject({
   assistantCoaches: count.default(0),
   cheerleaders: count.default(0),
   dedicatedFans: z.number().int().min(1).max(7).default(1),
+  /**
+   * Journeymen for a team with fewer than 11 players: `true` (from the lineman position), `false` (none), or the
+   * position title when the roster has more than one (Shambling Undead).
+   */
+  journeymen: z.union([z.boolean(), z.string().min(1)]).default(true),
   players: z
     .array(TeamPlayerSchema)
     .min(1)

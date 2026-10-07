@@ -47,11 +47,19 @@ const positionStats = (position: Roster["positions"][number]): PositionStats => 
   keywords: position.keywords,
 });
 
+/** A team takes journeymen when it has fewer players than this available for the game. */
+export const JOURNEYMEN_UP_TO = 11;
+
+/** Positions journeymen may be hired from: the roster's 0-12 or 0-16 positions that are not Irregular (its linemen). */
+export const journeymenPositions = (roster: Roster) => roster.positions.filter((p) => (p.quantity === 12 || p.quantity === 16) && p.type !== "Irregular");
+
 /**
  * Validate a team file against its BB2025 roster (re-rolls, apothecary, position quantities, Big Guys, Insignificant
  * players) and build the
  * engine's team: position characteristics with improvements and injuries applied, position skills plus gained ones.
- * Players who miss the next game are left out.
+ * Players who miss the next game are left out. Journeymen: a team with fewer than 11 players left gets free ones up to
+ * 11 (unless `journeymen` is false), from its lineman position (`journeymen` names it when there are several), with
+ * Loner (4+).
  */
 export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters): TeamSetup {
   const parsed = TeamFileSchema.safeParse(input);
@@ -91,7 +99,7 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
     cheerleaders: team.cheerleaders,
     assistantCoaches: team.assistantCoaches,
     ...(plagueRidden && lineman ? { raisePosition: positionStats(lineman) } : {}),
-    players: team.players
+    players: [...team.players
       .filter((p) => !p.missNextGame)
       .map((p) => {
         const position = positionOf(p);
@@ -108,6 +116,23 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
           keywords: position.keywords,
           nigglingInjuries: p.injuries.filter((i) => i === "niggling").length,
         };
-      }),
+      }), ...journeymen(roster, team)],
   };
+}
+
+/** The journeymen a team takes for the game: the smallest free numbers, Loner (4+) added to the position's skills. */
+function journeymen(roster: Roster, team: TeamFile) {
+  const missing = JOURNEYMEN_UP_TO - team.players.filter((p) => !p.missNextGame).length;
+  if (missing <= 0 || team.journeymen === false) return [];
+  const candidates = journeymenPositions(roster);
+  const position = team.journeymen === true ? candidates[0] : candidates.find((p) => p.title === team.journeymen);
+  if (!position) {
+    throw new TeamError(team.journeymen === true ? `${roster.name} has no position to hire journeymen from.` : `Journeymen cannot be ${team.journeymen} for ${roster.name}.`);
+  }
+  const used = new Set(team.players.map((p) => p.number));
+  const numbers: number[] = [];
+  for (let nr = 1; numbers.length < missing; nr++) if (!used.has(nr)) numbers.push(nr);
+  const stats = positionStats(position);
+  const loner = stats.skills.some((s) => s.startsWith("Loner")) ? [] : ["Loner(4)"];
+  return numbers.map((nr) => ({ ...stats, skills: [...stats.skills, ...loner], nr, name: `Journeyman #${nr}`, nigglingInjuries: 0 }));
 }

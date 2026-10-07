@@ -6,7 +6,7 @@ export interface Scenario {
   title: string;
   /** What to do once the scenario is loaded. */
   instructions: string[];
-  /** Team files in @bb/data's format. */
+  /** Team files in @bb/data's format; their few players are on purpose, so they take no journeymen. */
   home: unknown;
   away: unknown;
   seed: number;
@@ -96,6 +96,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Pros",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Gunther", position: "Human Lineman", skills: ["Pro"] },
         { number: 2, name: "Hans", position: "Human Lineman" },
@@ -106,6 +107,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -132,6 +134,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Passers",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Ludwig", position: "Human Thrower" },
         { number: 2, name: "Hans", position: "Human Lineman" },
@@ -144,6 +147,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Ball Watchers",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman", skills: ["On the Ball"] },
         { number: 2, name: "Ugluk", position: "Orc Lineman", skills: ["On the Ball"] },
@@ -173,6 +177,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Returners",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Hans", position: "Human Lineman", skills: ["On the Ball"] },
         { number: 2, name: "Otto", position: "Human Lineman" },
@@ -184,6 +189,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Kick Masters",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -213,6 +219,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Sappers",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Ludwig", position: "Human Thrower", skills: ["Bombardier"] },
         { number: 2, name: "Hans", position: "Human Lineman" },
@@ -224,6 +231,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Blast Radius",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Snaga", position: "Orc Lineman" },
         { number: 2, name: "Grishnak", position: "Orc Lineman" },
@@ -254,6 +262,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Slippery Gits",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Gorbag", position: "Orc Blitzer", skills: ["Dodge"] },
         { number: 2, name: "Snaga", position: "Orc Lineman" },
@@ -264,6 +273,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Tacklers",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Hans", position: "Human Lineman", skills: ["Diving Tackle"] },
         { number: 2, name: "Otto", position: "Human Lineman" },
@@ -290,6 +300,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Shovers",
       roster: "Human",
       rerolls: 3,
+      journeymen: false,
       players: [
         { number: 1, name: "Hans", position: "Human Lineman", skills: ["Frenzy"] },
         { number: 2, name: "Otto", position: "Human Lineman", skills: ["Juggernaut"] },
@@ -300,6 +311,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Stubborn Gits",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman", skills: ["Fend"] },
         { number: 2, name: "Ugluk", position: "Orc Lineman", skills: ["Stand Firm", "Fend"] },
@@ -326,6 +338,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Runners",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Kurt", position: "Human Catcher" },
         { number: 2, name: "Hans", position: "Human Lineman" },
@@ -336,6 +349,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Naggaroth Shadows",
       roster: "Dark Elf",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Malekith", position: "Dark Elf Assassin" },
         { number: 2, name: "Morathi", position: "Dark Elf Assassin", injuries: ["ma", "ma", "ma", "ma", "ma", "ma"] },
@@ -361,6 +375,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Grudges",
       roster: "Human",
       rerolls: 3,
+      journeymen: false,
       players: [
         { number: 1, name: "Gunther", position: "Human Lineman", skills: ["Pro", "Brawler", "Hatred(orc)", "Loner(4)"] },
         { number: 2, name: "Hans", position: "Human Lineman" },
@@ -371,6 +386,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -397,6 +413,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Flying Gits",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grumbol", position: "Troll" },
         { number: 2, name: "Snikkit", position: "Goblin Lineman" },
@@ -409,6 +426,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Targets",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Hans", position: "Human Lineman" },
         { number: 2, name: "Otto", position: "Human Lineman" },
@@ -435,6 +453,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Bashers",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Hans", position: "Human Lineman" },
         { number: 2, name: "Otto", position: "Human Lineman" },
@@ -445,6 +464,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Hangover Hall",
       roster: "Norse",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Ragnar", position: "Norse Raider" },
         { number: 2, name: "Sven", position: "Norse Raider" },
@@ -477,6 +497,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Clan Rattus",
       roster: "Skaven",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Skritch", position: "Rat Ogre" },
         { number: 2, name: "Snikch", position: "Skaven Clanrat" },
@@ -488,6 +509,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Ratcatchers",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Hans", position: "Human Lineman" },
         { number: 2, name: "Otto", position: "Human Lineman" },
@@ -513,6 +535,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Sylvania Nights",
       roster: "Vampire",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Count Vlad", position: "Vampire Blitzer" },
         { number: 2, name: "Igor", position: "Thrall Lineman" },
@@ -524,6 +547,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Hunters",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Hans", position: "Human Lineman" },
         { number: 2, name: "Otto", position: "Human Lineman" },
@@ -549,6 +573,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Mesmerists",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Hans", position: "Human Lineman", skills: ["Hypnotic Gaze"] },
         { number: 2, name: "Otto", position: "Human Lineman" },
@@ -559,6 +584,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Rotten Bellies",
       roster: "Nurgle",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Festus", position: "Bloater" },
         { number: 2, name: "Gutrot", position: "Rotter Lineman" },
@@ -584,6 +610,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Bastonne Lances",
       roster: "Bretonnian",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Bertrand", position: "Bretonnian Squire" },
         { number: 2, name: "Galahad", position: "Grail Knight" },
@@ -594,6 +621,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Guard",
       roster: "Imperial Nobility",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Wilhelm", position: "Bodyguard" },
         { number: 2, name: "Dieter", position: "Imperial Retainer" },
@@ -619,6 +647,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Athel Loren Hands",
       roster: "Wood Elf",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Orion", position: "Wood Elf Thrower" },
         { number: 2, name: "Ariel", position: "Wood Elf Lineman" },
@@ -629,6 +658,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -654,6 +684,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Divers",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Ludwig", position: "Human Thrower" },
         { number: 2, name: "Hans", position: "Human Lineman" },
@@ -666,6 +697,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -696,6 +728,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Elven Tricksters",
       roster: "Elven Union",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Ithilmar", position: "Elf Lineman" },
         { number: 2, name: "Aenarion", position: "Elf Lineman" },
@@ -707,6 +740,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -733,6 +767,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Zharr-Naggrund Furnace",
       roster: "Chaos Dwarf",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Zharrak", position: "Flamesmith" },
         { number: 2, name: "Drazhoath", position: "Flamesmith" },
@@ -745,6 +780,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -773,6 +809,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Naggaroth Nightblades",
       roster: "Dark Elf",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Kaelith", position: "Dark Elf Runner" },
         { number: 2, name: "Malus", position: "Dark Elf Lineman" },
@@ -784,6 +821,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -813,6 +851,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Naggaroth Nightblades",
       roster: "Dark Elf",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Kaelith", position: "Dark Elf Runner" },
         { number: 2, name: "Malus", position: "Dark Elf Lineman" },
@@ -825,6 +864,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -851,6 +891,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Elven Tricksters",
       roster: "Elven Union",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Ithilmar", position: "Elf Thrower" },
         { number: 2, name: "Aenarion", position: "Elf Catcher" },
@@ -863,6 +904,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -890,6 +932,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Glimmerwood Tricksters",
       roster: "Gnome",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Fizzwick", position: "Gnome Illusionist" },
         { number: 2, name: "Tumblewort", position: "Gnome Lineman" },
@@ -901,6 +944,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -930,6 +974,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Altdorf Pros",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Wilhelm", position: "Human Lineman" },
         { number: 2, name: "Hans", position: "Human Lineman" },
@@ -941,6 +986,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Rotting Hope",
       roster: "Nurgle",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Gloop", position: "Rotspawn" },
         { number: 2, name: "Mucus", position: "Rotter Lineman" },
@@ -967,6 +1013,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Bögenhafen Barons",
       roster: "Imperial Nobility",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Lord Edmund", position: "Imperial Thrower" },
         { number: 2, name: "Sir Roland", position: "Noble Blitzer" },
@@ -980,6 +1027,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -1006,6 +1054,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gnoblar Kickers",
       roster: "Ogre",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grunk", position: "Ogre Runt Punter" },
         { number: 2, name: "Snit", position: "Gnoblar Lineman" },
@@ -1020,6 +1069,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -1046,6 +1096,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Grotty Gits",
       roster: "Goblin",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grub", position: "Trained Troll" },
         { number: 2, name: "Zippy", position: "Doom Diver" },
@@ -1058,6 +1109,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -1084,6 +1136,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Grotty Gits",
       roster: "Goblin",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Whirla", position: "Looney" },
         { number: 2, name: "Grub", position: "Trained Troll" },
@@ -1095,6 +1148,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },
@@ -1132,6 +1186,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Grotty Gits",
       roster: "Goblin",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Spinna", position: "Fanatic" },
         { number: 2, name: "Snotling", position: "Goblin Lineman" },
@@ -1144,6 +1199,7 @@ export const SCENARIOS: Scenario[] = [
       name: "Gouged Eye",
       roster: "Orc",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "Grishnak", position: "Orc Lineman" },
         { number: 2, name: "Ugluk", position: "Orc Lineman" },

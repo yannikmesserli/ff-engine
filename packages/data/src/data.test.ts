@@ -32,6 +32,7 @@ describe("data", () => {
       name: "Minimal",
       roster: "Human",
       rerolls: 2,
+      journeymen: false,
       players: [
         { number: 1, name: "A", position: "Human Lineman" },
         { number: 2, name: "B", position: "Human Lineman", missNextGame: true },
@@ -39,6 +40,26 @@ describe("data", () => {
     });
     expect(team).toMatchObject({ apothecary: false, assistantCoaches: 0, cheerleaders: 0, dedicatedFans: 1 });
     expect(team.players.map((p) => p.nr)).toEqual([1]);
+  });
+
+  it("fills a team up to 11 with journeymen from the lineman position, with Loner (4+)", () => {
+    const short = (journeymen?: boolean | string, roster = "Human", position = "Human Blitzer") => ({
+      name: "Short",
+      roster,
+      rerolls: 2,
+      ...(journeymen === undefined ? {} : { journeymen }),
+      players: [
+        { number: 1, name: "A", position },
+        { number: 2, name: "B", position, missNextGame: true },
+      ],
+    });
+    const team = resolveTeam(short());
+    expect(team.players.map((p) => p.nr)).toEqual([1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    expect(team.players[1]).toMatchObject({ name: "Journeyman #3", position: "Human Lineman", skills: ["Loner(4)"] });
+    expect(resolveTeam(short(false)).players).toHaveLength(1);
+    // Shambling Undead may take Skeletons or Zombies.
+    expect(resolveTeam(short("Zombie Lineman", "Shambling Undead", "Ghoul Runner")).players[1]!.position).toBe("Zombie Lineman");
+    expect(() => resolveTeam(short("Ghoul Runner", "Shambling Undead", "Ghoul Runner"))).toThrow(/Journeymen cannot be Ghoul Runner/);
   });
 
   it("gives teams with Plague Ridden their lineman position for raised players", () => {

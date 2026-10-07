@@ -43,7 +43,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 
 ## Implemented so far (BB2025)
 
-- Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls).
+- Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls). Journeymen: a team with fewer
+  than 11 players available gets free ones up to 11 from its lineman position, with Loner (4+) (team file option).
 - Setup checks: 11 players (or all available), 3 on the line of scrimmage in the centre field, at most 2 per wide zone.
   Built-in formations are available as one-click setups.
 - Kick-off: D8 + D6 deviation, all 11 kick-off events (Solid Defence, High Kick, Quick Snap, Charge, Weather
