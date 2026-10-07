@@ -1,7 +1,7 @@
 import type { Ctx, Handler } from "../context";
 import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
-import { blockDice, revolted, rollFoulAppearance } from "./block";
+import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
 import { dropBall } from "./ball";
 import { handOffTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
@@ -947,7 +947,7 @@ export const Shadow: Handler<P<"Shadow">> = {
 export const HYPNOTIC_GAZE_TARGET = 3;
 
 /**
- * Hypnotic Gaze (a special action, after an optional move): Foul Appearance first, then a D6 (team re-roll allowed);
+ * Hypnotic Gaze (a special action, after an optional move): Foul Appearance and Dump-off first, then a D6 (team re-roll allowed);
  * on 3+ the adjacent opponent is distracted until their next activation (no tackle zone, cannot catch, assist...).
  * The activation ends either way, without a turnover.
  */
@@ -963,6 +963,13 @@ export const Gaze: Handler<P<"Gaze">> = {
     }
     if (proc.stage === "appearanceResult") {
       if (revolted(ctx, player)) return "done";
+      ctx.push(...dumpOff({ attackerId: player.id, defenderId: victim.id }));
+      proc.stage = "gaze";
+      return "continue";
+    }
+    if (proc.stage === "gaze") {
+      // A Dump-off may score a touchdown.
+      if (state.touchdown !== null) return "done";
       ctx.push({ type: "Check", kind: "gaze", playerId: player.id, target: HYPNOTIC_GAZE_TARGET, modifier: 0, stage: "roll", rerolled: false });
       proc.stage = "result";
       return "continue";

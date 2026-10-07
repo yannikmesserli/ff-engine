@@ -68,6 +68,7 @@ const SKILL_USES: Record<string, string> = {
   Shadowing: "and follows into the vacated square",
   "Strip Ball": "and knocks the ball loose",
   "Safe Pass": "and keeps the ball",
+  "Dump-off": "to pass before being hit",
   "Hit and Run": "to step away",
   "Diving Tackle": "(-2 to the roll) and dives into the square left",
 };

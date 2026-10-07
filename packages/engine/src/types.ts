@@ -317,9 +317,11 @@ export type Procedure =
       range: PassRange;
       /** A bomb (Throw Bomb action) rather than the ball: no Animosity or On the Ball, and it explodes where it stops. */
       bomb?: boolean;
+      /** Dump-off: a Quick pass by the player about to be blocked; no On the Ball, and nobody's turn ends. */
+      dumpOff?: boolean;
       /** "animosity": the thrower may first have to roll for Animosity towards the receiver. */
       /** "safePass": a natural 1 may be saved by Safe Pass. */
-      /** "aim": a player who caught a bomb picks where to throw it again. */
+      /** "aim": a player who caught a bomb picks where to throw it again, or a Dump-off thrower picks the target. */
       stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
       rerolled: boolean;
       result?: PassResult;
@@ -443,7 +445,9 @@ export type Procedure =
   /** Hit and Run: after their block (or Stab), the player may step to a free square away from any opponent. */
   | { type: "HitAndRun"; playerId: string; stage: "ask" | "move" }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
-  | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "result" }
+  | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "gaze" | "result" }
+  /** Dump-off: the ball carrier about to be blocked (or targeted by a special action) may first make a Quick pass. */
+  | { type: "DumpOff"; attackerId: string; defenderId: string }
   /** Shadowing: an opponent may follow the player who just left `from`, out of their tackle zone. */
   | { type: "Shadow"; playerId: string; from: Square; stage: "select" | "result"; shadowerId?: string }
   /** The crowd throws a rock at a stalling ball carrier. */

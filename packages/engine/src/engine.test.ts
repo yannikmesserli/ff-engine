@@ -2007,6 +2007,58 @@ describe("engine", () => {
       });
     });
 
+    describe("Dump-off", () => {
+      /** away-2 (13,7) holds the ball, marked by home-1, home-2 and home-3; away-6 stands free at (15,6). */
+      const dumper = (skills = ["Dump-off"]) =>
+        edit(withSkills(toFirstTurn(), { "away-2": skills }), (c) => {
+          c.ball = { square: { x: 13, y: 7 }, carried: true };
+        });
+      const blocked = (s = dumper()) => apply(s, declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" });
+
+      it("the targeted ball carrier may make a Quick pass first; a completed one is no turnover, then the block goes on", () => {
+        let s = blocked();
+        expect(getAvailableActions(s)).toEqual([{ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Dump-off" }]);
+        s = apply(s, { type: "USE_SKILL", use: true });
+        const aim = find(s, "THROW")!;
+        expect(aim.side).toBe("away");
+        expect(aim.squares.every((t) => t.range === "quick")).toBe(true);
+        expect(aim.squares.some((t) => t.x === 15 && t.y === 6)).toBe(true);
+        s = apply(s, { type: "THROW", square: { x: 15, y: 6 } });
+        // No On the Ball move, and no team re-roll outside their turn.
+        expect(find(s, "ROLL")?.reason).toBe("Pass 6+ (quick)");
+        s = apply(s, roll(6), roll(6));
+        expect(s.ball).toEqual({ square: { x: 15, y: 6 }, carried: true });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Block/);
+        expect([s.turnover, s.activeSide]).toEqual([false, "home"]);
+      });
+
+      it("a fumble bounces the ball without ending either team's turn", () => {
+        let s = apply(blocked(), { type: "USE_SKILL", use: true }, { type: "THROW", square: { x: 15, y: 6 } }, roll(1));
+        expect(types(s)).toEqual(["ROLL"]);
+        s = apply(s, roll(3));
+        expect(s.ball).toEqual({ square: { x: 14, y: 7 }, carried: false });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Block/);
+        expect(s.turnover).toBe(false);
+      });
+
+      it("declined, the block goes on; not offered without the ball, or when distracted", () => {
+        expect(find(apply(blocked(), { type: "USE_SKILL", use: false }), "ROLL")?.reason).toMatch(/^Block/);
+        const noBall = edit(dumper(), (c) => {
+          c.ball = { square: { x: 4, y: 2 }, carried: false };
+        });
+        expect(find(blocked(noBall), "ROLL")?.reason).toMatch(/^Block/);
+        const distracted = edit(dumper(), (c) => {
+          c.players["away-2"]!.distracted = true;
+        });
+        expect(find(blocked(distracted), "ROLL")?.reason).toMatch(/^Block/);
+      });
+
+      it("also before a special action such as Projectile Vomit", () => {
+        const s = apply(withSkills(dumper(), { "home-2": ["Projectile Vomit"] }), declare("home-2", "block"), { type: "VOMIT", targetId: "away-2" });
+        expect(find(s, "USE_SKILL")?.skill).toBe("Dump-off");
+      });
+    });
+
     describe("Stab", () => {
       const stabber = (skills = ["Stab"]) => withSkills(toFirstTurn(), { "home-2": skills });
 

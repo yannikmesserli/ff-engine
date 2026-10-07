@@ -83,6 +83,7 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   const top = state.stack.at(-1);
   if (main.type === "MOVE" && top?.type === "MoveAction" && top.fumblerooski) return "move: the ball stays in the square you leave (Fumblerooski)";
   if (main.type === "PLACE_BALL" && state.stack.at(-1)?.type === "SafeHands") return "Safe Pair of Hands: click a free square next to the player to place the ball";
+  if (main.type === "THROW" && top?.type === "Pass" && top.dumpOff) return `Dump-off: aim a Quick pass for ${state.players[top.throwerId]!.name} before the block`;
   if (main.type === "THROW" && throwingBomb(state)) {
     const top = state.stack.at(-1);
     return top?.type === "Pass" ? `${state.players[top.throwerId]!.name} caught the bomb and must throw it again: aim it` : "aim the bomb (no move before throwing it)";

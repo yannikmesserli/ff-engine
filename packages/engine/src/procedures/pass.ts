@@ -152,12 +152,16 @@ function rollAnimosity(ctx: Ctx, thrower: PlayerState, receiver: PlayerState | u
 /** A failed Animosity roll: the ball is not released and the action ends, without a turnover. */
 const animosityFailed = (state: GameState) => state.lastCheck?.kind === "animosity" && !state.lastCheck.success;
 
-/** After a pass or hand-off: a turnover unless a team-mate of the thrower holds the ball. */
-function endBallAction(ctx: Ctx, thrower: PlayerState) {
+/** After a pass or hand-off: a turnover unless a team-mate of the thrower holds the ball (never after a Dump-off). */
+function endBallAction(ctx: Ctx, thrower: PlayerState, dumpOff = false) {
   const carrier = ballCarrier(ctx.state);
   if (carrier) checkTouchdown(ctx, carrier);
-  if (!carrier || carrier.side !== thrower.side) ctx.state.turnover = true;
+  if (!dumpOff && (!carrier || carrier.side !== thrower.side)) ctx.state.turnover = true;
 }
+
+/** Where the thrower may aim: Quick passes only for a Dump-off. */
+const aimTargets = (state: GameState, thrower: PlayerState, proc: P<"Pass">) =>
+  throwTargets(state, thrower).filter((s) => !proc.dumpOff || s.range === "quick");
 
 /**
  * A thrown pass (BB2025), or a bomb (Throw Bomb: thrown like a pass, without Animosity or On the Ball; a fumble
@@ -176,7 +180,7 @@ export const Pass: Handler<P<"Pass">> = {
         // The player who caught the bomb throws it again straight away.
         if (action === null) return "wait";
         const { square } = ctx.expect(action, "THROW");
-        const to = throwTargets(state, thrower).find((s) => sameSquare(s, square)) ?? ctx.reject("Cannot throw there.");
+        const to = aimTargets(state, thrower, proc).find((s) => sameSquare(s, square)) ?? ctx.reject("Cannot throw there.");
         proc.target = { x: to.x, y: to.y };
         proc.range = to.range;
         proc.stage = "animosity";
@@ -192,8 +196,8 @@ export const Pass: Handler<P<"Pass">> = {
       case "animosityResult":
         if (animosityFailed(state)) return "done";
         ctx.emit({ type: "PassThrown", playerId: thrower.id, target: { ...proc.target }, range: proc.range, ...(proc.bomb ? { bomb: true } : {}) });
-        // On the Ball: the opponents may move before the throw (not for a bomb).
-        if (!proc.bomb) ctx.push({ type: "OnTheBall", side: other(thrower.side), kickoff: false, stage: "select", moved: [] });
+        // On the Ball: the opponents may move before the throw (not for a bomb or a Dump-off).
+        if (!proc.bomb && !proc.dumpOff) ctx.push({ type: "OnTheBall", side: other(thrower.side), kickoff: false, stage: "select", moved: [] });
         proc.stage = "roll";
         return "continue";
       case "roll": {
@@ -259,7 +263,7 @@ export const Pass: Handler<P<"Pass">> = {
         if (proc.result === "fumble") {
           // The ball bounces from the thrower's square.
           state.ball = { square: { ...at }, carried: false };
-          state.turnover = true;
+          if (!proc.dumpOff) state.turnover = true;
           ctx.push({ type: "Bounce", from: { ...at }, kickoff: false, receiving: null });
           proc.stage = "end";
           return "continue";
@@ -355,7 +359,7 @@ export const Pass: Handler<P<"Pass">> = {
         return "continue";
       case "end":
         // A bomb only causes a turnover by knocking down the team's players.
-        if (!proc.bomb) endBallAction(ctx, thrower);
+        if (!proc.bomb) endBallAction(ctx, thrower, proc.dumpOff);
         return "done";
     }
   },
@@ -363,7 +367,7 @@ export const Pass: Handler<P<"Pass">> = {
     const thrower = state.players[proc.throwerId]! as PlayerState & { at: Square };
     switch (proc.stage) {
       case "aim":
-        return [{ type: "THROW", side: thrower.side, playerId: thrower.id, squares: throwTargets(state, thrower) }];
+        return [{ type: "THROW", side: thrower.side, playerId: thrower.id, squares: aimTargets(state, thrower, proc) }];
       case "roll": {
         const needed = shownNeeded(thrower, passModifiers(state, thrower, proc.range));
         return [{ type: "ROLL", side: thrower.side, dice: [{ kind: "d6", count: 1 }], reason: `Pass ${needed}+ (${proc.range})` }];
@@ -404,6 +408,35 @@ export const Pass: Handler<P<"Pass">> = {
       default:
         return [];
     }
+  },
+};
+
+/** Dump-off: the defender holds the ball, is not distracted, and the attacker is still on their feet. */
+function canDumpOff(state: GameState, proc: P<"DumpOff">) {
+  const attacker = state.players[proc.attackerId]!;
+  const defender = state.players[proc.defenderId]!;
+  if (state.turnover || state.touchdown !== null || attacker.status !== "standing") return false;
+  return hasSkill(defender, "Dump-off") && ballCarrier(state)?.id === defender.id && hasTackleZone(defender);
+}
+
+/**
+ * Dump-off: when the ball carrier is targeted by a block (not Frenzy's second one) or a special action that targets
+ * them (Projectile Vomit, Stab, Breathe Fire, Hypnotic Gaze), after any Foul Appearance roll, their coach may first make
+ * a Quick pass with them. The normal passing rules apply (no team re-roll: it is not their turn), except that there is
+ * no On the Ball move and neither team's turn ends because of the pass. Then the attacker's action goes on.
+ */
+export const DumpOff: Handler<P<"DumpOff">> = {
+  step(ctx, proc, action) {
+    if (action === null) return canDumpOff(ctx.state, proc) ? "wait" : "done";
+    if (!ctx.expect(action, "USE_SKILL").use) return "done";
+    const thrower = getPlayer(ctx, proc.defenderId);
+    ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Dump-off" });
+    ctx.push({ type: "Pass", throwerId: thrower.id, target: { ...squareOf(ctx, thrower) }, range: "quick", dumpOff: true, stage: "aim", rerolled: false });
+    return "done";
+  },
+  actions(state, proc) {
+    const defender = state.players[proc.defenderId]!;
+    return [{ type: "USE_SKILL", side: defender.side, playerId: defender.id, skill: "Dump-off" }];
   },
 };
 

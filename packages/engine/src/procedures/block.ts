@@ -233,6 +233,13 @@ export function rollFoulAppearance(ctx: Ctx, attacker: PlayerState, defender: Pl
   return true;
 }
 
+/** A failed Rush before a block: the attacker falls over, a turnover. */
+const fall = (attacker: PlayerState): Procedure => ({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall", fallsOver: true });
+
+/** Dump-off, once the attacker is ready to block (not before Frenzy's second block): it checks whether it applies. */
+export const dumpOff = (proc: { attackerId: string; defenderId: string; second?: boolean }): Procedure[] =>
+  proc.second ? [] : [{ type: "DumpOff", attackerId: proc.attackerId, defenderId: proc.defenderId }];
+
 /** A failed Foul Appearance roll wastes the block, which ends the attacker's action (no turnover). */
 export function revolted(ctx: Ctx, attacker: PlayerState): boolean {
   const { lastCheck } = ctx.state;
@@ -359,8 +366,9 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
 }
 
 /**
- * One BB2025 block or blitz block: Foul Appearance -> (Rush when blitzing) -> Dauntless -> block dice -> re-roll ->
- * choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs -> loose ball -> touchdown check.
+ * One BB2025 block or blitz block: Foul Appearance -> (Rush when blitzing) -> Dump-off -> Dauntless -> block dice ->
+ * re-roll -> choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs -> loose ball ->
+ * touchdown check.
  */
 export const Block: Handler<P<"Block">> = {
   step(ctx, proc, action) {
@@ -375,6 +383,7 @@ export const Block: Handler<P<"Block">> = {
       case "appearanceResult":
         if (revolted(ctx, attacker)) return "done";
         proc.stage = proc.blitz ? "rush" : "dauntless";
+        if (!proc.blitz) ctx.push(...dumpOff(proc));
         return "continue";
       case "rush": {
         // Blocking during a Blitz costs one square of movement, which may be a Rush.
@@ -389,11 +398,13 @@ export const Block: Handler<P<"Block">> = {
       }
       case "rushResult":
         // The block goes on after the fall only if Steady Footing kept the attacker on their feet.
-        if (state.lastCheck?.success === false) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall", fallsOver: true });
+        // The Dump-off runs after any fall, and only if the attacker is still standing.
+        ctx.push(...(state.lastCheck?.success === false ? [fall(attacker)] : []), ...dumpOff(proc));
         proc.stage = "dauntless";
         return "continue";
       case "dauntless": {
-        if (attacker.status !== "standing") return "done";
+        // A Dump-off may score a touchdown.
+        if (attacker.status !== "standing" || state.touchdown !== null) return "done";
         const target = dauntlessTarget(attacker, defender);
         state.lastCheck = null;
         proc.stage = "dauntlessResult";
@@ -751,6 +762,7 @@ export const Vomit: Handler<P<"Vomit">> = {
       case "appearanceResult":
         if (revolted(ctx, attacker)) return "done";
         proc.stage = proc.blitz ? "rush" : "roll";
+        if (!proc.blitz) ctx.push(...dumpOff(proc));
         return "continue";
       case "rush": {
         const needsRush = attacker.movesUsed >= attacker.ma;
@@ -763,11 +775,12 @@ export const Vomit: Handler<P<"Vomit">> = {
         return "continue";
       }
       case "rushResult":
-        if (state.lastCheck?.success === false) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall", fallsOver: true });
+        // The Dump-off runs after any fall, and only if the attacker is still standing.
+        ctx.push(...(state.lastCheck?.success === false ? [fall(attacker)] : []), ...dumpOff(proc));
         proc.stage = "roll";
         return "continue";
       case "roll":
-        if (attacker.status !== "standing") return "done";
+        if (attacker.status !== "standing" || state.touchdown !== null) return "done";
         if (proc.skill === "Stab") {
           ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Stab" });
           proc.victimId = proc.defenderId;
