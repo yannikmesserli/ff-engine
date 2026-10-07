@@ -13,7 +13,7 @@ README of the package you touch:
 ## Commands (run from `frontend/`)
 
 ```
-pnpm test        # vitest: engine unit tests + 40 full random games (data.test.ts)
+pnpm test        # vitest: engine unit tests + 40 full random games between test teams of every roster (data.test.ts)
 pnpm typecheck   # tsc in every package
 pnpm build       # playground production build
 pnpm dev         # playground on http://localhost:5173 (?seed=42 replays the same dice) + relay on :8787
@@ -45,8 +45,9 @@ Run `pnpm typecheck && pnpm test` before reporting any change as done.
 - `packages/engine/src/engine.test.ts` builds positions with helpers (`toFirstTurn()`, `apply(state, ...actions)`,
   `roll(...)`, `find(state, "TEMPLATE")`, `types(state)`) and mutates a `structuredClone` of the state to place
   players. Add a `describe` block per rule with fixed dice.
-- `packages/data/src/data.test.ts` plays full games with random legal actions. When you add an action template, teach
-  `randomAction` how to answer it, or those games stall.
+- `packages/data/src/data.test.ts` plays full games with random legal actions, between test teams built from every
+  roster (`rosterTeam`: one of each position, then linemen), so each roster's skills come up. When you add an action
+  template, teach `randomAction` how to answer it, or those games stall.
 
 ## Code style
 

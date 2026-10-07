@@ -234,7 +234,42 @@ describe("skill descriptions", () => {
   });
 });
 
+/**
+ * A legal 11-player team for a roster: one of each position but the lineman (Big Guys up to the roster's limit, as
+ * many Insignificant players as the others allow), then linemen (the most common position) up to 11.
+ */
+function rosterTeam(roster: (typeof rosters)[number]): unknown {
+  const byQuantity = [...roster.positions].sort((a, b) => b.quantity - a.quantity);
+  const lineman = roster.positions.find((p) => p.keywords.includes("lineman")) ?? byQuantity[0]!;
+  const picked: string[] = [];
+  let bigGuys = 0;
+  for (const position of roster.positions) {
+    if (position === lineman || picked.length >= 11) continue;
+    if (position.type === "Big Guy" && bigGuys >= roster.maxBigGuys) continue;
+    if (position.skills.includes("Insignificant")) continue;
+    if (position.type === "Big Guy") bigGuys++;
+    picked.push(position.title);
+  }
+  for (const position of [lineman, ...byQuantity.filter((p) => p !== lineman && p.type !== "Big Guy")]) {
+    while (picked.length < 11 && picked.filter((t) => t === position.title).length < position.quantity) {
+      // Insignificant players may not outnumber the others.
+      if (position.skills.includes("Insignificant") && 2 * (picked.filter((t) => t === position.title).length + 1) > 11) break;
+      picked.push(position.title);
+    }
+  }
+  return {
+    name: `${roster.name} test team`,
+    roster: roster.name,
+    rerolls: Math.min(3, roster.maxRerolls),
+    apothecary: roster.apothecary,
+    players: picked.map((position, i) => ({ number: i + 1, name: `${roster.name} ${i + 1}`, position })),
+  };
+}
+
 describe("random games", () => {
+  it.each(rosters.map((r) => r.name))("builds a legal test team for %s", (name) => {
+    expect(resolveTeam(rosterTeam(rosters.find((r) => r.name === name)!)).players).toHaveLength(11);
+  });
   const seenKickoffResults = new Set<string>();
   const seenBlockResults = new Set<number>();
   const ballEvents = new Set<string>();
@@ -247,11 +282,14 @@ describe("random games", () => {
   });
   /** A game takes under a second; the margin keeps a busy or sleeping machine from failing the run. */
   const GAME_TIMEOUT_MS = 30_000;
-  it.each(Array.from({ length: 40 }, (_, i) => i + 1))("plays a full game with random legal actions (seed %i)", (seed) => {
+  /** Seed i: every roster plays at home once in 30 seeds (7 and 30 share no factor), against a different one away. */
+  const matchup = (seed: number) => [rosters[(7 * seed) % rosters.length]!, rosters[(11 * seed + 3) % rosters.length]!] as const;
+  it.each(Array.from({ length: 40 }, (_, i) => [i + 1, ...matchup(i + 1).map((r) => r.name)] as const))("plays a full game with random legal actions (seed %i: %s v %s)", (seed) => {
     let rng = seed;
     // Linear congruential generator: reproducible per seed, independent of the engine's RNG.
     const random = () => ((rng = (rng * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
-    const start = createGame(resolveTeam(exampleTeams["orc"]), resolveTeam(exampleTeams["wood-elf"]), { seed });
+    const [home, away] = matchup(seed);
+    const start = createGame(resolveTeam(rosterTeam(home)), resolveTeam(rosterTeam(away)), { seed });
     let s = start;
     const taken: Action[] = [];
     let steps = 0;
