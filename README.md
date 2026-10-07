@@ -119,6 +119,11 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Dump-off: when targeted by a block (not Frenzy's second one) or by Projectile Vomit, Stab, Breathe Fire or
   Hypnotic Gaze, after any Foul Appearance roll, the ball carrier's coach may first make a Quick pass with them (no
   team re-roll, no On the Ball); neither team's turn ends because of it, then the action goes on.
+- Punt: a once-per-turn action of a standing player with the skill, who may move first: the coach picks a square
+  next to the punter (not diagonally); a D6 on the throw-in template facing it gives the direction, then the ball
+  travels D6 squares (a team re-roll on each roll). Off the pitch, a throw-in from the last square and a turnover;
+  otherwise it comes down there, caught by a standing player (an opponent: a turnover) or bouncing, and the action
+  ends. From a sideline or an end zone, it may go into the crowd instead (throw-in, turnover).
 - Breathe Fire: instead of a block (a Blitz pays the square), a D6, -1 against ST 5 or more; the coach may re-roll
   anything but a 6 (team re-roll). A natural 6 knocks the opponent down (armour and injury without modifiers), 4+
   places them prone, 2+ does nothing, and a 1 knocks the fire-breather down (armour without modifiers), a turnover.

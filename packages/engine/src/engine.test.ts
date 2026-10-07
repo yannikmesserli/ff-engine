@@ -2059,6 +2059,60 @@ describe("engine", () => {
       });
     });
 
+    describe("Punt", () => {
+      /** home-5 (8,5) holds the ball and has the skill. */
+      const punter = (squares: Record<string, Square> = {}) =>
+        edit(place(withSkills(toFirstTurn(), { "home-5": ["Punt"] }), squares), (c) => {
+          c.ball = { square: { ...(c.players["home-5"]!.at as Square) }, carried: true };
+        });
+      const punt = (s: GameState, square: Square | null) => apply(s, declare("home-5", "punt"), { type: "PUNT", square });
+      const decline = { type: "DECLINE_REROLL" } as const;
+
+      it("a once-per-turn action: pick a square next to the punter, then direction and distance, each re-rollable", () => {
+        let s = apply(punter(), declare("home-5", "punt"));
+        expect(find(s, "PUNT")).toMatchObject({ squares: [{ x: 8, y: 4 }, { x: 9, y: 5 }, { x: 8, y: 6 }, { x: 7, y: 5 }], crowd: false });
+        s = apply(s, { type: "PUNT", square: { x: 9, y: 5 } });
+        expect(find(s, "ROLL")?.reason).toBe("Punt direction (Home 5)");
+        s = apply(s, roll(3));
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        s = apply(s, decline);
+        expect(find(s, "ROLL")?.reason).toBe("Punt distance (Home 5)");
+        s = apply(s, roll(4), decline);
+        expect(s.log).toContainEqual({ type: "Punted", playerId: "home-5", to: { x: 12, y: 5 }, out: false });
+        // An empty square: the ball bounces, and a loose ball is no turnover.
+        s = apply(s, roll(1));
+        expect(s.ball).toEqual({ square: { x: 12, y: 4 }, carried: false });
+        expect([s.turnover, s.activeSide, top(s).type]).toEqual([false, "home", "Turn"]);
+        expect(actionsOf(s, "home-6")).not.toContain("punt");
+      });
+
+      it("a re-roll replaces the direction; the ball may be caught by a team-mate", () => {
+        const s = apply(punt(punter({ "home-6": { x: 11, y: 5 } }), { x: 9, y: 5 }), roll(1), { type: "USE_REROLL" }, roll(4), roll(3), roll(6));
+        expect(s.ball).toEqual({ square: { x: 11, y: 5 }, carried: true });
+        expect(s.turnover).toBe(false);
+      });
+
+      it("caught by an opponent where it comes down: a turnover", () => {
+        const s = apply(punt(punter({ "away-1": { x: 13, y: 5 } }), { x: 9, y: 5 }), roll(3), decline, roll(5), decline, roll(6));
+        expect(s.players["away-1"]!.at).toEqual(s.ball.square);
+        expect(s.activeSide).toBe("away");
+      });
+
+      it("leaving the pitch: a throw-in from the last square, and a turnover", () => {
+        let s = apply(punt(punter(), { x: 8, y: 4 }), roll(3), decline, roll(6), decline);
+        expect(s.log).toContainEqual({ type: "Punted", playerId: "home-5", to: { x: 8, y: 0 }, out: true });
+        expect(top(s).type).toBe("ThrowIn");
+        s = apply(s, roll(3, 2, 2), roll(1));
+        expect(s.activeSide).toBe("away");
+      });
+
+      it("from a sideline, the ball may go into the crowd", () => {
+        const s = punt(punter({ "home-5": { x: 8, y: 0 } }), null);
+        expect(top(s).type).toBe("ThrowIn");
+        expect(s.turnover).toBe(true);
+      });
+    });
+
     describe("Stab", () => {
       const stabber = (skills = ["Stab"]) => withSkills(toFirstTurn(), { "home-2": skills });
 

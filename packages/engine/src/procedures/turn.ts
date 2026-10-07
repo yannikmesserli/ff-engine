@@ -3,7 +3,7 @@ import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Si
 import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
 import { dropBall } from "./ball";
-import { handOffTargets, throwTargets } from "./pass";
+import { handOffTargets, puntTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
 import { checkTouchdown, getPlayer, inScoringPosition, rushModifier, squareOf, weatherModifier } from "./helpers";
@@ -38,7 +38,7 @@ export const FURY_TARGET = 4;
 export const FURY_BLOCK_TARGET = 2;
 
 /** Team actions that can only be declared once per turn. */
-const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure", "ttm", "bomb"];
+const ONCE_PER_TURN: PlayerActionType[] = ["blitz", "pass", "handoff", "foul", "secure", "ttm", "bomb", "punt"];
 
 /** The innermost player activation on the stack. */
 const activation = (state: GameState) => state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction");
@@ -266,7 +266,7 @@ const keepsBall = (player: PlayerState) => ["My Ball", "No Ball", "Ball & Chain"
 
 /**
  * Actions the player may declare: Block needs a standing player next to a standing opponent;
- * Blitz, Pass, Hand-off, Foul and Secure the Ball are once per turn; Hypnotic Gaze is not. A Charge (kick-off event) only allows Move and Blitz.
+ * Blitz, Pass, Hand-off, Foul, Secure the Ball and Punt are once per turn; Hypnotic Gaze is not. A Charge (kick-off event) only allows Move and Blitz.
  */
 export function declarableActions(state: GameState, proc: P<"Turn">, player: PlayerState): PlayerActionType[] {
   if (!canAct(player)) return [];
@@ -279,6 +279,8 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   if (proc.charge) return actions;
   if (free("pass") && ballAvailable(state, player) && !keepsBall(player)) actions.push("pass");
   if (free("handoff") && ballAvailable(state, player) && !keepsBall(player)) actions.push("handoff");
+  // Punt: a special action of a standing player with the skill.
+  if (free("punt") && hasSkill(player, "Punt") && player.status === "standing" && ballAvailable(state, player) && !keepsBall(player)) actions.push("punt");
   if (free("secure") && canSecure(state, player)) actions.push("secure");
   // Throw Team-mate: a standing thrower, with a team-mate with Right Stuff on the pitch to throw.
   const throwable = teamPlayers(state, player.side).some((p) => p.id !== player.id && isOnPitch(p) && hasSkill(p, "Right Stuff"));
@@ -457,10 +459,11 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         handOffOptions(state, proc).length === 0 &&
         foulOptions(state, proc).length === 0 &&
         gazeOptions(state, proc).length === 0 &&
-        ttmOptions(state, proc).length === 0);
+        ttmOptions(state, proc).length === 0 &&
+        puntOptions(state, proc) === null);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "USE_SKILL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
     if (a.type === "USE_SKILL") {
       if (!canFumblerooski(state, proc)) ctx.reject("Fumblerooski cannot be used now.");
       if (a.use) proc.fumblerooski = true;
@@ -485,6 +488,24 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       // The thrower's action ends with the throw.
       proc.finished = true;
       ctx.push({ type: "ThrowTeamMate", throwerId: player.id, thrownId: a.targetId, target: { x: square.x, y: square.y }, range: square.range, stage: "hunger", rerolled: false });
+      return "continue";
+    }
+    if (a.type === "PUNT") {
+      const options = puntOptions(state, proc) ?? ctx.reject("Cannot punt now.");
+      const at = squareOf(ctx, player);
+      proc.finished = true;
+      if (a.square === null) {
+        if (!options.crowd) ctx.reject("Can only punt into the crowd from a sideline or an end zone.");
+        // Into the crowd: a throw-in from the punter's square, and a turnover.
+        ctx.emit({ type: "Punted", playerId: player.id, to: { ...at }, out: true });
+        state.ball = { square: null, carried: false };
+        state.turnover = true;
+        ctx.push({ type: "ThrowIn", from: { ...at } });
+        return "continue";
+      }
+      const square = options.squares.find((s) => sameSquare(s, a.square!)) ?? ctx.reject("Punt towards a square next to the player, not diagonally.");
+      const facing = { x: square.x - at.x, y: square.y - at.y };
+      ctx.push({ type: "Punt", playerId: player.id, facing, stage: "direction", rolling: "direction", rerolled: false });
       return "continue";
     }
     if (a.type === "FOUL") {
@@ -557,6 +578,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const fouls = foulOptions(state, proc);
     const throwable = ttmOptions(state, proc).map((p) => p.id);
     const gazes = gazeOptions(state, proc).map((p) => p.id);
+    const punt = puntOptions(state, proc);
     return [
       ...(proc.action === "block" || proc.action === "bomb" ? [] : [{ type: "MOVE" as const, side: player.side, playerId: player.id, squares: legalMoves(state, player) }]),
       ...(targets.length > 0 ? [{ type: "BLOCK" as const, side: player.side, playerId: player.id, targets }] : []),
@@ -567,6 +589,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
       ...(fouls.length > 0 ? [{ type: "FOUL" as const, side: player.side, playerId: player.id, targets: fouls }] : []),
       ...(gazes.length > 0 ? [{ type: "GAZE" as const, side: player.side, playerId: player.id, targetIds: gazes }] : []),
+      ...(punt ? [{ type: "PUNT" as const, side: player.side, playerId: player.id, ...punt }] : []),
       ...(canFumblerooski(state, proc) ? [{ type: "USE_SKILL" as const, side: player.side, playerId: player.id, skill: "Fumblerooski" }] : []),
       ...(throwable.length > 0
         ? [{ type: "THROW_TEAM_MATE" as const, side: player.side, playerId: player.id, playerIds: throwable, squares: teamMateTargets(state, player) }]
@@ -704,6 +727,13 @@ const throwOptions = (state: GameState, proc: P<"MoveAction">) => {
   if (proc.action === "bomb") return !proc.finished && bomber.status === "standing" ? throwTargets(state, bomber) : [];
   const player = releasingBall(state, proc, "pass");
   return player ? throwTargets(state, player) : [];
+};
+
+/** Punt: where the standing ball carrier may punt now, during a Punt action. */
+const puntOptions = (state: GameState, proc: P<"MoveAction">) => {
+  const player = state.players[proc.playerId]!;
+  if (proc.action !== "punt" || proc.finished || player.status !== "standing" || !holdsBall(state, player) || !isOnPitch(player)) return null;
+  return puntTargets(player);
 };
 
 const handOffOptions = (state: GameState, proc: P<"MoveAction">) => {

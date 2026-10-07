@@ -41,6 +41,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   CHOOSE_BLOCK_DIE: "pick a block die",
   REROLL_BLOCK_DIE: "pick the block die to re-roll",
   THROW: "move, or aim a pass",
+  PUNT: "move, or punt the ball",
   HAND_OFF: "move, or click an adjacent team-mate to hand the ball to",
   THROW_TEAM_MATE: "move, or click an adjacent team-mate with Right Stuff, then a square to throw them to",
   FOUL: "move, or click a prone or stunned opponent next to you to foul (badge: armour modifier)",
@@ -79,6 +80,7 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   const snap = findTemplate(templates, "SNAP");
   if (blitzFor) return `click the opponent ${state.players[blitzFor]!.name} will blitz`;
   if (aiming && throwingBomb(state)) return "click a square (or a player) to throw the bomb to";
+  if (aiming && findTemplate(templates, "PUNT")) return "click a square next to the punter (not diagonally) to punt towards it";
   if (aiming) return "click a square (or a team-mate) to throw to";
   const top = state.stack.at(-1);
   if (main.type === "MOVE" && top?.type === "MoveAction" && top.fumblerooski) return "move: the ball stays in the square you leave (Fumblerooski)";
@@ -117,6 +119,7 @@ export function ActionPanel(props: ActionPanelProps) {
   const select = findTemplate(templates, "SELECT_PLAYERS");
   const blockDie = findTemplate(templates, "CHOOSE_BLOCK_DIE");
   const throwTo = findTemplate(templates, "THROW");
+  const punt = findTemplate(templates, "PUNT");
 
   return (
     <div className={`bb-panel bb-actions${side ? ` bb-side-${side}` : ""}`}>
@@ -126,6 +129,17 @@ export function ActionPanel(props: ActionPanelProps) {
       </div>
       <div className="bb-buttons">
         {throwTo && <ThrowControls template={throwTo} aiming={props.aiming} setAiming={props.setAiming} />}
+        {punt &&
+          (props.aiming ? (
+            <button className="bb-link" onClick={() => props.setAiming(false)}>
+              Cancel punt
+            </button>
+          ) : (
+            <button className="bb-confirm" onClick={() => props.setAiming(true)}>
+              Punt…
+            </button>
+          ))}
+        {punt?.crowd && <button onClick={() => dispatch({ type: "PUNT", square: null })}>Punt into the crowd</button>}
         {props.blitzFor && (
           <button className="bb-link" onClick={props.cancelBlitz}>
             Cancel blitz

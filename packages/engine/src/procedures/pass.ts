@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
-import type { GameState, PassRange, PassResult, PlayerState, Procedure, Square } from "../types";
-import { SCATTER, passes } from "../dice";
+import type { GameState, PassRange, PassResult, PlayerState, Procedure, Side, Square } from "../types";
+import { SCATTER, passes, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName } from "../skills";
 import { explosion, rethrow } from "./bomb";
@@ -477,4 +477,125 @@ export const HandOff: Handler<P<"HandOff">> = {
     return "done";
   },
   actions: () => [],
+};
+
+/** Punt: the orthogonal squares next to the punter, to choose the direction; the crowd from a sideline or an end zone. */
+export function puntTargets(player: PlayerState & { at: Square }) {
+  const squares = [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }]
+    .map((d) => ({ x: player.at.x + d.x, y: player.at.y + d.y }))
+    .filter(inBounds);
+  const { x, y } = player.at;
+  return { squares, crowd: x < 1 || x > 24 || y < 1 || y > 13 };
+}
+
+/** After a punt roll: the team re-roll decision, or the next step. */
+function afterPuntRoll(state: GameState, proc: P<"Punt">, side: Side) {
+  if (canTeamReroll(state, side, proc.rerolled)) proc.stage = "reroll";
+  else nextPuntStep(proc);
+}
+
+/** The distance after the direction (unless the ball already leaves the pitch), then the landing. */
+function nextPuntStep(proc: P<"Punt">) {
+  if (proc.rolling === "direction" && proc.distance === undefined) {
+    proc.rolling = "distance";
+    proc.rerolled = false;
+    proc.stage = "distance";
+  } else proc.stage = "land";
+}
+
+/**
+ * Punt (a once-per-turn action of a player with the skill, who may move first): the coach picks a square next to the
+ * punter (not diagonally); a D6 on the throw-in template facing it gives the direction, then the ball travels D6
+ * squares from the punter. A team re-roll may be used on each of the two rolls. If the ball would leave the pitch, it
+ * is thrown in from the last square it reached, a turnover. Otherwise it comes down on the square: a standing player
+ * there may catch it (a turnover if it is an opponent), else it bounces; either way the action ends, and the ball
+ * loose or caught after a bounce is no turnover. From a sideline or an end zone, the punter may instead kick it into
+ * the crowd: a throw-in from their square, and a turnover.
+ */
+export const Punt: Handler<P<"Punt">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const punter = getPlayer(ctx, proc.playerId);
+    const at = squareOf(ctx, punter);
+    switch (proc.stage) {
+      case "direction": {
+        if (action === null) return "wait";
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], "Punt direction");
+        proc.direction = templateDirection(proc.facing, roll!);
+        // The first square is off the pitch: no need for a distance.
+        if (!inBounds({ x: at.x + proc.direction.x, y: at.y + proc.direction.y })) proc.distance = 0;
+        else delete proc.distance;
+        afterPuntRoll(state, proc, punter.side);
+        return "continue";
+      }
+      case "distance": {
+        if (action === null) return "wait";
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], "Punt distance");
+        proc.distance = roll!;
+        afterPuntRoll(state, proc, punter.side);
+        return "continue";
+      }
+      case "reroll": {
+        if (action === null) return "wait";
+        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
+        if (a.type === "DECLINE_REROLL") nextPuntStep(proc);
+        else {
+          if (!canTeamReroll(state, punter.side, proc.rerolled)) ctx.reject("No re-roll available.");
+          useTeamReroll(ctx, punter.side);
+          proc.rerolled = true;
+          proc.stage = lonerTarget(punter) === null ? proc.rolling : "loner";
+        }
+        return "continue";
+      }
+      case "loner":
+        if (action === null) return "wait";
+        // A failed Loner roll keeps the first result.
+        if (rollLoner(ctx, action, punter)) proc.stage = proc.rolling;
+        else nextPuntStep(proc);
+        return "continue";
+      case "land": {
+        const d = proc.direction!;
+        let n = proc.distance!;
+        const out = n === 0 || !inBounds({ x: at.x + d.x * n, y: at.y + d.y * n });
+        while (n > 0 && !inBounds({ x: at.x + d.x * n, y: at.y + d.y * n })) n -= 1;
+        const square = { x: at.x + d.x * n, y: at.y + d.y * n };
+        ctx.emit({ type: "Punted", playerId: punter.id, to: { ...square }, out });
+        if (out) {
+          state.ball = { square: null, carried: false };
+          state.turnover = true;
+          ctx.push({ type: "ThrowIn", from: square });
+        } else {
+          const catcher = playerAt(state, square);
+          if (catcher?.status === "standing") proc.catcherId = catcher.id;
+          landBall(ctx, square, square, { kickoff: false, receiving: null, bounceIfEmpty: true, scattered: false });
+        }
+        proc.stage = "end";
+        return "continue";
+      }
+      case "end": {
+        const carrier = ballCarrier(state);
+        // Only a catch where the ball came down counts: not one after a bounce.
+        if (carrier && carrier.id === proc.catcherId && carrier.side !== punter.side) state.turnover = true;
+        if (carrier) checkTouchdown(ctx, carrier);
+        return "done";
+      }
+    }
+  },
+  actions(state, proc) {
+    const punter = state.players[proc.playerId]!;
+    switch (proc.stage) {
+      case "direction":
+      case "distance":
+        return [{ type: "ROLL", side: punter.side, dice: [{ kind: "d6", count: 1 }], reason: `Punt ${proc.stage} (${punter.name})` }];
+      case "reroll":
+        return [
+          { type: "USE_REROLL", side: punter.side, available: rerollsLeft(state, punter.side) },
+          { type: "DECLINE_REROLL", side: punter.side },
+        ];
+      case "loner":
+        return [lonerRollTemplate(punter)];
+      default:
+        return [];
+    }
+  },
 };

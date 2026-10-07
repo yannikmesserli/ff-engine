@@ -108,6 +108,7 @@ export const ACTION_NAMES: Record<PlayerActionType, string> = {
   ttm: "Throw Team-mate",
   gaze: "Hypnotic Gaze",
   bomb: "Throw Bomb",
+  punt: "Punt",
 };
 
 /** Display names of the pass ranges, shortest first. */
@@ -193,6 +194,10 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${e.reason}: ${e.rolls.map((r) => r.values.join("+")).join(" / ")}`;
     case "BallScattered":
       return `The ball scatters to (${e.to.x}, ${e.to.y}).`;
+    case "Punted":
+      return e.out
+        ? `${who(state, e.playerId)} punts the ball into the crowd, from (${e.to.x}, ${e.to.y}).`
+        : `${who(state, e.playerId)} punts the ball to (${e.to.x}, ${e.to.y}).`;
     case "BallBounced":
       return `The ball bounces to (${e.to.x}, ${e.to.y}).`;
     case "BallThrownIn":

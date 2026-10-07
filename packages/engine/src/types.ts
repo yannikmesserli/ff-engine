@@ -188,7 +188,7 @@ export interface DiceRoll {
 }
 
 /** Actions a player can declare when activated. */
-export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm" | "gaze" | "bomb";
+export type PlayerActionType = "move" | "block" | "blitz" | "pass" | "handoff" | "foul" | "secure" | "ttm" | "gaze" | "bomb" | "punt";
 
 /** BB2025 range bands: Quick, Short, Long, Long Bomb. */
 export type PassRange = "quick" | "short" | "long" | "bomb";
@@ -446,6 +446,21 @@ export type Procedure =
   | { type: "HitAndRun"; playerId: string; stage: "ask" | "move" }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
   | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "gaze" | "result" }
+  /** Punt: the ball is kicked from the punter's square, on the throw-in template facing `facing`, D6 squares away. */
+  | {
+      type: "Punt";
+      playerId: string;
+      /** The orthogonal direction chosen by the coach. */
+      facing: Square;
+      /** "reroll" / "loner": a team re-roll of the `rolling` roll; "land": the ball comes down. */
+      stage: "direction" | "distance" | "reroll" | "loner" | "land" | "end";
+      rolling: "direction" | "distance";
+      rerolled: boolean;
+      direction?: Square;
+      distance?: number;
+      /** The player standing where the ball came down. */
+      catcherId?: string;
+    }
   /** Dump-off: the ball carrier about to be blocked (or targeted by a special action) may first make a Quick pass. */
   | { type: "DumpOff"; attackerId: string; defenderId: string }
   /** Shadowing: an opponent may follow the player who just left `from`, out of their tackle zone. */
@@ -599,6 +614,8 @@ export type Action =
   | { type: "FOUL"; targetId: string }
   /** Hypnotic Gaze: distract the adjacent opponent `targetId`. */
   | { type: "GAZE"; targetId: string }
+  /** Punt towards the orthogonally adjacent `square`, or into the crowd (null) from a sideline or an end zone. */
+  | { type: "PUNT"; square: Square | null }
   /** The referee spotted the foul: argue the call (6: the fouler stays, but it is still a turnover)? */
   | { type: "ARGUE_THE_CALL"; argue: boolean }
   /** Use a bribe (2+: the fouler stays and no turnover)? */
@@ -643,6 +660,8 @@ export type ActionTemplate =
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
+  /** `crowd`: the punter stands on a sideline or in an end zone and may punt into the crowd. */
+  | { type: "PUNT"; side: Side; playerId: string; squares: Square[]; crowd: boolean }
   | { type: "CHOOSE_BLOCK_DIE"; side: Side; results: number[] }
   | { type: "REROLL_BLOCK_DIE"; side: Side; results: number[]; skill: string }
   | { type: "PUSH"; side: Side; playerId: string; squares: Square[] }
@@ -690,6 +709,8 @@ export type GameEvent =
   | { type: "BallPlaced"; square: Square }
   | { type: "DiceRolled"; rolls: DiceRoll[]; reason: string }
   | { type: "BallScattered"; to: Square }
+  /** A punt came down on `to`, or left the pitch there (`out`: a throw-in from `to`). */
+  | { type: "Punted"; playerId: string; to: Square; out: boolean }
   | { type: "BallBounced"; to: Square }
   | { type: "BallThrownIn"; to: Square }
   | { type: "Touchback"; playerId: string }

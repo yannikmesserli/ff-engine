@@ -43,9 +43,14 @@ export function throwInDirection(from: Square, roll: number): Square {
     const corner = from.x < 1 ? (from.y < 1 ? [E, SE, S] : [N, NE, E]) : from.y < 1 ? [S, SW, W] : [W, NW, N];
     return corner[roll - 1]!;
   }
-  const template = (dirs: Square[]) => dirs[Math.floor((roll - 1) / 2)]!;
-  if (from.x < 1) return template([NE, E, SE]);
-  if (from.x > 24) return template([SW, W, NW]);
-  if (from.y > 13) return template([NW, N, NE]);
-  return template([SE, S, SW]);
+  if (from.x < 1) return templateDirection(E, roll);
+  if (from.x > 24) return templateDirection(W, roll);
+  if (from.y > 13) return templateDirection(N, roll);
+  return templateDirection(S, roll);
+}
+
+/** The throw-in template facing an orthogonal direction: a D6 of 1-2 veers left of it, 3-4 goes straight, 5-6 right. */
+export function templateDirection(facing: Square, roll: number): Square {
+  const dirs = facing.x > 0 ? [NE, E, SE] : facing.x < 0 ? [SW, W, NW] : facing.y < 0 ? [NW, N, NE] : [SE, S, SW];
+  return dirs[Math.floor((roll - 1) / 2)]!;
 }

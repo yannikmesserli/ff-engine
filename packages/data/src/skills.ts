@@ -53,7 +53,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Nerves of Steel": "Ignores tackle zones when passing, catching or intercepting.",
   "On the Ball": "When an opponent declares a pass (or at the kick-off), may move up to 3 squares.",
   Pass: "May re-roll an inaccurate or fumbled pass, instead of using a team re-roll.",
-  Punt: "Special action: kicks the ball downfield, with a direction and a distance roll.",
+  Punt: "Special action, once per turn: kicks the ball D6 squares on a throw-in template facing a chosen side; out of bounds or caught by an opponent is a turnover.",
   "Safe Pass": "A pass fumbled on a natural 1 is not dropped: the thrower keeps the ball and the action ends, without a turnover.",
   // Devious
   "Dirty Player": "+{X} to the armour or the injury roll (not both) when fouling.",
