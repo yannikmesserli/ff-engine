@@ -300,4 +300,14 @@ describe("scenarios", () => {
     expect(s.ball).toEqual({ square: { x: 7, y: 7 }, carried: true });
     expect(find(s, "MOVE")?.playerId).toBe("home-1");
   });
+
+  it("kick-team-mate: a fumbled kick hurts the Gnoblar, who drops the ball", () => {
+    let s = applyActions(load("kick-team-mate"), [{ type: "START_ACTION", playerId: "home-1", action: "ktm" }, { type: "ROLL", values: [6] }]);
+    expect(find(s, "THROW_TEAM_MATE")?.playerIds).toEqual(["home-2"]);
+    s = applyActions(s, [{ type: "THROW_TEAM_MATE", targetId: "home-2", square: { x: 5, y: 7 } }, { type: "ROLL", values: [1] }, { type: "DECLINE_REROLL" }]);
+    expect(find(s, "ROLL")?.reason).toBe("Injury (Snit, fumbled kick)");
+    const choices = find(load("kick-team-mate"), "START_ACTION")!.choices;
+    expect(choices.find((c) => c.playerId === "home-1")?.actions).toContain("ktm");
+    expect(choices.find((c) => c.playerId === "home-3")?.actions).toContain("ttm");
+  });
 });

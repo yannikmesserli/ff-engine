@@ -993,4 +993,44 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "kick-team-mate",
+    title: "Kick Team-mate: kick a team-mate downfield",
+    instructions: [
+      "Home's first turn: the Ogre Runt Punter Grunk (#1, Kick Team-mate) stands next to the Gnoblar Snit (#2, Right Stuff), who holds the ball.",
+      "Declare a Kick Team-mate with Grunk (roll his Bone Head first), click Snit, then a Quick or Short square to kick him to: the kick is rolled like a Throw Team-mate (PA 4+), then Snit scatters and rolls to land.",
+      "Enter a 1 for the kick with \"Physical dice\" and decline the re-roll: a fumbled kick does not scatter. Snit rolls for injury (a Stunned result counts as KO'd) and the ball bounces, a turnover.",
+      "Undo: the Ogre Blocker Brug (#3) can still Throw Team-mate the Gnoblar Nix (#4) in the same turn, as it is another action.",
+    ],
+    home: {
+      name: "Gnoblar Kickers",
+      roster: "Ogre",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grunk", position: "Ogre Runt Punter" },
+        { number: 2, name: "Snit", position: "Gnoblar Lineman" },
+        { number: 3, name: "Brug", position: "Ogre Blocker" },
+        { number: 4, name: "Nix", position: "Gnoblar Lineman" },
+        { number: 5, name: "Gob", position: "Gnoblar Lineman" },
+        { number: 6, name: "Pip", position: "Gnoblar Lineman" },
+        { number: 7, name: "Rok", position: "Gnoblar Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 53,
+    actions: toFirstTurn({
+      home: { 1: { x: 8, y: 7 }, 2: { x: 7, y: 7 }, 3: { x: 8, y: 10 }, 4: { x: 7, y: 10 }, 5: { x: 12, y: 6 }, 6: { x: 12, y: 8 }, 7: { x: 12, y: 7 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 } },
+      ball: { x: 7, y: 7 },
+    }),
+  },
 ];
