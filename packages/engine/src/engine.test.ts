@@ -331,6 +331,15 @@ describe("engine", () => {
       expect(s.activeSide).toBe("away");
     });
 
+    it("Blitzer's Best Kegs: +1 per keg to KO recovery, but a natural 1 still fails", () => {
+      const kegs = (n: number) => ({ ...team("Home"), inducements: { blitzersBestKegs: n } });
+      let s = apply(toFirstTurn(kegs(2)), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
+      s = endTurnsUntilSetup(apply(s, roll(1), { type: "DECLINE_REROLL" }, roll(6, 6), roll(4, 5)));
+      expect(find(s, "ROLL")?.reason).toMatch(/KO recovery 2\+ \(Home 11\)/);
+      expect(apply(s, roll(2)).players["home-11"]!.at).toBe("reserves");
+      expect(apply(s, roll(1)).players["home-11"]!.at).toBe("ko");
+    });
+
     it("lets KO'd players roll 4+ to come back before the next kick-off", () => {
       let s = apply(toFirstTurn(), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
       s = apply(s, roll(1), { type: "DECLINE_REROLL" }, roll(6, 6), roll(4, 5));

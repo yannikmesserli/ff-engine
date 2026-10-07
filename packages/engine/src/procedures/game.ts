@@ -1,5 +1,5 @@
 import type { Ctx, Handler } from "../context";
-import type { HalfNumber, Procedure, Side } from "../types";
+import type { GameState, HalfNumber, PlayerState, Procedure, Side } from "../types";
 import { other } from "../pitch";
 import { endDrive, resetForKickoff } from "./helpers";
 import { secretWeapons } from "./foul";
@@ -149,18 +149,24 @@ export const Half: Handler<P<"Half">> = {
   actions: () => [],
 };
 
-/** A KO'd player recovers on 4+ (no inducements yet). */
+/** A KO'd player recovers on 4+ (easier with Blitzer's Best Kegs). */
 export const KO_RECOVERY_TARGET = 4;
 
-/** Before each kick-off, every KO'd player rolls a D6: on 4+ they return to the reserves. */
+/** Blitzer's Best Kegs: +1 per keg the team bought to its KO recovery rolls (a natural 1 still fails). */
+const koRecoveryTarget = (state: GameState, player: PlayerState) =>
+  Math.max(2, KO_RECOVERY_TARGET - (state.teams[player.side].inducements.blitzersBestKegs ?? 0));
+
+/** Before each kick-off, every KO'd player rolls a D6: on 4+ (or less with kegs) they return to the reserves. */
 export const KoRecovery: Handler<P<"KoRecovery">> = {
   step(ctx, proc, action) {
     const playerId = proc.playerIds[0];
     if (playerId === undefined) return "done";
     if (action === null) return "wait";
     const player = ctx.state.players[playerId]!;
-    const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `KO recovery ${KO_RECOVERY_TARGET}+`);
-    const recovered = roll! >= KO_RECOVERY_TARGET;
+    const target = koRecoveryTarget(ctx.state, player);
+    const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `KO recovery ${target}+`);
+    // A natural 1 always fails.
+    const recovered = roll! > 1 && roll! >= target;
     if (recovered) player.at = "reserves";
     ctx.emit({ type: "KoRecovery", playerId, recovered });
     proc.playerIds.shift();
@@ -173,7 +179,7 @@ export const KoRecovery: Handler<P<"KoRecovery">> = {
         type: "ROLL",
         side: player.side,
         dice: [{ kind: "d6", count: 1 }],
-        reason: `KO recovery ${KO_RECOVERY_TARGET}+ (${player.name})`,
+        reason: `KO recovery ${koRecoveryTarget(state, player)}+ (${player.name})`,
       },
     ];
   },
