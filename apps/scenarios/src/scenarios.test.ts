@@ -310,4 +310,10 @@ describe("scenarios", () => {
     expect(choices.find((c) => c.playerId === "home-1")?.actions).toContain("ktm");
     expect(choices.find((c) => c.playerId === "home-3")?.actions).toContain("ttm");
   });
+
+  it("swoop: after the throw, the Doom Diver may swoop instead of scattering", () => {
+    let s = applyActions(load("swoop"), [{ type: "START_ACTION", playerId: "home-1", action: "ttm" }, { type: "ROLL", values: [6] }]);
+    s = applyActions(s, [{ type: "THROW_TEAM_MATE", targetId: "home-2", square: { x: 6, y: 5 } }, { type: "ROLL", values: [6] }, { type: "ROLL", values: [6] }]);
+    expect(find(s, "SWOOP")?.squares).toHaveLength(4);
+  });
 });

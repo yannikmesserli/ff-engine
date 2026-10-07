@@ -1033,4 +1033,42 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 7, y: 7 },
     }),
   },
+  {
+    id: "swoop",
+    title: "Swoop: travel in a line instead of scattering",
+    instructions: [
+      "Home's first turn: the Trained Troll Grub (#1) stands next to the Doom Diver Zippy (#2, Right Stuff, Swoop). Declare a Throw Team-mate with Grub (Really Stupid, then Always Hungry first).",
+      "Click Zippy, then a Quick or Short square. After a throw that is not fumbled, the board asks for Swoop: click a square next to the target to face the throw-in template that way, or \"Scatter as usual\".",
+      "Swooping: a D6 gives the direction (1-2 and 5-6 veer off to the sides), a D6 the number of squares travelled in a straight line from the target; each may take a team re-roll. Off the pitch, the crowd gets Zippy.",
+      "A Doom Diver who swooped may re-roll a failed landing (enter a 1 to see it).",
+    ],
+    home: {
+      name: "Grotty Gits",
+      roster: "Goblin",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grub", position: "Trained Troll" },
+        { number: 2, name: "Zippy", position: "Doom Diver" },
+        { number: 3, name: "Snotling", position: "Goblin Lineman" },
+        { number: 4, name: "Nobbla", position: "Goblin Lineman" },
+        { number: 5, name: "Grotsnik", position: "Goblin Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 59,
+    actions: toFirstTurn({
+      home: { 1: { x: 8, y: 7 }, 2: { x: 8, y: 8 }, 3: { x: 12, y: 6 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 8 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];
