@@ -233,10 +233,10 @@ export type CheckKind =
  * Their behaviour lives in `procedures/*` handlers keyed by `type`.
  */
 export type Procedure =
-  | { type: "Game"; stage: "pregame" | "half1" | "half2" | "end" }
+  | { type: "Game"; stage: "pregame" | "half1" | "half2" | "overtime" | "end" }
   | { type: "Pregame"; stage: "fans" | "weather" }
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
-  | { type: "Half"; half: 1 | 2; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side }
+  | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side }
   | { type: "SwelteringHeat" }
   | { type: "Setup"; side: Side }
   | {
@@ -594,15 +594,20 @@ export type Procedure =
 
 export type ProcedureType = Procedure["type"];
 
+/** The two halves, and 3 for overtime. */
+export type HalfNumber = 1 | 2 | 3;
+
 /** The whole game, plain serializable data (no classes): save it, replay it or keep old copies for undo. */
 export interface GameState {
   /** Schema version, for saved games. */
   version: 1;
   /** mulberry32 state, advanced by every random roll. */
   rng: number;
-  half: 1 | 2;
-  /** Chosen after the coin toss; the other team kicks in the second half. */
+  half: HalfNumber;
+  /** Chosen after the coin toss; the other team kicks in the second half, and this one again in overtime. */
   kickingFirstHalf: Side | null;
+  /** A draw after the second half goes to overtime (a game option, for cup games). */
+  overtime: boolean;
   teams: Record<Side, TeamState>;
   players: Record<string, PlayerState>;
   ball: BallState;
@@ -764,7 +769,7 @@ export type GameEvent =
   | { type: "ChargeEnded"; side: Side }
   | { type: "CoinFlipped"; call: "heads" | "tails"; result: "heads" | "tails"; winner: Side }
   | { type: "KickChosen"; kicking: Side }
-  | { type: "HalfStarted"; half: 1 | 2 }
+  | { type: "HalfStarted"; half: HalfNumber }
   | { type: "SetupDone"; side: Side }
   | { type: "BallPlaced"; square: Square }
   | { type: "DiceRolled"; rolls: DiceRoll[]; reason: string }
@@ -850,5 +855,5 @@ export type GameEvent =
   /** The apothecary's work is done: the player is stunned, back in the reserves, or keeps `casualty`. */
   | { type: "ApothecaryResult"; playerId: string; result: "stunned" | "reserves" | "casualty"; casualty: Casualty | null }
   | { type: "Touchdown"; side: Side; playerId: string }
-  | { type: "HalfEnded"; half: 1 | 2 }
+  | { type: "HalfEnded"; half: HalfNumber }
   | { type: "GameEnded"; winner: Side | null };

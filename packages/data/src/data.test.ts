@@ -295,10 +295,11 @@ describe("random games", () => {
   const seenBlockResults = new Set<number>();
   const ballEvents = new Set<string>();
   let crowdPushes = 0;
+  let seenOvertime = 0;
   // Coverage summary: which rare outcomes the random games reached.
   afterAll(() => {
     console.log("kick-off results seen:", [...seenKickoffResults].sort().join(", "));
-    console.log("block faces seen:", [...seenBlockResults].sort().join(", "), "| pushes into crowd:", crowdPushes);
+    console.log("block faces seen:", [...seenBlockResults].sort().join(", "), "| pushes into crowd:", crowdPushes, "| overtimes:", seenOvertime);
     console.log("ball events seen:", [...ballEvents].sort().join(", "));
   });
   /** A game takes under a second; the margin keeps a busy or sleeping machine from failing the run. */
@@ -310,7 +311,8 @@ describe("random games", () => {
     // Linear congruential generator: reproducible per seed, independent of the engine's RNG.
     const random = () => ((rng = (rng * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
     const [home, away] = matchup(seed);
-    const start = createGame(resolveTeam(rosterTeam(home)), resolveTeam(rosterTeam(away)), { seed });
+    // One game in four is a cup game: a draw goes to overtime.
+    const start = createGame(resolveTeam(rosterTeam(home)), resolveTeam(rosterTeam(away)), { seed, overtime: seed % 4 === 0 });
     let s = start;
     const taken: Action[] = [];
     let steps = 0;
@@ -323,7 +325,9 @@ describe("random games", () => {
     // Online play relies on this: the same seed and actions give the same game (dice rolled by the seeded RNG).
     if (seed <= 3) expect(taken.reduce((st, a) => step(st, a).state, start)).toEqual(s);
     // Time-out kick-offs can shift the turn counters, so the number of turns varies.
-    expect(s.log.filter((e) => e.type === "HalfEnded")).toHaveLength(2);
+    const overtime = s.log.some((e) => e.type === "HalfStarted" && e.half === 3);
+    expect(s.log.filter((e) => e.type === "HalfEnded")).toHaveLength(overtime ? 3 : 2);
+    if (overtime) seenOvertime++;
     expect(s.log.filter((e) => e.type === "TurnStarted").length).toBeGreaterThan(24);
     expect(s.log.at(-1)).toMatchObject({ type: "GameEnded" });
     for (const e of s.log) {

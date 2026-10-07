@@ -7,6 +7,8 @@ import type { Action, ActionTemplate, GameEvent, GameState, PlayerState, Side, T
 export interface GameOptions {
   /** Seed for the game RNG; random when omitted. Same seed and actions give the same game. */
   seed?: number;
+  /** A draw after the second half goes to overtime: a third half (cup games). Off by default: a draw stands. */
+  overtime?: boolean;
 }
 
 /** Result of `step`: the next state and the events emitted while getting there. */
@@ -16,7 +18,7 @@ export interface StepResult {
 }
 
 /** Teams in their reserves, before anything is rolled; player ids are "<side>-<nr>". */
-function initialState(home: TeamSetup, away: TeamSetup, seed: number): GameState {
+function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: boolean): GameState {
   const players: Record<string, PlayerState> = {};
   const teams = { home, away };
   for (const side of ["home", "away"] as const) {
@@ -50,6 +52,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number): GameState
     rng: seed >>> 0,
     half: 1,
     kickingFirstHalf: null,
+    overtime,
     teams: { home: team("home"), away: team("away") },
     players,
     ball: { square: null, carried: false },
@@ -69,7 +72,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number): GameState
 /** Create a game and advance it to the first decision (the fan factor roll). */
 export function createGame(home: TeamSetup, away: TeamSetup, options: GameOptions = {}): GameState {
   const seed = options.seed ?? Math.floor(Math.random() * 2 ** 32);
-  return produce(initialState(home, away, seed), (draft) => {
+  return produce(initialState(home, away, seed, options.overtime ?? false), (draft) => {
     run(createContext(draft, []), handlers, null);
   });
 }

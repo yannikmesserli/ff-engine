@@ -194,7 +194,7 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     case "KickChosen":
       return `${sideName(state, e.kicking)} will kick.`;
     case "HalfStarted":
-      return `Half ${e.half} starts.`;
+      return e.half === 3 ? "Overtime starts." : `Half ${e.half} starts.`;
     case "SetupDone":
       return `${sideName(state, e.side)} is set up.`;
     case "BallPlaced":
@@ -333,7 +333,7 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     case "Touchdown":
       return `TOUCHDOWN! ${who(state, e.playerId)} scores for ${sideName(state, e.side)}.`;
     case "HalfEnded":
-      return `End of half ${e.half}.`;
+      return e.half === 3 ? "End of overtime." : `End of half ${e.half}.`;
     case "GameEnded":
       return e.winner ? `Game over: ${sideName(state, e.winner)} wins!` : "Game over: it's a draw.";
   }

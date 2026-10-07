@@ -47,6 +47,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   than 11 players available gets free ones up to 11 from its lineman position, with Loner (4+) (team file option).
 - Setup checks: 11 players (or all available), 3 on the line of scrimmage in the centre field, at most 2 per wide zone.
   Built-in formations are available as one-click setups.
+- Overtime (the `overtime` game option, off by default, for cup games): a draw after the second half is played on in
+  a third half of 8 turns per team, kicked off by the team that kicked off the first half, without new team re-rolls;
+  a touchdown does not end it early, and a draw after it stands. The hot-seat playground has a checkbox for it.
 - Kick-off: D8 + D6 deviation, all 11 kick-off events (Solid Defence, High Kick, Quick Snap, Charge, Weather
   Change with wind gusts, Dodgy Snack, Pitch Invasion...), resolved before the ball lands; touchback.
 - Ball: bounce, throw-in (BB2025 template, D3 in corners, 2D6 counting the starting square), catch (+1 harder
@@ -282,7 +285,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
   without bouncing, in the square they leave on their next step, and it is not a turnover. Not with My Ball.
 
-Not yet: most other skills (Kick...), inducements, overtime.
+Not yet: most other skills (Kick...), inducements, the golden-goal overtime variant.
 
 The playground accepts `?seed=42` to replay the same dice.
 

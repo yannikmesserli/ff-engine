@@ -1,5 +1,5 @@
 import type { Ctx, Handler } from "../context";
-import type { Procedure, Side } from "../types";
+import type { HalfNumber, Procedure, Side } from "../types";
 import { other } from "../pitch";
 import { endDrive, resetForKickoff } from "./helpers";
 import { secretWeapons } from "./foul";
@@ -8,19 +8,23 @@ type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
 export const TURNS_PER_HALF = 8;
 
-/** Reset turn counters and team re-rolls, then run the half's drives. */
-function startHalf(ctx: Ctx, half: 1 | 2, kicking: Side) {
+/** Reset turn counters and team re-rolls (not for overtime: teams keep what is left), then run the half's drives. */
+function startHalf(ctx: Ctx, half: HalfNumber, kicking: Side) {
   const { state } = ctx;
   state.half = half;
   for (const team of Object.values(state.teams)) {
     team.turn = 0;
-    team.rerolls = team.rerollsPerHalf;
+    if (half < 3) team.rerolls = team.rerollsPerHalf;
   }
   ctx.emit({ type: "HalfStarted", half });
   ctx.push({ type: "Half", half, stage: "driveEnd", kicking, nextSide: other(kicking) });
 }
 
-/** Root procedure: pre-game, both halves, then the final result. */
+/**
+ * Root procedure: pre-game, both halves, then the final result. Overtime (a game option): a draw after the second half
+ * gives a third half of 8 turns per team, kicked off by the team that kicked off the first half, without new team
+ * re-rolls; a touchdown does not end it early, and a draw after it stands.
+ */
 export const Game: Handler<P<"Game">> = {
   step(ctx, proc) {
     const { state } = ctx;
@@ -35,8 +39,12 @@ export const Game: Handler<P<"Game">> = {
         startHalf(ctx, 1, state.kickingFirstHalf!);
         return "continue";
       case "half2":
-        proc.stage = "end";
+        proc.stage = "overtime";
         startHalf(ctx, 2, other(state.kickingFirstHalf!));
+        return "continue";
+      case "overtime":
+        proc.stage = "end";
+        if (state.overtime && state.teams.home.score === state.teams.away.score) startHalf(ctx, 3, state.kickingFirstHalf!);
         return "continue";
       case "end": {
         const { home, away } = state.teams;

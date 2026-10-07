@@ -3161,6 +3161,43 @@ describe("engine", () => {
     });
   });
 
+  describe("overtime", () => {
+    /** Both teams set up (the kicking one first) and the ball comes down in the receiving half; turns can start. */
+    const kickOff = (s: GameState, kicking: Side, ball: Square) =>
+      apply(s, ...setupActions(kicking), ...setupActions(kicking === "home" ? "away" : "home"), { type: "PLACE_BALL", square: ball }, roll(7, 1), QUIET_EVENT, roll(5));
+    /** A goalless game played to the end of the second half, with or without the overtime option. */
+    const toEndOfSecondHalf = (overtime: boolean) => {
+      const s = edit(endTurnsUntilSetup(toFirstTurn()), (c) => {
+        c.overtime = overtime;
+        c.teams.home.rerolls = 0;
+      });
+      return endTurnsUntilSetup(kickOff(s, "home", { x: 20, y: 1 }));
+    };
+
+    it("is off by default: a draw after the second half ends the game", () => {
+      const s = toEndOfSecondHalf(false);
+      expect([s.finished, s.log.at(-1)]).toEqual([true, { type: "GameEnded", winner: null }]);
+    });
+
+    it("on a draw: a third half kicked off by the first-half kicker, without new team re-rolls; a draw then stands", () => {
+      let s = toEndOfSecondHalf(true);
+      expect(s.log).toContainEqual({ type: "HalfStarted", half: 3 });
+      expect([s.half, s.finished, top(s)]).toEqual([3, false, { type: "Setup", side: "away" }]);
+      expect([s.teams.home.turn, s.teams.home.rerolls, s.teams.away.rerolls]).toEqual([0, 0, 1]);
+      s = endTurnsUntilSetup(kickOff(s, "away", { x: 5, y: 1 }));
+      expect(s.log.filter((e) => e.type === "HalfEnded").map((e) => e.type === "HalfEnded" && e.half)).toEqual([1, 2, 3]);
+      expect([s.finished, s.log.at(-1)]).toEqual([true, { type: "GameEnded", winner: null }]);
+    });
+
+    it("not when a team is ahead", () => {
+      const s = edit(endTurnsUntilSetup(toFirstTurn()), (c) => {
+        c.overtime = true;
+        c.teams.home.score = 1;
+      });
+      expect(endTurnsUntilSetup(kickOff(s, "home", { x: 20, y: 1 })).log.at(-1)).toEqual({ type: "GameEnded", winner: "home" });
+    });
+  });
+
   describe("weather", () => {
     it("Sweltering Heat exhausts the same D3 number of players in each team at the end of a drive", () => {
       let s = apply(createGame(team("Home"), team("Away"), { seed: 1 }), roll(1, 1), roll(1, 1));

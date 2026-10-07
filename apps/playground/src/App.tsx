@@ -53,12 +53,16 @@ function LocalGame() {
   const [away, setAway] = useState<unknown>(exampleTeams["orc"]);
   const [gameId, setGameId] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [overtime, setOvertime] = useState(false);
   const locked = playing ? "Finish the game first (or reload the page)" : undefined;
   return (
     <main>
       <header>
         <TeamPicker label="Home" value={home} disabled={playing} onChange={setHome} />
         <TeamPicker label="Away" value={away} disabled={playing} onChange={setAway} />
+        <label title="Cup games: a draw after the second half is played on in a third half">
+          <input type="checkbox" checked={overtime} disabled={playing} onChange={(e) => setOvertime(e.target.checked)} /> Overtime on a draw
+        </label>
         <button
           disabled={playing}
           title={locked}
@@ -76,6 +80,7 @@ function LocalGame() {
         away={away}
         assetsUrl="/img"
         seed={gameId === 0 ? SEED : undefined}
+        overtime={overtime}
         onChange={(state) => setPlaying(inProgress(state))}
       />
     </main>

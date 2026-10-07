@@ -31,6 +31,8 @@ export interface BloodBowlGameProps {
   assetsUrl?: string;
   /** RNG seed, to replay the same dice. Random when omitted. */
   seed?: number;
+  /** A draw after the second half goes to overtime (a third half). Off by default. */
+  overtime?: boolean;
   /** Actions applied right after the game is created, to start from a prepared position; undo stops there. */
   actions?: readonly Action[];
   /** Called with the new state after every successful action. */
@@ -58,17 +60,17 @@ const AUTO_ROLL_DELAY_MS = 350;
 /** Default for `actions`: a stable empty list, so the game is not recreated on every render. */
 const NO_ACTIONS: readonly Action[] = [];
 
-/** A complete hot-seat Blood Bowl game between two teams; restarts when `home`, `away`, `seed` or `actions` change. */
-export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, actions = NO_ACTIONS, onChange, online }: BloodBowlGameProps) {
+/** A complete hot-seat Blood Bowl game between two teams; restarts when `home`, `away`, `seed`, `overtime` or `actions` change. */
+export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, overtime = false, actions = NO_ACTIONS, onChange, online }: BloodBowlGameProps) {
   const initial = useMemo(() => {
     try {
-      return { state: applyActions(createGame(resolveTeam(home), resolveTeam(away), { seed }), actions) };
+      return { state: applyActions(createGame(resolveTeam(home), resolveTeam(away), { seed, overtime }), actions) };
     } catch (e) {
       return { error: (e as Error).message };
     }
-  }, [home, away, seed, actions]);
+  }, [home, away, seed, overtime, actions]);
   if ("error" in initial) return <div className="bb-game bb-error">{initial.error}</div>;
-  return <Game key={JSON.stringify([home, away, seed, actions])} initial={initial.state} assets={assetsUrl} onChange={onChange} online={online} />;
+  return <Game key={JSON.stringify([home, away, seed, overtime, actions])} initial={initial.state} assets={assetsUrl} onChange={onChange} online={online} />;
 }
 
 /** The state after applying the batches of actions in order; a batch that is not legal is skipped as a whole. */
@@ -217,7 +219,7 @@ function Scoreboard({ state, assets }: { state: GameState; assets: string }) {
           {state.teams.home.score} – {state.teams.away.score}
         </div>
         <div className="bb-half">
-          Half {state.half} · {WEATHER_NAMES[state.weather]}
+          {state.half === 3 ? "Overtime" : `Half ${state.half}`} · {WEATHER_NAMES[state.weather]}
         </div>
       </div>
       <TeamBanner state={state} side="away" assets={assets} />
