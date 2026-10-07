@@ -348,8 +348,15 @@ export type Procedure =
       target: Square;
       range: PassRange;
       /** "hunger": Always Hungry, rolled before the throw. */
-      /** "fumbled": a fumbled kick, the kicked player rolls for injury. */
-      stage: "hunger" | "hungerResult" | "escapeResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "scatter" | "fumbled" | "land" | "bounce" | "landed";
+      /** "fumbled": a fumbled kick, the kicked player rolls for injury; "swoop*": Swoop instead of the scatters. */
+      stage:
+        | "hunger" | "hungerResult" | "escapeResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "scatter"
+        | "swoop" | "swoopDirection" | "swoopDistance" | "swoopReroll" | "swoopLoner" | "fumbled" | "land" | "bounce" | "landed";
+      /**
+       * Swoop: false when declined; otherwise the side chosen, the roll being made (each with its own team re-roll), the
+       * direction and the distance rolled.
+       */
+      swoop?: false | { facing: Square; rolling: "direction" | "distance"; rerolled: boolean; direction?: Square; distance?: number };
       /** Kick Team-mate: the same as a throw, but a fumble injures the kicked player. */
       kicked?: boolean;
       rerolled: boolean;
@@ -551,6 +558,8 @@ export type Procedure =
       divingTacklerId?: string;
       /** A re-roll is also offered after a success below this natural roll (Breathe Fire short of a 6). */
       rerollBelow?: number;
+      /** A skill that may re-roll this failed roll (Swoop for the landing of a player who swooped). */
+      skillReroll?: string;
     }
   | {
       type: "KnockDown";
@@ -643,6 +652,8 @@ export type Action =
   | { type: "FOUL"; targetId: string }
   /** Hypnotic Gaze: distract the adjacent opponent `targetId`. */
   | { type: "GAZE"; targetId: string }
+  /** Swoop: travel from the target towards the side of `square` instead of scattering (null: scatter as usual). */
+  | { type: "SWOOP"; square: Square | null }
   /** Trickster: move to `square` before being hit (null: stay); `pickUp`: try to pick up a loose ball there. */
   | { type: "TRICKSTER"; square: Square | null; pickUp?: boolean }
   /** Punt towards the orthogonally adjacent `square`, or into the crowd (null) from a sideline or an end zone. */
@@ -691,6 +702,8 @@ export type ActionTemplate =
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
+  /** Swoop: the squares next to the target square (not diagonally) that give the side the template faces. */
+  | { type: "SWOOP"; side: Side; playerId: string; squares: Square[] }
   /** Trickster: free squares next to the attacker; `ball`: the one with a loose ball, if any. */
   | { type: "TRICKSTER"; side: Side; playerId: string; squares: Square[]; ball: Square | null }
   /** Hail Mary Pass to any square of the pitch but the thrower's; `needed`: the roll that avoids a fumble. */

@@ -38,6 +38,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   START_ACTION: "click a player to declare an action",
   BLOCK: "click a highlighted opponent to block (2D: you pick, 2D!: the defender picks)",
   PUSH: "click a square to push the player to",
+  SWOOP: "Swoop: click a square next to the target to face the throw-in template that way, or scatter as usual",
   TRICKSTER: "Trickster: click a square next to the attacker to move to before being hit, or stay",
   FOLLOW_UP: "follow up into the vacated square?",
   CHOOSE_BLOCK_DIE: "pick a block die",
@@ -274,6 +275,7 @@ export function ActionPanel(props: ActionPanelProps) {
             formations={state.stack.at(-1)?.type === "Setup"}
           />
         )}
+        {has("SWOOP") && <button onClick={() => dispatch({ type: "SWOOP", square: null })}>Scatter as usual</button>}
         {has("TRICKSTER") && (
           <>
             <button onClick={() => dispatch({ type: "TRICKSTER", square: null })}>Stay</button>

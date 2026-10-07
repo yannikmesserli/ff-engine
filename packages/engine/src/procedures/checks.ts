@@ -53,6 +53,7 @@ export const neededRoll = (target: number, modifier: number) => Math.min(6, Math
  * to keep a failed dodge, rush, pick-up or catch, and a prompt on each of them would slow the game down.
  */
 function skillReroll(state: GameState, proc: P<"Check">, player: PlayerState): string | null {
+  if (proc.skillReroll) return proc.skillReroll;
   if (proc.kind === "pickup") return hasSkill(player, "Sure Hands") ? "Sure Hands" : null;
   if (proc.kind === "catch") return hasSkill(player, "Catch") ? "Catch" : null;
   if (proc.kind === "rush") return hasSkill(player, "Sure Feet") && !player.usedSkills.includes("Sure Feet") ? "Sure Feet" : null;

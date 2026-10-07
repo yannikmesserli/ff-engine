@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PassRange, PlayerState, Procedure, Square } from "../types";
-import { SCATTER } from "../dice";
+import { SCATTER, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, offset, playerAt, sameSquare, tackleZones } from "../pitch";
 import { hasSkill } from "../skills";
 import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollsLeft, rollLoner, squareOf, stepPro, useTeamReroll } from "./helpers";
@@ -29,6 +29,32 @@ export function teamMateTargets(state: GameState, thrower: PlayerState) {
     if (range !== "quick" && range !== "short") return [];
     return [{ ...s, range, needed: shownNeeded(thrower, throwModifiers(state, thrower, range)) }];
   });
+}
+
+type Swoop = Exclude<P<"ThrowTeamMate">["swoop"], false | undefined>;
+
+/** Swoop: the squares next to the target (not diagonally) the throw-in template may face. */
+export const swoopSquares = (target: Square) =>
+  [{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }].map((d) => ({ x: target.x + d.x, y: target.y + d.y })).filter(inBounds);
+
+/** Swoop: the distance after the direction, then the player travels in a straight line from the target. */
+function nextSwoopStep(proc: P<"ThrowTeamMate">) {
+  const swoop = proc.swoop as Swoop;
+  if (swoop.rolling === "direction") {
+    swoop.rolling = "distance";
+    swoop.rerolled = false;
+    proc.stage = "swoopDistance";
+    return;
+  }
+  const d = swoop.direction!;
+  const along = (n: number) => ({ x: proc.target.x + d.x * n, y: proc.target.y + d.y * n });
+  let n = swoop.distance!;
+  if (!inBounds(along(n))) {
+    // Off the pitch: the crowd gets them, from the last square on the pitch.
+    while (n > 0 && !inBounds(along(n))) n -= 1;
+    proc.crowdFrom = along(n);
+  } else proc.at = along(n);
+  proc.stage = "land";
 }
 
 /** The thrown player comes down on `at`, moving the ball they hold with them. */
@@ -74,6 +100,9 @@ const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count:
  * -1 for a subpar throw, -1 for a fumble and -1 per tackle zone; it fails without a roll after landing on someone,
  * or for a player who was down or distracted. A failed landing is a knock-down, a turnover only with the ball.
  * Always Hungry is rolled first (see HUNGER_TARGET); eating the team-mate is a turnover only if they held the ball.
+ * Swoop: after a throw that is not fumbled, the thrown player's coach may pick a side instead of the scatters: a D6 on
+ * the throw-in template facing it gives the direction, a D6 the distance travelled from the target in a straight line
+ * (a team re-roll on each roll); a player who swooped may re-roll a failed landing.
  */
 export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
   step(ctx, proc, action) {
@@ -152,8 +181,58 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         if (pro !== "wait") proc.stage = pro === "reroll" ? "roll" : "scatter";
         return "continue";
       }
+      case "swoop": {
+        if (action === null) return "wait";
+        const { square } = ctx.expect(action, "SWOOP");
+        if (square === null) {
+          proc.swoop = false;
+          proc.stage = "scatter";
+          return "continue";
+        }
+        if (!swoopSquares(proc.target).some((s) => sameSquare(s, square))) ctx.reject("Swoop towards a square next to the target, not diagonally.");
+        ctx.emit({ type: "SkillUsed", playerId: thrown.id, skill: "Swoop" });
+        proc.swoop = { facing: { x: square.x - proc.target.x, y: square.y - proc.target.y }, rolling: "direction", rerolled: false };
+        proc.stage = "swoopDirection";
+        return "continue";
+      }
+      case "swoopDirection":
+      case "swoopDistance": {
+        if (action === null) return "wait";
+        const swoop = proc.swoop as Swoop;
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], proc.stage === "swoopDirection" ? "Swoop direction" : "Swoop distance");
+        if (proc.stage === "swoopDirection") swoop.direction = templateDirection(swoop.facing, roll!);
+        else swoop.distance = roll!;
+        if (canTeamReroll(state, thrown.side, swoop.rerolled)) proc.stage = "swoopReroll";
+        else nextSwoopStep(proc);
+        return "continue";
+      }
+      case "swoopReroll": {
+        if (action === null) return "wait";
+        const swoop = proc.swoop as Swoop;
+        if (ctx.expect(action, "USE_REROLL", "DECLINE_REROLL").type === "DECLINE_REROLL") nextSwoopStep(proc);
+        else {
+          if (!canTeamReroll(state, thrown.side, swoop.rerolled)) ctx.reject("No re-roll available.");
+          useTeamReroll(ctx, thrown.side);
+          swoop.rerolled = true;
+          proc.stage = lonerTarget(thrown) !== null ? "swoopLoner" : swoop.rolling === "direction" ? "swoopDirection" : "swoopDistance";
+        }
+        return "continue";
+      }
+      case "swoopLoner": {
+        if (action === null) return "wait";
+        const swoop = proc.swoop as Swoop;
+        // A failed Loner roll keeps the first result.
+        if (rollLoner(ctx, action, thrown)) proc.stage = swoop.rolling === "direction" ? "swoopDirection" : "swoopDistance";
+        else nextSwoopStep(proc);
+        return "continue";
+      }
       case "scatter":
       case "bounce": {
+        // Swoop: a thrown player who is not fumbled may travel in a line instead of scattering.
+        if (proc.stage === "scatter" && proc.swoop === undefined && proc.result !== "fumble" && hasSkill(thrown, "Swoop")) {
+          proc.stage = "swoop";
+          return "continue";
+        }
         // A fumbled kick does not scatter: the kicked player is hurt.
         if (proc.stage === "scatter" && proc.kicked && proc.result === "fumble") {
           proc.stage = "fumbled";
@@ -214,7 +293,8 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         }
         const modifier = -(proc.result === "accurate" ? 0 : 1) - tackleZones(state, thrown.side, proc.at!);
         state.lastCheck = null;
-        ctx.push({ type: "Check", kind: "landing", playerId: thrown.id, target: thrown.ag, modifier, stage: "roll", rerolled: false });
+        // Swoop: a player who swooped may re-roll the landing.
+        ctx.push({ type: "Check", kind: "landing", playerId: thrown.id, target: thrown.ag, modifier, stage: "roll", rerolled: false, ...(proc.swoop ? { skillReroll: "Swoop" } : {}) });
         proc.stage = "landed";
         return "continue";
       }
@@ -255,6 +335,22 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       case "scatter":
         if (proc.kicked && proc.result === "fumble") return [];
         return [{ type: "ROLL", side: null, dice: scatterDice(proc), reason: "Thrown player scatters" }];
+      case "swoop":
+        return [{ type: "SWOOP", side: state.players[proc.thrownId]!.side, playerId: proc.thrownId, squares: swoopSquares(proc.target) }];
+      case "swoopDirection":
+      case "swoopDistance": {
+        const thrown = state.players[proc.thrownId]!;
+        return [{ type: "ROLL", side: thrown.side, dice: [{ kind: "d6", count: 1 }], reason: `Swoop ${proc.stage === "swoopDirection" ? "direction" : "distance"} (${thrown.name})` }];
+      }
+      case "swoopReroll": {
+        const side = state.players[proc.thrownId]!.side;
+        return [
+          { type: "USE_REROLL", side, available: rerollsLeft(state, side) },
+          { type: "DECLINE_REROLL", side },
+        ];
+      }
+      case "swoopLoner":
+        return [lonerRollTemplate(state.players[proc.thrownId]!)];
       case "fumbled":
         return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason: `Injury (${state.players[proc.thrownId]!.name}, fumbled kick)` }];
       case "bounce":

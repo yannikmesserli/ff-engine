@@ -90,6 +90,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
   const block = findTemplate(templates, "BLOCK");
   const push = findTemplate(templates, "PUSH");
   const trick = findTemplate(templates, "TRICKSTER");
+  const swoop = findTemplate(templates, "SWOOP");
   const followUp = findTemplate(templates, "FOLLOW_UP");
   const throwTo = aiming === "throw" ? findTemplate(templates, "THROW") : undefined;
   // Punt: once aiming, the squares next to the punter give the direction.
@@ -127,7 +128,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
   ]);
   // Highlighted squares: at most one of these templates is offered at a time.
   const targets: Array<Square & { rolls?: CheckKind[] }> =
-    trick?.squares ?? puntTo?.squares ?? ballTarget?.squares ?? push?.squares ?? (followUp ? [followUp.square] : undefined) ?? move?.squares ?? snapMove?.squares ?? [];
+    trick?.squares ?? swoop?.squares ?? puntTo?.squares ?? ballTarget?.squares ?? push?.squares ?? (followUp ? [followUp.square] : undefined) ?? move?.squares ?? snapMove?.squares ?? [];
   const placementSquares = new Set((placement?.squares ?? []).map(squareId));
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
@@ -150,6 +151,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
       setPicked([]);
     } else if (push?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "PUSH", square: s });
     else if (trick?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "TRICKSTER", square: s, pickUp: true });
+    else if (swoop?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "SWOOP", square: s });
     else if (throwTo?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "THROW", square: s });
     else if (hailMary) dispatch({ type: "HAIL_MARY_PASS", square: s });
     else if (puntTo) {
@@ -228,7 +230,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
                   key={squareId(s)}
                   square={s}
                   droppable={placementSquares.has(squareId(s))}
-                  target={hailMary ? "pass-bomb" : pass ? `pass-${pass.range}` : target !== undefined ? (ballTarget || puntTo ? "kick" : "move") : null}
+                  target={hailMary ? "pass-bomb" : pass ? `pass-${pass.range}` : target !== undefined ? (ballTarget || puntTo || swoop ? "kick" : "move") : null}
                   risky={rolls.length > 0}
                   badge={pass ? "" : rolls.map((r) => ROLL_BADGES[r]).join("")}
                   title={pass ? `${PASS_RANGE_NAMES[pass.range]}: ${pass.needed}+ for an accurate pass` : undefined}

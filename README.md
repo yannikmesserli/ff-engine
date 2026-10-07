@@ -147,6 +147,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   down (a turnover if they are a team-mate) and scatters on; off the pitch means the crowd and a turnover. Landing
   roll on AG (-1 subpar or fumble, -1 per tackle zone), failing after hitting someone or for a prone or distracted
   player; a failed landing is a turnover only with the ball. The thrown player may still act.
+- Swoop: after a throw (or kick) that is not fumbled, the thrown player's coach may pick a side instead of the three
+  scatters: a D6 on the throw-in template facing it gives the direction, a D6 the distance travelled from the target
+  in a straight line (a team re-roll on each roll); a player who swooped may re-roll a failed landing.
 - Kick Team-mate: a once-per-turn action of its own, played like Throw Team-mate, except that a fumbled kick does
   not scatter: the kicked player rolls for injury (a Stunned result counts as KO'd), and a ball they held bounces (a
   turnover).

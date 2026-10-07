@@ -2442,6 +2442,40 @@ describe("engine", () => {
       });
     });
 
+    describe("Swoop", () => {
+      /** home-4 at (10,4) throws home-5 (Right Stuff, Swoop) from (10,5) to (7,4): a superb throw. */
+      const swooper = () =>
+        apply(
+          withSkills(place(toFirstTurn(), { "home-5": { x: 10, y: 5 } }), { "home-4": ["Throw Team-mate"], "home-5": ["Right Stuff", "Swoop"] }),
+          declare("home-4", "ttm"),
+          { type: "THROW_TEAM_MATE", targetId: "home-5", square: { x: 7, y: 4 } },
+          roll(4),
+        );
+      const decline = { type: "DECLINE_REROLL" } as const;
+
+      it("instead of the scatters: a side, a direction on the throw-in template and a distance from the target", () => {
+        let s = swooper();
+        expect(find(s, "SWOOP")).toEqual({ type: "SWOOP", side: "home", playerId: "home-5", squares: [{ x: 7, y: 3 }, { x: 8, y: 4 }, { x: 7, y: 5 }, { x: 6, y: 4 }] });
+        s = apply(s, { type: "SWOOP", square: { x: 6, y: 4 } });
+        expect(find(s, "ROLL")?.reason).toBe("Swoop direction (Home 5)");
+        // 3-4: straight west, then two squares.
+        s = apply(s, roll(3), decline, roll(2), decline);
+        expect(find(s, "ROLL")?.reason).toMatch(/^Landing/);
+        // A player who swooped re-rolls a failed landing.
+        s = apply(s, roll(1));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-5", skill: "Swoop" });
+        s = apply(s, roll(3));
+        expect(s.players["home-5"]).toMatchObject({ at: { x: 5, y: 4 }, status: "standing" });
+      });
+
+      it("declined, the player scatters as usual; off the pitch, the crowd", () => {
+        expect(find(apply(swooper(), { type: "SWOOP", square: null }), "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 3 }] });
+        const s = apply(swooper(), { type: "SWOOP", square: { x: 7, y: 3 } }, roll(3), decline, roll(6), decline);
+        expect(s.players["home-5"]!.at).toBe("reserves");
+        expect(s.turnover).toBe(true);
+      });
+    });
+
     describe("Kick Team-mate", () => {
       /** home-4 at (10,4) can kick home-5, who has Right Stuff, from (10,5). */
       const kicker = (s = toFirstTurn()) => withSkills(place(s, { "home-5": { x: 10, y: 5 } }), { "home-4": ["Kick Team-mate"], "home-5": ["Right Stuff"] });

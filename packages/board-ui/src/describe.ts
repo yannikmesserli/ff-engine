@@ -64,6 +64,7 @@ const SKILL_USES: Record<string, string> = {
   Taunt: "and makes the attacker follow up",
   Trickster: "and slips to another square",
   "Give and Go": "and keeps moving",
+  Swoop: "and swoops instead of scattering",
   Tentacles: "and holds the moving player in place",
   Fend: "and keeps the attacker away",
   Pro: "to try a re-roll",

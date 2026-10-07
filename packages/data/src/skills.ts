@@ -111,7 +111,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Secret Weapon": "Sent off at the end of every drive this player plays in.",
   Stab: "Instead of a block: an adjacent opponent rolls armour with no modifier.",
   Stunty: "Ignores tackle zones on the square moved to when dodging; uses the Stunty injury table (7 KO'd, 9 Badly Hurt).",
-  Swoop: "When thrown, may move in a straight line instead of scattering, and re-roll the landing.",
+  Swoop: "When thrown, may travel D6 squares on a throw-in template facing a chosen side instead of scattering, then re-roll a failed landing.",
   "Take Root": "After declaring an action, roll a D6: on a 1 the player is rooted (cannot move or be pushed) for the rest of the drive.",
   "Throw Team-mate": "Once per turn, may throw an adjacent team-mate with Right Stuff to a Quick or Short square.",
   "Timmm-ber!": "Standing up with MA 2 or less: +1 to the roll per adjacent standing team-mate not marked by an opponent (a 1 still fails).",
