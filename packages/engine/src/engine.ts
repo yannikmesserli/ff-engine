@@ -45,6 +45,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     journeymanPosition: teams[side].journeymanPosition ?? null,
     inducements: { ...(teams[side].inducements ?? {}) },
     inducementsUsed: {},
+    prayers: [],
     mascotUsed: false,
     mascotRolling: false,
     coachBanned: false,

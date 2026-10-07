@@ -56,6 +56,12 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Plague Doctor (Favoured of Nurgle): once per game, re-roll a failed Regeneration roll; the Plague Doctor's single use
   may go to treating a player as an apothecary instead. Weather Mage: once per game, at the start of the team's turn,
   2D6, then the coach picks the weather for the total or a total up to 2 away.
+- Prayers to Nuffle (bought as inducements, up to 3): before the coin toss, a D16 each on the BB2025 table, re-rolled
+  when the team already has the result; they last the whole game. Stiletto (a random player gains Stab), Iron Man
+  (+1 AV, up to 11+, to a player the coach picks), Knuckle Dusters (Mighty Blow, likewise), Bad Habits (D3 random
+  opponents gain Loner (2+)), Greasy Cleats (a random opponent -1 MA), Blessing of Nuffle (a random player gains Pro).
+  The four that only award Star Player Points (Perfect Passing, Dazzling Catching, Fan Interaction, Fouling Frenzy) have
+  no effect: the engine does not track them.
 - Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls). Journeymen: a team with fewer
   than 11 players available gets free ones up to 11 from its lineman position, with Loner (4+) (team file option).
 - Setup checks: 11 players (or all available), 3 on the line of scrimmage in the centre field, at most 2 per wide zone.

@@ -126,6 +126,8 @@ export interface TeamState {
   journeymanPosition: PositionStats | null;
   /** Inducements bought for this game; what is left of them is tracked where they are used. */
   inducements: Inducements;
+  /** Prayers to Nuffle granted to the team for the game. */
+  prayers: Prayer[];
   /** How many of each inducement were used up (the once-per-game ones: Plague Doctor, Mortuary Assistant...). */
   inducementsUsed: Inducements;
   /** Team Mascot: tried this half (once per half); `mascotRolling`: its 4+ roll is due before the die is re-rolled. */
@@ -178,6 +180,27 @@ export const INDUCEMENTS = [
   "prayers",
 ] as const;
 export type InducementId = (typeof INDUCEMENTS)[number];
+
+/** The 16 BB2025 Prayers to Nuffle, in table order (D16: 1 is Treacherous Trapdoor). */
+export const PRAYERS = [
+  "treacherous-trapdoor",
+  "friends-with-the-ref",
+  "stiletto",
+  "iron-man",
+  "knuckle-dusters",
+  "bad-habits",
+  "greasy-cleats",
+  "blessing-of-nuffle",
+  "moles-under-the-pitch",
+  "perfect-passing",
+  "dazzling-catching",
+  "fan-interaction",
+  "fouling-frenzy",
+  "throw-a-rock",
+  "under-scrutiny",
+  "intensive-training",
+] as const;
+export type Prayer = (typeof PRAYERS)[number];
 
 /** Inducements bought for the game, by id (missing: none). */
 export type Inducements = Partial<Record<InducementId, number>>;
@@ -275,6 +298,12 @@ export type Procedure =
   | { type: "Game"; stage: "pregame" | "half1" | "half2" | "overtime" | "end" }
   /** "rookies": Riotous Rookies, rolled by the teams in `rookies` (in order). */
   | { type: "Pregame"; stage: "fans" | "weather" | "rookies"; rookies?: Side[] }
+  /**
+   * Prayers to Nuffle, before the coin toss: `draws` lists the team of each prayer still to draw (a D16, re-rolled when
+   * the team already has the result); "choose": the coach picks the player (Iron Man, Knuckle Dusters); "badHabits":
+   * the D3 of Bad Habits.
+   */
+  | { type: "Prayers"; draws: Side[]; stage: "draw" | "choose" | "badHabits"; prayer?: Prayer }
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
   /** `drives`: kick-offs so far in this half. */
   | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number }
@@ -884,6 +913,8 @@ export type GameEvent =
   | { type: "RerollUsed"; side: Side }
   /** Halfling Master Chef: `side` stole `count` team re-rolls from the opponents for the half. */
   | { type: "RerollsStolen"; side: Side; count: number }
+  /** A Prayer to Nuffle was granted to `side`; `playerIds`: the players it changed, if any. */
+  | { type: "PrayerGranted"; side: Side; prayer: Prayer; playerIds: string[] }
   /** Riotous Rookies: `playerIds` joined `side`'s reserves for the game. */
   | { type: "RookiesJoined"; side: Side; playerIds: string[] }
   /** An inducement bought for the game was used (the Team Mascot was tried...). */

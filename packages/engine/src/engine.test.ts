@@ -3229,6 +3229,40 @@ describe("engine", () => {
     });
   });
 
+  describe("Prayers to Nuffle", () => {
+    /** Home bought `n` prayers; fan factor and weather rolled, the first prayer is due. */
+    const praying = (n: number) => apply(createGame({ ...team("Home"), inducements: { prayers: n } }, team("Away"), { seed: 1 }), roll(1, 1), roll(3, 4));
+    const granted = (s: GameState) => s.log.filter((e) => e.type === "PrayerGranted");
+
+    it("a D16 per prayer before the coin toss, re-rolled when the team already has it", () => {
+      let s = praying(2);
+      expect(find(s, "ROLL")).toMatchObject({ side: "home", dice: [{ kind: "d16", count: 1 }], reason: "Prayer to Nuffle (Home)" });
+      s = apply(s, roll(3));
+      expect(s.teams.home.prayers).toEqual(["stiletto"]);
+      const [stiletto] = granted(s);
+      expect(stiletto).toMatchObject({ side: "home", prayer: "stiletto", playerIds: [expect.stringMatching(/^home-/)] });
+      expect(s.players[(stiletto as { playerIds: string[] }).playerIds[0]!]!.skills).toContain("Stab");
+      // Stiletto again: rolled again.
+      s = apply(s, roll(3));
+      expect(find(s, "ROLL")?.reason).toBe("Prayer to Nuffle (Home)");
+      s = apply(s, roll(2));
+      expect([s.teams.home.prayers, types(s)]).toEqual([["stiletto", "friends-with-the-ref"], ["CALL_COIN"]]);
+    });
+
+    it("Iron Man and Knuckle Dusters go to the player the coach picks", () => {
+      let s = apply(praying(2), roll(4));
+      expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", min: 1, max: 1 });
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-2"] }, roll(5), { type: "SELECT_PLAYERS", playerIds: ["home-3"] });
+      expect([s.players["home-2"]!.av, s.players["home-3"]!.skills]).toEqual([9, ["Mighty Blow"]]);
+    });
+
+    it("Bad Habits gives D3 random opponents Loner (2+); Greasy Cleats takes 1 MA from one", () => {
+      const s = apply(praying(2), roll(6), roll(2), roll(7));
+      expect(Object.values(s.players).filter((p) => p.skills.includes("Loner(2)")).map((p) => p.side)).toEqual(["away", "away"]);
+      expect(Object.values(s.players).filter((p) => p.ma === 5).map((p) => p.side)).toEqual(["away"]);
+    });
+  });
+
   describe("Riotous Rookies", () => {
     it("before the coin toss, 2D3 + 1 linemen with Loner (4+) join the reserves for the game", () => {
       const lineman = { position: "Human Lineman", ma: 6, st: 3, ag: 3, pa: 4, av: 8, skills: [], keywords: ["human", "lineman"] };

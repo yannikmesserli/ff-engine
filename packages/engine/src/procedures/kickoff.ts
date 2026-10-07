@@ -78,11 +78,13 @@ function checkSelection(ctx: Ctx, side: Side, playerIds: string[], allowed: numb
 }
 
 /**
- * Fan factor (dedicated fans + D3 per team), then the weather, then Riotous Rookies: a team that bought them rolls
- * 2D3 + 1 players of its lineman position into its reserves for the game, with Loner (4+).
+ * Fan factor (dedicated fans + D3 per team), then the weather, then Prayers to Nuffle (see `Prayers`), then Riotous
+ * Rookies: a team that bought them rolls 2D3 + 1 players of its lineman position into its reserves for the game, with
+ * Loner (4+).
  */
 export const Pregame: Handler<P<"Pregame">> = {
   step(ctx, proc, action) {
+    if (proc.stage === "rookies" && proc.rookies!.length === 0) return "done";
     if (action === null) return "wait";
     if (proc.stage === "fans") {
       const rolls = ctx.roll(action, D3_EACH, "Fan factor (home, away)");
@@ -98,7 +100,10 @@ export const Pregame: Handler<P<"Pregame">> = {
       rollWeather(ctx, action, "Weather");
       proc.rookies = SIDES.filter((side) => (ctx.state.teams[side].inducements.riotousRookies ?? 0) > 0 && ctx.state.teams[side].journeymanPosition);
       proc.stage = "rookies";
-      return proc.rookies.length > 0 ? "wait" : "done";
+      // Prayers to Nuffle come first.
+      const draws = SIDES.flatMap((side) => Array.from({ length: ctx.state.teams[side].inducements.prayers ?? 0 }, () => side));
+      if (draws.length > 0) ctx.push({ type: "Prayers", draws, stage: "draw" });
+      return "continue";
     }
     const side = proc.rookies!.shift()!;
     const [a, b] = ctx.roll(action, TWO_D3, `Riotous Rookies (${ctx.state.teams[side].name})`);
