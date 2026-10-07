@@ -2976,6 +2976,23 @@ describe("engine", () => {
       expect([s.activeSide, s.activePlayerId]).toEqual(["home", null]);
     });
 
+    it("Biased Referee: the victim's team spots a foul the referee missed on 5+, and argues with +1", () => {
+      const biased = (side: Side) =>
+        edit(fouling(), (c) => {
+          c.teams[side].inducements = { biasedReferee: 1 };
+        });
+      let s = apply(foul(biased("away")), roll(5, 4), roll(2, 4));
+      expect(find(s, "ROLL")).toMatchObject({ side: "away", reason: "Biased Referee 5+ (foul by Home 4)" });
+      expect(apply(s, roll(4)).log).toContainEqual({ type: "RefereeCall", foulerId: "home-4", spotted: false });
+      s = apply(s, roll(5));
+      expect(s.log).toContainEqual({ type: "RefereeCall", foulerId: "home-4", spotted: true });
+      expect(types(s)).toEqual(["ARGUE_THE_CALL"]);
+      // The fouling team's own Biased Referee: arguing works on 5+.
+      s = apply(foul(biased("home")), roll(2, 2), { type: "ARGUE_THE_CALL", argue: true });
+      expect(find(s, "ROLL")?.reason).toBe("Argue the call 5+");
+      expect(apply(s, roll(5)).players["home-4"]!.at).toEqual({ x: 19, y: 2 });
+    });
+
     it("a double on the armour roll is spotted: arguing the call on a 6 keeps the fouler, but it is a turnover", () => {
       let s = apply(foul(fouling()), roll(2, 2));
       expect(types(s)).toEqual(["ARGUE_THE_CALL"]);

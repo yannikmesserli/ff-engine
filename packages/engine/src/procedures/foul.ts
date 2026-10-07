@@ -1,5 +1,5 @@
 import type { Ctx, Handler } from "../context";
-import type { GameState, PlayerState, Procedure, Square } from "../types";
+import type { GameState, PlayerState, Procedure, Square, TeamState } from "../types";
 import { adjacent, ballCarrier, isOnPitch, playerAt, tackleZoneAt } from "../pitch";
 import { ARMOUR_DICE } from "./checks";
 import { injure } from "./injury";
@@ -11,6 +11,12 @@ type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
 /** Argue the call succeeds on a 6; a natural 1 bans the coach. */
 export const ARGUE_THE_CALL_TARGET = 6;
+
+/** Biased Referee: spots an opposing foul the referee missed on 5+. */
+export const BIASED_REFEREE_TARGET = 5;
+
+/** Argue the call: 6+, with +1 for the team's Biased Referee. */
+const argueTarget = (team: TeamState) => ARGUE_THE_CALL_TARGET - (team.inducements.biasedReferee ?? 0);
 /** A bribe works on 2+. */
 export const BRIBE_TARGET = 2;
 
@@ -54,6 +60,8 @@ const isDouble = (dice: number[] | undefined) => dice !== undefined && dice[0] =
  * doubles (Sneaky Git: not on the armour roll if the armour holds).
  * Chainsaw: the fouler may use it, rolling for kick-back first (2+, team re-roll): on a 1 they are knocked down (+3 to
  * their armour roll), a turnover, and there is no foul; otherwise the armour roll gets +3 (not against Iron Hard Skin).
+ * Biased Referee (bought by the victim's team): a foul the referee missed is spotted anyway on a D6 of 5+; the team's
+ * own arguments get +1 (a natural 1 still bans the coach).
  * A spotted fouler may argue the call (6: stays, still a turnover; 1: coach banned) and then use bribes
  * (2+: stays, no turnover); otherwise they are sent off and it is a turnover.
  */
@@ -113,6 +121,19 @@ export const Foul: Handler<P<"Foul">> = {
         // Sneaky Git: a double on the armour roll is not spotted when the armour holds.
         const broken = proc.injury !== undefined;
         const spotted = (isDouble(proc.armour) && (broken || !hasSkill(fouler, "Sneaky Git"))) || isDouble(proc.injury);
+        // A missed foul: the victim's team's Biased Referee may still spot it.
+        if (!spotted && (state.teams[victim.side].inducements.biasedReferee ?? 0) > 0) {
+          proc.stage = "biasedReferee";
+          return "continue";
+        }
+        ctx.emit({ type: "RefereeCall", foulerId: fouler.id, spotted });
+        proc.stage = !spotted ? "end" : team.coachBanned ? "bribe" : "argue";
+        return "continue";
+      }
+      case "biasedReferee": {
+        if (action === null) return "wait";
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Biased Referee ${BIASED_REFEREE_TARGET}+`);
+        const spotted = roll! >= BIASED_REFEREE_TARGET;
         ctx.emit({ type: "RefereeCall", foulerId: fouler.id, spotted });
         proc.stage = !spotted ? "end" : team.coachBanned ? "bribe" : "argue";
         return "continue";
@@ -125,8 +146,8 @@ export const Foul: Handler<P<"Foul">> = {
       }
       case "argueRoll": {
         if (action === null) return "wait";
-        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Argue the call ${ARGUE_THE_CALL_TARGET}+`);
-        if (roll! >= ARGUE_THE_CALL_TARGET) {
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Argue the call ${argueTarget(team)}+`);
+        if (roll! > 1 && roll! >= argueTarget(team)) {
           // The fouler stays on the pitch, but the turn is still over.
           ctx.emit({ type: "ArgueTheCall", foulerId: fouler.id, result: "success" });
           state.turnover = true;
@@ -189,10 +210,12 @@ export const Foul: Handler<P<"Foul">> = {
       }
       case "injury":
         return [{ type: "ROLL", side, dice: [...ARMOUR_DICE], reason: injuryModifier(fouler, proc) ? "Injury (+1 Dirty Player)" : "Injury" }];
+      case "biasedReferee":
+        return [{ type: "ROLL", side: victim.side, dice: [{ kind: "d6", count: 1 }], reason: `Biased Referee ${BIASED_REFEREE_TARGET}+ (foul by ${fouler.name})` }];
       case "argue":
         return [{ type: "ARGUE_THE_CALL", side, playerId: fouler.id }];
       case "argueRoll":
-        return [{ type: "ROLL", side, dice: [{ kind: "d6", count: 1 }], reason: `Argue the call ${ARGUE_THE_CALL_TARGET}+` }];
+        return [{ type: "ROLL", side, dice: [{ kind: "d6", count: 1 }], reason: `Argue the call ${argueTarget(state.teams[side])}+` }];
       case "bribe":
         return [{ type: "BRIBE", side, playerId: fouler.id, bribes: state.teams[side].bribes }];
       case "bribeRoll":
@@ -243,8 +266,8 @@ export const SecretWeapon: Handler<P<"SecretWeapon">> = {
       }
       case "argueRoll": {
         if (action === null) return "wait";
-        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Argue the call ${ARGUE_THE_CALL_TARGET}+`);
-        if (roll! >= ARGUE_THE_CALL_TARGET) {
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Argue the call ${argueTarget(team)}+`);
+        if (roll! > 1 && roll! >= argueTarget(team)) {
           ctx.emit({ type: "ArgueTheCall", foulerId: player.id, result: "success" });
           return next();
         }
@@ -283,7 +306,7 @@ export const SecretWeapon: Handler<P<"SecretWeapon">> = {
       case "argue":
         return [{ type: "ARGUE_THE_CALL", side, playerId: player.id }];
       case "argueRoll":
-        return [{ type: "ROLL", side, dice: [{ kind: "d6", count: 1 }], reason: `Argue the call ${ARGUE_THE_CALL_TARGET}+ (${player.name})` }];
+        return [{ type: "ROLL", side, dice: [{ kind: "d6", count: 1 }], reason: `Argue the call ${argueTarget(state.teams[side])}+ (${player.name})` }];
       case "bribe":
         return [{ type: "BRIBE", side, playerId: player.id, bribes: state.teams[side].bribes }];
       case "bribeRoll":

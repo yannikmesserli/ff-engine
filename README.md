@@ -46,7 +46,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Inducements: listed in the team file (no pre-game shop yet) and checked against the BB2025 limits and the team's
   special rules. Bribes: one each to keep a fouler (or a Secret Weapon) on the pitch on 2+. Part-time Assistant
   Coaches and Temp Agency Cheerleaders: added to the team's own for Brilliant Coaching and Cheering Fans. Blitzer's
-  Best Kegs: +1 each to the team's KO recovery rolls (a natural 1 still fails).
+  Best Kegs: +1 each to the team's KO recovery rolls (a natural 1 still fails). Biased Referee: an opposing foul the
+  referee missed is spotted on a D6 of 5+, and the team's own arguments get +1 (a natural 1 still bans the coach).
 - Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls). Journeymen: a team with fewer
   than 11 players available gets free ones up to 11 from its lineman position, with Loner (4+) (team file option).
 - Setup checks: 11 players (or all available), 3 on the line of scrimmage in the centre field, at most 2 per wide zone.

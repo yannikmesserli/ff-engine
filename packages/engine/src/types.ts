@@ -409,7 +409,8 @@ export type Procedure =
       /** Offensive minus defensive foul assists, added to the armour roll. */
       assists: number;
       /** "chainsaw": the fouler may use their Chainsaw (a kick-back roll first, then +3 to the armour roll). */
-      stage: "chainsaw" | "kickback" | "armour" | "injury" | "referee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
+      /** "biasedReferee": the victim's team's Biased Referee may spot a foul the referee missed. */
+      stage: "chainsaw" | "kickback" | "armour" | "injury" | "referee" | "biasedReferee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
       /** The Chainsaw is used for this foul. */
       chainsaw?: boolean;
       armour?: number[];
