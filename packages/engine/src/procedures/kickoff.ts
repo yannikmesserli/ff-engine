@@ -2,7 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { Action, DiceSpec, GameState, KickoffResult, PlayerState, Procedure, Side, Square, TeamState, Weather } from "../types";
 import { SCATTER } from "../dice";
 import { adjacent, allSquares, inHalf, isOnPitch, offset, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
-import { getPlayer, landBall } from "./helpers";
+import { createPlayer, getPlayer, landBall } from "./helpers";
 import { setupErrors } from "./setup";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -77,7 +77,10 @@ function checkSelection(ctx: Ctx, side: Side, playerIds: string[], allowed: numb
   if (playerIds.length > allowed || playerIds.some((id) => !open.includes(id))) ctx.reject("Invalid selection.");
 }
 
-/** Fan factor (dedicated fans + D3 per team), then the weather. */
+/**
+ * Fan factor (dedicated fans + D3 per team), then the weather, then Riotous Rookies: a team that bought them rolls
+ * 2D3 + 1 players of its lineman position into its reserves for the game, with Loner (4+).
+ */
 export const Pregame: Handler<P<"Pregame">> = {
   step(ctx, proc, action) {
     if (action === null) return "wait";
@@ -91,15 +94,44 @@ export const Pregame: Handler<P<"Pregame">> = {
       proc.stage = "weather";
       return "continue";
     }
-    rollWeather(ctx, action, "Weather");
-    return "done";
+    if (proc.stage === "weather") {
+      rollWeather(ctx, action, "Weather");
+      proc.rookies = SIDES.filter((side) => (ctx.state.teams[side].inducements.riotousRookies ?? 0) > 0 && ctx.state.teams[side].journeymanPosition);
+      proc.stage = "rookies";
+      return proc.rookies.length > 0 ? "wait" : "done";
+    }
+    const side = proc.rookies!.shift()!;
+    const [a, b] = ctx.roll(action, TWO_D3, `Riotous Rookies (${ctx.state.teams[side].name})`);
+    joinRookies(ctx, side, a! + b! + 1);
+    return proc.rookies!.length > 0 ? "wait" : "done";
   },
-  actions(_state, proc) {
+  actions(state, proc) {
+    if (proc.stage === "rookies") {
+      const side = proc.rookies![0]!;
+      return [{ type: "ROLL", side, dice: TWO_D3, reason: `Riotous Rookies (${state.teams[side].name}): 2D3 + 1 players join` }];
+    }
     return proc.stage === "fans"
       ? [{ type: "ROLL", side: null, dice: D3_EACH, reason: "Fan factor (home, away)" }]
       : [{ type: "ROLL", side: null, dice: TWO_D6, reason: "Weather" }];
   },
 };
+
+const TWO_D3: DiceSpec[] = [{ kind: "d3", count: 2 }];
+
+/** Riotous Rookies: `count` players of the lineman position join the reserves for the game, with Loner (4+). */
+function joinRookies(ctx: Ctx, side: Side, count: number) {
+  const { state } = ctx;
+  const position = state.teams[side].journeymanPosition!;
+  const loner = position.skills.some((s) => s.startsWith("Loner")) ? [] : ["Loner(4)"];
+  const playerIds: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const nr = 1 + Math.max(...teamPlayers(state, side).map((p) => p.nr));
+    const rookie = createPlayer(side, { ...position, skills: [...position.skills, ...loner], nr, name: `Riotous Rookie #${nr}` });
+    state.players[rookie.id] = rookie;
+    playerIds.push(rookie.id);
+  }
+  ctx.emit({ type: "RookiesJoined", side, playerIds });
+}
 
 const SWELTERING_HEAT = "Sweltering Heat (players per team)";
 

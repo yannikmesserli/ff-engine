@@ -122,6 +122,8 @@ export interface TeamState {
   bribes: number;
   /** Team special rules, e.g. "Bribery and Corruption". */
   specialRules: string[];
+  /** The lineman position Riotous Rookies come from, if any. */
+  journeymanPosition: PositionStats | null;
   /** Inducements bought for this game; what is left of them is tracked where they are used. */
   inducements: Inducements;
   /** Team Mascot: tried this half (once per half); `mascotRolling`: its 4+ roll is due before the die is re-rolled. */
@@ -192,6 +194,8 @@ export interface TeamSetup {
   raisePosition?: PositionStats;
   /** Team special rules, e.g. "Bribery and Corruption", "Favoured of Nurgle". */
   specialRules?: string[];
+  /** The lineman position journeymen and Riotous Rookies come from. */
+  journeymanPosition?: PositionStats;
   /** Inducements bought for this game. */
   inducements?: Inducements;
   players: Array<
@@ -267,7 +271,8 @@ export type CheckKind =
  */
 export type Procedure =
   | { type: "Game"; stage: "pregame" | "half1" | "half2" | "overtime" | "end" }
-  | { type: "Pregame"; stage: "fans" | "weather" }
+  /** "rookies": Riotous Rookies, rolled by the teams in `rookies` (in order). */
+  | { type: "Pregame"; stage: "fans" | "weather" | "rookies"; rookies?: Side[] }
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
   /** `drives`: kick-offs so far in this half. */
   | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number }
@@ -864,6 +869,8 @@ export type GameEvent =
   | { type: "RerollUsed"; side: Side }
   /** Halfling Master Chef: `side` stole `count` team re-rolls from the opponents for the half. */
   | { type: "RerollsStolen"; side: Side; count: number }
+  /** Riotous Rookies: `playerIds` joined `side`'s reserves for the game. */
+  | { type: "RookiesJoined"; side: Side; playerIds: string[] }
   /** An inducement bought for the game was used (the Team Mascot was tried...). */
   | { type: "InducementUsed"; side: Side; inducement: InducementId }
   | { type: "BallCaught"; playerId: string }

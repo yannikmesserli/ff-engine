@@ -137,6 +137,7 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
     cheerleaders: team.cheerleaders,
     assistantCoaches: team.assistantCoaches,
     specialRules: [...team.specialRules],
+    ...(journeymanPosition(roster, team) ? { journeymanPosition: positionStats(journeymanPosition(roster, team)!) } : {}),
     inducements: { ...team.inducements },
     ...(plagueRidden && lineman ? { raisePosition: positionStats(lineman) } : {}),
     players: [...team.players
@@ -159,6 +160,12 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
       }), ...journeymen(roster, team)],
   };
 }
+
+/** The position journeymen and Riotous Rookies come from: the one the team file names, or the roster's first. */
+const journeymanPosition = (roster: Roster, team: TeamFile) => {
+  const candidates = journeymenPositions(roster);
+  return typeof team.journeymen === "string" ? candidates.find((p) => p.title === team.journeymen) : candidates[0];
+};
 
 /** The journeymen a team takes for the game: the smallest free numbers, Loner (4+) added to the position's skills. */
 function journeymen(roster: Roster, team: TeamFile) {

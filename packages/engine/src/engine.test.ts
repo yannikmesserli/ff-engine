@@ -3203,6 +3203,20 @@ describe("engine", () => {
     });
   });
 
+  describe("Riotous Rookies", () => {
+    it("before the coin toss, 2D3 + 1 linemen with Loner (4+) join the reserves for the game", () => {
+      const lineman = { position: "Human Lineman", ma: 6, st: 3, ag: 3, pa: 4, av: 8, skills: [], keywords: ["human", "lineman"] };
+      const rookies = { ...team("Home"), inducements: { riotousRookies: 1 }, journeymanPosition: lineman };
+      let s = apply(createGame(rookies, team("Away"), { seed: 1 }), roll(1, 1), roll(3, 4));
+      expect(find(s, "ROLL")).toMatchObject({ side: "home", dice: [{ kind: "d3", count: 2 }] });
+      s = apply(s, roll(2, 3));
+      const joined = Object.values(s.players).filter((p) => p.name.startsWith("Riotous Rookie"));
+      expect(joined.map((p) => p.id)).toEqual(["home-12", "home-13", "home-14", "home-15", "home-16", "home-17"]);
+      expect(joined[0]).toMatchObject({ at: "reserves", position: "Human Lineman", skills: ["Loner(4)"] });
+      expect(types(s)).toEqual(["CALL_COIN"]);
+    });
+  });
+
   describe("Halfling Master Chef", () => {
     it("before the first kick-off of each half, 3D6: every 4+ steals a team re-roll for the half", () => {
       const chef = { ...team("Home"), inducements: { halflingMasterChef: 1 } };
