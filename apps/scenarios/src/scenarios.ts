@@ -954,4 +954,43 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 12, y: 7 },
     }),
   },
+  {
+    id: "give-and-go",
+    title: "Give and Go: keep moving after a quick pass or hand-off",
+    instructions: [
+      "Home's first turn: Lord Edmund (#1, Imperial Thrower, Give and Go) holds the ball, with Sir Roland (#2) two squares away.",
+      "Declare a Pass with Edmund, click \"Throw…\" and throw a Quick pass to Roland. Once he has caught it, Edmund may keep moving with his six squares, but cannot throw again.",
+      "Undo and declare a Hand-off instead: after the hand-off, Edmund moves on the same way.",
+      "Undo and throw a Short pass to Sir Gareth (#3): the action ends after the throw, as usual.",
+    ],
+    home: {
+      name: "Bögenhafen Barons",
+      roster: "Imperial Nobility",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Lord Edmund", position: "Imperial Thrower" },
+        { number: 2, name: "Sir Roland", position: "Noble Blitzer" },
+        { number: 3, name: "Sir Gareth", position: "Noble Blitzer" },
+        { number: 4, name: "Piet", position: "Imperial Retainer" },
+        { number: 5, name: "Jan", position: "Imperial Retainer" },
+        { number: 6, name: "Klaas", position: "Imperial Retainer" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 47,
+    actions: toFirstTurn({
+      home: { 1: { x: 5, y: 7 }, 2: { x: 7, y: 7 }, 3: { x: 9, y: 11 }, 4: { x: 12, y: 6 }, 5: { x: 12, y: 7 }, 6: { x: 12, y: 8 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

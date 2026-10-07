@@ -289,4 +289,15 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "ROLL", values: [4] }]);
     expect([s.players["home-1"]!.at, s.turnover]).toEqual([{ x: 12, y: 7 }, false]);
   });
+
+  it("give-and-go: the thrower moves on after a quick pass", () => {
+    const s = applyActions(load("give-and-go"), [
+      { type: "START_ACTION", playerId: "home-1", action: "pass" },
+      { type: "THROW", square: { x: 7, y: 7 } },
+      { type: "ROLL", values: [6] },
+      { type: "ROLL", values: [6] },
+    ]);
+    expect(s.ball).toEqual({ square: { x: 7, y: 7 }, carried: true });
+    expect(find(s, "MOVE")?.playerId).toBe("home-1");
+  });
 });
