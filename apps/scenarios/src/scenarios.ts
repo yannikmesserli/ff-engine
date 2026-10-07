@@ -759,4 +759,44 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "dump-off",
+    title: "Dump-off: a Quick pass before being hit",
+    instructions: [
+      "Away's first turn: Naggaroth runner Kaelith (#1, Dump-off) holds the ball on the line of scrimmage, next to Grishnak (#1).",
+      "Declare a Block with Grishnak on Kaelith: before the block dice, the home coach is asked whether to use Dump-off.",
+      "Use it, click \"Throw…\" and pick a Quick square, e.g. Malus (#2): only Quick passes are offered, there is no team re-roll and no On the Ball move. Whatever happens to the ball, nobody's turn ends, and Grishnak's block goes on.",
+      "Undo and decline: the block goes on with Kaelith still holding the ball.",
+    ],
+    home: {
+      name: "Naggaroth Nightblades",
+      roster: "Dark Elf",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Kaelith", position: "Dark Elf Runner" },
+        { number: 2, name: "Malus", position: "Dark Elf Lineman" },
+        { number: 3, name: "Lokhir", position: "Dark Elf Lineman" },
+        { number: 4, name: "Rakarth", position: "Dark Elf Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 29,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 12, y: 7 }, 2: { x: 10, y: 6 }, 3: { x: 12, y: 4 }, 4: { x: 12, y: 10 } },
+        away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+        ball: { x: 12, y: 7 },
+      }),
+      { type: "END_TURN" },
+    ],
+  },
 ];

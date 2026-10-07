@@ -228,4 +228,16 @@ describe("scenarios", () => {
     expect(s.players["home-1"]!.status).toBe("prone");
     expect(s.turnover).toBe(true);
   });
+
+  it("dump-off: the home coach may pass before the block, and nobody's turn ends", () => {
+    let s = applyActions(load("dump-off"), [
+      { type: "START_ACTION", playerId: "away-1", action: "block" },
+      { type: "BLOCK", targetId: "home-1" },
+      { type: "USE_SKILL", use: true, skill: "Dump-off" },
+    ]);
+    expect(find(s, "THROW")?.squares.every((t) => t.range === "quick")).toBe(true);
+    s = applyActions(s, [{ type: "THROW", square: { x: 10, y: 6 } }, { type: "ROLL", values: [6] }, { type: "ROLL", values: [6] }]);
+    expect(s.ball).toEqual({ square: { x: 10, y: 6 }, carried: true });
+    expect([s.activeSide, s.turnover, find(s, "ROLL")?.reason]).toEqual(["away", false, "Block (1 die)"]);
+  });
 });
