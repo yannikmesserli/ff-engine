@@ -2092,6 +2092,22 @@ describe("engine", () => {
         expect(s.turnover).toBe(false);
       });
 
+      it("Pro may re-roll a punt roll, once per turn", () => {
+        let s = edit(punter(), (c) => {
+          c.players["home-5"]!.skills = ["Punt", "Pro"];
+        });
+        s = apply(punt(s, { x: 9, y: 5 }), roll(1));
+        expect(types(s)).toEqual(["USE_REROLL", "USE_SKILL", "DECLINE_REROLL"]);
+        s = apply(s, { type: "USE_SKILL", use: true, skill: "Pro" });
+        expect(find(s, "ROLL")?.reason).toBe("Pro 3+ (Home 5)");
+        s = apply(s, roll(4));
+        expect(find(s, "ROLL")?.reason).toBe("Punt direction (Home 5)");
+        s = apply(s, roll(3), roll(4));
+        // Pro is used up: only the team re-roll is left for the distance.
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        expect(s.teams.home.rerolls).toBe(1);
+      });
+
       it("caught by an opponent where it comes down: a turnover", () => {
         const s = apply(punt(punter({ "away-1": { x: 13, y: 5 } }), { x: 9, y: 5 }), roll(3), decline, roll(5), decline, roll(6));
         expect(s.players["away-1"]!.at).toEqual(s.ball.square);

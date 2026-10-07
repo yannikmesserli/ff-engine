@@ -121,9 +121,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   team re-roll, no On the Ball); neither team's turn ends because of it, then the action goes on.
 - Punt: a once-per-turn action of a standing player with the skill, who may move first: the coach picks a square
   next to the punter (not diagonally); a D6 on the throw-in template facing it gives the direction, then the ball
-  travels D6 squares (a team re-roll on each roll). Off the pitch, a throw-in from the last square and a turnover;
-  otherwise it comes down there, caught by a standing player (an opponent: a turnover) or bouncing, and the action
-  ends. From a sideline or an end zone, it may go into the crowd instead (throw-in, turnover).
+  travels D6 squares (a team re-roll or Pro on each roll). Off the pitch, a throw-in from the last square and a
+  turnover; otherwise it comes down there, caught by a standing player (an opponent: a turnover) or bouncing, and the
+  action ends. From a sideline or an end zone, it may go into the crowd instead (throw-in, turnover).
 - Breathe Fire: instead of a block (a Blitz pays the square), a D6, -1 against ST 5 or more; the coach may re-roll
   anything but a 6 (team re-roll). A natural 6 knocks the opponent down (armour and injury without modifiers), 4+
   places them prone, 2+ does nothing, and a 1 knocks the fire-breather down (armour without modifiers), a turnover.
@@ -218,7 +218,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Fend: when the player (with a tackle zone) is pushed back by a block, even if knocked down, their coach may stop the
   attacker from following up (Frenzy included); a blitzing Juggernaut ignores it.
 - Pro: once per turn, the active player (standing, in their team's turn) may roll a D6 instead of using a team re-roll
-  on one of their failed rolls (single-D6 checks and passes): on 3+ the die is re-rolled, otherwise the first result
+  on one of their failed rolls (single-D6 checks and passes) or a punt roll: on 3+ the die is re-rolled, otherwise the first result
   stands, unless the coach spends a team re-roll (Loner applies) to roll Pro once more. On block dice, the coach first
   picks the one die to re-roll.
 - Eye Gouge: an opponent the player pushes back with a block cannot give block assists (offensive or defensive) until

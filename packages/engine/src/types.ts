@@ -452,10 +452,12 @@ export type Procedure =
       playerId: string;
       /** The orthogonal direction chosen by the coach. */
       facing: Square;
-      /** "reroll" / "loner": a team re-roll of the `rolling` roll; "land": the ball comes down. */
-      stage: "direction" | "distance" | "reroll" | "loner" | "land" | "end";
+      /** "reroll" / "loner" / "pro*": a team or Pro re-roll of the `rolling` roll; "land": the ball comes down. */
+      stage: "direction" | "distance" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "land" | "end";
       rolling: "direction" | "distance";
       rerolled: boolean;
+      /** A team re-roll was spent on a failed Pro roll. */
+      proRetried?: boolean;
       direction?: Square;
       distance?: number;
       /** The player standing where the ball came down. */

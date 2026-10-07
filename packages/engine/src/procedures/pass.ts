@@ -1,5 +1,5 @@
 import type { Ctx, Handler } from "../context";
-import type { GameState, PassRange, PassResult, PlayerState, Procedure, Side, Square } from "../types";
+import type { GameState, PassRange, PassResult, PlayerState, Procedure, Square } from "../types";
 import { SCATTER, passes, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName } from "../skills";
@@ -488,9 +488,9 @@ export function puntTargets(player: PlayerState & { at: Square }) {
   return { squares, crowd: x < 1 || x > 24 || y < 1 || y > 13 };
 }
 
-/** After a punt roll: the team re-roll decision, or the next step. */
-function afterPuntRoll(state: GameState, proc: P<"Punt">, side: Side) {
-  if (canTeamReroll(state, side, proc.rerolled)) proc.stage = "reroll";
+/** After a punt roll: the re-roll decision (team re-roll or Pro), or the next step. */
+function afterPuntRoll(state: GameState, proc: P<"Punt">, punter: PlayerState) {
+  if (canTeamReroll(state, punter.side, proc.rerolled) || canUsePro(state, punter, proc.rerolled)) proc.stage = "reroll";
   else nextPuntStep(proc);
 }
 
@@ -506,7 +506,7 @@ function nextPuntStep(proc: P<"Punt">) {
 /**
  * Punt (a once-per-turn action of a player with the skill, who may move first): the coach picks a square next to the
  * punter (not diagonally); a D6 on the throw-in template facing it gives the direction, then the ball travels D6
- * squares from the punter. A team re-roll may be used on each of the two rolls. If the ball would leave the pitch, it
+ * squares from the punter. A team re-roll (or Pro) may be used on each of the two rolls. If the ball would leave the pitch, it
  * is thrown in from the last square it reached, a turnover. Otherwise it comes down on the square: a standing player
  * there may catch it (a turnover if it is an opponent), else it bounces; either way the action ends, and the ball
  * loose or caught after a bounce is no turnover. From a sideline or an end zone, the punter may instead kick it into
@@ -525,21 +525,25 @@ export const Punt: Handler<P<"Punt">> = {
         // The first square is off the pitch: no need for a distance.
         if (!inBounds({ x: at.x + proc.direction.x, y: at.y + proc.direction.y })) proc.distance = 0;
         else delete proc.distance;
-        afterPuntRoll(state, proc, punter.side);
+        afterPuntRoll(state, proc, punter);
         return "continue";
       }
       case "distance": {
         if (action === null) return "wait";
         const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], "Punt distance");
         proc.distance = roll!;
-        afterPuntRoll(state, proc, punter.side);
+        afterPuntRoll(state, proc, punter);
         return "continue";
       }
       case "reroll": {
         if (action === null) return "wait";
-        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
-        if (a.type === "DECLINE_REROLL") nextPuntStep(proc);
-        else {
+        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
+        if (a.type === "DECLINE_REROLL" || (a.type === "USE_SKILL" && !a.use)) nextPuntStep(proc);
+        else if (a.type === "USE_SKILL") {
+          if ((a.skill ?? "Pro") !== "Pro" || !canUsePro(state, punter, proc.rerolled)) ctx.reject("Pro cannot be used now.");
+          proc.rerolled = true;
+          proc.stage = "pro";
+        } else {
           if (!canTeamReroll(state, punter.side, proc.rerolled)) ctx.reject("No re-roll available.");
           useTeamReroll(ctx, punter.side);
           proc.rerolled = true;
@@ -553,6 +557,15 @@ export const Punt: Handler<P<"Punt">> = {
         if (rollLoner(ctx, action, punter)) proc.stage = proc.rolling;
         else nextPuntStep(proc);
         return "continue";
+      case "pro":
+      case "proTeam":
+      case "proLoner": {
+        if (action === null) return "wait";
+        const pro = stepPro(ctx, proc, action, punter);
+        if (pro === "reroll") proc.stage = proc.rolling;
+        else if (pro === "stands") nextPuntStep(proc);
+        return "continue";
+      }
       case "land": {
         const d = proc.direction!;
         let n = proc.distance!;
@@ -589,11 +602,16 @@ export const Punt: Handler<P<"Punt">> = {
         return [{ type: "ROLL", side: punter.side, dice: [{ kind: "d6", count: 1 }], reason: `Punt ${proc.stage} (${punter.name})` }];
       case "reroll":
         return [
-          { type: "USE_REROLL", side: punter.side, available: rerollsLeft(state, punter.side) },
+          ...(canTeamReroll(state, punter.side, proc.rerolled) ? [{ type: "USE_REROLL" as const, side: punter.side, available: rerollsLeft(state, punter.side) }] : []),
+          ...proTemplate(state, punter, proc.rerolled),
           { type: "DECLINE_REROLL", side: punter.side },
         ];
       case "loner":
         return [lonerRollTemplate(punter)];
+      case "pro":
+      case "proTeam":
+      case "proLoner":
+        return proTemplates(state, proc.stage, punter);
       default:
         return [];
     }
