@@ -240,4 +240,19 @@ describe("scenarios", () => {
     expect(s.ball).toEqual({ square: { x: 10, y: 6 }, carried: true });
     expect([s.activeSide, s.turnover, find(s, "ROLL")?.reason]).toEqual(["away", false, "Block (1 die)"]);
   });
+
+  it("punt: 3 and 4 put the ball on Malus; from the sideline the crowd is offered", () => {
+    const start = applyActions(load("punt"), [{ type: "START_ACTION", playerId: "home-1", action: "punt" }]);
+    let s = applyActions(start, [
+      { type: "PUNT", square: { x: 6, y: 2 } },
+      { type: "ROLL", values: [3] },
+      { type: "DECLINE_REROLL" },
+      { type: "ROLL", values: [4] },
+      { type: "DECLINE_REROLL" },
+      { type: "ROLL", values: [6] },
+    ]);
+    expect([s.ball, s.turnover]).toEqual([{ square: { x: 9, y: 2 }, carried: true }, false]);
+    s = applyActions(start, [{ type: "MOVE", square: { x: 5, y: 1 } }, { type: "MOVE", square: { x: 5, y: 0 } }]);
+    expect(find(s, "PUNT")?.crowd).toBe(true);
+  });
 });

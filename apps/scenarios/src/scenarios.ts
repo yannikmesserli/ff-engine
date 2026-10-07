@@ -799,4 +799,42 @@ export const SCENARIOS: Scenario[] = [
       { type: "END_TURN" },
     ],
   },
+  {
+    id: "punt",
+    title: "Punt: kick the ball downfield",
+    instructions: [
+      "Home's first turn: Kaelith (#1, Dark Elf Runner, Punt) holds the ball near the top sideline.",
+      "Declare a Punt with Kaelith, click \"Punt…\" and the square east of her: a D6 on the throw-in template facing east (1-2 north-east, 3-4 east, 5-6 south-east), then D6 squares. A team re-roll may be used on each roll.",
+      "Enter 3 and 4 with \"Physical dice\": the ball comes down on Malus (#2), who may catch it. An empty square makes it bounce; neither is a turnover. Off the pitch, it is thrown in and the turn ends.",
+      "Undo and move Kaelith two squares north onto the sideline first: \"Punt into the crowd\" is offered (a throw-in from her square, and a turnover).",
+    ],
+    home: {
+      name: "Naggaroth Nightblades",
+      roster: "Dark Elf",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Kaelith", position: "Dark Elf Runner" },
+        { number: 2, name: "Malus", position: "Dark Elf Lineman" },
+        { number: 3, name: "Lokhir", position: "Dark Elf Lineman" },
+        { number: 4, name: "Rakarth", position: "Dark Elf Lineman" },
+        { number: 5, name: "Tullaris", position: "Dark Elf Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 31,
+    actions: toFirstTurn({
+      home: { 1: { x: 5, y: 2 }, 2: { x: 9, y: 2 }, 3: { x: 12, y: 6 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 8 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 } },
+      ball: { x: 5, y: 2 },
+    }),
+  },
 ];
