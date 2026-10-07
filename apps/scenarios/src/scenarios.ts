@@ -1215,4 +1215,78 @@ export const SCENARIOS: Scenario[] = [
       }),
     ],
   },
+  {
+    id: "inducements",
+    title: "Inducements: Team Mascot and Weather Mage",
+    instructions: [
+      "Home's first turn. The home team bought a Team Mascot, a Weather Mage and two Bribes (the team file's inducements in src/scenarios.ts).",
+      "Before anyone acts, click \"Weather Mage\": a 2D6, then pick the weather for the total or up to 2 away.",
+      "Move Wilhelm (#1) away from the orc and fail the dodge with \"Physical dice\": the re-roll offers \"Team Mascot (4+)\", which spends no team re-roll; on a failure a team re-roll is used instead.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      inducements: { teamMascot: 1, weatherMage: 1, bribes: 2 },
+      players: [
+        { number: 1, name: "Wilhelm", position: "Human Lineman" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Klaus", position: "Human Blitzer" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 71,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 }, 4: { x: 9, y: 7 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 9, y: 7 },
+    }),
+  },
+  {
+    id: "prayers",
+    title: "Prayers to Nuffle: the pre-game draw",
+    instructions: [
+      "Pre-game: the home team bought three Prayers to Nuffle. Fan factor and weather are rolled; now each prayer is a D16 on the BB2025 table (a result the team already has is rolled again).",
+      "Roll with \"Physical dice\" to pick them: 4 Iron Man and 5 Knuckle Dusters let you choose the player, 6 Bad Habits rolls a D3 for the opponents who gain Loner (2+), 16 Intensive Training lets you choose a primary skill.",
+      "The others (Friends with the Ref, Under Scrutiny, Moles under the Pitch, Throw a Rock, Treacherous Trapdoor...) change rules during the game; the log shows each prayer granted.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      inducements: { prayers: 3 },
+      players: [
+        { number: 1, name: "Wilhelm", position: "Human Lineman" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Klaus", position: "Human Blitzer" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 73,
+    actions: [roll(1, 1), roll(3, 4)],
+  },
 ];

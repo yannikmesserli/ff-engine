@@ -332,4 +332,19 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "MOVE", square: { x: 12, y: 7 } }, { type: "ROLL", values: [3] }]);
     expect(s.log).toContainEqual(expect.objectContaining({ type: "BlockDeclared", attackerId: "home-1", defenderId: "home-2" }));
   });
+
+  it("inducements: the Weather Mage at the start of the turn, the Team Mascot on a failed dodge", () => {
+    const s = load("inducements");
+    expect(getAvailableActions(s).some((t) => t.type === "WEATHER_MAGE")).toBe(true);
+    const dodge = applyActions(s, [{ type: "START_ACTION", playerId: "home-1", action: "move" }, { type: "MOVE", square: { x: 11, y: 7 } }, { type: "ROLL", values: [1] }]);
+    expect(find(dodge, "USE_REROLL")?.mascot).toBe(true);
+  });
+
+  it("prayers: three D16 draws before the coin toss", () => {
+    let s = load("prayers");
+    expect(find(s, "ROLL")?.dice).toEqual([{ kind: "d16", count: 1 }]);
+    s = applyActions(s, [{ type: "ROLL", values: [2] }, { type: "ROLL", values: [9] }, { type: "ROLL", values: [15] }]);
+    expect(s.teams.home.prayers).toEqual(["friends-with-the-ref", "moles-under-the-pitch", "under-scrutiny"]);
+    expect(find(s, "CALL_COIN")).toBeDefined();
+  });
 });
