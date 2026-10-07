@@ -447,6 +447,32 @@ describe("engine", () => {
       expect(find(s, "USE_APOTHECARY")).toMatchObject({ casualty: { result: "dead" } });
     });
 
+    it("a Mortuary Assistant re-rolls a failed Regeneration, once per game", () => {
+      const assisted = (c: GameState) => {
+        regenerating(c);
+        c.teams.home.inducements = { mortuaryAssistant: 1 };
+      };
+      let s = apply(toInjury(assisted), roll(5, 5), roll(16, 1), roll(3), { type: "DECLINE_REROLL" });
+      expect(find(s, "USE_SKILL")).toMatchObject({ side: "home", playerId: "home-11", skill: "Mortuary Assistant" });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(find(s, "ROLL")?.reason).toBe("Regeneration 4+ (Home 11)");
+      s = apply(s, roll(4));
+      expect(s.players["home-11"]!.at).toBe("reserves");
+      expect(s.teams.home.inducementsUsed).toEqual({ mortuaryAssistant: 1 });
+    });
+
+    it("a Plague Doctor re-rolls Regeneration or stands in for the apothecary: one use", () => {
+      const doctor = (c: GameState) => void (c.teams.home.inducements = { plagueDoctor: 1 });
+      // No apothecary of its own: the Plague Doctor treats a KO'd player.
+      let s = apply(toInjury(doctor), roll(4, 5));
+      expect(find(s, "USE_APOTHECARY")).toBeDefined();
+      s = apply(s, { type: "USE_APOTHECARY", use: true });
+      expect([s.players["home-11"]!.status, s.teams.home.inducementsUsed]).toEqual(["stunned", { plagueDoctor: 1 }]);
+      // Used for Regeneration instead, it is gone for the apothecary.
+      s = apply(toInjury((c) => (regenerating(c), doctor(c))), roll(5, 5), roll(16, 1), roll(3), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: true }, roll(3));
+      expect(s.players["home-11"]!.at).toBe("cas");
+    });
+
     it("Regeneration also covers a Stunty player's Badly Hurt, and does nothing for a KO", () => {
       const stunty = apply(toInjury((c) => void (c.players["home-11"]!.skills = ["Stunty", "Regeneration"])), roll(4, 5), roll(6));
       expect(stunty.players["home-11"]!.at).toBe("reserves");

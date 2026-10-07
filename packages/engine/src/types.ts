@@ -126,6 +126,8 @@ export interface TeamState {
   journeymanPosition: PositionStats | null;
   /** Inducements bought for this game; what is left of them is tracked where they are used. */
   inducements: Inducements;
+  /** How many of each inducement were used up (the once-per-game ones: Plague Doctor, Mortuary Assistant...). */
+  inducementsUsed: Inducements;
   /** Team Mascot: tried this half (once per half); `mascotRolling`: its 4+ roll is due before the die is re-rolled. */
   mascotUsed: boolean;
   mascotRolling: boolean;
@@ -564,7 +566,10 @@ export type Procedure =
       crowd: boolean;
       /** The opponent whose block caused the injury (Plague Ridden). */
       attackerId?: string;
-      stage: "casualty" | "regeneration" | "regenerated" | "apothecary" | "apothecaryRoll" | "apothecaryChoice" | "place";
+      /** "regenerationReroll": a Mortuary Assistant or Plague Doctor may re-roll a failed Regeneration roll. */
+      stage: "casualty" | "regeneration" | "regenerated" | "regenerationReroll" | "apothecary" | "apothecaryRoll" | "apothecaryChoice" | "place";
+      /** The inducement re-rolling Regeneration was offered. */
+      regenerationRerolled?: boolean;
       casualty?: Casualty;
       /** The apothecary's casualty re-roll, to choose from. */
       reroll?: Casualty;

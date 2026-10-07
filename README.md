@@ -52,7 +52,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   die (Loner still applies), a failure spends a team re-roll instead if one is left; it also re-rolls a natural 1 on
   the Cheering Fans roll, for free. Halfling Master Chef: before the first kick-off of each half, 3D6, each 4+
   steals one of the opponents' team re-rolls for the half. Riotous Rookies (Low Cost Linemen teams): before the coin
-  toss, 2D3 + 1 linemen with Loner (4+) join the reserves for the game.
+  toss, 2D3 + 1 linemen with Loner (4+) join the reserves for the game. Mortuary Assistant (Masters of Undeath) and
+  Plague Doctor (Favoured of Nurgle): once per game, re-roll a failed Regeneration roll; the Plague Doctor's single use
+  may go to treating a player as an apothecary instead.
 - Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls). Journeymen: a team with fewer
   than 11 players available gets free ones up to 11 from its lineman position, with Loner (4+) (team file option).
 - Setup checks: 11 players (or all available), 3 on the line of scrimmage in the centre field, at most 2 per wide zone.

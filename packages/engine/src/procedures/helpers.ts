@@ -1,5 +1,5 @@
 import type { Ctx } from "../context";
-import type { Action, ActionTemplate, GameState, PlayerState, Side, Square, TeamSetup, Weather } from "../types";
+import type { Action, ActionTemplate, GameState, InducementId, PlayerState, Side, Square, TeamSetup, TeamState, Weather } from "../types";
 import { hasSkill, skillName } from "../skills";
 import { adjacent, inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, teamPlayers } from "../pitch";
 
@@ -185,6 +185,16 @@ export const rerollsLeft = (state: GameState, side: Side) => state.teams[side].r
  */
 export const canTeamReroll = (state: GameState, side: Side, rerolled: boolean) =>
   !rerolled && (state.activeSide === side || movingAtKickoff(state, side)) && (rerollsLeft(state, side) > 0 || mascotAvailable(state, side));
+
+/** How many uses of an inducement the team has left. */
+export const inducementsLeft = (team: TeamState, id: InducementId) => (team.inducements[id] ?? 0) - (team.inducementsUsed[id] ?? 0);
+
+/** Use up one of the team's inducements. */
+export function spendInducement(ctx: Ctx, side: Side, id: InducementId) {
+  const team = ctx.state.teams[side];
+  team.inducementsUsed[id] = (team.inducementsUsed[id] ?? 0) + 1;
+  ctx.emit({ type: "InducementUsed", side, inducement: id });
+}
 
 /** Team Mascot: once per half, in the team's own turn, even without team re-rolls left. */
 export const mascotAvailable = (state: GameState, side: Side) => {

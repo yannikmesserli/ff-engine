@@ -1,8 +1,8 @@
 import type { Ctx, Handler } from "../context";
-import type { Action, Casualty, Characteristic, DiceSpec, InjuryOutcome, PlayerState, Procedure } from "../types";
+import type { Action, Casualty, Characteristic, DiceSpec, InjuryOutcome, PlayerState, Procedure, TeamState } from "../types";
 import { hasSkill } from "../skills";
 import { teamPlayers } from "../pitch";
-import { createPlayer, getPlayer } from "./helpers";
+import { createPlayer, getPlayer, inducementsLeft, spendInducement } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -69,6 +69,13 @@ export function casualtyFor(player: PlayerState, d16: number, d6: number): Casua
   return { result: "badly-hurt" };
 }
 
+/** The inducement that may re-roll a failed Regeneration roll: the Mortuary Assistant first, then the Plague Doctor. */
+const regenerationReroll = (team: TeamState): "mortuaryAssistant" | "plagueDoctor" | null =>
+  inducementsLeft(team, "mortuaryAssistant") > 0 ? "mortuaryAssistant" : inducementsLeft(team, "plagueDoctor") > 0 ? "plagueDoctor" : null;
+
+/** Names of the inducements offered as a USE_SKILL decision. */
+const INDUCEMENT_SKILLS = { mortuaryAssistant: "Mortuary Assistant", plagueDoctor: "Plague Doctor" } as const;
+
 /** Regeneration (4+, team re-roll in the player's own turn) comes before the apothecary. */
 export const REGENERATION_TARGET = 4;
 
@@ -113,8 +120,9 @@ function rollCasualty(ctx: Ctx, player: PlayerState, action: Action, reason: str
 }
 
 /**
- * After the injury roll: a casualty rolls on the casualty table, then Regeneration (4+: back to the reserves), then the
- * team's apothecary (once per game) may treat
+ * After the injury roll: a casualty rolls on the casualty table, then Regeneration (4+: back to the reserves; a
+ * Mortuary Assistant or Plague Doctor may re-roll a failure, once per game), then the team's apothecary (once per
+ * game; the Plague Doctor can stand in, sharing its single use) may treat
  * a KO'd or injured player. KO'd: Stunned on the pitch (to the reserves if pushed into the crowd). Badly Hurt: back to
  * the reserves. Worse: the casualty is re-rolled; Badly Hurt on the re-roll heals the player, otherwise the coach keeps
  * either result.
@@ -142,12 +150,25 @@ export const Injury: Handler<P<"Injury">> = {
           proc.healed = true;
           ctx.emit({ type: "Regenerated", playerId: player.id });
         }
-        proc.stage = regenerated ? "place" : "apothecary";
+        proc.stage = regenerated ? "place" : !proc.regenerationRerolled && regenerationReroll(team) ? "regenerationReroll" : "apothecary";
+        return "continue";
+      }
+      case "regenerationReroll": {
+        if (action === null) return "wait";
+        proc.regenerationRerolled = true;
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "apothecary";
+          return "continue";
+        }
+        spendInducement(ctx, player.side, regenerationReroll(team)!);
+        proc.stage = "regenerated";
+        ctx.push({ type: "Check", kind: "regeneration", playerId: player.id, target: REGENERATION_TARGET, modifier: 0, stage: "roll", rerolled: true });
         return "continue";
       }
       case "apothecary": {
         // Ball & Chain: no apothecary for a KO.
-        if (proc.outcome === "stunned" || team.apothecaries === 0 || (proc.outcome === "ko" && hasSkill(player, "Ball & Chain"))) {
+        const plagueDoctor = inducementsLeft(team, "plagueDoctor") > 0;
+        if (proc.outcome === "stunned" || (team.apothecaries === 0 && !plagueDoctor) || (proc.outcome === "ko" && hasSkill(player, "Ball & Chain"))) {
           proc.stage = "place";
           return "continue";
         }
@@ -156,7 +177,9 @@ export const Injury: Handler<P<"Injury">> = {
           proc.stage = "place";
           return "continue";
         }
-        team.apothecaries -= 1;
+        // The team's own apothecary first, then the Plague Doctor.
+        if (team.apothecaries > 0) team.apothecaries -= 1;
+        else spendInducement(ctx, player.side, "plagueDoctor");
         proc.treated = true;
         ctx.emit({ type: "ApothecaryUsed", playerId: player.id });
         if (proc.outcome === "ko") {
@@ -195,6 +218,8 @@ export const Injury: Handler<P<"Injury">> = {
     switch (proc.stage) {
       case "casualty":
         return [{ type: "ROLL", side: null, dice: CASUALTY_DICE, reason: `Casualty (${player.name})` }];
+      case "regenerationReroll":
+        return [{ type: "USE_SKILL", side, playerId: player.id, skill: INDUCEMENT_SKILLS[regenerationReroll(state.teams[side])!] }];
       case "apothecary":
         return [{ type: "USE_APOTHECARY", side, playerId: player.id, outcome: proc.outcome, casualty: proc.casualty ?? null }];
       case "apothecaryRoll":
