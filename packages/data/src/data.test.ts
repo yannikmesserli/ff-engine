@@ -219,6 +219,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "APOTHECARY_CHOICE", keep: pick(["first", "second"] as const) };
     case "FOLLOW_UP":
       return { type: "FOLLOW_UP", follow: random() < 0.5 };
+    case "USE_REROLL":
+      return t.mascot && (t.available === 0 || random() < 0.5) ? { type: "USE_REROLL", mascot: true } : { type: "USE_REROLL" };
     case "USE_SKILL":
       return { type: "USE_SKILL", use: random() < 0.7, skill: t.skill };
     case "REROLL_BLOCK_DIE":
@@ -317,6 +319,8 @@ describe("random games", () => {
   });
   /** A game takes under a second; the margin keeps a busy or sleeping machine from failing the run. */
   const GAME_TIMEOUT_MS = 30_000;
+  /** Inducements any team may buy, for the random games. */
+  const RANDOM_GAME_INDUCEMENTS = { bribes: 1, teamMascot: 1, partTimeCoaches: 1, tempCheerleaders: 1, blitzersBestKegs: 1, biasedReferee: 1 };
   /** Seed i: every roster plays at home once in 30 seeds (7 and 30 share no factor), against a different one away. */
   const matchup = (seed: number) => [rosters[(7 * seed) % rosters.length]!, rosters[(11 * seed + 3) % rosters.length]!] as const;
   it.each(Array.from({ length: 40 }, (_, i) => [i + 1, ...matchup(i + 1).map((r) => r.name)] as const))("plays a full game with random legal actions (seed %i: %s v %s)", (seed) => {
@@ -325,7 +329,9 @@ describe("random games", () => {
     const random = () => ((rng = (rng * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
     const [home, away] = matchup(seed);
     // One game in four is a cup game: a draw goes to overtime.
-    const start = createGame(resolveTeam(rosterTeam(home)), resolveTeam(rosterTeam(away)), { seed, overtime: seed % 4 === 0 });
+    // Every other game, the home team bought a few inducements.
+    const homeTeam = { ...(rosterTeam(home) as object), ...(seed % 2 === 1 ? { inducements: RANDOM_GAME_INDUCEMENTS } : {}) };
+    const start = createGame(resolveTeam(homeTeam), resolveTeam(rosterTeam(away)), { seed, overtime: seed % 4 === 0 });
     let s = start;
     const taken: Action[] = [];
     let steps = 0;

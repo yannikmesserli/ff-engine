@@ -14,7 +14,10 @@ function startHalf(ctx: Ctx, half: HalfNumber, kicking: Side) {
   state.half = half;
   for (const team of Object.values(state.teams)) {
     team.turn = 0;
-    if (half < 3) team.rerolls = team.rerollsPerHalf;
+    if (half < 3) {
+      team.rerolls = team.rerollsPerHalf;
+      team.mascotUsed = false;
+    }
   }
   ctx.emit({ type: "HalfStarted", half });
   ctx.push({ type: "Half", half, stage: "driveEnd", kicking, nextSide: other(kicking) });

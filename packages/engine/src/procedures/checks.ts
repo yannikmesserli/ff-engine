@@ -3,7 +3,7 @@ import type { GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollsLeft, rollLoner, squareOf, stepPro, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 import { injure } from "./injury";
 import { dropBall } from "./ball";
 
@@ -29,6 +29,7 @@ const CHECK_NAMES = {
   vomit: "Projectile Vomit",
   breathefire: "Breathe Fire",
   tentacles: "Tentacles",
+  mascot: "Team Mascot",
   chainsaw: "Chainsaw",
   animosity: "Animosity",
   landing: "Landing",
@@ -166,9 +167,9 @@ export const Check: Handler<P<"Check">> = {
         return "wait";
       }
       if (!canTeamReroll(state, player.side, proc.rerolled)) ctx.reject("No re-roll available.");
-      useTeamReroll(ctx, player.side);
+      useTeamReroll(ctx, player.side, a.mascot);
       proc.rerolled = true;
-      proc.stage = lonerTarget(player) === null ? "roll" : "loner";
+      proc.stage = rerollGate(state, player) ? "loner" : "roll";
       return "wait";
     }
     if (proc.stage === "loner") {
@@ -209,12 +210,12 @@ export const Check: Handler<P<"Check">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "reroll") {
       return [
-        ...(canTeamReroll(state, player.side, proc.rerolled) ? [{ type: "USE_REROLL" as const, side: player.side, available: rerollsLeft(state, player.side) }] : []),
+        ...(canTeamReroll(state, player.side, proc.rerolled) ? [teamRerollTemplate(state, player.side)] : []),
         ...proTemplate(state, player, proc.rerolled),
         { type: "DECLINE_REROLL", side: player.side },
       ];
     }
-    if (proc.stage === "loner") return [lonerRollTemplate(player)];
+    if (proc.stage === "loner") return [lonerRollTemplate(state, player)];
     if (proc.stage === "pro" || proc.stage === "proTeam" || proc.stage === "proLoner") return proTemplates(state, proc.stage, player);
     if (proc.stage === "divingTackle") {
       const playerIds = divingTacklers(state, proc, player).map((p) => p.id);

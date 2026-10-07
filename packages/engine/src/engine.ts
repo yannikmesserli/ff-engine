@@ -43,6 +43,8 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     bribes: teams[side].inducements?.bribes ?? 0,
     specialRules: [...(teams[side].specialRules ?? [])],
     inducements: { ...(teams[side].inducements ?? {}) },
+    mascotUsed: false,
+    mascotRolling: false,
     coachBanned: false,
     extraAssist: false,
     apothecaries: teams[side].apothecary ? 1 : 0,

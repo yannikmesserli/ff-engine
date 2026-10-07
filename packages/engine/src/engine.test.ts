@@ -3106,6 +3106,13 @@ describe("engine", () => {
       expect([coaching.teams.home.driveRerolls, coaching.teams.away.driveRerolls]).toEqual([1, 0]);
     });
 
+    it("Cheering Fans: a team with a Team Mascot re-rolls a natural 1 for free", () => {
+      let s = apply(kickWith(3, 3, { ...team("Home"), inducements: { teamMascot: 1 } }), roll(1, 4));
+      expect(find(s, "ROLL")?.reason).toBe("Cheering Fans: Team Mascot re-roll (home)");
+      s = apply(s, roll(6));
+      expect([s.teams.home.extraAssist, s.teams.away.extraAssist]).toEqual([true, false]);
+    });
+
     it("Brilliant Coaching gives both teams a drive re-roll on a tie, used before the normal ones", () => {
       let s = apply(kickWith(3, 4), roll(2, 2), roll(5));
       expect([s.teams.home.driveRerolls, s.teams.away.driveRerolls]).toEqual([1, 1]);
@@ -3193,6 +3200,39 @@ describe("engine", () => {
       expect(flightMarkers(caught)).toEqual([{ kind: "bomb", square: { x: 10, y: 6 }, state: "landing" }]);
       expect(flightMarkers(apply(caught, roll(3)))).toEqual([{ kind: "bomb", square: { x: 10, y: 6 }, state: "held" }]);
       expect(flightMarkers(apply(caught, roll(1), { type: "DECLINE_REROLL" }))).toContainEqual({ kind: "bomb", square: { x: 10, y: 6 }, state: "exploding" });
+    });
+  });
+
+  describe("Team Mascot", () => {
+    const mascotTeam = (rerolls = 1, skills: string[] = []) => ({ ...team("Home", { rerolls, skills }), inducements: { teamMascot: 1 } });
+    /** home-1 dodges from (12,6) to (11,5) and fails. */
+    const failedDodge = (s: GameState) => apply(s, startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1));
+
+    it("re-rolls on 4+ without spending a team re-roll; once per half", () => {
+      let s = failedDodge(toFirstTurn(mascotTeam()));
+      expect(find(s, "USE_REROLL")).toEqual({ type: "USE_REROLL", side: "home", available: 1, mascot: true });
+      s = apply(s, { type: "USE_REROLL", mascot: true });
+      expect(find(s, "ROLL")?.reason).toBe("Team Mascot 4+ (Home 1)");
+      s = apply(s, roll(4));
+      expect(find(s, "ROLL")?.reason).toMatch(/^Dodge/);
+      expect(s.teams.home.rerolls).toBe(1);
+      s = apply(s, roll(6), { type: "END_PLAYER_ACTION" }, startMove("home-3"), ...move({ x: 11, y: 9 }), roll(1));
+      expect(find(s, "USE_REROLL")).toEqual({ type: "USE_REROLL", side: "home", available: 1 });
+    });
+
+    it("a failed Mascot roll spends a team re-roll instead, if one is left; without one the result stands", () => {
+      const s = apply(failedDodge(toFirstTurn(mascotTeam())), { type: "USE_REROLL", mascot: true }, roll(3));
+      expect([s.teams.home.rerolls, find(s, "ROLL")?.reason]).toEqual([0, expect.stringMatching(/^Dodge/)]);
+      let none = failedDodge(toFirstTurn(mascotTeam(0)));
+      expect(find(none, "USE_REROLL")).toEqual({ type: "USE_REROLL", side: "home", available: 0, mascot: true });
+      none = apply(none, { type: "USE_REROLL", mascot: true }, roll(3));
+      expect(none.players["home-1"]!.status).toBe("prone");
+    });
+
+    it("a Loner player rolls the Mascot and Loner dice together", () => {
+      const s = apply(failedDodge(toFirstTurn(mascotTeam(1, ["Loner(4)"]))), { type: "USE_REROLL", mascot: true });
+      expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d6", count: 2 }], reason: "Team Mascot 4+, Loner 4+ (Home 1)" });
+      expect(find(apply(s, roll(5, 3)), "ROLL")?.reason).toMatch(/^Armour/);
     });
   });
 

@@ -124,6 +124,9 @@ export interface TeamState {
   specialRules: string[];
   /** Inducements bought for this game; what is left of them is tracked where they are used. */
   inducements: Inducements;
+  /** Team Mascot: tried this half (once per half); `mascotRolling`: its 4+ roll is due before the die is re-rolled. */
+  mascotUsed: boolean;
+  mascotRolling: boolean;
   /** Argued the call and rolled a 1: cannot argue again this game. */
   coachBanned: boolean;
   /** Cheering Fans: one extra offensive block assist this drive. */
@@ -244,6 +247,7 @@ export type CheckKind =
   | "vomit"
   | "breathefire"
   | "tentacles"
+  | "mascot"
   | "chainsaw"
   | "animosity"
   | "landing"
@@ -277,7 +281,14 @@ export type Procedure =
       landing?: Square;
       touchback?: boolean;
     }
-  | { type: "KickoffEvent"; result: "cheering-fans" | "brilliant-coaching" | "dodgy-snack" | "pitch-invasion"; stage: "roll" | "snack"; snackers?: string[] }
+  /** "mascot": Cheering Fans, a team with a Team Mascot re-rolls its natural 1 (`rolls`: the first rolls). */
+  | {
+      type: "KickoffEvent";
+      result: "cheering-fans" | "brilliant-coaching" | "dodgy-snack" | "pitch-invasion";
+      stage: "roll" | "snack" | "mascot";
+      snackers?: string[];
+      rolls?: Record<Side, number>;
+    }
   | { type: "SolidDefence"; side: Side; stage: "roll" | "select" | "setup"; allowed?: number; selected?: string[] }
   | { type: "HighKick"; side: Side; square: Square }
   | { type: "QuickSnap"; side: Side; stage: "roll" | "move"; allowed?: number; moved: string[] }
@@ -668,7 +679,8 @@ export type Action =
   | { type: "CHOOSE_KICK"; kick: boolean }
   /** Roll the requested dice. `values` lets a user enter physical dice results. */
   | { type: "ROLL"; values?: number[] }
-  | { type: "USE_REROLL" }
+  /** `mascot`: try the Team Mascot (4+) instead of spending a team re-roll. */
+  | { type: "USE_REROLL"; mascot?: boolean }
   | { type: "DECLINE_REROLL" }
   | { type: "PLACE_PLAYER"; playerId: string; square: Square | null }
   | { type: "END_SETUP" }
@@ -736,7 +748,8 @@ export type ActionTemplate =
   | { type: "CHOOSE_KICK"; side: Side }
   | { type: "ROLL"; side: Side | null; dice: DiceSpec[]; reason: string }
   /** `skill`: the re-roll comes from this skill of the player (Pass), not from the team. */
-  | { type: "USE_REROLL"; side: Side; available: number; skill?: string }
+  /** `mascot`: the Team Mascot may be tried instead (it works even without team re-rolls left). */
+  | { type: "USE_REROLL"; side: Side; available: number; skill?: string; mascot?: boolean }
   | { type: "DECLINE_REROLL"; side: Side }
   | { type: "PLACE_PLAYER"; side: Side; playerIds: string[]; squares: Square[] }
   | { type: "END_SETUP"; side: Side; errors: string[] }
@@ -846,6 +859,8 @@ export type GameEvent =
   | { type: "KoRecovery"; playerId: string; recovered: boolean }
   | { type: "CheckResult"; kind: CheckKind; playerId: string; success: boolean; roll: number; target: number }
   | { type: "RerollUsed"; side: Side }
+  /** An inducement bought for the game was used (the Team Mascot was tried...). */
+  | { type: "InducementUsed"; side: Side; inducement: InducementId }
   | { type: "BallCaught"; playerId: string }
   | { type: "BallPickedUp"; playerId: string }
   | { type: "PlayerKnockedDown"; playerId: string }

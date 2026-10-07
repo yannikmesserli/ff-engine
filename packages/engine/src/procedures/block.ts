@@ -5,7 +5,7 @@ import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { dropBall } from "./ball";
 import { hasSkill, skillName, skillValue } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, proTemplate, proTemplates, rushModifier, squareOf, stepPro, useTeamReroll, weatherModifier } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, useTeamReroll, weatherModifier } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -402,10 +402,10 @@ function useSingleDie(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, skill: 
 const singleDieReason = (skill: SingleDieSkill) => `${skill} (re-roll a ${skill === "Brawler" ? "Both Down" : "Skull"})`;
 
 /** Spend the team re-roll; a Loner attacker must roll for it first. */
-function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState) {
-  useTeamReroll(ctx, attacker.side);
+function useReroll(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, mascot = false) {
+  useTeamReroll(ctx, attacker.side, mascot);
   proc.rerolled = true;
-  proc.stage = lonerTarget(attacker) === null ? "roll" : "loner";
+  proc.stage = rerollGate(ctx.state, attacker) ? "loner" : "roll";
 }
 
 /**
@@ -529,7 +529,7 @@ export const Block: Handler<P<"Block">> = {
         if (a.type === "USE_SKILL" && a.use) useSkill(ctx, proc, attacker, defender, a.skill);
         else if (a.type === "USE_REROLL") {
           if (!canReroll(state, proc, attacker)) ctx.reject("No re-roll available.");
-          useReroll(ctx, proc, attacker);
+          useReroll(ctx, proc, attacker, a.mascot);
         } else proc.stage = "choose";
         return "continue";
       }
@@ -582,7 +582,7 @@ export const Block: Handler<P<"Block">> = {
           }
           if (a.type === "USE_REROLL") {
             if (proc.dice < 0 || !canReroll(state, proc, attacker)) ctx.reject("No re-roll available.");
-            useReroll(ctx, proc, attacker);
+            useReroll(ctx, proc, attacker, a.mascot);
             return "continue";
           }
           proc.face = proc.results![a.index] ?? ctx.reject("Invalid die.");
@@ -759,7 +759,7 @@ export const Block: Handler<P<"Block">> = {
         return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: Math.abs(proc.dice) }], reason: `Block (${Math.abs(proc.dice)} ${proc.dice < 0 ? "dice, defender chooses" : Math.abs(proc.dice) > 1 ? "dice" : "die"})` }];
       case "reroll":
         return [
-          ...(canReroll(state, proc, attacker) ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }] : []),
+          ...(canReroll(state, proc, attacker) ? [teamRerollTemplate(state, attacker.side)] : []),
           ...skillTemplates(state, proc, attacker, defender),
           { type: "DECLINE_REROLL", side: attacker.side },
         ];
@@ -772,14 +772,14 @@ export const Block: Handler<P<"Block">> = {
       case "proReroll":
         return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: "Pro (re-roll a block die)" }];
       case "loner":
-        return [lonerRollTemplate(attacker)];
+        return [lonerRollTemplate(state, attacker)];
       case "singleDie":
         return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: singleDieReason(proc.singleDie!) }];
       case "choose": {
         const chooser = proc.dice > 0 ? attacker.side : defender.side;
         const reroll =
           proc.dice > 0 && canReroll(state, proc, attacker)
-            ? [{ type: "USE_REROLL" as const, side: attacker.side, available: rerollsLeft(state, attacker.side) }]
+            ? [teamRerollTemplate(state, attacker.side)]
             : [];
         return [{ type: "CHOOSE_BLOCK_DIE", side: chooser, results: proc.results! }, ...reroll, ...(proc.dice > 0 ? skillTemplates(state, proc, attacker, defender) : [])];
       }

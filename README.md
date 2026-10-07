@@ -48,6 +48,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Coaches and Temp Agency Cheerleaders: added to the team's own for Brilliant Coaching and Cheering Fans. Blitzer's
   Best Kegs: +1 each to the team's KO recovery rolls (a natural 1 still fails). Biased Referee: an opposing foul the
   referee missed is spotted on a D6 of 5+, and the team's own arguments get +1 (a natural 1 still bans the coach).
+  Team Mascot: once per half, in the team's turn, instead of a team re-roll (even with none left): 4+ re-rolls the
+  die (Loner still applies), a failure spends a team re-roll instead if one is left; it also re-rolls a natural 1 on
+  the Cheering Fans roll, for free.
 - Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls). Journeymen: a team with fewer
   than 11 players available gets free ones up to 11 from its lineman position, with Loner (4+) (team file option).
 - Setup checks: 11 players (or all available), 3 on the line of scrimmage in the centre field, at most 2 per wide zone.

@@ -3,7 +3,7 @@ import type { GameState, PassRange, PlayerState, Procedure, Square } from "../ty
 import { SCATTER, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, offset, playerAt, sameSquare, tackleZones } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollsLeft, rollLoner, squareOf, stepPro, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 import { evaluatePass, passModifiers, passRange, shownNeeded } from "./pass";
 import { injure } from "./injury";
 
@@ -162,9 +162,9 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
           proc.stage = "pro";
         } else if (a.type === "USE_REROLL") {
           if (!canTeamReroll(state, thrower.side, proc.rerolled)) ctx.reject("No re-roll available.");
-          useTeamReroll(ctx, thrower.side);
+          useTeamReroll(ctx, thrower.side, a.mascot);
           proc.rerolled = true;
-          proc.stage = lonerTarget(thrower) === null ? "roll" : "loner";
+          proc.stage = rerollGate(state, thrower) ? "loner" : "roll";
         } else proc.stage = "scatter";
         return "continue";
       }
@@ -209,12 +209,13 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       case "swoopReroll": {
         if (action === null) return "wait";
         const swoop = proc.swoop as Swoop;
-        if (ctx.expect(action, "USE_REROLL", "DECLINE_REROLL").type === "DECLINE_REROLL") nextSwoopStep(proc);
+        const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL");
+        if (a.type === "DECLINE_REROLL") nextSwoopStep(proc);
         else {
           if (!canTeamReroll(state, thrown.side, swoop.rerolled)) ctx.reject("No re-roll available.");
-          useTeamReroll(ctx, thrown.side);
+          useTeamReroll(ctx, thrown.side, a.mascot);
           swoop.rerolled = true;
-          proc.stage = lonerTarget(thrown) !== null ? "swoopLoner" : swoop.rolling === "direction" ? "swoopDirection" : "swoopDistance";
+          proc.stage = rerollGate(state, thrown) ? "swoopLoner" : swoop.rolling === "direction" ? "swoopDirection" : "swoopDistance";
         }
         return "continue";
       }
@@ -322,12 +323,12 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       }
       case "reroll":
         return [
-          ...(canTeamReroll(state, thrower.side, proc.rerolled) ? [{ type: "USE_REROLL" as const, side: thrower.side, available: rerollsLeft(state, thrower.side) }] : []),
+          ...(canTeamReroll(state, thrower.side, proc.rerolled) ? [teamRerollTemplate(state, thrower.side)] : []),
           ...proTemplate(state, thrower, proc.rerolled),
           { type: "DECLINE_REROLL", side: thrower.side },
         ];
       case "loner":
-        return [lonerRollTemplate(thrower)];
+        return [lonerRollTemplate(state, thrower)];
       case "pro":
       case "proTeam":
       case "proLoner":
@@ -345,12 +346,12 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       case "swoopReroll": {
         const side = state.players[proc.thrownId]!.side;
         return [
-          { type: "USE_REROLL", side, available: rerollsLeft(state, side) },
+          teamRerollTemplate(state, side),
           { type: "DECLINE_REROLL", side },
         ];
       }
       case "swoopLoner":
-        return [lonerRollTemplate(state.players[proc.thrownId]!)];
+        return [lonerRollTemplate(state, state.players[proc.thrownId]!)];
       case "fumbled":
         return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason: `Injury (${state.players[proc.thrownId]!.name}, fumbled kick)` }];
       case "bounce":

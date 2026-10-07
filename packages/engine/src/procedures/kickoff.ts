@@ -270,6 +270,10 @@ const EVENT_DICE: Record<RollOffEvent, DiceSpec[]> = {
   "pitch-invasion": [...TWO_D6, ...D3],
 };
 
+/** Cheering Fans: the teams with a Team Mascot that rolled a natural 1, which they re-roll for free. */
+const mascotFans = (state: GameState, rolls: Record<Side, number>) =>
+  (["home", "away"] as const).filter((side) => rolls[side] === 1 && (state.teams[side].inducements.teamMascot ?? 0) > 0);
+
 /** Cheerleaders for Cheering Fans: the team's own, plus Temp Agency Cheerleaders. */
 const cheerleaders = (team: TeamState) => team.cheerleaders + (team.inducements.tempCheerleaders ?? 0);
 
@@ -308,8 +312,20 @@ export const KickoffEvent: Handler<P<"KickoffEvent">> = {
       });
       return "done";
     }
-    const [h, a, d3] = ctx.roll(action, EVENT_DICE[proc.result], EVENT_NAMES[proc.result]);
+    if (proc.stage === "mascot") {
+      const rerolls = ctx.roll(action, [{ kind: "d6", count: mascotFans(state, proc.rolls!).length }], "Cheering Fans (Team Mascot)");
+      mascotFans(state, proc.rolls!).forEach((side, i) => {
+        proc.rolls![side] = rerolls[i]!;
+      });
+    }
+    const [h, a, d3] = proc.stage === "mascot" ? [proc.rolls!.home, proc.rolls!.away] : ctx.roll(action, EVENT_DICE[proc.result], EVENT_NAMES[proc.result]);
     const totals = { home: h!, away: a! };
+    // Cheering Fans: a team with a Team Mascot re-rolls a natural 1, for free.
+    if (proc.result === "cheering-fans" && proc.stage === "roll" && mascotFans(state, totals).length > 0) {
+      proc.rolls = { ...totals };
+      proc.stage = "mascot";
+      return "wait";
+    }
     switch (proc.result) {
       case "cheering-fans":
         totals.home += cheerleaders(home);
@@ -346,9 +362,13 @@ export const KickoffEvent: Handler<P<"KickoffEvent">> = {
         return "done";
     }
   },
-  actions(_state, proc) {
+  actions(state, proc) {
     if (proc.stage === "snack") {
       return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: proc.snackers!.length }], reason: "Dodgy Snack: 1 sends the player off" }];
+    }
+    if (proc.stage === "mascot") {
+      const sides = mascotFans(state, proc.rolls!);
+      return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: sides.length }], reason: `Cheering Fans: Team Mascot re-roll (${sides.join(", ")})` }];
     }
     return [{ type: "ROLL", side: null, dice: EVENT_DICE[proc.result], reason: EVENT_NAMES[proc.result] }];
   },

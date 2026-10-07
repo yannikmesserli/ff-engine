@@ -4,7 +4,7 @@ import { SCATTER, passes, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName } from "../skills";
 import { explosion, rethrow } from "./bomb";
-import { canTeamReroll, canUsePro, proTemplate, proTemplates, stepPro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, rerollsLeft, rollLoner, squareOf, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -258,9 +258,9 @@ export const Pass: Handler<P<"Pass">> = {
           proc.stage = "roll";
         } else if (a.type === "USE_REROLL") {
           if (!canTeamReroll(state, thrower.side, proc.rerolled)) ctx.reject("No re-roll available.");
-          useTeamReroll(ctx, thrower.side);
+          useTeamReroll(ctx, thrower.side, a.mascot);
           proc.rerolled = true;
-          proc.stage = lonerTarget(thrower) === null ? "roll" : "loner";
+          proc.stage = rerollGate(state, thrower) ? "loner" : "roll";
         } else proc.stage = "outcome";
         return "continue";
       }
@@ -405,14 +405,16 @@ export const Pass: Handler<P<"Pass">> = {
       }
       case "reroll":
         return [
-          ...(passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled)
-            ? [{ type: "USE_REROLL" as const, side: thrower.side, available: rerollsLeft(state, thrower.side), ...(passSkillReroll(thrower, proc) ? { skill: "Pass" } : {}) }]
-            : []),
+          ...(passSkillReroll(thrower, proc)
+            ? [{ type: "USE_REROLL" as const, side: thrower.side, available: rerollsLeft(state, thrower.side), skill: "Pass" }]
+            : canTeamReroll(state, thrower.side, proc.rerolled)
+              ? [teamRerollTemplate(state, thrower.side)]
+              : []),
           ...proTemplate(state, thrower, proc.rerolled),
           { type: "DECLINE_REROLL", side: thrower.side },
         ];
       case "loner":
-        return [lonerRollTemplate(thrower)];
+        return [lonerRollTemplate(state, thrower)];
       case "pro":
       case "proTeam":
       case "proLoner":
@@ -578,9 +580,9 @@ export const Punt: Handler<P<"Punt">> = {
           proc.stage = "pro";
         } else {
           if (!canTeamReroll(state, punter.side, proc.rerolled)) ctx.reject("No re-roll available.");
-          useTeamReroll(ctx, punter.side);
+          useTeamReroll(ctx, punter.side, a.mascot);
           proc.rerolled = true;
-          proc.stage = lonerTarget(punter) === null ? proc.rolling : "loner";
+          proc.stage = rerollGate(state, punter) ? "loner" : proc.rolling;
         }
         return "continue";
       }
@@ -635,12 +637,12 @@ export const Punt: Handler<P<"Punt">> = {
         return [{ type: "ROLL", side: punter.side, dice: [{ kind: "d6", count: 1 }], reason: `Punt ${proc.stage} (${punter.name})` }];
       case "reroll":
         return [
-          ...(canTeamReroll(state, punter.side, proc.rerolled) ? [{ type: "USE_REROLL" as const, side: punter.side, available: rerollsLeft(state, punter.side) }] : []),
+          ...(canTeamReroll(state, punter.side, proc.rerolled) ? [teamRerollTemplate(state, punter.side)] : []),
           ...proTemplate(state, punter, proc.rerolled),
           { type: "DECLINE_REROLL", side: punter.side },
         ];
       case "loner":
-        return [lonerRollTemplate(punter)];
+        return [lonerRollTemplate(state, punter)];
       case "pro":
       case "proTeam":
       case "proLoner":

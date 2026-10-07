@@ -232,8 +232,11 @@ export function ActionPanel(props: ActionPanelProps) {
             <button onClick={() => dispatch({ type: "FOLLOW_UP", follow: false })}>Stay</button>
           </>
         )}
-        {blockDie && has("USE_REROLL") && (
-          <button onClick={() => dispatch({ type: "USE_REROLL" })}>Re-roll the dice</button>
+        {blockDie && findTemplate(templates, "USE_REROLL") && (
+          <>
+            {findTemplate(templates, "USE_REROLL")!.available > 0 && <button onClick={() => dispatch({ type: "USE_REROLL" })}>Re-roll the dice</button>}
+            {findTemplate(templates, "USE_REROLL")!.mascot && <button onClick={() => dispatch({ type: "USE_REROLL", mascot: true })}>Re-roll with the Team Mascot (4+)</button>}
+          </>
         )}
         {templates.map((t) =>
           t.type === "USE_SKILL" && t !== main && SKILL_BUTTONS[t.skill] ? (
@@ -253,7 +256,10 @@ export function ActionPanel(props: ActionPanelProps) {
         )}
         {main.type === "USE_REROLL" && (
           <>
-            <button onClick={() => dispatch({ type: "USE_REROLL" })}>{main.skill ? `Re-roll (${main.skill})` : `Re-roll (${main.available} left)`}</button>
+            {(main.skill || main.available > 0) && (
+              <button onClick={() => dispatch({ type: "USE_REROLL" })}>{main.skill ? `Re-roll (${main.skill})` : `Re-roll (${main.available} left)`}</button>
+            )}
+            {main.mascot && <button onClick={() => dispatch({ type: "USE_REROLL", mascot: true })}>Team Mascot (4+)</button>}
             <button onClick={() => dispatch({ type: "DECLINE_REROLL" })}>Accept failure</button>
           </>
         )}

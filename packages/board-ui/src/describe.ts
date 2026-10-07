@@ -1,4 +1,4 @@
-import { BLOCK_FACES, type Casualty, type GameEvent, type GameState, type PassRange, type PlayerActionType, type Side } from "@bb/engine";
+import { BLOCK_FACES, type Casualty, type GameEvent, type GameState, type PassRange, type PlayerActionType, type Side, type InducementId } from "@bb/engine";
 
 const CHECK_NAMES = {
   dodge: "dodge",
@@ -19,6 +19,7 @@ const CHECK_NAMES = {
   dauntless: "Dauntless roll",
   vomit: "Projectile Vomit roll (a failure hits the vomiting player)",
   chainsaw: "Chainsaw roll (a failure kicks back: the chainsaw player is knocked down)",
+  mascot: "Team Mascot roll (a failure spends a team re-roll instead, if any is left)",
   tentacles: "Tentacles roll (a success holds the moving player in place)",
   breathefire: "Breathe Fire roll (6 knocks the target down, 4+ places them prone, a failure knocks the fire-breather down)",
   animosity: "Animosity roll (a failure keeps the ball and ends the action)",
@@ -79,6 +80,22 @@ const SKILL_USES: Record<string, string> = {
   "Dump-off": "to pass before being hit",
   "Hit and Run": "to step away",
   "Diving Tackle": "(-2 to the roll) and dives into the square left",
+};
+
+/** Display names of the inducements. */
+export const INDUCEMENT_NAMES: Record<InducementId, string> = {
+  bribes: "a bribe",
+  teamMascot: "the Team Mascot",
+  partTimeCoaches: "Part-time Assistant Coaches",
+  tempCheerleaders: "Temp Agency Cheerleaders",
+  blitzersBestKegs: "Blitzer's Best Kegs",
+  halflingMasterChef: "the Halfling Master Chef",
+  riotousRookies: "Riotous Rookies",
+  plagueDoctor: "the Plague Doctor",
+  mortuaryAssistant: "the Mortuary Assistant",
+  weatherMage: "the Weather Mage",
+  biasedReferee: "the Biased Referee",
+  prayers: "a Prayer to Nuffle",
 };
 
 /** Display names of the weather conditions. */
@@ -276,6 +293,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} ${e.success ? "succeeds" : "fails"} the ${CHECK_NAMES[e.kind]} (${e.roll} vs ${e.target}+).`;
     case "RerollUsed":
       return `${sideName(state, e.side)} uses a team re-roll.`;
+    case "InducementUsed":
+      return `${sideName(state, e.side)} uses ${INDUCEMENT_NAMES[e.inducement]}.`;
     case "BallCaught":
       return `${who(state, e.playerId)} catches the ball.`;
     case "BallPickedUp":
