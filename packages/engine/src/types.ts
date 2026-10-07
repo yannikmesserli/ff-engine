@@ -319,6 +319,8 @@ export type Procedure =
       bomb?: boolean;
       /** Dump-off: a Quick pass by the player about to be blocked; no On the Ball, and nobody's turn ends. */
       dumpOff?: boolean;
+      /** Hail Mary Pass: to any square, rolled as a Long Bomb, never accurate and never intercepted. */
+      hailMary?: boolean;
       /** "animosity": the thrower may first have to roll for Animosity towards the receiver. */
       /** "safePass": a natural 1 may be saved by Safe Pass. */
       /** "aim": a player who caught a bomb picks where to throw it again, or a Dump-off thrower picks the target. */
@@ -618,6 +620,8 @@ export type Action =
   | { type: "PUSH"; square: Square }
   | { type: "FOLLOW_UP"; follow: boolean }
   | { type: "THROW"; square: Square }
+  /** Hail Mary Pass: throw the ball to any square of the pitch. */
+  | { type: "HAIL_MARY_PASS"; square: Square }
   | { type: "HAND_OFF"; targetId: string }
   /** Throw Team-mate: throw the adjacent team-mate `targetId` to `square`. */
   | { type: "THROW_TEAM_MATE"; targetId: string; square: Square }
@@ -670,6 +674,8 @@ export type ActionTemplate =
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
+  /** Hail Mary Pass to any square of the pitch but the thrower's; `needed`: the roll that avoids a fumble. */
+  | { type: "HAIL_MARY_PASS"; side: Side; playerId: string; needed: number }
   /** `crowd`: the punter stands on a sideline or in an end zone and may punt into the crowd. */
   | { type: "PUNT"; side: Side; playerId: string; squares: Square[]; crowd: boolean }
   | { type: "CHOOSE_BLOCK_DIE"; side: Side; results: number[] }
@@ -737,7 +743,7 @@ export type GameEvent =
   | { type: "BlockResult"; attackerId: string; defenderId: string; face: number }
   | { type: "PlayerPushed"; playerId: string; from: Square; to: Square | null }
   | { type: "FollowedUp"; playerId: string; to: Square }
-  | { type: "PassThrown"; playerId: string; target: Square; range: PassRange; bomb?: boolean }
+  | { type: "PassThrown"; playerId: string; target: Square; range: PassRange; bomb?: boolean; hailMary?: boolean }
   | { type: "BombCaught"; playerId: string }
   | { type: "BombExploded"; square: Square }
   /** The bomb left the pitch, or Safe Pass kept it: it does not explode. */

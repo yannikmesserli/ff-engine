@@ -3,7 +3,7 @@ import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Si
 import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
 import { dropBall } from "./ball";
-import { handOffTargets, puntTargets, throwTargets } from "./pass";
+import { canHailMary, hailMaryNeeded, handOffTargets, puntTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
 import { checkTouchdown, getPlayer, inScoringPosition, rushModifier, squareOf, weatherModifier } from "./helpers";
@@ -465,7 +465,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         puntOptions(state, proc) === null);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "THROW", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
     if (a.type === "USE_SKILL") {
       if (!canFumblerooski(state, proc)) ctx.reject("Fumblerooski cannot be used now.");
       if (a.use) proc.fumblerooski = true;
@@ -482,6 +482,13 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
       proc.finished = true;
       ctx.push(...feedFirst(proc), { type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, stage: "animosity", rerolled: false });
+      return "continue";
+    }
+    if (a.type === "HAIL_MARY_PASS") {
+      const thrower = hailMaryThrower(state, proc) ?? ctx.reject("Cannot make a Hail Mary Pass now.");
+      if (!inBounds(a.square) || sameSquare(a.square, thrower.at)) ctx.reject("Throw to another square of the pitch.");
+      proc.finished = true;
+      ctx.push(...feedFirst(proc), { type: "Pass", throwerId: player.id, target: { x: a.square.x, y: a.square.y }, range: "bomb", hailMary: true, stage: "animosity", rerolled: false });
       return "continue";
     }
     if (a.type === "THROW_TEAM_MATE") {
@@ -581,6 +588,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const throwable = ttmOptions(state, proc).map((p) => p.id);
     const gazes = gazeOptions(state, proc).map((p) => p.id);
     const punt = puntOptions(state, proc);
+    const hailMary = hailMaryThrower(state, proc);
     return [
       ...(proc.action === "block" || proc.action === "bomb" ? [] : [{ type: "MOVE" as const, side: player.side, playerId: player.id, squares: legalMoves(state, player) }]),
       ...(targets.length > 0 ? [{ type: "BLOCK" as const, side: player.side, playerId: player.id, targets }] : []),
@@ -588,6 +596,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(stabs.length > 0 ? [{ type: "STAB" as const, side: player.side, playerId: player.id, targetIds: stabs }] : []),
       ...(fires.length > 0 ? [{ type: "BREATHE_FIRE" as const, side: player.side, playerId: player.id, targetIds: fires }] : []),
       ...(throws.length > 0 ? [{ type: "THROW" as const, side: player.side, playerId: player.id, squares: throws }] : []),
+      ...(hailMary ? [{ type: "HAIL_MARY_PASS" as const, side: player.side, playerId: player.id, needed: hailMaryNeeded(state, hailMary) }] : []),
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
       ...(fouls.length > 0 ? [{ type: "FOUL" as const, side: player.side, playerId: player.id, targets: fouls }] : []),
       ...(gazes.length > 0 ? [{ type: "GAZE" as const, side: player.side, playerId: player.id, targetIds: gazes }] : []),
@@ -730,6 +739,12 @@ const throwOptions = (state: GameState, proc: P<"MoveAction">) => {
   const player = releasingBall(state, proc, "pass");
   return player ? throwTargets(state, player) : [];
 };
+
+/** Hail Mary Pass: the player may make one instead of a normal pass now. */
+function hailMaryThrower(state: GameState, proc: P<"MoveAction">) {
+  const player = releasingBall(state, proc, "pass");
+  return player && isOnPitch(player) && canHailMary(state, player) ? player : null;
+}
 
 /** Punt: where the standing ball carrier may punt now, during a Punt action. */
 const puntOptions = (state: GameState, proc: P<"MoveAction">) => {

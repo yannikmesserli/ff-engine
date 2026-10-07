@@ -219,6 +219,7 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     case "PlayerPushed":
       return e.to ? null : `${who(state, e.playerId)} is pushed into the crowd!`;
     case "PassThrown":
+      if (e.hailMary) return `${who(state, e.playerId)} throws a Hail Mary Pass!`;
       return e.bomb ? `${who(state, e.playerId)} throws a bomb!` : `${who(state, e.playerId)} throws a ${PASS_RANGE_NAMES[e.range].toLowerCase()}.`;
     case "BombCaught":
       return `${who(state, e.playerId)} catches the bomb and must throw it again!`;

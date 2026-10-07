@@ -113,7 +113,14 @@ function randomActions(state: GameState, templates: ActionTemplate[], random: ()
   if (setup?.type === "END_SETUP") {
     return [...formationActions(state, setup.side, pick(Object.values(formations))), { type: "END_SETUP" }];
   }
-  return [randomAction(templates, pick, random)];
+  const hailMary = templates.find((t) => t.type === "HAIL_MARY_PASS");
+  if (hailMary && random() < 0.3) {
+    // Any square of the pitch but the thrower's.
+    const at = state.players[hailMary.playerId]!.at as { x: number; y: number };
+    const squares = Array.from({ length: 26 * 15 }, (_, i) => ({ x: i % 26, y: Math.floor(i / 26) })).filter((s) => s.x !== at.x || s.y !== at.y);
+    return [{ type: "HAIL_MARY_PASS", square: pick(squares) }];
+  }
+  return [randomAction(templates.filter((t) => t.type !== "HAIL_MARY_PASS"), pick, random)];
 }
 
 /** One random answer to a random template; ending a turn or player action is rarer so games progress. */

@@ -78,6 +78,13 @@ export function throwTargets(state: GameState, thrower: PlayerState) {
   });
 }
 
+/** Hail Mary Pass: the roll needed not to fumble, rolled as a Long Bomb (a fumble on a modified 1 or less). */
+export const hailMaryNeeded = (state: GameState, thrower: PlayerState & { at: Square }) =>
+  thrower.pa === null ? 6 : Math.min(6, Math.max(2, 2 + passModifiers(state, thrower, "bomb")));
+
+/** Hail Mary Pass: the thrower holds the ball in a Pass action, and it is not a blizzard. */
+export const canHailMary = (state: GameState, thrower: PlayerState) => hasSkill(thrower, "Hail Mary Pass") && state.weather !== "blizzard";
+
 /** Can intercept: the player stands under the range ruler between thrower and target. */
 export function underRuler(thrower: Square, target: Square, player: Square): boolean {
   const rx = target.x - thrower.x;
@@ -164,6 +171,8 @@ const aimTargets = (state: GameState, thrower: PlayerState, proc: P<"Pass">) =>
   throwTargets(state, thrower).filter((s) => !proc.dumpOff || s.range === "quick");
 
 /**
+ * Hail Mary Pass: the target may be any square of the pitch, the roll counts as a Long Bomb, a result better than a
+ * fumble is always inaccurate (three scatters from the target), only a fumble may be re-rolled, and nobody may intercept.
  * A thrown pass (BB2025), or a bomb (Throw Bomb: thrown like a pass, without Animosity or On the Ball; a fumble
  * explodes on the thrower, an intercepted bomb is thrown again by the interceptor, and it lands with `BombLanding`): Animosity towards the receiver, On the Ball moves of the opponents, PA roll with a team re-roll,
  * fumble (Safe Pass: the thrower may keep the ball on a natural 1, ending the action without a turnover) / inaccurate scatter,
@@ -195,7 +204,7 @@ export const Pass: Handler<P<"Pass">> = {
         return "continue";
       case "animosityResult":
         if (animosityFailed(state)) return "done";
-        ctx.emit({ type: "PassThrown", playerId: thrower.id, target: { ...proc.target }, range: proc.range, ...(proc.bomb ? { bomb: true } : {}) });
+        ctx.emit({ type: "PassThrown", playerId: thrower.id, target: { ...proc.target }, range: proc.range, ...(proc.bomb ? { bomb: true } : {}), ...(proc.hailMary ? { hailMary: true } : {}) });
         // On the Ball: the opponents may move before the throw (not for a bomb or a Dump-off).
         if (!proc.bomb && !proc.dumpOff) ctx.push({ type: "OnTheBall", side: other(thrower.side), kickoff: false, stage: "select", moved: [] });
         proc.stage = "roll";
@@ -208,12 +217,15 @@ export const Pass: Handler<P<"Pass">> = {
           return "continue";
         }
         if (action === null) return "wait";
-        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Pass ${shownNeeded(thrower, modifiers)}+`);
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], proc.hailMary ? `Hail Mary Pass ${hailMaryNeeded(state, { ...thrower, at })}+` : `Pass ${shownNeeded(thrower, modifiers)}+`);
         proc.roll = roll!;
         proc.result = evaluatePass(thrower, roll!, modifiers);
+        // A Hail Mary Pass is never accurate, and only a fumble is worth a re-roll.
+        if (proc.hailMary && proc.result === "accurate") proc.result = "inaccurate";
         ctx.emit({ type: "PassResult", playerId: thrower.id, result: proc.result });
         const canReroll = passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
-        proc.stage = proc.result !== "accurate" && canReroll ? "reroll" : "outcome";
+        const wantsReroll = proc.hailMary ? proc.result === "fumble" : proc.result !== "accurate";
+        proc.stage = wantsReroll && canReroll ? "reroll" : "outcome";
         return "continue";
       }
       case "reroll": {
@@ -304,7 +316,8 @@ export const Pass: Handler<P<"Pass">> = {
         return "continue";
       }
       case "intercept": {
-        const candidates = interceptors(state, thrower, proc.landing!);
+        // Nobody may intercept a Hail Mary Pass.
+        const candidates = proc.hailMary ? [] : interceptors(state, thrower, proc.landing!);
         if (candidates.length === 0) {
           proc.stage = "land";
           return "continue";
@@ -370,7 +383,7 @@ export const Pass: Handler<P<"Pass">> = {
         return [{ type: "THROW", side: thrower.side, playerId: thrower.id, squares: aimTargets(state, thrower, proc) }];
       case "roll": {
         const needed = shownNeeded(thrower, passModifiers(state, thrower, proc.range));
-        return [{ type: "ROLL", side: thrower.side, dice: [{ kind: "d6", count: 1 }], reason: `Pass ${needed}+ (${proc.range})` }];
+        return [{ type: "ROLL", side: thrower.side, dice: [{ kind: "d6", count: 1 }], reason: proc.hailMary ? `Hail Mary Pass ${hailMaryNeeded(state, thrower)}+` : `Pass ${needed}+ (${proc.range})` }];
       }
       case "reroll":
         return [

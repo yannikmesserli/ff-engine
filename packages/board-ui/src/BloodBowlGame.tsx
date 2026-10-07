@@ -16,7 +16,7 @@ import {
 } from "@bb/engine";
 import { resolveTeam, skillDescription } from "@bb/data";
 import { ActionPanel } from "./ActionPanel";
-import { Board, type ActionMenuState } from "./Board";
+import { Board, type ActionMenuState, type Aiming } from "./Board";
 import { DiceRolls } from "./Dice";
 import { WEATHER_NAMES, casualtyName, describeEvent } from "./describe";
 import { teamLogo } from "./icons";
@@ -105,7 +105,7 @@ function Game(props: { initial: GameState; assets: string; onChange?(s: GameStat
   const [pinned, setPinned] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
   const [menu, setMenu] = useState<ActionMenuState | null>(null);
-  const [aiming, setAiming] = useState(false);
+  const [aiming, setAiming] = useState<Aiming>(false);
   const onlineState = useReplay(initial, online?.actions);
   const state = online ? onlineState : history.at(-1)!;
   // Online, the board only offers this browser's decisions.

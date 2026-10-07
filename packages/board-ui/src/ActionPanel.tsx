@@ -3,6 +3,7 @@ import { DIE_FACES, type Action, type ActionTemplate, type GameState, type PassR
 import { formationActions, formations } from "@bb/data";
 import { DieFace } from "./Dice";
 import { blockFaceName, casualtyName } from "./describe";
+import type { Aiming } from "./Board";
 import { findTemplate, type TemplateOf } from "./templates";
 
 interface ActionPanelProps {
@@ -20,9 +21,9 @@ interface ActionPanelProps {
   /** Players picked on the board for a SELECT_PLAYERS decision. */
   picked: string[];
   setPicked(ids: string[]): void;
-  /** Showing the pass range overlay. */
-  aiming: boolean;
-  setAiming(aiming: boolean): void;
+  /** Showing the pass range overlay, or aiming a Hail Mary Pass. */
+  aiming: Aiming;
+  setAiming(aiming: Aiming): void;
   /** Online: the opponent's team name while it is their decision. */
   waitingFor?: string | null;
 }
@@ -74,11 +75,15 @@ function throwingBomb(state: GameState) {
 }
 
 /** The prompt line, from the main template and the board's interaction mode. */
-function promptText(state: GameState, templates: ActionTemplate[], main: ActionTemplate, blitzFor: string | null, aiming: boolean) {
+function promptText(state: GameState, templates: ActionTemplate[], main: ActionTemplate, blitzFor: string | null, aiming: Aiming) {
   const roll = findTemplate(templates, "ROLL");
   const select = findTemplate(templates, "SELECT_PLAYERS");
   const snap = findTemplate(templates, "SNAP");
   if (blitzFor) return `click the opponent ${state.players[blitzFor]!.name} will blitz`;
+  if (aiming === "hailMary") {
+    const needed = findTemplate(templates, "HAIL_MARY_PASS")?.needed;
+    return `Hail Mary Pass: click any square of the pitch (${needed}+ to avoid a fumble; it always scatters three times, nobody can intercept)`;
+  }
   if (aiming && throwingBomb(state)) return "click a square (or a player) to throw the bomb to";
   if (aiming && findTemplate(templates, "PUNT")) return "click a square next to the punter (not diagonally) to punt towards it";
   if (aiming) return "click a square (or a team-mate) to throw to";
@@ -128,14 +133,14 @@ export function ActionPanel(props: ActionPanelProps) {
         {promptText(state, templates, main, props.blitzFor, props.aiming)}
       </div>
       <div className="bb-buttons">
-        {throwTo && <ThrowControls template={throwTo} aiming={props.aiming} setAiming={props.setAiming} />}
+        {throwTo && <ThrowControls template={throwTo} hailMary={has("HAIL_MARY_PASS")} aiming={props.aiming} setAiming={props.setAiming} />}
         {punt &&
           (props.aiming ? (
             <button className="bb-link" onClick={() => props.setAiming(false)}>
               Cancel punt
             </button>
           ) : (
-            <button className="bb-confirm" onClick={() => props.setAiming(true)}>
+            <button className="bb-confirm" onClick={() => props.setAiming("throw")}>
               Punt…
             </button>
           ))}
@@ -308,11 +313,20 @@ export function ActionPanel(props: ActionPanelProps) {
 }
 
 /** Pass legend and cancel while aiming, or the button that starts aiming. */
-function ThrowControls(props: { template: TemplateOf<"THROW">; aiming: boolean; setAiming(aiming: boolean): void }) {
+function ThrowControls(props: { template: TemplateOf<"THROW">; hailMary: boolean; aiming: Aiming; setAiming(aiming: Aiming): void }) {
   if (!props.aiming)
     return (
-      <button className="bb-confirm" onClick={() => props.setAiming(true)}>
-        Throw…
+      <>
+        <button className="bb-confirm" onClick={() => props.setAiming("throw")}>
+          Throw…
+        </button>
+        {props.hailMary && <button onClick={() => props.setAiming("hailMary")}>Hail Mary Pass…</button>}
+      </>
+    );
+  if (props.aiming === "hailMary")
+    return (
+      <button className="bb-link" onClick={() => props.setAiming(false)}>
+        Cancel throw
       </button>
     );
   return (

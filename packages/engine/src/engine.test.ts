@@ -2007,6 +2007,41 @@ describe("engine", () => {
       });
     });
 
+    describe("Hail Mary Pass", () => {
+      /** home-5 picks up the ball at (4,2) during a Pass action. */
+      const thrower = (s = toFirstTurn()) => apply(withSkills(s, { "home-5": ["Hail Mary Pass"] }), declare("home-5", "pass"), ...TO_BALL, roll(3));
+
+      it("to any square, rolled as a Long Bomb, never accurate: it scatters three times from the target", () => {
+        let s = thrower();
+        expect(find(s, "HAIL_MARY_PASS")).toEqual({ type: "HAIL_MARY_PASS", side: "home", playerId: "home-5", needed: 5 });
+        s = apply(s, { type: "HAIL_MARY_PASS", square: { x: 20, y: 10 } });
+        expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass 5+");
+        // Even a 6 is inaccurate, and it is not worth a re-roll.
+        s = apply(s, roll(6));
+        expect(s.log).toContainEqual({ type: "PassResult", playerId: "home-5", result: "inaccurate" });
+        expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
+        s = apply(s, roll(1, 5, 1));
+        expect(s.log).toContainEqual({ type: "BallScattered", to: { x: 20, y: 9 } });
+      });
+
+      it("cannot be intercepted; a fumble may be re-rolled", () => {
+        let s = apply(thrower(place(toFirstTurn(), { "away-4": { x: 9, y: 3 } })), { type: "HAIL_MARY_PASS", square: { x: 12, y: 4 } }, roll(5));
+        expect(types(s)).toEqual(["ROLL"]);
+        expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
+        s = apply(thrower(), { type: "HAIL_MARY_PASS", square: { x: 12, y: 4 } }, roll(4));
+        expect(s.log).toContainEqual({ type: "PassResult", playerId: "home-5", result: "fumble" });
+        expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+      });
+
+      it("not in a blizzard", () => {
+        const s = thrower(edit(toFirstTurn(), (c) => {
+          c.weather = "blizzard";
+        }));
+        expect(find(s, "THROW")).toBeDefined();
+        expect(find(s, "HAIL_MARY_PASS")).toBeUndefined();
+      });
+    });
+
     describe("Dump-off", () => {
       /** away-2 (13,7) holds the ball, marked by home-1, home-2 and home-3; away-6 stands free at (15,6). */
       const dumper = (skills = ["Dump-off"]) =>

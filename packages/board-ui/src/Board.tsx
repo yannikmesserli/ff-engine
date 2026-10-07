@@ -59,9 +59,12 @@ interface BoardProps {
   setPicked(ids: string[]): void;
   menu: ActionMenuState | null;
   setMenu(menu: ActionMenuState | null): void;
-  /** Showing the pass range overlay: square clicks throw instead of moving. */
-  aiming: boolean;
+  /** Aiming a throw (pass range overlay, also a punt) or a Hail Mary Pass: square clicks throw instead of moving. */
+  aiming: Aiming;
 }
+
+/** What the coach is aiming: a throw or punt, a Hail Mary Pass to any square, or nothing. */
+export type Aiming = false | "throw" | "hailMary";
 
 /** Alt text of the flight markers. */
 const FLIGHT_NAMES = { aimed: "aimed here", landing: "coming down here", held: "to throw again", exploding: "exploding" } as const;
@@ -87,9 +90,11 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
   const block = findTemplate(templates, "BLOCK");
   const push = findTemplate(templates, "PUSH");
   const followUp = findTemplate(templates, "FOLLOW_UP");
-  const throwTo = aiming ? findTemplate(templates, "THROW") : undefined;
+  const throwTo = aiming === "throw" ? findTemplate(templates, "THROW") : undefined;
   // Punt: once aiming, the squares next to the punter give the direction.
-  const puntTo = aiming ? findTemplate(templates, "PUNT") : undefined;
+  const puntTo = aiming === "throw" ? findTemplate(templates, "PUNT") : undefined;
+  // Hail Mary Pass: any square of the pitch.
+  const hailMary = aiming === "hailMary" ? findTemplate(templates, "HAIL_MARY_PASS") : undefined;
   const handOff = findTemplate(templates, "HAND_OFF");
   const ttm = findTemplate(templates, "THROW_TEAM_MATE");
   // Throw Team-mate: once a team-mate is picked, the target squares replace the moves.
@@ -144,6 +149,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
       setPicked([]);
     } else if (push?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "PUSH", square: s });
     else if (throwTo?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "THROW", square: s });
+    else if (hailMary) dispatch({ type: "HAIL_MARY_PASS", square: s });
     else if (puntTo) {
       if (puntTo.squares.some((t) => sameSquare(t, s))) dispatch({ type: "PUNT", square: s });
     }
@@ -220,7 +226,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
                   key={squareId(s)}
                   square={s}
                   droppable={placementSquares.has(squareId(s))}
-                  target={pass ? `pass-${pass.range}` : target !== undefined ? (ballTarget || puntTo ? "kick" : "move") : null}
+                  target={hailMary ? "pass-bomb" : pass ? `pass-${pass.range}` : target !== undefined ? (ballTarget || puntTo ? "kick" : "move") : null}
                   risky={rolls.length > 0}
                   badge={pass ? "" : rolls.map((r) => ROLL_BADGES[r]).join("")}
                   title={pass ? `${PASS_RANGE_NAMES[pass.range]}: ${pass.needed}+ for an accurate pass` : undefined}
