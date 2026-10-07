@@ -214,6 +214,7 @@ export type CheckKind =
   | "dauntless"
   | "vomit"
   | "breathefire"
+  | "tentacles"
   | "animosity"
   | "landing"
   | "hunger"
@@ -479,6 +480,8 @@ export type Procedure =
       /** Named as the target of a Blitz being declared: the blitzer may not be standing yet. */
       declared?: boolean;
     }
+  /** Tentacles: an opponent may try to hold the player dodging or jumping away from `from`. */
+  | { type: "Tentacles"; playerId: string; from: Square; stage: "select" | "result"; tentaclerId?: string }
   /** Shadowing: an opponent may follow the player who just left `from`, out of their tackle zone. */
   | { type: "Shadow"; playerId: string; from: Square; stage: "select" | "result"; shadowerId?: string }
   /** The crowd throws a rock at a stalling ball carrier. */
@@ -516,6 +519,9 @@ export type Procedure =
       stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup";
       /** The failed roll left the player in the starting square. */
       fellInPlace?: boolean;
+      /** Tentacles: the opponents were asked; `held`: a Tentacles player kept the mover in the starting square. */
+      tentacles?: boolean;
+      held?: boolean;
     }
   | {
       type: "Check";

@@ -2042,6 +2042,36 @@ describe("engine", () => {
       });
     });
 
+    describe("Tentacles", () => {
+      /** home-2 (12,7) steps back to (11,7), away from away-2 (13,7) and its Tentacles. */
+      const leaving = (st = 3) =>
+        apply(
+          edit(withSkills(toFirstTurn(), { "away-2": ["Tentacles"] }), (c) => {
+            c.players["away-2"]!.st = st;
+          }),
+          declare("home-2", "move"),
+          ...move({ x: 11, y: 7 }),
+        );
+      const grab: Action = { type: "SELECT_PLAYERS", playerIds: ["away-2"] };
+
+      it("before the dodge, the opponent may roll D6 + ST difference, 6+, to hold the player in place", () => {
+        let s = leaving();
+        expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-2"], max: 1 });
+        s = apply(s, grab);
+        expect(find(s, "ROLL")?.reason).toBe("Tentacles 6+ (Away 2)");
+        // No team re-roll out of their turn.
+        s = apply(s, roll(6));
+        expect(s.players["home-2"]!.at).toEqual({ x: 12, y: 7 });
+        expect([s.turnover, s.activeSide, top(s).type, s.players["home-2"]!.activated]).toEqual([false, "home", "Turn", true]);
+      });
+
+      it("a failed or declined grab leaves the dodge to roll; a stronger player grabs more easily", () => {
+        expect(find(apply(leaving(), grab, roll(5)), "ROLL")?.reason).toMatch(/^Dodge/);
+        expect(find(apply(leaving(), { type: "SELECT_PLAYERS", playerIds: [] }), "ROLL")?.reason).toMatch(/^Dodge/);
+        expect(find(apply(leaving(5), grab), "ROLL")?.reason).toBe("Tentacles 4+ (Away 2)");
+      });
+    });
+
     describe("Trickster", () => {
       /** away-2 (13,7) has Trickster; home-4 waits at (10,7), next to the square behind the attacker. */
       const trickster = (s = toFirstTurn()) => place(withSkills(s, { "away-2": ["Trickster"] }), { "home-4": { x: 10, y: 7 } });

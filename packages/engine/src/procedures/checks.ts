@@ -28,6 +28,7 @@ const CHECK_NAMES = {
   dauntless: "Dauntless",
   vomit: "Projectile Vomit",
   breathefire: "Breathe Fire",
+  tentacles: "Tentacles",
   animosity: "Animosity",
   landing: "Landing",
   hunger: "Always Hungry",

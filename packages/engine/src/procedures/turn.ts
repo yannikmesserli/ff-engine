@@ -1,4 +1,4 @@
-import type { Ctx, Handler } from "../context";
+import type { Ctx, Handler, StepResult } from "../context";
 import type { CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
@@ -893,6 +893,14 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         return "continue";
       case "dodge":
         if (failed(ctx)) return fall(proc.jump);
+        if (proc.held) return holdInPlace(ctx, proc, player);
+        // Tentacles: the opponents may first try to hold a player dodging or jumping away.
+        if (!proc.tentacles && !proc.hitAndRun && tentaclers(state, player, squareOf(ctx, player)).length > 0) {
+          proc.tentacles = true;
+          state.lastCheck = null;
+          ctx.push({ type: "Tentacles", playerId: player.id, from: { ...squareOf(ctx, player) }, stage: "select" });
+          return "continue";
+        }
         state.lastCheck = null;
         proc.stage = "move";
         const leaving = { from: { ...squareOf(ctx, player) }, to: { ...proc.to } };
@@ -931,6 +939,64 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     }
   },
   actions: () => [],
+};
+
+/** Tentacles: D6 + the Tentacles player's ST - the mover's ST must reach 6. */
+export const TENTACLES_TARGET = 6;
+
+/** Opponents with Tentacles and a tackle zone next to the square the player leaves. */
+export function tentaclers(state: GameState, player: PlayerState, from: Square): PlayerState[] {
+  return adjacent(from).flatMap((s) => {
+    const p = tackleZoneAt(state, s);
+    return p && p.side !== player.side && hasSkill(p, "Tentacles") ? [p] : [];
+  });
+}
+
+/** Held by Tentacles: the player stays in the starting square and their action (or On the Ball move) ends, no turnover. */
+function holdInPlace(ctx: Ctx, proc: P<"MoveStep">, player: PlayerState): StepResult {
+  const activation = ctx.state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === player.id);
+  if (activation) activation.finished = true;
+  if (proc.onTheBall) player.movesUsed = ON_THE_BALL_SQUARES;
+  return "done";
+}
+
+/**
+ * Tentacles: when a player dodges or jumps away from opponents with the skill (after any Rush), their coach may pick one
+ * of them, who rolls a D6 + their ST - the mover's ST (a 1 always fails, a 6 always succeeds) and needs 6, without a
+ * team re-roll (it is not their turn). On a success the mover is held in the starting square and their action ends.
+ */
+export const Tentacles: Handler<P<"Tentacles">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const player = getPlayer(ctx, proc.playerId);
+    if (proc.stage === "result") {
+      const held = state.lastCheck?.kind === "tentacles" && state.lastCheck.success;
+      state.lastCheck = null;
+      if (held) {
+        ctx.emit({ type: "SkillUsed", playerId: proc.tentaclerId!, skill: "Tentacles" });
+        const move = state.stack.findLast((p): p is P<"MoveStep"> => p.type === "MoveStep" && p.playerId === player.id);
+        if (move) move.held = true;
+      }
+      return "done";
+    }
+    const candidates = tentaclers(state, player, proc.from);
+    if (candidates.length === 0) return "done";
+    if (action === null) return "wait";
+    const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+    const id = playerIds[0];
+    if (playerIds.length > 1 || (id !== undefined && !candidates.some((c) => c.id === id))) ctx.reject("Invalid Tentacles player.");
+    if (id === undefined) return "done";
+    const holder = getPlayer(ctx, id);
+    proc.tentaclerId = id;
+    ctx.push({ type: "Check", kind: "tentacles", playerId: id, target: TENTACLES_TARGET, modifier: holder.st - player.st, stage: "roll", rerolled: false });
+    proc.stage = "result";
+    return "continue";
+  },
+  actions(state, proc) {
+    const player = state.players[proc.playerId]!;
+    const playerIds = tentaclers(state, player, proc.from).map((p) => p.id);
+    return [{ type: "SELECT_PLAYERS", side: other(player.side), playerIds, max: 1, reason: `Tentacles: choose a player to try to hold ${player.name}` }];
+  },
 };
 
 /** Shadowing succeeds on 4+. */

@@ -78,7 +78,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Iron Hard Skin": "Opponents cannot modify armour rolls against this player, and Claws does not work against them.",
   "Monstrous Mouth": "May chomp an adjacent opponent: on 3+ they cannot leave their square while marked by this player.",
   "Prehensile Tail": "-1 more to the Dodge, Jump and Leap rolls of opponents leaving this player's tackle zone.",
-  Tentacles: "When an opponent tries to leave this player's tackle zone, roll D6 + ST against their ST: on a win they stay in place.",
+  Tentacles: "When an opponent dodges or jumps away from this player, may roll D6 + own ST - their ST: on 6+ they are held in place and their action ends.",
   "Two Heads": "+1 to Dodge rolls.",
   "Very Long Legs": "+1 to Jump and Leap rolls, +2 to interceptions; ignores Cloud Burster.",
   // Extraordinary

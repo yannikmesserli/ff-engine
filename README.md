@@ -120,6 +120,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Hypnotic Gaze, after any Foul Appearance roll, the ball carrier's coach may first make a Quick pass with them (no
   team re-roll, no On the Ball); neither team's turn ends because of it, then the action goes on. The target of a
   Blitz decides as soon as the Blitz is declared, before the blitzer moves (a blitzer still down has no tackle zone).
+- Tentacles: when an opponent dodges or jumps away from players with the skill (after any Rush), their coach may pick
+  one, who rolls D6 + their ST - the mover's ST, 6+ (no team re-roll): the mover stays in the starting square and
+  their action ends, without a turnover.
 - Trickster: before being blocked (or hit by Projectile Vomit, Stab or Breathe Fire), after any Dump-off and
   Dauntless, a player with a tackle zone may move to a free square next to the attacker, with the ball; onto a loose
   ball, a pick-up roll or a bounce, as their coach chooses. The block dice are worked out again.
