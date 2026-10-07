@@ -3,7 +3,7 @@ import type { GameState, PassRange, PlayerState, Procedure, Square } from "../ty
 import { SCATTER, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, offset, playerAt, sameSquare, tackleZones } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 import { evaluatePass, passModifiers, passRange, shownNeeded } from "./pass";
 import { injure } from "./injury";
 
@@ -157,7 +157,7 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         if (action === null) return "wait";
         const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
         if (a.type === "USE_SKILL" && a.use) {
-          if ((a.skill ?? "Pro") !== "Pro" || !canUsePro(state, thrower, proc.rerolled)) ctx.reject("Pro cannot be used now.");
+          if ((a.skill ?? "Pro") !== "Pro" || proc.mascotFailed || !canUsePro(state, thrower, proc.rerolled)) ctx.reject("Pro cannot be used now.");
           proc.rerolled = true;
           proc.stage = "pro";
         } else if (a.type === "USE_REROLL") {
@@ -170,7 +170,9 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       }
       case "loner":
         if (action === null) return "wait";
-        proc.stage = rollLoner(ctx, action, thrower) ? "roll" : "scatter";
+        const gate = rollLoner(ctx, action, thrower);
+        if (gate === "offer") mascotFailed(proc);
+        proc.stage = gate === "reroll" ? "roll" : gate === "offer" ? "reroll" : "scatter";
         return "continue";
       case "pro":
       case "proTeam":
@@ -223,7 +225,10 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         if (action === null) return "wait";
         const swoop = proc.swoop as Swoop;
         // A failed Loner roll keeps the first result.
-        if (rollLoner(ctx, action, thrown)) proc.stage = swoop.rolling === "direction" ? "swoopDirection" : "swoopDistance";
+        const gate = rollLoner(ctx, action, thrown);
+        if (gate === "offer") mascotFailed(swoop);
+        if (gate === "reroll") proc.stage = swoop.rolling === "direction" ? "swoopDirection" : "swoopDistance";
+        else if (gate === "offer") proc.stage = "swoopReroll";
         else nextSwoopStep(proc);
         return "continue";
       }
@@ -324,7 +329,7 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       case "reroll":
         return [
           ...(canTeamReroll(state, thrower.side, proc.rerolled) ? [teamRerollTemplate(state, thrower.side)] : []),
-          ...proTemplate(state, thrower, proc.rerolled),
+          ...(proc.mascotFailed ? [] : proTemplate(state, thrower, proc.rerolled)),
           { type: "DECLINE_REROLL", side: thrower.side },
         ];
       case "loner":

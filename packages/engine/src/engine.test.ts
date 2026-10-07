@@ -3406,8 +3406,12 @@ describe("engine", () => {
       expect(find(s, "USE_REROLL")).toEqual({ type: "USE_REROLL", side: "home", available: 1 });
     });
 
-    it("a failed Mascot roll spends a team re-roll instead, if one is left; without one the result stands", () => {
-      const s = apply(failedDodge(toFirstTurn(mascotTeam())), { type: "USE_REROLL", mascot: true }, roll(3));
+    it("after a failed Mascot roll the coach may still use a team re-roll; without one the result stands", () => {
+      let s = apply(failedDodge(toFirstTurn(mascotTeam())), { type: "USE_REROLL", mascot: true }, roll(3));
+      // Asked again: the team re-roll only, not the Mascot.
+      expect(getAvailableActions(s)).toEqual([{ type: "USE_REROLL", side: "home", available: 1 }, { type: "DECLINE_REROLL", side: "home" }]);
+      expect(apply(s, { type: "DECLINE_REROLL" }).players["home-1"]!.status).toBe("prone");
+      s = apply(s, { type: "USE_REROLL" });
       expect([s.teams.home.rerolls, find(s, "ROLL")?.reason]).toEqual([0, expect.stringMatching(/^Dodge/)]);
       let none = failedDodge(toFirstTurn(mascotTeam(0)));
       expect(find(none, "USE_REROLL")).toEqual({ type: "USE_REROLL", side: "home", available: 0, mascot: true });
@@ -3415,10 +3419,20 @@ describe("engine", () => {
       expect(none.players["home-1"]!.status).toBe("prone");
     });
 
-    it("a Loner player rolls the Mascot and Loner dice together", () => {
+    it("on block dice too: after a failed Mascot roll the dice are offered again with the team re-roll, not Pro", () => {
+      let s = apply(toFirstTurn(mascotTeam(1, ["Pro"])), declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(1));
+      expect(find(s, "USE_REROLL")?.mascot).toBe(true);
+      s = apply(s, { type: "USE_REROLL", mascot: true }, roll(2));
+      expect(types(s).sort()).toEqual(["CHOOSE_BLOCK_DIE", "USE_REROLL"]);
+      expect(find(s, "USE_REROLL")).toEqual({ type: "USE_REROLL", side: "home", available: 1 });
+    });
+
+    it("a Loner player rolls the Mascot and Loner dice together; a team re-roll after a failed Mascot needs Loner again", () => {
       const s = apply(failedDodge(toFirstTurn(mascotTeam(1, ["Loner(4)"]))), { type: "USE_REROLL", mascot: true });
       expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d6", count: 2 }], reason: "Team Mascot 4+, Loner 4+ (Home 1)" });
       expect(find(apply(s, roll(5, 3)), "ROLL")?.reason).toMatch(/^Armour/);
+      const team = apply(s, roll(2, 6), { type: "USE_REROLL" });
+      expect(find(team, "ROLL")).toMatchObject({ dice: [{ kind: "d6", count: 1 }], reason: "Loner 4+ (Home 1)" });
     });
   });
 

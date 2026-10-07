@@ -6,7 +6,7 @@ import { injure } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
 import { hasSkill, skillName, skillValue } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, useTeamReroll, weatherModifier } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, useTeamReroll, weatherModifier } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -367,13 +367,11 @@ function singleDieSkills(proc: P<"Block">, attacker: PlayerState, defender: Play
 
 /** Any re-roll the attacker could use on the block dice now (team re-roll, Brawler, Hatred, Pro). */
 const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
-  canReroll(state, proc, attacker) || singleDieSkills(proc, attacker, defender).length > 0 || canUsePro(state, attacker, proc.rerolled);
+  canReroll(state, proc, attacker) || (!proc.mascotFailed && (singleDieSkills(proc, attacker, defender).length > 0 || canUsePro(state, attacker, proc.rerolled)));
 
 /** The re-roll skills offered on the block dice now, as USE_SKILL templates. */
-const skillTemplates = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) => [
-  ...singleDieTemplate(proc, attacker, defender),
-  ...proTemplate(state, attacker, proc.rerolled),
-];
+const skillTemplates = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
+  proc.mascotFailed ? [] : [...singleDieTemplate(proc, attacker, defender), ...proTemplate(state, attacker, proc.rerolled)];
 
 /** Use the re-roll skill named by the action (the only one offered when it names none): Brawler, Hatred or Pro. */
 function useSkill(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: PlayerState, skill: string | undefined) {
@@ -568,8 +566,10 @@ export const Block: Handler<P<"Block">> = {
       }
       case "loner":
         if (action === null) return "wait";
-        // A failed Loner roll keeps the dice already rolled.
-        proc.stage = rollLoner(ctx, action, attacker) ? "roll" : "choose";
+        // A failed Loner roll keeps the dice already rolled; a failed Team Mascot asks again.
+        const gate = rollLoner(ctx, action, attacker);
+        if (gate === "offer") mascotFailed(proc);
+        proc.stage = gate === "reroll" ? "roll" : gate === "offer" && proc.dice < 0 ? "reroll" : "choose";
         return "continue";
       case "choose": {
         // A single die without a possible re-roll leaves nothing to decide.

@@ -259,7 +259,7 @@ export function stepPro(ctx: Ctx, proc: { stage: string; proRetried?: boolean },
     return "wait";
   }
   if (proc.stage === "proLoner") {
-    if (!rollLoner(ctx, action, player)) return "stands";
+    if (rollLoner(ctx, action, player) !== "reroll") return "stands";
     proc.stage = "pro";
     return "wait";
   }
@@ -283,7 +283,7 @@ export function proTemplates(state: GameState, stage: ProStage, player: PlayerSt
 
 /**
  * Spend a team re-roll, drive re-rolls first; or (`mascot`) try the Team Mascot, whose 4+ roll comes with the Loner
- * roll (see `rerollGate`).
+ * roll (see `rerollGate`). After a failed Mascot roll the coach is asked again, for a team re-roll only.
  */
 export function useTeamReroll(ctx: Ctx, side: Side, mascot = false) {
   const team = ctx.state.teams[side];
@@ -298,6 +298,12 @@ export function useTeamReroll(ctx: Ctx, side: Side, mascot = false) {
   if (team.driveRerolls > 0) team.driveRerolls -= 1;
   else team.rerolls -= 1;
   ctx.emit({ type: "RerollUsed", side });
+}
+
+/** The Team Mascot failed: the roll may be re-rolled again, with a team re-roll only (no Mascot, Pro or skill). */
+export function mascotFailed(proc: { rerolled: boolean; mascotFailed?: boolean }) {
+  proc.rerolled = false;
+  proc.mascotFailed = true;
 }
 
 /** A roll is due before a team re-roll happens: the Team Mascot's 4+, and Loner's. */
@@ -334,11 +340,11 @@ export const lonerRollTemplate = (state: GameState, player: PlayerState): Action
 });
 
 /**
- * The rolls due before a team re-roll, in one throw: the Team Mascot (4+; a failure spends a team re-roll instead if
- * one is left, otherwise the first result stands), then Loner (a failure loses the re-roll). True when the die is
- * re-rolled.
+ * The rolls due before a team re-roll, in one throw: the Team Mascot (4+), then Loner (a failure loses the re-roll).
+ * "reroll": the die is re-rolled; "stands": the first result stands; "offer": the Mascot failed, and the coach may
+ * still spend a team re-roll (the Loner die, if any, is not read).
  */
-export function rollLoner(ctx: Ctx, action: Action, player: PlayerState): boolean {
+export function rollLoner(ctx: Ctx, action: Action, player: PlayerState): "reroll" | "stands" | "offer" {
   const { state } = ctx;
   const team = state.teams[player.side];
   const rolls = ctx.roll(action, gateDice(state, player), gateReason(state, player));
@@ -347,15 +353,12 @@ export function rollLoner(ctx: Ctx, action: Action, player: PlayerState): boolea
     const roll = rolls.shift()!;
     const success = roll >= MASCOT_TARGET;
     ctx.emit({ type: "CheckResult", kind: "mascot", playerId: player.id, success, roll, target: MASCOT_TARGET });
-    if (!success) {
-      if (rerollsLeft(state, player.side) === 0) return false;
-      useTeamReroll(ctx, player.side);
-    }
+    if (!success) return rerollsLeft(state, player.side) > 0 ? "offer" : "stands";
   }
   const target = lonerTarget(player);
-  if (target === null) return true;
+  if (target === null) return "reroll";
   const roll = rolls.shift()!;
   const success = roll >= target;
   ctx.emit({ type: "CheckResult", kind: "loner", playerId: player.id, success, roll, target });
-  return success;
+  return success ? "reroll" : "stands";
 }

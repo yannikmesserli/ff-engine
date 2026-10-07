@@ -3,7 +3,7 @@ import type { GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 import { injure } from "./injury";
 import { dropBall } from "./ball";
 
@@ -162,7 +162,7 @@ export const Check: Handler<P<"Check">> = {
       const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
       if (a.type === "DECLINE_REROLL" || (a.type === "USE_SKILL" && !a.use)) return finish(state, proc, kept(proc));
       if (a.type === "USE_SKILL") {
-        if ((a.skill ?? "Pro") !== "Pro" || !canUsePro(state, player, proc.rerolled)) ctx.reject("Pro cannot be used now.");
+        if ((a.skill ?? "Pro") !== "Pro" || proc.mascotFailed || !canUsePro(state, player, proc.rerolled)) ctx.reject("Pro cannot be used now.");
         proc.rerolled = true;
         proc.stage = "pro";
         return "wait";
@@ -175,7 +175,13 @@ export const Check: Handler<P<"Check">> = {
     }
     if (proc.stage === "loner") {
       // A failed Loner roll keeps the first result.
-      if (!rollLoner(ctx, action, player)) return finish(state, proc, kept(proc));
+      const gate = rollLoner(ctx, action, player);
+      if (gate === "offer") {
+        mascotFailed(proc);
+        proc.stage = "reroll";
+        return "wait";
+      }
+      if (gate === "stands") return finish(state, proc, kept(proc));
       proc.stage = "roll";
       return "wait";
     }
@@ -212,7 +218,7 @@ export const Check: Handler<P<"Check">> = {
     if (proc.stage === "reroll") {
       return [
         ...(canTeamReroll(state, player.side, proc.rerolled) ? [teamRerollTemplate(state, player.side)] : []),
-        ...proTemplate(state, player, proc.rerolled),
+        ...(proc.mascotFailed ? [] : proTemplate(state, player, proc.rerolled)),
         { type: "DECLINE_REROLL", side: player.side },
       ];
     }

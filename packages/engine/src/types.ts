@@ -424,6 +424,8 @@ export type Procedure =
       /** "aim": a player who caught a bomb picks where to throw it again, or a Dump-off thrower picks the target. */
       stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
       rerolled: boolean;
+      /** The Team Mascot failed: only a team re-roll may be offered now. */
+      mascotFailed?: boolean;
       result?: PassResult;
       /** A team re-roll was spent on a failed Pro roll. */
       proRetried?: boolean;
@@ -451,10 +453,14 @@ export type Procedure =
        * Swoop: false when declined; otherwise the side chosen, the roll being made (each with its own team re-roll), the
        * direction and the distance rolled.
        */
-      swoop?: false | { facing: Square; rolling: "direction" | "distance"; rerolled: boolean; direction?: Square; distance?: number };
+      swoop?:
+        | false
+        | { facing: Square; rolling: "direction" | "distance"; rerolled: boolean; mascotFailed?: boolean; direction?: Square; distance?: number };
       /** Kick Team-mate: the same as a throw, but a fumble injures the kicked player. */
       kicked?: boolean;
       rerolled: boolean;
+      /** The Team Mascot failed: only a team re-roll may be offered now. */
+      mascotFailed?: boolean;
       /** A team re-roll was spent on a failed Pro roll. */
       proRetried?: boolean;
       /** "accurate" is a superb throw, "inaccurate" a subpar one. */
@@ -516,6 +522,8 @@ export type Procedure =
       dice: number;
       results?: number[];
       rerolled: boolean;
+      /** The Team Mascot failed: only a team re-roll may be offered now. */
+      mascotFailed?: boolean;
       face?: number;
       /** Square the defender was pushed from, available for the follow-up (none after Stand Firm). */
       vacated?: Square;
@@ -580,6 +588,8 @@ export type Procedure =
       stage: "direction" | "distance" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "land" | "end";
       rolling: "direction" | "distance";
       rerolled: boolean;
+      /** The Team Mascot failed: only a team re-roll may be offered now. */
+      mascotFailed?: boolean;
       /** A team re-roll was spent on a failed Pro roll. */
       proRetried?: boolean;
       direction?: Square;
@@ -655,6 +665,8 @@ export type Procedure =
        */
       stage: "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "divingTackle";
       rerolled: boolean;
+      /** The Team Mascot failed: only a team re-roll may be offered now. */
+      mascotFailed?: boolean;
       /** The natural roll, kept when the re-roll is declined or lost. */
       roll?: number;
       /** A team re-roll was spent on a failed Pro roll. */
