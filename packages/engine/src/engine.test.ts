@@ -3203,6 +3203,22 @@ describe("engine", () => {
     });
   });
 
+  describe("Halfling Master Chef", () => {
+    it("before the first kick-off of each half, 3D6: every 4+ steals a team re-roll for the half", () => {
+      const chef = { ...team("Home"), inducements: { halflingMasterChef: 1 } };
+      let s = apply(toSetup(chef), ...setupActions("away"), ...setupActions("home"));
+      expect(find(s, "ROLL")).toMatchObject({ side: "home", dice: [{ kind: "d6", count: 3 }] });
+      s = apply(s, roll(4, 5, 1));
+      // Away had only one re-roll to lose, but home gains both.
+      expect([s.teams.home.rerolls, s.teams.away.rerolls]).toEqual([3, 0]);
+      expect(types(s)).toEqual(["PLACE_BALL"]);
+      s = endTurnsUntilSetup(apply(s, { type: "PLACE_BALL", square: { x: 5, y: 1 } }, roll(7, 1), QUIET_EVENT, roll(5)));
+      // A new half: re-rolls back to normal, and the chef cooks again.
+      s = apply(s, ...setupActions("home"), ...setupActions("away"));
+      expect([s.teams.home.rerolls, s.teams.away.rerolls, find(s, "ROLL")?.reason]).toEqual([1, 1, expect.stringMatching(/^Halfling Master Chef/)]);
+    });
+  });
+
   describe("Team Mascot", () => {
     const mascotTeam = (rerolls = 1, skills: string[] = []) => ({ ...team("Home", { rerolls, skills }), inducements: { teamMascot: 1 } });
     /** home-1 dodges from (12,6) to (11,5) and fails. */

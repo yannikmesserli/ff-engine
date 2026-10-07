@@ -132,8 +132,11 @@ export const Half: Handler<P<"Half">> = {
         ...(knockedOut.length > 0 ? [{ type: "KoRecovery" as const, playerIds: knockedOut }] : []),
         { type: "Setup", side: proc.kicking },
         { type: "Setup", side: receiving },
+        // Halfling Master Chef: before the first kick-off of the first and second halves.
+        ...(proc.half < 3 && (proc.drives ?? 0) === 0 ? masterChef(state) : []),
         { type: "Kickoff", kicking: proc.kicking, stage: "place" },
       );
+      proc.drives = (proc.drives ?? 0) + 1;
       return "continue";
     }
     if (state.teams[proc.nextSide].turn >= TURNS_PER_HALF) {
@@ -150,6 +153,46 @@ export const Half: Handler<P<"Half">> = {
     return "continue";
   },
   actions: () => [],
+};
+
+/** Halfling Master Chef: each of the 3D6 steals a team re-roll on 4+. */
+export const MASTER_CHEF_TARGET = 4;
+
+/** The Halfling Master Chef roll, if a team bought one. */
+function masterChef(state: GameState): Procedure[] {
+  const sides = (["home", "away"] as const).filter((side) => (state.teams[side].inducements.halflingMasterChef ?? 0) > 0);
+  return sides.length > 0 ? [{ type: "MasterChef", sides: [...sides], stolen: {} }] : [];
+}
+
+/**
+ * Halfling Master Chef: before the first kick-off of each half (not overtime), each team with a chef rolls 3D6; every
+ * 4+ steals one of the opponents' team re-rolls for the half. Both teams roll before anything changes; the opponents
+ * cannot go below 0, but the chef's team gains every re-roll stolen.
+ */
+export const MasterChef: Handler<P<"MasterChef">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const side = proc.sides[0];
+    if (side === undefined) {
+      for (const [chef, stolen] of Object.entries(proc.stolen) as Array<[Side, number]>) {
+        const victim = state.teams[other(chef)];
+        victim.rerolls = Math.max(0, victim.rerolls - stolen);
+        state.teams[chef].rerolls += stolen;
+        ctx.emit({ type: "RerollsStolen", side: chef, count: stolen });
+      }
+      return "done";
+    }
+    if (action === null) return "wait";
+    const rolls = ctx.roll(action, [{ kind: "d6", count: 3 }], "Halfling Master Chef");
+    proc.stolen[side] = rolls.filter((r) => r >= MASTER_CHEF_TARGET).length;
+    ctx.emit({ type: "InducementUsed", side, inducement: "halflingMasterChef" });
+    proc.sides.shift();
+    return "continue";
+  },
+  actions(state, proc) {
+    const side = proc.sides[0]!;
+    return [{ type: "ROLL", side, dice: [{ kind: "d6", count: 3 }], reason: `Halfling Master Chef (${state.teams[side].name}): each 4+ steals a re-roll` }];
+  },
 };
 
 /** A KO'd player recovers on 4+ (easier with Blitzer's Best Kegs). */

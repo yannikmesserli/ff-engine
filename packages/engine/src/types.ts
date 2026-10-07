@@ -269,7 +269,10 @@ export type Procedure =
   | { type: "Game"; stage: "pregame" | "half1" | "half2" | "overtime" | "end" }
   | { type: "Pregame"; stage: "fans" | "weather" }
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
-  | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side }
+  /** `drives`: kick-offs so far in this half. */
+  | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number }
+  /** Halfling Master Chef: each team with one rolls 3D6 (`sides` still to roll); every 4+ steals a team re-roll. */
+  | { type: "MasterChef"; sides: Side[]; stolen: Partial<Record<Side, number>> }
   | { type: "SwelteringHeat" }
   | { type: "Setup"; side: Side }
   | {
@@ -859,6 +862,8 @@ export type GameEvent =
   | { type: "KoRecovery"; playerId: string; recovered: boolean }
   | { type: "CheckResult"; kind: CheckKind; playerId: string; success: boolean; roll: number; target: number }
   | { type: "RerollUsed"; side: Side }
+  /** Halfling Master Chef: `side` stole `count` team re-rolls from the opponents for the half. */
+  | { type: "RerollsStolen"; side: Side; count: number }
   /** An inducement bought for the game was used (the Team Mascot was tried...). */
   | { type: "InducementUsed"; side: Side; inducement: InducementId }
   | { type: "BallCaught"; playerId: string }
