@@ -260,4 +260,11 @@ describe("scenarios", () => {
     s = applyActions(start, [{ type: "MOVE", square: { x: 5, y: 1 } }, { type: "MOVE", square: { x: 5, y: 0 } }]);
     expect(find(s, "PUNT")?.crowd).toBe(true);
   });
+
+  it("hail-mary-pass: any square, never accurate, no interception", () => {
+    let s = applyActions(load("hail-mary-pass"), [{ type: "START_ACTION", playerId: "home-1", action: "pass" }]);
+    expect(find(s, "HAIL_MARY_PASS")?.needed).toBe(5);
+    s = applyActions(s, [{ type: "HAIL_MARY_PASS", square: { x: 20, y: 7 } }, { type: "ROLL", values: [6] }]);
+    expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
+  });
 });

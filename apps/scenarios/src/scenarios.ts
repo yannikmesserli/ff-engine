@@ -838,4 +838,43 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 2 },
     }),
   },
+  {
+    id: "hail-mary-pass",
+    title: "Hail Mary Pass: throw the ball anywhere",
+    instructions: [
+      "Home's first turn: Ithilmar (#1, Elf Thrower, Hail Mary Pass) holds the ball deep in his half. Declare a Pass with him.",
+      "Click \"Hail Mary Pass…\", then any square, e.g. next to Aenarion (#2) in the opposing half: a roll counted as a Long Bomb (5+ avoids a fumble). Even a 6 scatters the ball three times from the target, and the orc under the path cannot intercept.",
+      "Enter 4 or less with \"Physical dice\": a fumble, which a team re-roll may save.",
+      "Undo and click \"Throw…\" instead: the usual range overlay is still there.",
+    ],
+    home: {
+      name: "Elven Tricksters",
+      roster: "Elven Union",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Ithilmar", position: "Elf Thrower" },
+        { number: 2, name: "Aenarion", position: "Elf Catcher" },
+        { number: 3, name: "Belannaer", position: "Elf Lineman" },
+        { number: 4, name: "Caledor", position: "Elf Lineman" },
+        { number: 5, name: "Eltharion", position: "Elf Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+        { number: 4, name: "Gorbag", position: "Orc Lineman" },
+      ],
+    },
+    seed: 37,
+    actions: toFirstTurn({
+      home: { 1: { x: 3, y: 7 }, 2: { x: 11, y: 2 }, 3: { x: 12, y: 6 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 8 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 }, 4: { x: 16, y: 7 } },
+      ball: { x: 3, y: 7 },
+    }),
+  },
 ];
