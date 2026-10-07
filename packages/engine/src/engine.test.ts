@@ -3071,6 +3071,15 @@ describe("engine", () => {
       expect([s.teams.home.extraAssist, s.teams.away.extraAssist]).toEqual([true, false]);
     });
 
+    it("Temp Agency Cheerleaders and Part-time Assistant Coaches count for Cheering Fans and Brilliant Coaching", () => {
+      // Away rolls one more, but the home inducements turn it around.
+      const hired = { ...team("Home"), inducements: { tempCheerleaders: 2, partTimeCoaches: 2 } };
+      const fans = apply(kickWith(3, 3, hired), roll(3, 4));
+      expect([fans.teams.home.extraAssist, fans.teams.away.extraAssist]).toEqual([true, false]);
+      const coaching = apply(kickWith(3, 4, hired), roll(3, 4), roll(5));
+      expect([coaching.teams.home.driveRerolls, coaching.teams.away.driveRerolls]).toEqual([1, 0]);
+    });
+
     it("Brilliant Coaching gives both teams a drive re-roll on a tie, used before the normal ones", () => {
       let s = apply(kickWith(3, 4), roll(2, 2), roll(5));
       expect([s.teams.home.driveRerolls, s.teams.away.driveRerolls]).toEqual([1, 1]);

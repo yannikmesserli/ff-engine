@@ -1,5 +1,5 @@
 import type { Ctx, Handler } from "../context";
-import type { Action, DiceSpec, GameState, KickoffResult, PlayerState, Procedure, Side, Square, Weather } from "../types";
+import type { Action, DiceSpec, GameState, KickoffResult, PlayerState, Procedure, Side, Square, TeamState, Weather } from "../types";
 import { SCATTER } from "../dice";
 import { adjacent, allSquares, inHalf, isOnPitch, offset, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { getPlayer, landBall } from "./helpers";
@@ -270,6 +270,12 @@ const EVENT_DICE: Record<RollOffEvent, DiceSpec[]> = {
   "pitch-invasion": [...TWO_D6, ...D3],
 };
 
+/** Cheerleaders for Cheering Fans: the team's own, plus Temp Agency Cheerleaders. */
+const cheerleaders = (team: TeamState) => team.cheerleaders + (team.inducements.tempCheerleaders ?? 0);
+
+/** Assistant coaches for Brilliant Coaching: the team's own, plus Part-time Assistant Coaches. */
+const assistantCoaches = (team: TeamState) => team.assistantCoaches + (team.inducements.partTimeCoaches ?? 0);
+
 const EVENT_NAMES: Record<RollOffEvent, string> = {
   "cheering-fans": "Cheering Fans (home, away)",
   "brilliant-coaching": "Brilliant Coaching (home, away)",
@@ -306,16 +312,16 @@ export const KickoffEvent: Handler<P<"KickoffEvent">> = {
     const totals = { home: h!, away: a! };
     switch (proc.result) {
       case "cheering-fans":
-        totals.home += home.cheerleaders;
-        totals.away += away.cheerleaders;
+        totals.home += cheerleaders(home);
+        totals.away += cheerleaders(away);
         for (const side of winners(totals)) {
           state.teams[side].extraAssist = true;
           ctx.emit({ type: "ExtraAssist", side });
         }
         return "done";
       case "brilliant-coaching":
-        totals.home += home.assistantCoaches;
-        totals.away += away.assistantCoaches;
+        totals.home += assistantCoaches(home);
+        totals.away += assistantCoaches(away);
         for (const side of winners(totals)) {
           state.teams[side].driveRerolls += 1;
           ctx.emit({ type: "RerollGained", side });
