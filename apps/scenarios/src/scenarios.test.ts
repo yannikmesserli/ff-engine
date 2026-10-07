@@ -316,4 +316,11 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "THROW_TEAM_MATE", targetId: "home-2", square: { x: 6, y: 5 } }, { type: "ROLL", values: [6] }, { type: "ROLL", values: [6] }]);
     expect(find(s, "SWOOP")?.squares).toHaveLength(4);
   });
+
+  it("chainsaw: an attack instead of a block, or +3 in a foul", () => {
+    const start = load("chainsaw");
+    expect(start.players["away-3"]).toMatchObject({ at: { x: 14, y: 9 }, status: "prone" });
+    const s = applyActions(start, [{ type: "START_ACTION", playerId: "home-1", action: "block" }]);
+    expect(find(s, "CHAINSAW")?.targetIds).toEqual(["away-1"]);
+  });
 });

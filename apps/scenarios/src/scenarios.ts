@@ -1071,4 +1071,52 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "chainsaw",
+    title: "Chainsaw: a chainsaw attack instead of a block or in a foul",
+    instructions: [
+      "Home's first turn: the Looney Whirla (#1, Chainsaw) stands on the line of scrimmage next to Grishnak (#1); the Trained Troll Grub (#2) has already knocked Snaga (#3) down.",
+      "Declare a Block with Whirla and click \"Chainsaw Grishnak\": a D6, 2+, then Grishnak rolls armour with +3 and is placed prone (and injured) if it breaks. No turnover either way.",
+      "Enter a 1 with \"Physical dice\" and decline the re-roll: the chainsaw kicks back, Whirla is knocked down with +3 to his own armour roll, and the turn is over.",
+      "Undo and declare a Foul with Whirla instead: step next to Snaga (a dodge) and foul her. He may use his chainsaw, rolling for kick-back first, for +3 to the armour roll.",
+    ],
+    home: {
+      name: "Grotty Gits",
+      roster: "Goblin",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Whirla", position: "Looney" },
+        { number: 2, name: "Grub", position: "Trained Troll" },
+        { number: 3, name: "Snotling", position: "Goblin Lineman" },
+        { number: 4, name: "Nobbla", position: "Goblin Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 61,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 8 }, 3: { x: 12, y: 5 }, 4: { x: 5, y: 7 } },
+        away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 5 }, 3: { x: 13, y: 8 } },
+        ball: { x: 5, y: 7 },
+      }),
+      // Grub (Really Stupid, helped by Whirla: 2+) blocks Snaga with two dice and pushes her down to (14,9).
+      { type: "START_ACTION", playerId: "home-2", action: "block" },
+      roll(6),
+      { type: "BLOCK", targetId: "away-3" },
+      roll(6, 6),
+      { type: "CHOOSE_BLOCK_DIE", index: 0 },
+      { type: "PUSH", square: { x: 14, y: 9 } },
+      { type: "FOLLOW_UP", follow: false },
+      roll(1, 1),
+    ],
+  },
 ];
