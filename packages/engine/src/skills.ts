@@ -23,3 +23,30 @@ export const IMPLEMENTED_SKILLS: readonly string[] = [
   "Plague Ridden", "Bloodlust", "Defensive", "Brawler", "Nerves of Steel", "Steady Footing",
   "Shadowing", "Animal Savagery", "Timmm-ber!", "Foul Appearance", "Strip Ball", "Hypnotic Gaze", "On the Ball", "Safe Pass", "Hit and Run", "Diving Tackle", "Hatred", "Break Tackle", "Sure Feet", "Drunkard", "Cloud Burster", "Decay", "Leap", "Iron Hard Skin", "Arm Bar", "Grab", "Safe Pair of Hands", "Diving Catch", "Insignificant", "Fumblerooski", "My Ball", "Bombardier", "Pogo", "Taunt", "Fend", "Pro", "Eye Gouge", "Pick-me-up",
 ];
+
+/** BB2025 skills by category, keyed like the rosters' skill categories (G, A, S, P, D, Mutations). */
+export const SKILL_CATEGORIES: Record<string, readonly string[]> = {
+  G: [
+    "Block", "Dauntless", "Fend", "Frenzy", "Kick", "Pro", "Strip Ball", "Sure Hands", "Tackle", "Taunt", "Wrestle",
+  ],
+  A: [
+    "Catch", "Defensive", "Diving Catch", "Diving Tackle", "Dodge", "Jump Up", "Leap", "Safe Pair of Hands",
+    "Sidestep", "Sprint", "Sure Feet",
+  ],
+  S: [
+    "Arm Bar", "Brawler", "Break Tackle", "Bullseye", "Grab", "Guard", "Juggernaut", "Mighty Blow", "Multiple Block",
+    "Stand Firm", "Strong Arm", "Thick Skull",
+  ],
+  P: [
+    "Accurate", "Cannoneer", "Cloud Burster", "Dump-off", "Give and Go", "Hail Mary Pass", "Leader",
+    "Nerves of Steel", "On the Ball", "Pass", "Punt", "Safe Pass",
+  ],
+  D: [
+    "Dirty Player", "Eye Gouge", "Fumblerooski", "Lethal Flight", "Lone Fouler", "Pile Driver", "Put the Boot In",
+    "Quick Foul", "Saboteur", "Shadowing", "Sneaky Git", "Violent Innovator",
+  ],
+  Mutations: [
+    "Big Hand", "Claws", "Disturbing Presence", "Extra Arms", "Foul Appearance", "Horns", "Iron Hard Skin",
+    "Monstrous Mouth", "Prehensile Tail", "Tentacles", "Two Heads", "Very Long Legs",
+  ],
+};

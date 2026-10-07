@@ -2,7 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerState, Prayer, Procedure, Side } from "../types";
 import { PRAYERS } from "../types";
 import { other, teamPlayers } from "../pitch";
-import { hasSkill } from "../skills";
+import { SKILL_CATEGORIES, hasSkill } from "../skills";
 import { getPlayer } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -43,6 +43,10 @@ export function prayerChoices(state: GameState, side: Side, prayer: Prayer): Pla
   return candidates(state, side, (p) => !hasSkill(p, "Mighty Blow"));
 }
 
+/** Intensive Training: the primary skills the player does not have yet, by name. */
+export const trainingSkills = (player: PlayerState) =>
+  player.primary.flatMap((c) => SKILL_CATEGORIES[c] ?? []).filter((s) => !hasSkill(player, s)).sort();
+
 /** Pick `count` players at random, without repeats. */
 function pickRandom(ctx: Ctx, players: PlayerState[], count: number): PlayerState[] {
   const pool = [...players];
@@ -69,8 +73,8 @@ function grant(ctx: Ctx, side: Side, prayer: Prayer, players: PlayerState[]) {
  * team already has that result. All last the whole game. Those that change players pick them among the team's players
  * in the reserves: Stiletto (a random player gains Stab), Iron Man (one the coach picks gets +1 AV, up to 11+), Knuckle
  * Dusters (one the coach picks gains Mighty Blow), Bad Habits (D3 random opponents without Loner gain Loner (2+)),
- * Greasy Cleats (a random opponent gets -1 MA), Blessing of Nuffle (a random player gains Pro). The others are
- * recorded on the team for the rules they change.
+ * Greasy Cleats (a random opponent gets -1 MA), Blessing of Nuffle (a random player gains Pro), Intensive Training (a
+ * random player gains a primary skill the coach picks). The others are recorded on the team for the rules they change.
  */
 export const Prayers: Handler<P<"Prayers">> = {
   step(ctx, proc, action) {
@@ -88,6 +92,13 @@ export const Prayers: Handler<P<"Prayers">> = {
       return next(ctx, proc, side, [chosen!]);
     }
     if (action === null) return "wait";
+    if (proc.stage === "skill") {
+      const player = getPlayer(ctx, proc.playerId!);
+      const { skill } = ctx.expect(action, "CHOOSE_SKILL");
+      if (!trainingSkills(player).includes(skill)) ctx.reject("Choose one of the skills offered.");
+      player.skills.push(skill);
+      return next(ctx, proc, side, [player]);
+    }
     if (proc.stage === "badHabits") {
       const [count] = ctx.roll(action, [{ kind: "d3", count: 1 }], "Bad Habits");
       const victims = pickRandom(ctx, candidates(state, other(side), (p) => !hasSkill(p, "Loner")), count!);
@@ -113,6 +124,13 @@ export const Prayers: Handler<P<"Prayers">> = {
         return next(ctx, proc, side, pickRandom(ctx, candidates(state, other(side), () => true), 1));
       case "blessing-of-nuffle":
         return next(ctx, proc, side, pickRandom(ctx, candidates(state, side, (p) => !hasSkill(p, "Pro")), 1));
+      case "intensive-training": {
+        const [trainee] = pickRandom(ctx, candidates(state, side, (p) => trainingSkills(p).length > 0), 1);
+        if (!trainee) return next(ctx, proc, side, []);
+        proc.playerId = trainee.id;
+        proc.stage = "skill";
+        return "wait";
+      }
       default:
         return next(ctx, proc, side, []);
     }
@@ -123,6 +141,7 @@ export const Prayers: Handler<P<"Prayers">> = {
       const playerIds = prayerChoices(state, side, proc.prayer!).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side, playerIds, min: 1, max: 1, reason: `${PRAYER_NAMES[proc.prayer!]}: choose the player` }];
     }
+    if (proc.stage === "skill") return [{ type: "CHOOSE_SKILL", side, playerId: proc.playerId!, skills: trainingSkills(state.players[proc.playerId!]!) }];
     if (proc.stage === "badHabits") return [{ type: "ROLL", side, dice: [{ kind: "d3", count: 1 }], reason: "Bad Habits: D3 opponents gain Loner (2+)" }];
     return [{ type: "ROLL", side, dice: [{ kind: "d16", count: 1 }], reason: `Prayer to Nuffle (${state.teams[side].name})` }];
   },
@@ -133,6 +152,7 @@ function next(ctx: Ctx, proc: P<"Prayers">, side: Side, players: PlayerState[]) 
   grant(ctx, side, proc.prayer!, players.map((p) => getPlayer(ctx, p.id)));
   proc.draws.shift();
   delete proc.prayer;
+  delete proc.playerId;
   proc.stage = "draw";
   return "continue" as const;
 }

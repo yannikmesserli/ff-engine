@@ -67,6 +67,8 @@ export interface PlayerState {
   skills: string[];
   /** Position keywords from the roster: "lineman", "big guy"... */
   keywords: string[];
+  /** Primary skill categories ("G", "A"...), for Intensive Training. */
+  primary: string[];
   /** A square on the pitch, or a dugout box. */
   at: Square | DugoutBox;
   status: PlayerStatus;
@@ -162,6 +164,8 @@ export interface PositionStats {
   av: number;
   skills: string[];
   keywords?: string[];
+  /** Primary skill categories, as the rosters write them ("G", "A", "S", "P", "D", "Mutations"). */
+  primary?: string[];
 }
 
 /** BB2025 inducements a team can buy before a game (star players and Infamous Coaching Staff aside). */
@@ -303,7 +307,7 @@ export type Procedure =
    * the team already has the result); "choose": the coach picks the player (Iron Man, Knuckle Dusters); "badHabits":
    * the D3 of Bad Habits.
    */
-  | { type: "Prayers"; draws: Side[]; stage: "draw" | "choose" | "badHabits"; prayer?: Prayer }
+  | { type: "Prayers"; draws: Side[]; stage: "draw" | "choose" | "badHabits" | "skill"; prayer?: Prayer; playerId?: string }
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
   /** `drives`: kick-offs so far in this half; `turnPlayed`: a team turn just ended (time for Throw a Rock). */
   | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number; turnPlayed?: boolean }
@@ -762,6 +766,8 @@ export type Action =
   | { type: "SWOOP"; square: Square | null }
   /** Trickster: move to `square` before being hit (null: stay); `pickUp`: try to pick up a loose ball there. */
   | { type: "TRICKSTER"; square: Square | null; pickUp?: boolean }
+  /** Intensive Training (a prayer): the skill the player gains. */
+  | { type: "CHOOSE_SKILL"; skill: string }
   /** Throw a Rock (a prayer): throw it now or keep it. */
   | { type: "THROW_A_ROCK"; use: boolean }
   /** Use the Weather Mage at the start of the team's turn. */
@@ -818,6 +824,8 @@ export type ActionTemplate =
   | { type: "CHAINSAW"; side: Side; playerId: string; targetIds: string[] }
   | { type: "WEATHER_MAGE"; side: Side }
   | { type: "THROW_A_ROCK"; side: Side }
+  /** Intensive Training: the skills `playerId` may gain. */
+  | { type: "CHOOSE_SKILL"; side: Side; playerId: string; skills: string[] }
   | { type: "CHOOSE_WEATHER"; side: Side; options: Weather[] }
   /** Swoop: the squares next to the target square (not diagonally) that give the side the template faces. */
   | { type: "SWOOP"; side: Side; playerId: string; squares: Square[] }

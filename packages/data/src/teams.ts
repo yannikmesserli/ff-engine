@@ -45,6 +45,7 @@ const positionStats = (position: Roster["positions"][number]): PositionStats => 
   av: position.av,
   skills: [...position.skills],
   keywords: position.keywords,
+  primary: position.normal,
 });
 
 /**
@@ -155,6 +156,7 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
           av: characteristic(p, "av", position.av),
           skills: [...position.skills, ...p.skills],
           keywords: position.keywords,
+          primary: position.normal,
           nigglingInjuries: p.injuries.filter((i) => i === "niggling").length,
         };
       }), ...journeymen(roster, team)],

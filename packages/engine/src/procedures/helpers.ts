@@ -22,6 +22,7 @@ export function createPlayer(side: Side, p: TeamSetup["players"][number]): Playe
     av,
     skills: [...p.skills],
     keywords: [...(p.keywords ?? [])],
+    primary: [...(p.primary ?? [])],
     id: `${side}-${nr}`,
     side,
     at: "reserves",

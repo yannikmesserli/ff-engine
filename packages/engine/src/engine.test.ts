@@ -3268,6 +3268,18 @@ describe("engine", () => {
       expect([s.players["home-2"]!.av, s.players["home-3"]!.skills]).toEqual([9, ["Mighty Blow"]]);
     });
 
+    it("Intensive Training: a random player gains a primary skill the coach picks", () => {
+      const trained = edit(praying(1), (c) => {
+        for (const p of Object.values(c.players)) p.primary = p.side === "home" ? ["G"] : [];
+      });
+      const s = apply(trained, roll(16));
+      const choice = find(s, "CHOOSE_SKILL")!;
+      expect(choice.skills).toEqual(["Block", "Dauntless", "Fend", "Frenzy", "Kick", "Pro", "Strip Ball", "Sure Hands", "Tackle", "Taunt", "Wrestle"]);
+      const after = apply(s, { type: "CHOOSE_SKILL", skill: "Block" });
+      expect(after.players[choice.playerId]!.skills).toEqual(["Block"]);
+      expect(() => step(s, { type: "CHOOSE_SKILL", skill: "Dodge" })).toThrow(/skills offered/);
+    });
+
     it("Bad Habits gives D3 random opponents Loner (2+); Greasy Cleats takes 1 MA from one", () => {
       const s = apply(praying(2), roll(6), roll(2), roll(7));
       expect(Object.values(s.players).filter((p) => p.skills.includes("Loner(2)")).map((p) => p.side)).toEqual(["away", "away"]);
