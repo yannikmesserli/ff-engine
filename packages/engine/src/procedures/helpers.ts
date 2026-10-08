@@ -187,8 +187,19 @@ export function resetForKickoff(ctx: Ctx) {
   state.touchdown = null;
 }
 
-/** Team re-rolls left for the drive (Brilliant Coaching) and the half. */
-export const rerollsLeft = (state: GameState, side: Side) => state.teams[side].rerolls + state.teams[side].driveRerolls;
+/**
+ * Leader: the team's Leader re-roll can be used, i.e. it is not spent and one of the half's Leader players is on the
+ * pitch (even prone or stunned). Returns that player.
+ */
+export function leaderReroll(state: GameState, side: Side): PlayerState | undefined {
+  const team = state.teams[side];
+  if (team.leaderUsed) return undefined;
+  return team.leaders.map((id) => state.players[id]!).find((p) => isOnPitch(p));
+}
+
+/** Team re-rolls left for the drive (Brilliant Coaching) and the half, the Leader re-roll included. */
+export const rerollsLeft = (state: GameState, side: Side) =>
+  state.teams[side].rerolls + state.teams[side].driveRerolls + (leaderReroll(state, side) ? 1 : 0);
 
 /**
  * BB2025: any number of team re-rolls per turn, only in the team's own turn (or while a receiving player makes an On the
@@ -290,7 +301,7 @@ export function proTemplates(state: GameState, stage: ProStage, player: PlayerSt
 }
 
 /**
- * Spend a team re-roll, drive re-rolls first; or (`mascot`) try the Team Mascot, whose 4+ roll comes with the Loner
+ * Spend a team re-roll, drive re-rolls first, then the Leader re-roll (it may not last); or (`mascot`) try the Team Mascot, whose 4+ roll comes with the Loner
  * roll (see `rerollGate`). After a failed Mascot roll the coach is asked again, for a team re-roll only.
  */
 export function useTeamReroll(ctx: Ctx, side: Side, mascot = false) {
@@ -303,8 +314,12 @@ export function useTeamReroll(ctx: Ctx, side: Side, mascot = false) {
     return;
   }
   if (rerollsLeft(ctx.state, side) === 0) ctx.reject("No re-roll available.");
+  const leader = leaderReroll(ctx.state, side);
   if (team.driveRerolls > 0) team.driveRerolls -= 1;
-  else team.rerolls -= 1;
+  else if (leader) {
+    team.leaderUsed = true;
+    ctx.emit({ type: "SkillUsed", playerId: leader.id, skill: "Leader" });
+  } else team.rerolls -= 1;
   ctx.emit({ type: "RerollUsed", side });
 }
 

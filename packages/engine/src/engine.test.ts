@@ -1170,6 +1170,39 @@ describe("engine", () => {
       expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(6);
     });
 
+    describe("Leader", () => {
+      /** home-5 has Leader from the start: on the pitch at the kick-off. */
+      const leading = () =>
+        apply(edit(toSetup(), (c) => void (c.players["home-5"]!.skills = ["Leader"])), ...setupActions("away"), ...setupActions("home"), { type: "PLACE_BALL", square: { x: 5, y: 1 } }, roll(7, 1), QUIET_EVENT, roll(5));
+      /** home-1 fails a dodge to (12,5): the team re-roll decision. */
+      const failDodge = (s: GameState) => apply(s, startMove("home-1"), ...move({ x: 12, y: 5 }), roll(1));
+
+      it("a Leader on the pitch at the kick-off gives one more team re-roll for the half, spent first", () => {
+        let s = leading();
+        expect(s.teams.home.leaders).toEqual(["home-5"]);
+        s = failDodge(s);
+        expect(find(s, "USE_REROLL")?.available).toBe(2);
+        s = apply(s, { type: "USE_REROLL" });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-5", skill: "Leader" });
+        expect([s.teams.home.rerolls, s.teams.home.leaderUsed]).toEqual([1, true]);
+      });
+
+      it("only while one of the half's Leaders is on the pitch, even down", () => {
+        expect(find(failDodge(edit(leading(), (c) => void (c.players["home-5"]!.status = "stunned"))), "USE_REROLL")?.available).toBe(2);
+        expect(find(failDodge(edit(leading(), (c) => void (c.players["home-5"]!.at = "ko"))), "USE_REROLL")?.available).toBe(1);
+        // A player who gains Leader after the kick-off gives nothing this half.
+        const late = edit(toFirstTurn(), (c) => void (c.players["home-5"]!.skills = ["Leader"]));
+        expect(find(failDodge(late), "USE_REROLL")?.available).toBe(1);
+      });
+
+      it("a new Leader re-roll each half", () => {
+        let s = edit(leading(), (c) => (c.teams.home.leaderUsed = true));
+        s = endTurnsUntilSetup(s);
+        expect(s.half).toBe(2);
+        expect([s.teams.home.leaders, s.teams.home.leaderUsed]).toEqual([[], false]);
+      });
+    });
+
     describe("passing range skills", () => {
       /** The roll home-8 (unmarked at (10,8), PA 4+) needs to pass to (10,6) (Quick), (10,4) (Short), (10,1) (Long). */
       const needed = (skills: string[]) => {
@@ -3604,6 +3637,16 @@ describe("engine", () => {
       s = endTurnsUntilSetup(kickOff(s, "away", { x: 5, y: 1 }));
       expect(s.log.filter((e) => e.type === "HalfEnded").map((e) => e.type === "HalfEnded" && e.half)).toEqual([1, 2, 3]);
       expect([s.finished, s.log.at(-1)]).toEqual([true, { type: "GameEnded", winner: null }]);
+    });
+
+    it("keeps an unused Leader re-roll, without a new one", () => {
+      const s = edit(toEndOfSecondHalf(true), (c) => {
+        c.players["home-5"]!.skills = ["Leader"];
+        c.teams.home.leaders = ["home-5"];
+      });
+      const kicked = kickOff(s, "away", { x: 5, y: 1 });
+      expect([kicked.teams.home.leaders, kicked.teams.home.leaderUsed]).toEqual([["home-5"], false]);
+      expect(kicked.teams.away.leaders).toEqual([]);
     });
 
     it("not when a team is ahead", () => {

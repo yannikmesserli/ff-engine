@@ -5,6 +5,7 @@ import {
   applyActions,
   createGame,
   getAvailableActions,
+  leaderReroll,
   skillName,
   step,
   type Action,
@@ -237,6 +238,7 @@ function TeamBanner({ state, side, assets }: { state: GameState; side: Side; ass
         <div className="bb-team-info">
           Turn {t.turn}/8 · Re-rolls {t.rerolls}
           {t.driveRerolls > 0 ? ` +${t.driveRerolls}` : ""}
+          {leaderReroll(state, side) ? " +1 Leader" : ""}
         </div>
       </div>
     </div>

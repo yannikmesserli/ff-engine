@@ -115,6 +115,12 @@ export interface TeamState {
   rerollsPerHalf: number;
   /** Extra re-rolls for the current drive only (Brilliant Coaching). Used before the normal ones. */
   driveRerolls: number;
+  /**
+   * Leader: the players with the skill on the pitch at the half's first kick-off. While one of them is on the pitch,
+   * the team has one more team re-roll for the half (`leaderUsed` once spent), kept into overtime.
+   */
+  leaders: string[];
+  leaderUsed: boolean;
   dedicatedFans: number;
   /** Dedicated fans + D3, rolled before the game. */
   fanFactor: number;
@@ -335,6 +341,8 @@ export type Procedure =
       kicking: Side;
       /** "kick": the kicking player may use Kick before the deviation roll. */
       stage: "place" | "kick" | "scatter" | "event" | "weather" | "gusts" | "land";
+      /** The first kick-off of the first or second half: Leader players on the pitch grant the Leader re-roll. */
+      firstOfHalf?: boolean;
       /** Kick: the deviation distance is a D3. */
       kick?: boolean;
       target?: Square;

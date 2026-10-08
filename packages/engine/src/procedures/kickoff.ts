@@ -176,6 +176,8 @@ export const SwelteringHeat: Handler<P<"SwelteringHeat">> = {
  * In BB2025 the event is resolved while the ball is in the air.
  * Kick: if the kicking player has the skill, their coach may decide, before the roll, that the ball deviates D3 squares
  * instead of D6.
+ * Leader: at the half's first kick-off, the players with the skill on the pitch are noted; they give their team the
+ * Leader re-roll (see `leaderReroll`).
  */
 export const Kickoff: Handler<P<"Kickoff">> = {
   step(ctx, proc, action) {
@@ -188,6 +190,9 @@ export const Kickoff: Handler<P<"Kickoff">> = {
         if (!inHalf(receiving, square)) ctx.reject("The ball must be kicked into the receiving half.");
         proc.target = { ...square };
         for (const p of Object.values(state.players)) p.played = isOnPitch(p);
+        if (proc.firstOfHalf) {
+          for (const side of SIDES) state.teams[side].leaders = teamPlayers(state, side).filter((p) => isOnPitch(p) && hasSkill(p, "Leader")).map((p) => p.id);
+        }
         ctx.emit({ type: "BallPlaced", square });
         proc.stage = kicker(state, proc) ? "kick" : "scatter";
         return "continue";

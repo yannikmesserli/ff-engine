@@ -8,7 +8,10 @@ type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
 export const TURNS_PER_HALF = 8;
 
-/** Reset turn counters and team re-rolls (not for overtime: teams keep what is left), then run the half's drives. */
+/**
+ * Reset turn counters and team re-rolls, the Leader re-roll included (not for overtime: teams keep what is left), then
+ * run the half's drives.
+ */
 function startHalf(ctx: Ctx, half: HalfNumber, kicking: Side) {
   const { state } = ctx;
   state.half = half;
@@ -17,6 +20,8 @@ function startHalf(ctx: Ctx, half: HalfNumber, kicking: Side) {
     if (half < 3) {
       team.rerolls = team.rerollsPerHalf;
       team.mascotUsed = false;
+      team.leaders = [];
+      team.leaderUsed = false;
     }
   }
   ctx.emit({ type: "HalfStarted", half });
@@ -132,9 +137,9 @@ export const Half: Handler<P<"Half">> = {
         ...(knockedOut.length > 0 ? [{ type: "KoRecovery" as const, playerIds: knockedOut }] : []),
         { type: "Setup", side: proc.kicking },
         { type: "Setup", side: receiving },
-        // Halfling Master Chef: before the first kick-off of the first and second halves.
+        // Halfling Master Chef: before the first kick-off of the first and second halves; then the Leader re-rolls.
         ...(proc.half < 3 && (proc.drives ?? 0) === 0 ? masterChef(state) : []),
-        { type: "Kickoff", kicking: proc.kicking, stage: "place" },
+        { type: "Kickoff", kicking: proc.kicking, stage: "place", ...(proc.half < 3 && (proc.drives ?? 0) === 0 ? { firstOfHalf: true } : {}) },
       );
       proc.drives = (proc.drives ?? 0) + 1;
       return "continue";

@@ -36,6 +36,8 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     rerolls: teams[side].rerolls,
     rerollsPerHalf: teams[side].rerolls,
     driveRerolls: 0,
+    leaders: [],
+    leaderUsed: false,
     dedicatedFans: teams[side].dedicatedFans,
     fanFactor: teams[side].dedicatedFans,
     cheerleaders: teams[side].cheerleaders,

@@ -212,6 +212,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Kick: the kicking player (one set up in the centre field, or on the line of scrimmage when nobody is there) may
   have the kick-off deviate D3 squares instead of D6, decided before the roll. A punter with the skill may re-roll each
   punt roll with it instead of a team re-roll.
+- Leader: a team with a Leader on the pitch at the first kick-off of a half gets one more team re-roll for the half,
+  spent before the others (after Brilliant Coaching's), and only while one of those Leaders is on the pitch (even
+  prone or stunned). An unused one is kept into overtime, without a new one.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).
