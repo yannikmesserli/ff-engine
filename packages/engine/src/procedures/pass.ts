@@ -45,13 +45,18 @@ export function passRange(state: GameState, from: Square, to: Square): PassRange
 export const markingZones = (state: GameState, player: PlayerState & { at: Square }) =>
   hasSkill(player, "Nerves of Steel") ? 0 : tackleZones(state, player.side, player.at);
 
+/** Accurate: +1 to the player's Quick and Short passes (not team-mate throws). */
+const rangeSkill = (thrower: PlayerState, range: PassRange) =>
+  (range === "quick" || range === "short") && hasSkill(thrower, "Accurate") ? 1 : 0;
+
 /**
  * Everything added to the thrower's PA: range, tackle zones on the thrower (not with Nerves of Steel, unless throwing a
- * team-mate), Very Sunny, Disturbing Presence.
+ * team-mate), Very Sunny, Disturbing Presence, Accurate.
  */
 export function passModifiers(state: GameState, thrower: PlayerState & { at: Square }, range: PassRange, teamMate = false) {
   const zones = teamMate ? tackleZones(state, thrower.side, thrower.at) : markingZones(state, thrower);
-  return RANGE_MODIFIER[range] + zones + (state.weather === "very-sunny" ? 1 : 0) + disturbingPresences(state, thrower);
+  const skill = teamMate ? 0 : rangeSkill(thrower, range);
+  return RANGE_MODIFIER[range] + zones + (state.weather === "very-sunny" ? 1 : 0) + disturbingPresences(state, thrower) - skill;
 }
 
 /** The D6 roll needed for an accurate pass, or null without PA. */

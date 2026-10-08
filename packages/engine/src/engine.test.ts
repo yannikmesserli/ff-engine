@@ -1145,6 +1145,20 @@ describe("engine", () => {
       expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(6);
     });
 
+    describe("passing range skills", () => {
+      /** The roll home-8 (unmarked at (10,8), PA 4+) needs to pass to (10,6) (Quick), (10,4) (Short), (10,1) (Long). */
+      const needed = (skills: string[]) => {
+        const s = edit(withSkills(toFirstTurn(), { "home-8": skills }), (c) => (c.ball = { square: { x: 10, y: 8 }, carried: true }));
+        const squares = find(apply(s, declare("home-8", "pass")), "THROW")!.squares;
+        return [6, 4, 1].map((y) => squares.find((q) => q.x === 10 && q.y === y)?.needed);
+      };
+
+      it("Accurate: +1 to Quick and Short passes", () => {
+        expect(needed([])).toEqual([4, 5, 6]);
+        expect(needed(["Accurate"])).toEqual([3, 4, 6]);
+      });
+    });
+
     it("Extra Arms: +1 to pick up, catch and intercept the ball", () => {
       // home-5 walks onto the ball at (4,2), unmarked: 3+ on AG 3+.
       const pickUp = (skills: string[]) => {
