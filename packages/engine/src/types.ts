@@ -503,7 +503,8 @@ export type Procedure =
       assists: number;
       /** "chainsaw": the fouler may use their Chainsaw (a kick-back roll first, then +3 to the armour roll). */
       /** "biasedReferee": the victim's team's Biased Referee may spot a foul the referee missed. */
-      stage: "chainsaw" | "kickback" | "armour" | "injury" | "referee" | "biasedReferee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
+      /** "loneFouler": the fouler may re-roll the armour roll with Lone Fouler. */
+      stage: "chainsaw" | "kickback" | "armour" | "loneFouler" | "injury" | "referee" | "biasedReferee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
       /** The Chainsaw is used for this foul. */
       chainsaw?: boolean;
       armour?: number[];

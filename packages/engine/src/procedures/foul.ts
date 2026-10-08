@@ -33,12 +33,11 @@ const argueTarget = (team: TeamState) =>
 export const BRIBE_TARGET = 2;
 
 /**
- * Foul assists: +1 per team-mate next to the victim who is not marked by any opponent (Put the Boot In: even
- * marked), -1 per victim team-mate next to the fouler who is not marked by anyone but the fouler. Only players exerting
- * a tackle zone assist or mark. None against Iron Hard Skin, whose armour roll cannot be modified.
+ * Players assisting a foul: team-mates next to the victim who are not marked by any opponent (Put the Boot In: even
+ * marked), and victim team-mates next to the fouler who are not marked by anyone but the fouler. Only players exerting
+ * a tackle zone assist or mark.
  */
-export function foulAssists(state: GameState, fouler: PlayerState & { at: Square }, victim: PlayerState & { at: Square }): number {
-  if (hasSkill(victim, "Iron Hard Skin")) return 0;
+function foulHelpers(state: GameState, fouler: PlayerState & { at: Square }, victim: PlayerState & { at: Square }) {
   const offensive = adjacent(victim.at).filter((s) => {
     const helper = tackleZoneAt(state, s);
     if (!helper || helper.side !== fouler.side || helper.id === fouler.id) return false;
@@ -49,7 +48,24 @@ export function foulAssists(state: GameState, fouler: PlayerState & { at: Square
     if (!helper || helper.side !== victim.side) return false;
     return adjacent(s).filter((n) => tackleZoneAt(state, n)?.side === fouler.side).length < 2;
   }).length;
+  return { offensive, defensive };
+}
+
+/**
+ * Foul assists: +1 per offensive assist, -1 per defensive one (see `foulHelpers`). None against Iron Hard Skin, whose
+ * armour roll cannot be modified.
+ */
+export function foulAssists(state: GameState, fouler: PlayerState & { at: Square }, victim: PlayerState & { at: Square }): number {
+  if (hasSkill(victim, "Iron Hard Skin")) return 0;
+  const { offensive, defensive } = foulHelpers(state, fouler, victim);
   return offensive - defensive;
+}
+
+/** Lone Fouler: once per turn, a fouler with nobody assisting the foul (either way) may re-roll an armour roll that holds. */
+function loneFouler(state: GameState, fouler: PlayerState, victim: PlayerState) {
+  if (!hasSkill(fouler, "Lone Fouler") || fouler.usedSkills.includes("Lone Fouler") || !isOnPitch(fouler) || !isOnPitch(victim)) return false;
+  const { offensive, defensive } = foulHelpers(state, fouler, victim);
+  return offensive === 0 && defensive === 0;
 }
 
 /** Prone or stunned opponents next to a standing player, with the foul assists against each. */
@@ -69,7 +85,8 @@ const isDouble = (dice: number[] | undefined) => dice !== undefined && dice[0] =
 
 /**
  * BB2025 Foul: armour roll with foul assists and Dirty Player, injury, then the referee spots
- * doubles (Sneaky Git: not on the armour roll if the armour holds).
+ * doubles (Sneaky Git: not on the armour roll if the armour holds). Lone Fouler: the fouler's coach may re-roll an armour
+ * roll that holds when nobody assists the foul; only the new roll counts, its doubles included.
  * Chainsaw: the fouler may use it, rolling for kick-back first (2+, team re-roll): on a 1 they are knocked down (+3 to
  * their armour roll), a turnover, and there is no foul; otherwise the armour roll gets +3 (not against Iron Hard Skin).
  * Biased Referee (bought by the victim's team): a foul the referee missed is spotted anyway on a D6 of 5+; the team's
@@ -120,8 +137,19 @@ export const Foul: Handler<P<"Foul">> = {
         const roll = unmodified + (proc.dirtyPlayerOnArmour ? 1 : 0);
         const broken = roll >= victim.av;
         ctx.emit(broken ? { type: "ArmourBroken", playerId: victim.id, roll } : { type: "ArmourHeld", playerId: victim.id, roll });
-        proc.stage = broken ? "injury" : "referee";
+        proc.stage = broken ? "injury" : loneFouler(state, fouler, victim) ? "loneFouler" : "referee";
         return "continue";
+      }
+      case "loneFouler": {
+        if (action === null) return "wait";
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "referee";
+          return "continue";
+        }
+        fouler.usedSkills.push("Lone Fouler");
+        ctx.emit({ type: "SkillUsed", playerId: fouler.id, skill: "Lone Fouler" });
+        proc.stage = "armour";
+        return "wait";
       }
       case "injury": {
         if (action === null) return "wait";
@@ -218,6 +246,8 @@ export const Foul: Handler<P<"Foul">> = {
     switch (proc.stage) {
       case "chainsaw":
         return [{ type: "USE_SKILL", side, playerId: fouler.id, skill: "Chainsaw" }];
+      case "loneFouler":
+        return [{ type: "USE_SKILL", side, playerId: fouler.id, skill: "Lone Fouler" }];
       case "armour": {
         const mod = proc.assists === 0 ? "" : `, ${proc.assists > 0 ? "+" : ""}${proc.assists} assists`;
         const dirty = hasSkill(fouler, "Dirty Player") ? ", Dirty Player" : "";

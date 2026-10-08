@@ -3163,6 +3163,27 @@ describe("engine", () => {
       expect(find(apply(marked(["Put the Boot In"]), declare("home-4", "foul")), "FOUL")?.targets).toEqual([{ playerId: "away-1", assists: 1 }]);
     });
 
+    describe("Lone Fouler", () => {
+      it("without any assist, the fouler may re-roll an armour roll that holds, once per turn", () => {
+        let s = apply(foul(withSkill("Lone Fouler")), roll(2, 3));
+        expect(find(s, "USE_SKILL")).toMatchObject({ playerId: "home-4", skill: "Lone Fouler" });
+        s = apply(s, { type: "USE_SKILL", use: true, skill: "Lone Fouler" });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour 8\+ \(foul on Away 1/);
+        // Only the new roll counts: its double is spotted.
+        s = apply(s, roll(4, 4), roll(2, 3));
+        expect(s.log).toContainEqual({ type: "RefereeCall", foulerId: "home-4", spotted: true });
+        expect(s.players["home-4"]!.usedSkills).toContain("Lone Fouler");
+      });
+
+      it("not with an assist on either side, nor when the armour breaks", () => {
+        expect(types(apply(foul(withSkill("Lone Fouler", { "home-6": { x: 21, y: 2 } })), roll(2, 3)))).not.toContain("USE_SKILL");
+        // An offensive and a defensive assist cancel out, but there are still assists.
+        const both = withSkill("Lone Fouler", { "home-6": { x: 21, y: 2 }, "away-6": { x: 18, y: 1 } });
+        expect(types(apply(foul(both), roll(2, 3)))).not.toContain("USE_SKILL");
+        expect(top(apply(foul(withSkill("Lone Fouler")), roll(5, 4)))).toMatchObject({ type: "Foul", stage: "injury" });
+      });
+    });
+
     it("breaks armour on armour roll + assists >= AV; without doubles the referee sees nothing", () => {
       let s = foul(fouling({ "home-6": { x: 21, y: 2 } }));
       expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (foul on Away 1, +1 assists)");
