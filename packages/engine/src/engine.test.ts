@@ -3184,6 +3184,20 @@ describe("engine", () => {
       });
     });
 
+    it("Quick Foul: the fouler may move on after the foul, without fouling again", () => {
+      let s = apply(foul(withSkill("Quick Foul")), roll(4, 3));
+      expect(s.log).toContainEqual({ type: "RefereeCall", foulerId: "home-4", spotted: false });
+      expect(s.activePlayerId).toBe("home-4");
+      expect(types(s)).toEqual(["MOVE", "END_PLAYER_ACTION"]);
+      s = apply(s, ...move({ x: 18, y: 2 }));
+      expect(s.players["home-4"]!.at).toEqual({ x: 18, y: 2 });
+      // Spotted and sent off: a turnover, the turn ends. Kept on the pitch by a bribe: the fouler may still move.
+      const spotted = apply(foul(withSkill("Quick Foul")), roll(3, 3), { type: "ARGUE_THE_CALL", argue: false });
+      const sentOff = apply(spotted, { type: "BRIBE", use: false });
+      expect([sentOff.players["home-4"]!.at, sentOff.activeSide]).toEqual(["banned", "away"]);
+      expect(types(apply(spotted, { type: "BRIBE", use: true }, roll(2)))).toEqual(["MOVE", "END_PLAYER_ACTION"]);
+    });
+
     it("breaks armour on armour roll + assists >= AV; without doubles the referee sees nothing", () => {
       let s = foul(fouling({ "home-6": { x: 21, y: 2 } }));
       expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (foul on Away 1, +1 assists)");

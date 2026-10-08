@@ -218,6 +218,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Put the Boot In: the player gives a foul assist even while marked by opponents.
 - Lone Fouler: once per turn, when nobody assists the foul (offensive or defensive), the fouler's coach may re-roll
   an armour roll that holds; only the new roll counts, its doubles included.
+- Quick Foul: after a foul that is not a turnover (a bribe may keep the fouler on the pitch), the fouler may go on
+  moving with the squares left, without fouling again.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).

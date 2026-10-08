@@ -395,6 +395,7 @@ function confusionCheck(state: GameState, player: PlayerState & { at: Square }, 
  * Take Root (standing players only, 2+): a failure roots the player, who keeps their action but cannot move.
  * Jump Up: stand up for free (no movement spent, no roll); a prone player declaring a Block stands up on an AG roll
  * with +1 instead (a failure ends the action, without a turnover).
+ * Quick Foul: after a foul without a turnover, the fouler may go on moving with the squares left (no second foul).
  */
 export const MoveAction: Handler<P<"MoveAction">> = {
   step(ctx, proc, action) {
@@ -578,7 +579,9 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     }
     if (a.type === "FOUL") {
       const target = foulOptions(state, proc).find((t) => t.playerId === a.targetId) ?? ctx.reject("Cannot foul this player.");
-      proc.finished = true;
+      // Quick Foul: the player may move on after the foul (unless it ends in a turnover).
+      if (hasSkill(player, "Quick Foul")) proc.fouled = true;
+      else proc.finished = true;
       ctx.emit({ type: "Fouled", foulerId: player.id, victimId: target.playerId, assists: target.assists });
       ctx.push({ type: "Foul", foulerId: player.id, victimId: target.playerId, assists: target.assists, stage: "chainsaw" });
       return "continue";
@@ -788,7 +791,7 @@ const gazeOptions = (state: GameState, proc: P<"MoveAction">) => {
 };
 
 const foulOptions = (state: GameState, proc: P<"MoveAction">) =>
-  proc.action === "foul" && !proc.finished ? foulTargets(state, state.players[proc.playerId]!) : [];
+  proc.action === "foul" && !proc.finished && !proc.fouled ? foulTargets(state, state.players[proc.playerId]!) : [];
 
 /** The active player, if this activation still lets them throw or hand off the ball they are holding. */
 function releasingBall(state: GameState, proc: P<"MoveAction">, action: "pass" | "handoff") {

@@ -426,6 +426,8 @@ export type Procedure =
       fumblerooski?: boolean;
       /** Give and Go: the ball was passed or handed off, and the player moves on (no second throw). */
       released?: boolean;
+      /** Quick Foul: the player fouled and moves on (no second foul). */
+      fouled?: boolean;
     }
   | {
       type: "Pass";
