@@ -77,9 +77,13 @@ export const ThrowIn: Handler<P<"ThrowIn">> = {
   },
 };
 
-/** Catch roll modifier: tackle zones (none with Nerves of Steel), -1 after a bounce or scatter, weather, Disturbing Presence. */
+/**
+ * Catch roll modifier: tackle zones (none with Nerves of Steel), -1 after a bounce or scatter, weather, Disturbing
+ * Presence; +1 with Extra Arms.
+ */
 export const catchModifier = (state: GameState, player: PlayerState & { at: Square }, scattered: boolean) =>
-  -markingZones(state, player) - (scattered ? 1 : 0) + weatherModifier(state, "catch") - disturbingPresences(state, player);
+  -markingZones(state, player) - (scattered ? 1 : 0) + weatherModifier(state, "catch") - disturbingPresences(state, player) +
+  (hasSkill(player, "Extra Arms") ? 1 : 0);
 
 /**
  * A standing player tries to catch the ball on their square (AG, tackle zones unless they have Nerves of Steel, weather,

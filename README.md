@@ -201,6 +201,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
   stack with Mighty Blow, which then goes to the injury roll.
 - Titchy: +1 to the player's Dodge rolls; opponents dodging into their tackle zone do not count it.
 - Two Heads: +1 to the player's Dodge rolls.
+- Extra Arms: +1 to pick up, catch and intercept the ball.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).

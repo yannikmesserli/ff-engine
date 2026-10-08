@@ -118,7 +118,7 @@ export function interceptors(state: GameState, thrower: PlayerState, target: Squ
 
 /**
  * BB2025 interception target: AG +3 accurate / +2 inaccurate, +1 per tackle
- * zone (not with Nerves of Steel), +1 in Pouring Rain, +1 per Disturbing Presence.
+ * zone (not with Nerves of Steel), +1 in Pouring Rain, +1 per Disturbing Presence, -1 with Extra Arms.
  */
 export const interceptionTarget = (state: GameState, interceptor: PlayerState & { at: Square }, result: PassResult) =>
   Math.max(
@@ -127,7 +127,8 @@ export const interceptionTarget = (state: GameState, interceptor: PlayerState & 
       (result === "accurate" ? 3 : 2) +
       markingZones(state, interceptor) +
       (state.weather === "pouring-rain" ? 1 : 0) +
-      disturbingPresences(state, interceptor),
+      disturbingPresences(state, interceptor) -
+      (hasSkill(interceptor, "Extra Arms") ? 1 : 0),
   );
 
 /** Pass: the thrower may re-roll an inaccurate pass or a fumble with the skill instead of a team re-roll. */

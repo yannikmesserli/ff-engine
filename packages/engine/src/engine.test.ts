@@ -1145,6 +1145,27 @@ describe("engine", () => {
       expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(6);
     });
 
+    it("Extra Arms: +1 to pick up, catch and intercept the ball", () => {
+      // home-5 walks onto the ball at (4,2), unmarked: 3+ on AG 3+.
+      const pickUp = (skills: string[]) => {
+        const s = withSkills(toFirstTurn(), { "home-5": skills });
+        const path: Square[] = [];
+        let at = s.players["home-5"]!.at as Square;
+        while (at.x !== 4 || at.y !== 2) {
+          at = { x: at.x + Math.sign(4 - at.x), y: at.y + Math.sign(2 - at.y) };
+          path.push(at);
+        }
+        return find(apply(s, startMove("home-5"), ...move(...path)), "ROLL")?.reason;
+      };
+      expect(pickUp(["Extra Arms"])).toMatch(/^Pick-up 2\+/);
+      // home-1 hands off to home-2, marked by three opponents.
+      const handOff = (skills: string[]) =>
+        find(apply(edit(withSkills(toFirstTurn(), { "home-2": skills }), (c) => (c.ball = { square: { x: 12, y: 6 }, carried: true })), declare("home-1", "handoff"), { type: "HAND_OFF", targetId: "home-2" }), "ROLL")?.reason;
+      expect(handOff(["Extra Arms"])).toBe("Catch 5+ (Home 2)");
+      const interceptor = { ...toFirstTurn().players["away-2"]!, at: { x: 13, y: 7 }, skills: ["Extra Arms"] };
+      expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(8);
+    });
+
     describe("Steady Footing", () => {
       const steady = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Steady Footing"] });
 

@@ -9,7 +9,7 @@ import { dropBall } from "./ball";
 import { canHailMary, hailMaryNeeded, handOffTargets, puntTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
-import { checkTouchdown, getPlayer, inducementsLeft, inScoringPosition, rushModifier, spendInducement, squareOf, weatherModifier } from "./helpers";
+import { checkTouchdown, getPlayer, inducementsLeft, inScoringPosition, pickupModifier, rushModifier, spendInducement, squareOf } from "./helpers";
 import { isStalling } from "./stalling";
 import { TURNS_PER_HALF } from "./game";
 import { teamMateTargets, throwableTeamMates } from "./ttm";
@@ -937,7 +937,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         proc.stage = "pickup";
         // Secure the Ball picks up on a 2+ instead of the player's AG.
         const target = securing(state, player) ? SECURE_TARGET : player.ag;
-        check("pickup", target, -tackleZones(state, player.side, proc.to) + weatherModifier(state, "pickup"));
+        check("pickup", target, pickupModifier(state, player, proc.to));
         return "continue" as const;
       }
       checkTouchdown(ctx, player);

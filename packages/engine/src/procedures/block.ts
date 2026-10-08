@@ -6,7 +6,7 @@ import { injure } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
 import { hasSkill, skillName, skillValue } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, useTeamReroll, weatherModifier } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -300,7 +300,7 @@ export const Trickster: Handler<P<"Trickster">> = {
       return "done";
     }
     state.lastCheck = null;
-    ctx.push({ type: "Check", kind: "pickup", playerId: defender.id, target: defender.ag, modifier: -tackleZones(state, defender.side, to) + weatherModifier(state, "pickup"), stage: "roll", rerolled: false });
+    ctx.push({ type: "Check", kind: "pickup", playerId: defender.id, target: defender.ag, modifier: pickupModifier(state, defender, to), stage: "roll", rerolled: false });
     proc.stage = "pickup";
     return "continue";
   },

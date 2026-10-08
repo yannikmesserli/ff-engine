@@ -1,7 +1,7 @@
 import type { Ctx } from "../context";
 import type { Action, ActionTemplate, GameState, InducementId, PlayerState, Side, Square, TeamSetup, TeamState, Weather } from "../types";
 import { hasSkill, skillName } from "../skills";
-import { adjacent, inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, teamPlayers } from "../pitch";
+import { adjacent, inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, tackleZones, teamPlayers } from "../pitch";
 
 /** The player with this id, or reject the action. */
 export function getPlayer(ctx: Ctx, id: string): PlayerState {
@@ -151,6 +151,10 @@ export function weatherModifier(state: { weather: Weather }, kind: "rush" | "pic
   if (kind === "rush") return state.weather === "blizzard" ? -1 : 0;
   return state.weather === "pouring-rain" ? -1 : 0;
 }
+
+/** Pick-up roll modifier on `square`: -1 per opponent's tackle zone, the weather (Pouring Rain); +1 with Extra Arms. */
+export const pickupModifier = (state: GameState, player: PlayerState, square: Square) =>
+  -tackleZones(state, player.side, square) + weatherModifier(state, "pickup") + (hasSkill(player, "Extra Arms") ? 1 : 0);
 
 /** Rush roll modifier: the weather (Blizzard), -1 for a Drunkard, -1 when the opponents prayed for Moles under the Pitch. */
 export const rushModifier = (state: GameState, player: PlayerState) =>
