@@ -1003,6 +1003,45 @@ export const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: "monstrous-mouth",
+    title: "Monstrous Mouth: chomp an opponent in place",
+    instructions: [
+      "Home's first turn. Declare a Block with Wolfgang (#1, Blitzer, Monstrous Mouth) and click \"Chomp Ugluk\" instead of blocking: a D6, 3+ (a team re-roll is offered on a failure).",
+      "Ugluk is now chomped. Block him with Hans (#2): a Push does not move him (the log shows Monstrous Mouth), and a knock-down happens where he stands.",
+      "End the turn: in the orcs' turn, Ugluk cannot move while Wolfgang stays next to him with a tackle zone, but he may still block. If Wolfgang is knocked down (or moves away), the chomp is over for good.",
+      "In the orcs' turn, Gorbag (#4, Strip Ball) may blitz Wolfgang, who holds the ball: a Push does not strip it, as Strip Ball does not work against Monstrous Mouth.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Wolfgang", position: "Human Blitzer", skills: ["Monstrous Mouth"] },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+        { number: 4, name: "Gorbag", position: "Orc Lineman", skills: ["Strip Ball"] },
+      ],
+    },
+    seed: 53,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 6 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 4 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 10 }, 4: { x: 14, y: 8 } },
+      ball: { x: 12, y: 7 },
+    }),
+  },
+  {
     id: "hail-mary-pass",
     title: "Hail Mary Pass: throw the ball anywhere",
     instructions: [

@@ -293,6 +293,15 @@ describe("scenarios", () => {
     expect(find(s, "USE_SKILL")?.skill).toBe("Pile Driver");
   });
 
+  it("monstrous-mouth: Wolfgang chomps Ugluk, who is then not pushed", () => {
+    let s = load("monstrous-mouth");
+    expect(s.ball).toEqual({ square: { x: 12, y: 7 }, carried: true });
+    s = applyActions(s, [{ type: "START_ACTION", playerId: "home-1", action: "block" }, { type: "CHOMP", targetId: "away-2" }, { type: "ROLL", values: [3] }]);
+    expect(s.players["away-2"]!.chompedBy).toEqual(["home-1"]);
+    s = applyActions(s, [{ type: "START_ACTION", playerId: "home-2", action: "block" }, { type: "BLOCK", targetId: "away-2" }, { type: "ROLL", values: [3, 3] }, { type: "CHOOSE_BLOCK_DIE", index: 0 }]);
+    expect(s.players["away-2"]!.at).toEqual({ x: 13, y: 7 });
+  });
+
   it("punt: 3 and 4 put the ball on Malus; from the sideline the crowd is offered", () => {
     const start = applyActions(load("punt"), [{ type: "START_ACTION", playerId: "home-1", action: "punt" }]);
     let s = applyActions(start, [
