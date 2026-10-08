@@ -84,6 +84,13 @@ const SKILL_USES: Record<string, string> = {
   "Dump-off": "to pass before being hit",
   "Hit and Run": "to step away",
   "Diving Tackle": "(-2 to the roll) and dives into the square left",
+  Bullseye: "and lands the thrown player on target",
+  Leader: "for the team re-roll",
+  "Lone Fouler": "to re-roll the armour",
+  "Pile Driver": "to foul the fallen opponent",
+  Saboteur: "and the weapon goes off",
+  "Lethal Flight": "",
+  "Multiple Block": "to block two opponents at once",
 };
 
 /** Display names of the inducements. */
