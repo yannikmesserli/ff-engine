@@ -307,7 +307,8 @@ export type CheckKind =
   | "bombcatch"
   | "pro"
   | "pickmeup"
-  | "chomp";
+  | "chomp"
+  | "saboteur";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -728,9 +729,12 @@ export type Procedure =
       mightyBlowOnArmour?: boolean;
       /** Steady Footing was offered (and failed or declined). */
       steadied?: boolean;
+      /** Saboteur: the blocker the player (a defender with the skill) may knock down with them, before the armour roll. */
+      saboteurTargetId?: string;
       /** The player fell over (a failed dodge, jump, Rush or landing), as opposed to being knocked down: no Safe Pair of Hands. */
       fallsOver?: boolean;
-      stage: "fall" | "steady" | "steadyResult" | "armour" | "injury" | "bounce";
+      /** "sabotage": the player may use Saboteur; "sabotageRoll": its D6. */
+      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "injury" | "bounce";
       square?: Square;
       hadBall?: boolean;
     };

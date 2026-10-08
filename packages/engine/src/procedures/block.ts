@@ -146,11 +146,13 @@ const pushStage = (state: GameState, proc: P<"Block">) => {
 
 /**
  * The attacker's Mighty Blow, Claws and Plague Ridden, for a knock-down of an opponent caused by the block. Knocking
- * down a standing team-mate (Ball & Chain) is a turnover.
+ * down a standing team-mate (Ball & Chain) is a turnover. Saboteur: an opponent with the skill and a tackle zone,
+ * knocked down by a Block or Blitz action (not a Ball & Chain move), may take the attacker down too.
  */
-function knockDownDefender(attacker: PlayerState, defender: PlayerState): P<"KnockDown"> {
+function knockDownDefender(proc: P<"Block">, attacker: PlayerState, defender: PlayerState): P<"KnockDown"> {
   const opponent = attacker.side !== defender.side;
   const bonus = opponent ? skillValue(attacker, "Mighty Blow", 1) : null;
+  const saboteur = opponent && !proc.ballAndChain && hasSkill(defender, "Saboteur") && hasTackleZone(defender);
   return {
     type: "KnockDown",
     playerId: defender.id,
@@ -158,6 +160,7 @@ function knockDownDefender(attacker: PlayerState, defender: PlayerState): P<"Kno
     stage: "fall",
     ...(bonus ? { mightyBlow: { playerId: attacker.id, bonus } } : {}),
     ...(opponent ? { blockerId: attacker.id } : {}),
+    ...(saboteur ? { saboteurTargetId: attacker.id } : {}),
   };
 }
 
@@ -194,7 +197,7 @@ function resolveBothDown(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defe
     proc.stage = "wrestle";
     return;
   }
-  bothDown(ctx, attacker, defender);
+  bothDown(ctx, proc, attacker, defender);
   proc.stage = "end";
 }
 
@@ -202,10 +205,10 @@ function resolveBothDown(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defe
 const PUSH_FACE = BLOCK_FACES.indexOf("push") + 1;
 
 /** Both Down without Wrestle: whoever lacks Block is knocked down (a defender needs a tackle zone for Block). */
-function bothDown(ctx: Ctx, attacker: PlayerState, defender: PlayerState) {
+function bothDown(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) {
   const defenderBlocks = hasSkill(defender, "Block") && hasTackleZone(defender);
   ctx.push(
-    ...(defenderBlocks ? [] : [knockDownDefender(attacker, defender)]),
+    ...(defenderBlocks ? [] : [knockDownDefender(proc, attacker, defender)]),
     ...(hasSkill(attacker, "Block") ? [] : [{ type: "KnockDown" as const, playerId: attacker.id, turnover: true, stage: "fall" as const }]),
   );
 }
@@ -637,7 +640,7 @@ export const Block: Handler<P<"Block">> = {
           proc.wrestlerId = next;
           return "wait";
         }
-        bothDown(ctx, attacker, defender);
+        bothDown(ctx, proc, attacker, defender);
         proc.stage = "end";
         return "continue";
       }
@@ -727,7 +730,7 @@ export const Block: Handler<P<"Block">> = {
         }
         // A loose ball under a pushed player (or stripped from them) bounces once the knock-downs are resolved.
         ctx.push(
-          ...(knock ? [knockDownDefender(attacker, defender)] : []),
+          ...(knock ? [knockDownDefender(proc, attacker, defender)] : []),
           ...(proc.bounceFrom ? [{ type: "Bounce" as const, from: proc.bounceFrom, kickoff: false, receiving: null }] : []),
         );
         proc.stage = "end";

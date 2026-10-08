@@ -1907,6 +1907,40 @@ describe("engine", () => {
       });
     });
 
+    describe("Saboteur", () => {
+      const saboteur = (s = toFirstTurn()) => withSkills(s, { "away-2": ["Secret Weapon", "Saboteur"] });
+      /** home-2 knocks away-2 down to (14,7), without following up. */
+      const knockDown = (s = saboteur()) => apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      const use = { type: "USE_SKILL", use: true } as const;
+
+      it("knocked down by a block, 4+ knocks the blocker down too and the saboteur out, without an armour roll", () => {
+        let s = knockDown();
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Saboteur" });
+        s = apply(s, use);
+        expect(find(s, "ROLL")?.reason).toBe("Saboteur 4+ (Away 2)");
+        s = apply(s, roll(4));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "away-2", skill: "Saboteur" });
+        expect(s.players["away-2"]!.at).toBe("ko");
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Home 2)");
+        s = apply(s, roll(1, 2));
+        // The blocker going down is no turnover.
+        expect([s.players["home-2"]!.status, s.turnover, s.activeSide]).toEqual(["prone", false, "home"]);
+      });
+
+      it("a failed or declined roll: the usual armour roll", () => {
+        expect(find(apply(knockDown(), use, roll(3)), "ROLL")?.reason).toBe("Armour 8+ (Away 2)");
+        expect(find(apply(knockDown(), { type: "USE_SKILL", use: false }), "ROLL")?.reason).toBe("Armour 8+ (Away 2)");
+      });
+
+      it("on Both Down, the blocker's fall is no turnover; a turnover if the blocker holds the ball", () => {
+        const both = apply(blockAway2(saboteur()), roll(2), pick, use, roll(5), roll(1, 2));
+        expect([both.players["home-2"]!.status, both.turnover, both.activeSide]).toEqual(["prone", false, "home"]);
+        const carrying = edit(saboteur(), (c) => (c.ball = { square: { x: 12, y: 7 }, carried: true }));
+        const s = apply(knockDown(carrying), use, roll(6), roll(1, 2));
+        expect(s.turnover).toBe(true);
+      });
+    });
+
     describe("Foul Appearance", () => {
       const ugly = (s = toFirstTurn()) => withSkills(s, { "away-2": ["Foul Appearance"] });
 

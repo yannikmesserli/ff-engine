@@ -111,6 +111,12 @@ export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = f
   });
 }
 
+/** Knocked Out without an injury roll (Saboteur): the apothecary may still treat the player. Returns the procedure to push. */
+export function knockOut(ctx: Ctx, player: PlayerState): Procedure {
+  ctx.emit({ type: "PlayerInjured", playerId: player.id, result: "ko" });
+  return { type: "Injury", playerId: player.id, outcome: "ko", crowd: false, stage: "apothecary" };
+}
+
 /** Roll the casualty dice and read the table. */
 function rollCasualty(ctx: Ctx, player: PlayerState, action: Action, reason: string) {
   const [d16, d6] = ctx.roll(action, CASUALTY_DICE, reason);

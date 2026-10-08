@@ -1,10 +1,10 @@
 import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
-import { adjacent, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
 import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
-import { injure } from "./injury";
+import { injure, knockOut } from "./injury";
 import { dropBall } from "./ball";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -44,6 +44,7 @@ const CHECK_NAMES = {
   pro: "Pro",
   pickmeup: "Pick-me-up",
   chomp: "Chomp",
+  saboteur: "Saboteur",
 } as const;
 
 /** The natural d6 result needed, for display ("4+"). */
@@ -266,6 +267,33 @@ const chainsawNote = (player: PlayerState) => (chainsawBonus(player) > 0 ? " (+3
 /** Steady Footing avoids a knock-down on a 6. */
 export const STEADY_FOOTING_TARGET = 6;
 
+/** Saboteur: the weapon goes off on 4+. */
+export const SABOTEUR_TARGET = 4;
+
+/**
+ * Saboteur went off: the player is Knocked Out without an armour roll, and the blocker is knocked down too (armour and
+ * injury without modifiers), a turnover only if the blocker holds the ball. In a Both Down, the blocker's own fall
+ * becomes this knock-down.
+ */
+function sabotage(ctx: Ctx, proc: P<"KnockDown">, player: PlayerState) {
+  const { state } = ctx;
+  const blocker = getPlayer(ctx, proc.saboteurTargetId!);
+  const square = squareOf(ctx, player);
+  proc.square = { ...square };
+  proc.hadBall = ballCarrier(state)?.id === player.id;
+  if (proc.hadBall) state.ball.carried = false;
+  // Off the pitch by the time the ball bounces: no Safe Pair of Hands.
+  proc.fallsOver = true;
+  ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Saboteur" });
+  ctx.emit({ type: "PlayerKnockedDown", playerId: player.id });
+  player.status = "prone";
+  const turnover = ballCarrier(state)?.id === blocker.id;
+  const pending = state.stack.find((p): p is P<"KnockDown"> => p.type === "KnockDown" && p.playerId === blocker.id && p.stage === "fall");
+  if (pending) pending.turnover = turnover;
+  const knock: Procedure[] = !pending && isOnPitch(blocker) && blocker.status === "standing" ? [{ type: "KnockDown", playerId: blocker.id, turnover, stage: "fall" }] : [];
+  ctx.push(knockOut(ctx, player), ...knock);
+}
+
 /**
  * Steady Footing first: a standing, undistracted player with the skill may roll a D6 (team re-roll allowed in their own
  * turn); on a 6 they stay on their feet, holding the ball, and there is no turnover.
@@ -277,6 +305,8 @@ export const STEADY_FOOTING_TARGET = 6;
  * Chainsaw: a knocked-down chainsaw player always gets +3 against them on the armour roll.
  * Ball & Chain: the player's armour breaks without a roll, a Stunned result is a KO and a KO gets no apothecary.
  * A stunned player knocked down (hit on the ground by a Ball & Chain) stays stunned if the armour holds.
+ * Saboteur (a defender knocked down by a block, before Steady Footing): the player's coach may roll a D6; on 4+ see
+ * `sabotage`, otherwise the knock-down goes on as usual.
  */
 export const KnockDown: Handler<P<"KnockDown">> = {
   step(ctx, proc, action) {
@@ -284,6 +314,10 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     const player = getPlayer(ctx, proc.playerId);
     switch (proc.stage) {
       case "fall": {
+        if (proc.saboteurTargetId !== undefined && player.status === "standing") {
+          proc.stage = "sabotage";
+          return "continue";
+        }
         if (!proc.steadied && hasSkill(player, "Steady Footing") && player.status === "standing" && !player.distracted) {
           proc.stage = "steady";
           return "continue";
@@ -297,6 +331,29 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         if (proc.turnover) state.turnover = true;
         ctx.emit({ type: "PlayerKnockedDown", playerId: player.id });
         proc.stage = "armour";
+        return "continue";
+      }
+      case "sabotage":
+        if (action === null) return "wait";
+        if (ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "sabotageRoll";
+          return "wait";
+        }
+        delete proc.saboteurTargetId;
+        proc.stage = "fall";
+        return "continue";
+      case "sabotageRoll": {
+        if (action === null) return "wait";
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Saboteur ${SABOTEUR_TARGET}+`);
+        const success = roll! >= SABOTEUR_TARGET;
+        ctx.emit({ type: "CheckResult", kind: "saboteur", playerId: player.id, success, roll: roll!, target: SABOTEUR_TARGET });
+        if (success) {
+          sabotage(ctx, proc, player);
+          proc.stage = "bounce";
+          return "continue";
+        }
+        delete proc.saboteurTargetId;
+        proc.stage = "fall";
         return "continue";
       }
       case "steady": {
@@ -371,6 +428,8 @@ export const KnockDown: Handler<P<"KnockDown">> = {
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "steady") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Steady Footing" }];
+    if (proc.stage === "sabotage") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Saboteur" }];
+    if (proc.stage === "sabotageRoll") return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `Saboteur ${SABOTEUR_TARGET}+ (${player.name})` }];
     const reason =
       proc.stage === "injury"
         ? `Injury${mightyBlowNote(injuryBonus(proc), proc)}`
