@@ -317,6 +317,14 @@ describe("scenarios", () => {
     expect(find(s, "ROLL")?.reason).toBe("Armour 9+ (Hans)");
   });
 
+  it("multiple-block: one die against each goblin, both rolled before either resolves", () => {
+    let s = applyActions(load("multiple-block"), [{ type: "START_ACTION", playerId: "home-1", action: "block" }]);
+    expect(find(s, "MULTIPLE_BLOCK")?.targetIds).toEqual(["away-1", "away-2", "away-3"]);
+    s = applyActions(s, [{ type: "MULTIPLE_BLOCK", targetIds: ["away-1", "away-2"] }, { type: "ROLL", values: [6] }, { type: "CHOOSE_BLOCK_DIE", index: 0 }]);
+    expect(find(s, "ROLL")?.dice).toEqual([{ kind: "block", count: 1 }]);
+    expect(s.players["away-1"]!.at).toEqual({ x: 13, y: 6 });
+  });
+
   it("punt: 3 and 4 put the ball on Malus; from the sideline the crowd is offered", () => {
     const start = applyActions(load("punt"), [{ type: "START_ACTION", playerId: "home-1", action: "punt" }]);
     let s = applyActions(start, [
