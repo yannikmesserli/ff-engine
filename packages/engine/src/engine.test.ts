@@ -221,6 +221,31 @@ describe("engine", () => {
       const s = apply(toKick({ x: 10, y: 5 }), roll(1, 1), QUIET_EVENT);
       expect(find(s, "ROLL")?.reason).toMatch(/^Catch 3\+/);
     });
+
+    describe("Kick", () => {
+      /** Away kicks to (5,7), after giving Kick to some of its players. */
+      const kickWith = (ids: string[]) => {
+        const s = edit(toSetup(), (c) => ids.forEach((id) => (c.players[id]!.skills = ["Kick"])));
+        return apply(s, ...setupActions("away"), ...setupActions("home"), { type: "PLACE_BALL", square: { x: 5, y: 7 } });
+      };
+
+      it("the kicking player may roll a D3 instead of a D6 for the deviation, decided before the roll", () => {
+        let s = kickWith(["away-5"]);
+        expect(getAvailableActions(s)).toEqual([{ type: "USE_SKILL", side: "away", playerId: "away-5", skill: "Kick" }]);
+        s = apply(s, { type: "USE_SKILL", use: true, skill: "Kick" });
+        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }, { kind: "d3", count: 1 }], reason: "Kick-off deviation (Kick: D3)" });
+        s = apply(s, roll(3, 3));
+        expect(s.log).toContainEqual({ type: "BallScattered", to: { x: 8, y: 7 } });
+        const declined = apply(kickWith(["away-5"]), { type: "USE_SKILL", use: false, skill: "Kick" });
+        expect(find(declined, "ROLL")?.dice).toEqual([{ kind: "d8", count: 1 }, { kind: "d6", count: 1 }]);
+      });
+
+      it("only for the kicking player: in the centre field, or on the line of scrimmage when nobody is there", () => {
+        expect(types(kickWith(["away-1"]))).toEqual(["ROLL"]);
+        // A player in a wide zone (away-11 at (17,11)) cannot kick either.
+        expect(types(kickWith(["away-11"]))).toEqual(["ROLL"]);
+      });
+    });
   });
 
   describe("movement", () => {
@@ -2375,6 +2400,25 @@ describe("engine", () => {
         s = apply(s, roll(3), roll(4));
         // Pro is used up: only the team re-roll is left for the distance.
         expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+        expect(s.teams.home.rerolls).toBe(1);
+      });
+
+      it("Kick re-rolls each punt roll instead of a team re-roll", () => {
+        let s = edit(punter(), (c) => {
+          c.players["home-5"]!.skills = ["Punt", "Kick"];
+        });
+        s = apply(punt(s, { x: 9, y: 5 }), roll(1));
+        expect(find(s, "USE_REROLL")).toMatchObject({ skill: "Kick" });
+        s = apply(s, { type: "USE_REROLL" });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-5", skill: "Kick" });
+        expect(find(s, "ROLL")?.reason).toBe("Punt direction (Home 5)");
+        // The re-rolled direction stands; the distance gets its own Kick re-roll.
+        s = apply(s, roll(3));
+        expect(find(s, "ROLL")?.reason).toBe("Punt distance (Home 5)");
+        s = apply(s, roll(1));
+        expect(find(s, "USE_REROLL")).toMatchObject({ skill: "Kick" });
+        s = apply(s, { type: "USE_REROLL" }, roll(4));
+        expect(s.log).toContainEqual({ type: "Punted", playerId: "home-5", to: { x: 12, y: 5 }, out: false });
         expect(s.teams.home.rerolls).toBe(1);
       });
 

@@ -209,6 +209,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Cannoneer: +1 to the player's Long passes and Long Bombs (bombs and Hail Mary Passes too), not to team-mate throws.
 - Bullseye: after a superb team-mate throw, the thrower may have the player land in the target square, without
   scattering.
+- Kick: the kicking player (one set up in the centre field, or on the line of scrimmage when nobody is there) may
+  have the kick-off deviate D3 squares instead of D6, decided before the roll. A punter with the skill may re-roll each
+  punt roll with it instead of a team re-roll.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).
@@ -320,7 +323,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
   without bouncing, in the square they leave on their next step, and it is not a turnover. Not with My Ball.
 
-Not yet: most other skills (Kick...), inducements, the golden-goal overtime variant.
+Not yet: Multiple Block and the Star Player Points (Violent Innovator), the pre-game shop, star players, the golden-goal overtime variant.
 
 The playground accepts `?seed=42` to replay the same dice.
 

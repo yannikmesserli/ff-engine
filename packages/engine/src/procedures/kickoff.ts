@@ -1,7 +1,8 @@
 import type { Ctx, Handler } from "../context";
 import type { Action, DiceSpec, GameState, KickoffResult, PlayerState, Procedure, Side, Square, TeamState, Weather } from "../types";
 import { SCATTER } from "../dice";
-import { adjacent, allSquares, inHalf, isOnPitch, offset, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
+import { adjacent, allSquares, inHalf, inWideZone, isOnPitch, offset, onLineOfScrimmage, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
+import { hasSkill } from "../skills";
 import { createPlayer, getPlayer, landBall } from "./helpers";
 import { setupErrors } from "./setup";
 
@@ -13,11 +14,22 @@ const D3: DiceSpec[] = [{ kind: "d3", count: 1 }];
 /** One D3 per team, home first. */
 const D3_EACH: DiceSpec[] = [{ kind: "d3", count: 2 }];
 const TWO_D6: DiceSpec[] = [{ kind: "d6", count: 2 }];
-/** Kick-off deviation: d8 direction, D6 squares. */
-const KICK_DICE: DiceSpec[] = [
+/** Kick-off deviation: d8 direction, D6 squares (a D3 with Kick). */
+const kickDice = (kick = false): DiceSpec[] => [
   { kind: "d8", count: 1 },
-  { kind: "d6", count: 1 },
+  { kind: kick ? "d3" : "d6", count: 1 },
 ];
+
+/**
+ * The kicking player: one set up in the centre field (not on the line of scrimmage nor in a wide zone), or on the line
+ * of scrimmage when nobody is there; one with Kick if any.
+ */
+export function kickingPlayer(state: GameState, side: Side): PlayerState | undefined {
+  const onPitch = teamPlayers(state, side).filter((p): p is PlayerState & { at: Square } => isOnPitch(p));
+  const centre = onPitch.filter((p) => inWideZone(p.at) === null && !onLineOfScrimmage(side, p.at));
+  const candidates = centre.length > 0 ? centre : onPitch.filter((p) => onLineOfScrimmage(side, p.at));
+  return candidates.find((p) => hasSkill(p, "Kick")) ?? candidates[0];
+}
 
 /** BB2025 weather table (2D6). */
 export function weatherFor(roll: number): Weather {
@@ -162,6 +174,8 @@ export const SwelteringHeat: Handler<P<"SwelteringHeat">> = {
 /**
  * Kick-off: place the ball, deviate it (D8 + D6), roll the kick-off event, then land the ball.
  * In BB2025 the event is resolved while the ball is in the air.
+ * Kick: if the kicking player has the skill, their coach may decide, before the roll, that the ball deviates D3 squares
+ * instead of D6.
  */
 export const Kickoff: Handler<P<"Kickoff">> = {
   step(ctx, proc, action) {
@@ -175,13 +189,21 @@ export const Kickoff: Handler<P<"Kickoff">> = {
         proc.target = { ...square };
         for (const p of Object.values(state.players)) p.played = isOnPitch(p);
         ctx.emit({ type: "BallPlaced", square });
+        proc.stage = kicker(state, proc) ? "kick" : "scatter";
+        return "continue";
+      }
+      case "kick": {
+        if (action === null) return "wait";
+        if (ctx.expect(action, "USE_SKILL").use) {
+          proc.kick = true;
+          ctx.emit({ type: "SkillUsed", playerId: kicker(state, proc)!.id, skill: "Kick" });
+        }
         proc.stage = "scatter";
         return "continue";
       }
       case "scatter": {
         if (action === null) return "wait";
-        // TODO: Kick skill (D3 distance).
-        const [direction, distance] = ctx.roll(action, KICK_DICE, "Kick-off deviation");
+        const [direction, distance] = ctx.roll(action, kickDice(proc.kick), "Kick-off deviation");
         proc.landing = offset(proc.target!, SCATTER[direction!]!, distance!);
         proc.touchback = !inHalf(receiving, proc.landing);
         ctx.emit({ type: "BallScattered", to: proc.landing });
@@ -235,13 +257,15 @@ export const Kickoff: Handler<P<"Kickoff">> = {
         return "done";
     }
   },
-  actions(_state, proc) {
+  actions(state, proc) {
     const receiving = other(proc.kicking);
     switch (proc.stage) {
       case "place":
         return [{ type: "PLACE_BALL", side: proc.kicking, squares: allSquares((s) => inHalf(receiving, s)) }];
+      case "kick":
+        return [{ type: "USE_SKILL", side: proc.kicking, playerId: kicker(state, proc)!.id, skill: "Kick" }];
       case "scatter":
-        return [{ type: "ROLL", side: proc.kicking, dice: KICK_DICE, reason: "Kick-off deviation" }];
+        return [{ type: "ROLL", side: proc.kicking, dice: kickDice(proc.kick), reason: proc.kick ? "Kick-off deviation (Kick: D3)" : "Kick-off deviation" }];
       case "event":
         return [{ type: "ROLL", side: proc.kicking, dice: TWO_D6, reason: "Kick-off event" }];
       case "weather":
@@ -252,6 +276,12 @@ export const Kickoff: Handler<P<"Kickoff">> = {
         return [];
     }
   },
+};
+
+/** The kicking player, if they have Kick. */
+const kicker = (state: GameState, proc: P<"Kickoff">) => {
+  const player = kickingPlayer(state, proc.kicking);
+  return player && hasSkill(player, "Kick") ? player : undefined;
 };
 
 /** Apply a kick-off event: immediate effects here, the others as procedures that run before the ball lands. */

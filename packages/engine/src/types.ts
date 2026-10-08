@@ -333,7 +333,10 @@ export type Procedure =
   | {
       type: "Kickoff";
       kicking: Side;
-      stage: "place" | "scatter" | "event" | "weather" | "gusts" | "land";
+      /** "kick": the kicking player may use Kick before the deviation roll. */
+      stage: "place" | "kick" | "scatter" | "event" | "weather" | "gusts" | "land";
+      /** Kick: the deviation distance is a D3. */
+      kick?: boolean;
       target?: Square;
       /** Where the ball will come down; may be off the pitch. */
       landing?: Square;

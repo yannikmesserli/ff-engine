@@ -532,9 +532,12 @@ export function puntTargets(player: PlayerState & { at: Square }) {
   return { squares, crowd: x < 1 || x > 24 || y < 1 || y > 13 };
 }
 
-/** After a punt roll: the re-roll decision (team re-roll or Pro), or the next step. */
+/** Kick: the punter may re-roll each punt roll with the skill, instead of a team re-roll. */
+const kickReroll = (punter: PlayerState, proc: P<"Punt">) => !proc.rerolled && hasSkill(punter, "Kick");
+
+/** After a punt roll: the re-roll decision (Kick, team re-roll or Pro), or the next step. */
 function afterPuntRoll(state: GameState, proc: P<"Punt">, punter: PlayerState) {
-  if (canTeamReroll(state, punter.side, proc.rerolled) || canUsePro(state, punter, proc.rerolled)) proc.stage = "reroll";
+  if (kickReroll(punter, proc) || canTeamReroll(state, punter.side, proc.rerolled) || canUsePro(state, punter, proc.rerolled)) proc.stage = "reroll";
   else nextPuntStep(proc);
 }
 
@@ -550,7 +553,7 @@ function nextPuntStep(proc: P<"Punt">) {
 /**
  * Punt (a once-per-turn action of a player with the skill, who may move first): the coach picks a square next to the
  * punter (not diagonally); a D6 on the throw-in template facing it gives the direction, then the ball travels D6
- * squares from the punter. A team re-roll (or Pro) may be used on each of the two rolls. If the ball would leave the pitch, it
+ * squares from the punter. A team re-roll (or Pro, or Kick's skill re-roll) may be used on each of the two rolls. If the ball would leave the pitch, it
  * is thrown in from the last square it reached, a turnover. Otherwise it comes down on the square: a standing player
  * there may catch it (a turnover if it is an opponent), else it bounces; either way the action ends, and the ball
  * loose or caught after a bounce is no turnover. From a sideline or an end zone, the punter may instead kick it into
@@ -587,6 +590,11 @@ export const Punt: Handler<P<"Punt">> = {
           if ((a.skill ?? "Pro") !== "Pro" || proc.mascotFailed || !canUsePro(state, punter, proc.rerolled)) ctx.reject("Pro cannot be used now.");
           proc.rerolled = true;
           proc.stage = "pro";
+        } else if (kickReroll(punter, proc)) {
+          // A skill re-roll: no team re-roll is spent, so Loner does not apply.
+          ctx.emit({ type: "SkillUsed", playerId: punter.id, skill: "Kick" });
+          proc.rerolled = true;
+          proc.stage = proc.rolling;
         } else {
           if (!canTeamReroll(state, punter.side, proc.rerolled)) ctx.reject("No re-roll available.");
           useTeamReroll(ctx, punter.side, a.mascot);
@@ -649,7 +657,11 @@ export const Punt: Handler<P<"Punt">> = {
         return [{ type: "ROLL", side: punter.side, dice: [{ kind: "d6", count: 1 }], reason: `Punt ${proc.stage} (${punter.name})` }];
       case "reroll":
         return [
-          ...(canTeamReroll(state, punter.side, proc.rerolled) ? [teamRerollTemplate(state, punter.side)] : []),
+          ...(kickReroll(punter, proc)
+            ? [{ type: "USE_REROLL" as const, side: punter.side, available: rerollsLeft(state, punter.side), skill: "Kick" }]
+            : canTeamReroll(state, punter.side, proc.rerolled)
+              ? [teamRerollTemplate(state, punter.side)]
+              : []),
           ...(proc.mascotFailed ? [] : proTemplate(state, punter, proc.rerolled)),
           { type: "DECLINE_REROLL", side: punter.side },
         ];
