@@ -255,6 +255,15 @@ describe("scenarios", () => {
     expect(find(s, "USE_REROLL")).toMatchObject({ skill: "Kick" });
   });
 
+  it("leader: the Leader re-roll is spent first", () => {
+    let s = load("leader");
+    expect(s.teams.home.leaders).toEqual(["home-1"]);
+    s = applyActions(s, [{ type: "START_ACTION", playerId: "home-2", action: "move" }, { type: "MOVE", square: { x: 11, y: 7 } }, { type: "ROLL", values: [1] }]);
+    expect(find(s, "USE_REROLL")?.available).toBe(3);
+    s = applyActions(s, [{ type: "USE_REROLL" }]);
+    expect([s.teams.home.rerolls, s.teams.home.leaderUsed]).toEqual([2, true]);
+  });
+
   it("punt: 3 and 4 put the ball on Malus; from the sideline the crowd is offered", () => {
     const start = applyActions(load("punt"), [{ type: "START_ACTION", playerId: "home-1", action: "punt" }]);
     let s = applyActions(start, [

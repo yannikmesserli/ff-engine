@@ -922,6 +922,45 @@ export const SCENARIOS: Scenario[] = [
     ),
   },
   {
+    id: "leader",
+    title: "Leader: an extra team re-roll while the Leader is on the pitch",
+    instructions: [
+      "Home's first turn: Lothar (#1, Thrower, Leader) was on the pitch at the kick-off, so the home banner shows \"Re-rolls 2 +1 Leader\".",
+      "Move Hans (#2, on the line of scrimmage) one square west, away from the orc: enter 1 for the dodge. The re-roll offer counts 3 left.",
+      "Use it: the Leader re-roll goes first (the log shows Leader), so the banner drops \"+1 Leader\" and the 2 team re-rolls are untouched.",
+      "The Leader re-roll stays while Lothar is on the pitch, even prone or stunned; knocked out or injured, it is not available until he comes back. A new one comes each half.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Lothar", position: "Human Thrower", skills: ["Leader"] },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Gunther", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 43,
+    actions: toFirstTurn({
+      home: { 1: { x: 7, y: 7 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 5 }, 4: { x: 12, y: 9 } },
+      away: { 1: { x: 13, y: 5 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 9 } },
+      ball: { x: 7, y: 7 },
+    }),
+  },
+  {
     id: "hail-mary-pass",
     title: "Hail Mary Pass: throw the ball anywhere",
     instructions: [
