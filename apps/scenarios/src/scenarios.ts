@@ -1042,6 +1042,44 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "saboteur",
+    title: "Saboteur: a Looney's weapon goes off when knocked down",
+    instructions: [
+      "Home's first turn. Block Snikkit (#1, Looney, Saboteur) with Hans (#1): two dice, you choose. Enter 6 and 6 and push him back.",
+      "Before the armour roll, the away coach may use Saboteur: a D6, 4+. Snikkit is then Knocked Out without an armour roll, and Hans is knocked down too (an armour roll without modifiers). It is no turnover: Hans did not hold the ball.",
+      "Undo and roll 1 to 3 for Saboteur, or decline it: Snikkit rolls armour as usual.",
+      "On Both Down (2 and 2), Hans falls anyway, but if the weapon goes off his fall is no turnover either.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Gunther", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Grotty Gits",
+      roster: "Goblin",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Snikkit", position: "Looney", skills: ["Saboteur"] },
+        { number: 2, name: "Nobbla", position: "Goblin Lineman" },
+        { number: 3, name: "Grotsnik", position: "Goblin Lineman" },
+      ],
+    },
+    seed: 59,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 6, y: 7 },
+    }),
+  },
+  {
     id: "hail-mary-pass",
     title: "Hail Mary Pass: throw the ball anywhere",
     instructions: [

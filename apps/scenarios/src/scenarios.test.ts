@@ -302,6 +302,21 @@ describe("scenarios", () => {
     expect(s.players["away-2"]!.at).toEqual({ x: 13, y: 7 });
   });
 
+  it("saboteur: a Looney knocked down may take the blocker with him", () => {
+    let s = applyActions(load("saboteur"), [
+      { type: "START_ACTION", playerId: "home-1", action: "block" },
+      { type: "BLOCK", targetId: "away-1" },
+      { type: "ROLL", values: [6, 6] },
+      { type: "CHOOSE_BLOCK_DIE", index: 0 },
+      { type: "PUSH", square: { x: 14, y: 7 } },
+      { type: "FOLLOW_UP", follow: false },
+    ]);
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "away", skill: "Saboteur" });
+    s = applyActions(s, [{ type: "USE_SKILL", use: true }, { type: "ROLL", values: [4] }]);
+    expect(s.players["away-1"]!.at).toBe("ko");
+    expect(find(s, "ROLL")?.reason).toBe("Armour 9+ (Hans)");
+  });
+
   it("punt: 3 and 4 put the ball on Malus; from the sideline the crowd is offered", () => {
     const start = applyActions(load("punt"), [{ type: "START_ACTION", playerId: "home-1", action: "punt" }]);
     let s = applyActions(start, [
