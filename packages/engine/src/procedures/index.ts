@@ -3,7 +3,7 @@ import { Bounce, Catch, DivingCatch, SafeHands, ThrowIn, Touchback } from "./bal
 import { BombLanding, Explosion } from "./bomb";
 import { Block, Crowd, Trickster, Vomit } from "./block";
 import { DumpOff, HandOff, Pass, Punt } from "./pass";
-import { Foul, SecretWeapon } from "./foul";
+import { Foul, PileDriver, SecretWeapon } from "./foul";
 import { Feed } from "./bloodlust";
 import { Check, KnockDown } from "./checks";
 import { Injury } from "./injury";
@@ -62,6 +62,7 @@ export const handlers: HandlerMap = {
   Explosion,
   HandOff,
   Foul,
+  PileDriver,
   SecretWeapon,
   Feed,
   Check,

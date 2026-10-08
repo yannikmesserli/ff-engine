@@ -1787,6 +1787,39 @@ describe("engine", () => {
       });
     });
 
+    describe("Pile Driver", () => {
+      /** home-2 knocks away-2 down to (14,7) and follows up; the armour holds. */
+      const knockDown = (skills: string[], follow = true) =>
+        apply(blockAway2(withSkills(toFirstTurn(), { "home-2": skills })), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow }, roll(1, 2));
+
+      it("after a Block action, a free foul on the knocked-down defender, then the attacker is placed prone", () => {
+        let s = knockDown(["Pile Driver"]);
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Pile Driver" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(s.log).toContainEqual({ type: "Fouled", foulerId: "home-2", victimId: "away-2", assists: 0 });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour 8\+ \(foul on Away 2/);
+        s = apply(s, roll(5, 3), roll(2, 3));
+        expect(s.players["away-2"]!.status).toBe("stunned");
+        expect(s.players["home-2"]!.status).toBe("prone");
+        expect(s.log).toContainEqual({ type: "PlayerPlacedProne", playerId: "home-2" });
+        // Not a turnover, and the team's Foul action is still there.
+        expect([s.turnover, s.activeSide, s.activePlayerId]).toEqual([false, "home", null]);
+        expect(actionsOf(edit(s, (c) => void (c.players["away-1"]!.status = "prone")), "home-1")).toContain("foul");
+      });
+
+      it("a ball carrier placed prone drops the ball: a turnover", () => {
+        const s = apply(edit(knockDown(["Pile Driver"]), (c) => (c.ball = { square: { x: 13, y: 7 }, carried: true })), { type: "USE_SKILL", use: true }, roll(2, 3));
+        expect(find(s, "ROLL")?.reason).toBe("Bounce");
+        expect(s.turnover).toBe(true);
+      });
+
+      it("not when the defender is no longer next to the attacker, nor after a Blitz", () => {
+        expect(types(knockDown(["Pile Driver"], false))).not.toContain("USE_SKILL");
+        const blitz = apply(withSkills(toFirstTurn(), { "home-2": ["Pile Driver"] }), declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" }, roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: true }, roll(1, 2));
+        expect(types(blitz)).not.toContain("USE_SKILL");
+      });
+    });
+
     describe("Hypnotic Gaze", () => {
       const gazer = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Hypnotic Gaze"] });
       const gaze = (s: GameState) => apply(s, declare("home-2", "gaze"), { type: "GAZE", targetId: "away-2" });

@@ -5,6 +5,7 @@ import { ARMOUR_DICE } from "./checks";
 import { injure } from "./injury";
 import { hasSkill } from "../skills";
 import { getPlayer, squareOf } from "./helpers";
+import { dropBall } from "./ball";
 import { CHAINSAW_TARGET, chainsawArmour } from "./block";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -272,6 +273,50 @@ export const Foul: Handler<P<"Foul">> = {
   },
 };
 
+/** Pile Driver: the attacker is still standing next to the defender, who is down and can be fouled. */
+function canPileDrive(state: GameState, proc: P<"PileDriver">) {
+  const attacker = state.players[proc.attackerId]!;
+  if (state.turnover || state.touchdown !== null || !hasSkill(attacker, "Pile Driver")) return false;
+  return foulTargets(state, attacker).some((t) => t.playerId === proc.defenderId);
+}
+
+/**
+ * Pile Driver: once a Block action (not a Blitz) is over, if the defender was knocked down and the attacker is still
+ * standing next to them, the attacker's coach may make a free foul on them (it is not the team's Foul action), as any
+ * foul (assists, Chainsaw, the referee). The attacker is then placed prone, unless sent off: a turnover only if they
+ * hold the ball.
+ */
+export const PileDriver: Handler<P<"PileDriver">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const attacker = getPlayer(ctx, proc.attackerId);
+    if (proc.stage === "drop") {
+      if (!isOnPitch(attacker) || attacker.status !== "standing") return "done";
+      const square = squareOf(ctx, attacker);
+      const carrying = ballCarrier(state)?.id === attacker.id;
+      attacker.status = "prone";
+      ctx.emit({ type: "PlayerPlacedProne", playerId: attacker.id });
+      if (carrying) {
+        state.ball.carried = false;
+        state.turnover = true;
+        ctx.push(dropBall(attacker, square));
+      }
+      return "done";
+    }
+    if (action === null) return canPileDrive(state, proc) ? "wait" : "done";
+    if (!ctx.expect(action, "USE_SKILL").use) return "done";
+    const target = foulTargets(state, attacker).find((t) => t.playerId === proc.defenderId)!;
+    ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Pile Driver" });
+    ctx.emit({ type: "Fouled", foulerId: attacker.id, victimId: target.playerId, assists: target.assists });
+    ctx.push({ type: "Foul", foulerId: attacker.id, victimId: target.playerId, assists: target.assists, stage: "chainsaw" });
+    proc.stage = "drop";
+    return "continue";
+  },
+  actions(state, proc) {
+    const attacker = state.players[proc.attackerId]!;
+    return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Pile Driver" }];
+  },
+};
 
 /** Secret Weapon players who played in the drive and are not a casualty or already sent off. */
 export const secretWeapons = (state: GameState) =>

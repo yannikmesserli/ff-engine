@@ -220,6 +220,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   an armour roll that holds; only the new roll counts, its doubles included.
 - Quick Foul: after a foul that is not a turnover (a bribe may keep the fouler on the pitch), the fouler may go on
   moving with the squares left, without fouling again.
+- Pile Driver: once a Block action (not a Blitz) is over, if the defender was knocked down and the attacker still
+  stands next to them, the attacker's coach may make a free foul on them (not the team's Foul action), then the
+  attacker is placed prone (unless sent off): a turnover only if they held the ball.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).

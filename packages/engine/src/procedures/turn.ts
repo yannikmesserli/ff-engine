@@ -627,7 +627,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         ...(extraAssist ? { extraAssist } : {}),
         rerolled: false,
         chain: [],
-      }, ...hitAndRun(player, true));
+      }, ...pileDriver(player, target, proc.action), ...hitAndRun(player, true));
       return "continue";
     }
     if (!activationMoves(state, proc).some((s) => sameSquare(s, a.square))) ctx.reject("Illegal move.");
@@ -677,6 +677,10 @@ export const MoveAction: Handler<P<"MoveAction">> = {
 };
 
 const holdsBall = (state: GameState, player: PlayerState) => ballCarrier(state)?.id === player.id;
+
+/** Pile Driver: offered once a Block action's block (and any Frenzy block) is over, before Hit and Run. */
+const pileDriver = (player: PlayerState, defender: PlayerState, action: PlayerActionType): Procedure[] =>
+  action === "block" && hasSkill(player, "Pile Driver") ? [{ type: "PileDriver", attackerId: player.id, defenderId: defender.id, stage: "ask" }] : [];
 
 /** Hit and Run runs once the block (and any Frenzy block) or Stab is over. */
 const hitAndRun = (player: PlayerState, allowed: boolean): Procedure[] =>

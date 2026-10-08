@@ -599,6 +599,8 @@ export type Procedure =
   | { type: "PickMeUp"; side: Side; playerIds: string[]; selected: string[]; stage: "select" | "roll" }
   /** Hit and Run: after their block (or Stab), the player may step to a free square away from any opponent. */
   | { type: "HitAndRun"; playerId: string; stage: "ask" | "move" }
+  /** Pile Driver: after a Block action, the attacker may foul the defender they knocked down ("drop": then goes prone). */
+  | { type: "PileDriver"; attackerId: string; defenderId: string; stage: "ask" | "drop" }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
   | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "gaze" | "result" }
   /** Trickster: the defender may move next to the attacker before the block or attack; "pickup": onto the loose ball. */
