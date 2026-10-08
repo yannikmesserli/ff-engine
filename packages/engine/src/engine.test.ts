@@ -704,6 +704,12 @@ describe("engine", () => {
       expect(dodge({ "away-1": ["Titchy"] })).toMatch(/^Dodge 3\+/);
     });
 
+    it("Two Heads: +1 to the player's Dodge rolls", () => {
+      const dodge = (skills: string[]) => find(apply(withSkills(toFirstTurn(), { "home-1": skills }), startMove("home-1"), ...move({ x: 12, y: 5 })), "ROLL")?.reason;
+      expect(dodge(["Two Heads"])).toMatch(/^Dodge 3\+/);
+      expect(dodge(["Two Heads", "Titchy"])).toMatch(/^Dodge 2\+/);
+    });
+
     it("Prehensile Tail: -1 to Dodge and Jump rolls of opponents leaving its tackle zone", () => {
       const tail = withSkills(toFirstTurn(), { "away-1": ["Prehensile Tail"] });
       // home-1 leaves (12,6), marked by away-1, for (12,5), also in its tackle zone: 5+ instead of 4+.

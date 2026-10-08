@@ -200,6 +200,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Claws: when the blocker knocks an opponent down, a natural armour roll of 8+ breaks armour above 8+; it does not
   stack with Mighty Blow, which then goes to the injury roll.
 - Titchy: +1 to the player's Dodge rolls; opponents dodging into their tackle zone do not count it.
+- Two Heads: +1 to the player's Dodge rolls.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).

@@ -100,7 +100,7 @@ function jumpModifier(state: GameState, player: PlayerState, from: Square, to: S
 
 /**
  * Dodge roll modifier from `from` to `to`: -1 per opponent's tackle zone on the square moved to (none for Stunty; Titchy
- * opponents do not count), -1 per Prehensile Tail marking the square left, +1 for a Titchy player.
+ * opponents do not count), -1 per Prehensile Tail marking the square left, +1 for a Titchy player, +1 with Two Heads.
  */
 export function dodgeModifier(state: GameState, player: PlayerState, from: Square, to: Square): number {
   const zones = hasSkill(player, "Stunty")
@@ -109,7 +109,7 @@ export function dodgeModifier(state: GameState, player: PlayerState, from: Squar
         const marker = tackleZoneAt(state, s);
         return marker !== undefined && marker.side !== player.side && !hasSkill(marker, "Titchy");
       }).length;
-  return -zones - prehensileTails(state, player, from) + (hasSkill(player, "Titchy") ? 1 : 0);
+  return -zones - prehensileTails(state, player, from) + (hasSkill(player, "Titchy") ? 1 : 0) + (hasSkill(player, "Two Heads") ? 1 : 0);
 }
 
 /** Squares a player in a Move action may step (or jump) to, with the rolls each move requires. */
