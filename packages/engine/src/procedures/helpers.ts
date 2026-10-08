@@ -152,9 +152,13 @@ export function weatherModifier(state: { weather: Weather }, kind: "rush" | "pic
   return state.weather === "pouring-rain" ? -1 : 0;
 }
 
-/** Pick-up roll modifier on `square`: -1 per opponent's tackle zone, the weather (Pouring Rain); +1 with Extra Arms. */
+/**
+ * Pick-up roll modifier on `square`: -1 per opponent's tackle zone, the weather (Pouring Rain), both ignored with Big
+ * Hand; +1 with Extra Arms.
+ */
 export const pickupModifier = (state: GameState, player: PlayerState, square: Square) =>
-  -tackleZones(state, player.side, square) + weatherModifier(state, "pickup") + (hasSkill(player, "Extra Arms") ? 1 : 0);
+  (hasSkill(player, "Big Hand") ? 0 : -tackleZones(state, player.side, square) + weatherModifier(state, "pickup")) +
+  (hasSkill(player, "Extra Arms") ? 1 : 0);
 
 /** Rush roll modifier: the weather (Blizzard), -1 for a Drunkard, -1 when the opponents prayed for Moles under the Pitch. */
 export const rushModifier = (state: GameState, player: PlayerState) =>

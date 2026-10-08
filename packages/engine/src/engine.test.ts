@@ -1166,6 +1166,20 @@ describe("engine", () => {
       expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(8);
     });
 
+    it("Big Hand: tackle zones and Pouring Rain do not count on pick-ups", () => {
+      // home-1 dodges onto the ball at (12,5), in away-1's tackle zone, in the rain: 5+ without the skill.
+      const pickUp = (skills: string[]) => {
+        const s = edit(withSkills(toFirstTurn(), { "home-1": skills }), (c) => {
+          c.ball = { square: { x: 12, y: 5 }, carried: false };
+          c.weather = "pouring-rain";
+        });
+        return find(apply(s, startMove("home-1"), ...move({ x: 12, y: 5 }), roll(6)), "ROLL")?.reason;
+      };
+      expect(pickUp([])).toMatch(/^Pick-up 5\+/);
+      expect(pickUp(["Big Hand"])).toMatch(/^Pick-up 3\+/);
+      expect(pickUp(["Big Hand", "Extra Arms"])).toMatch(/^Pick-up 2\+/);
+    });
+
     describe("Steady Footing", () => {
       const steady = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Steady Footing"] });
 
