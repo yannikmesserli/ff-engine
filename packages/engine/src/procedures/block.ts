@@ -37,13 +37,13 @@ function guardCancelled(state: GameState, helper: PlayerState & { at: Square }):
 
 /**
  * Assists for `side` against the opponent standing on `target`: team-mates next to it exerting a tackle zone (except
- * `excludeId`, and Eye Gouged players) that are not marked by any other opponent, or that have Guard (unless Defensive
+ * `excludeIds`, and Eye Gouged players) that are not marked by any other opponent, or that have Guard (unless Defensive
  * cancels it).
  */
-function assists(state: GameState, side: Side, target: Square, opponentId: string, excludeId: string): number {
+function assists(state: GameState, side: Side, target: Square, opponentId: string, ...excludeIds: string[]): number {
   return adjacent(target).filter((s) => {
     const helper = tackleZoneAt(state, s);
-    if (!helper || helper.side !== side || helper.id === excludeId || helper.gouged) return false;
+    if (!helper || helper.side !== side || excludeIds.includes(helper.id) || helper.gouged) return false;
     if (hasSkill(helper, "Guard") && !guardCancelled(state, { ...helper, at: s })) return true;
     return adjacent(s).every((n) => {
       const marker = tackleZoneAt(state, n);
@@ -52,17 +52,26 @@ function assists(state: GameState, side: Side, target: Square, opponentId: strin
   }).length;
 }
 
-/** How a block is made, for its strength: during a Blitz (Horns), after a successful Dauntless roll. */
+/** How a block is made, for its strength: during a Blitz (Horns), after a successful Dauntless roll, in a Multiple Block. */
 export interface BlockContext {
   blitz?: boolean;
   dauntless?: boolean;
   /** Cheering Fans' extra assist, when it is no longer in the team state (the dice are worked out again). */
   extraAssist?: boolean;
+  /** Multiple Block: the other target, who does not assist this defender. */
+  multiple?: string;
 }
 
-/** The attacker's strength before assists: Dauntless raises it to the defender's ST, then Horns +1 during a Blitz. */
-function attackerStrength(attacker: PlayerState, defender: PlayerState, { blitz = false, dauntless = false }: BlockContext) {
-  const base = dauntless ? Math.max(attacker.st, defender.st) : attacker.st;
+/** Multiple Block: -2 to the attacker's ST for each block (at least 1). */
+export const MULTIPLE_BLOCK_PENALTY = 2;
+
+/**
+ * The attacker's strength before assists: -2 in a Multiple Block (at least 1), Dauntless raises it to the defender's
+ * ST, then Horns +1 during a Blitz.
+ */
+function attackerStrength(attacker: PlayerState, defender: PlayerState, { blitz = false, dauntless = false, multiple }: BlockContext) {
+  const st = multiple === undefined ? attacker.st : Math.max(1, attacker.st - MULTIPLE_BLOCK_PENALTY);
+  const base = dauntless ? Math.max(st, defender.st) : st;
   return base + (blitz && hasSkill(attacker, "Horns") ? 1 : 0);
 }
 
@@ -85,7 +94,7 @@ export function blockDice(state: GameState, attacker: PlayerState, defender: Pla
   }
   const extra = (context.extraAssist ?? state.teams[attacker.side].extraAssist) ? 1 : 0;
   const a = attackerStrength(attacker, defender, context) + assists(state, attacker.side, defender.at, defender.id, attacker.id) + extra;
-  const d = defender.st + assists(state, defender.side, attacker.at, attacker.id, defender.id);
+  const d = defender.st + assists(state, defender.side, attacker.at, attacker.id, defender.id, ...(context.multiple ? [context.multiple] : []));
   if (a > 2 * d) return 3;
   if (a > d) return 2;
   if (2 * a < d) return -3;
@@ -96,15 +105,17 @@ export function blockDice(state: GameState, attacker: PlayerState, defender: Pla
 /**
  * Squares a player on `from` can be pushed to in direction `dir`:
  * the free ones among the three away from the pusher, else all three for a chain push; empty means into the crowd.
+ * `forbidden` squares (where the targets of a Multiple Block stood) are never used.
  */
-export function pushbackSquares(state: GameState, from: Square, dir: Square): Square[] {
+export function pushbackSquares(state: GameState, from: Square, dir: Square, forbidden: Square[] = []): Square[] {
   const i = COMPASS.findIndex((d) => sameSquare(d, dir));
   const squares = [-1, 0, 1].map((k) => COMPASS[(i + k + 8) % 8]!).map((d) => ({ x: from.x + d.x, y: from.y + d.y }));
   const onPitch = squares.filter(inBounds);
-  const free = onPitch.filter((s) => !playerAt(state, s));
+  const allowed = (s: Square) => !forbidden.some((f) => sameSquare(f, s));
+  const free = onPitch.filter((s) => !playerAt(state, s) && allowed(s));
   if (free.length > 0) return free;
   // All three squares occupied: push into one of them (chain push). Otherwise the crowd gets them.
-  return onPitch.length === 3 ? onPitch : [];
+  return onPitch.length === 3 ? onPitch.filter(allowed) : [];
 }
 
 /**
@@ -117,16 +128,19 @@ export function pushChoice(state: GameState, proc: P<"Block">): { side: Side; sq
   const pushing = proc.pushing!;
   const player = state.players[pushing.playerId]!;
   const attacker = state.players[proc.attackerId]!;
+  // Multiple Block: nobody is pushed where its targets stood.
+  const forbidden = proc.multiple?.squares ?? [];
+  const open = (s: Square) => !playerAt(state, s) && !forbidden.some((f) => sameSquare(f, s));
   if (!proc.blitz && hasSkill(attacker, "Grab") && pushing.playerId === proc.defenderId && player.side !== attacker.side) {
-    const usual = pushbackSquares(state, pushing.from, pushing.dir);
-    const free = adjacent(pushing.from).filter((s) => !playerAt(state, s) && !usual.some((u) => sameSquare(u, s)));
+    const usual = pushbackSquares(state, pushing.from, pushing.dir, forbidden);
+    const free = adjacent(pushing.from).filter((s) => open(s) && !usual.some((u) => sameSquare(u, s)));
     return { side: attacker.side, squares: [...usual, ...free], sidestep: false, grab: free };
   }
   if (hasSkill(player, "Sidestep") && hasTackleZone(player)) {
-    const free = adjacent(pushing.from).filter((s) => !playerAt(state, s));
+    const free = adjacent(pushing.from).filter(open);
     if (free.length > 0) return { side: player.side, squares: free, sidestep: true };
   }
-  return { side: state.players[proc.attackerId]!.side, squares: pushbackSquares(state, pushing.from, pushing.dir), sidestep: false };
+  return { side: state.players[proc.attackerId]!.side, squares: pushbackSquares(state, pushing.from, pushing.dir, forbidden), sidestep: false };
 }
 
 /** Juggernaut works during a Blitz only. */
@@ -169,7 +183,7 @@ function knockDownDefender(proc: P<"Block">, attacker: PlayerState, defender: Pl
  * other; during a Blitz it costs another square of movement (a Rush if needed) and needs movement left.
  */
 function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState): P<"Block"> | null {
-  if (proc.second || !hasSkill(attacker, "Frenzy") || state.turnover || state.touchdown !== null) return null;
+  if (proc.second || proc.multiple || !hasSkill(attacker, "Frenzy") || state.turnover || state.touchdown !== null) return null;
   const face = BLOCK_FACES[proc.face! - 1];
   if (face !== "push" && face !== "defender_stumbles") return null;
   if (!isOnPitch(attacker) || !hasTackleZone(attacker) || !isOnPitch(defender) || defender.status !== "standing") return null;
@@ -204,12 +218,16 @@ function resolveBothDown(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defe
 /** The face of a Push on the block dice. */
 const PUSH_FACE = BLOCK_FACES.indexOf("push") + 1;
 
-/** Both Down without Wrestle: whoever lacks Block is knocked down (a defender needs a tackle zone for Block). */
+/**
+ * Both Down without Wrestle: whoever lacks Block is knocked down (a defender needs a tackle zone for Block). An
+ * attacker already down (the first block of a Multiple Block) does not fall again.
+ */
 function bothDown(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) {
   const defenderBlocks = hasSkill(defender, "Block") && hasTackleZone(defender);
+  const attackerFalls = !hasSkill(attacker, "Block") && attacker.status === "standing";
   ctx.push(
     ...(defenderBlocks ? [] : [knockDownDefender(proc, attacker, defender)]),
-    ...(hasSkill(attacker, "Block") ? [] : [{ type: "KnockDown" as const, playerId: attacker.id, turnover: true, stage: "fall" as const }]),
+    ...(attackerFalls ? [{ type: "KnockDown" as const, playerId: attacker.id, turnover: true, stage: "fall" as const }] : []),
   );
 }
 
@@ -294,7 +312,7 @@ export const Trickster: Handler<P<"Trickster">> = {
     ctx.emit({ type: "PlayerMoved", playerId: defender.id, from: { ...from }, to: { ...defender.at } });
     if (carrying) state.ball.square = { ...defender.at };
     const block = state.stack.findLast((p): p is P<"Block"> => p.type === "Block" && p.defenderId === defender.id);
-    if (block) block.dice = blockDice(state, attacker, defender, { blitz: block.blitz, dauntless: block.dauntless, extraAssist: block.extraAssist });
+    if (block) block.dice = blockDice(state, attacker, defender, { blitz: block.blitz, dauntless: block.dauntless, extraAssist: block.extraAssist, multiple: block.multiple?.otherId });
     const { ball } = state;
     if (carrying || !ball.square || ball.carried || !sameSquare(ball.square, to)) return "done";
     proc.square = { x: to.x, y: to.y };
@@ -453,6 +471,64 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
 }
 
 /**
+ * Multiple Block (a Block action, not a Blitz): the attacker blocks two adjacent standing opponents at once, at -2 ST
+ * each (at least 1), and neither target assists against the other block. Each block is prepared in turn, from Foul
+ * Appearance (a failure only drops that block) to the choice of the die, then both are resolved in the same order,
+ * without any follow-up, Frenzy, or push into a square where either target stood. A Pile Driver or Hit and Run may
+ * follow.
+ */
+export const MultipleBlock: Handler<P<"MultipleBlock">> = {
+  step(ctx, proc) {
+    const { state } = ctx;
+    const attacker = getPlayer(ctx, proc.attackerId);
+    const next = proc.pending.shift();
+    if (next !== undefined) {
+      // A Dump-off may score, a Trickster may move away: the next block needs a standing target still next to the attacker.
+      const defender = getPlayer(ctx, next);
+      const otherId = proc.targetIds.find((id) => id !== next)!;
+      const adjacentNow = isOnPitch(attacker) && isOnPitch(defender) && adjacent(attacker.at).some((s) => sameSquare(s, defender.at));
+      if (state.touchdown !== null || attacker.status !== "standing" || defender.status !== "standing" || !adjacentNow) return "continue";
+      // Cheering Fans: the extra assist goes to the first block.
+      const extraAssist = proc.extraAssist === true && proc.pending.length === 1;
+      const dice = blockDice(state, attacker, defender, { multiple: otherId, extraAssist });
+      ctx.emit({ type: "BlockDeclared", attackerId: attacker.id, defenderId: defender.id, dice });
+      ctx.push({
+        type: "Block",
+        attackerId: attacker.id,
+        defenderId: defender.id,
+        blitz: false,
+        stage: "appearance",
+        dice,
+        ...(extraAssist ? { extraAssist } : {}),
+        rerolled: false,
+        chain: [],
+        multiple: { stage: "prepare", otherId, squares: proc.squares.map((s) => ({ ...s })) },
+      });
+      return "continue";
+    }
+    if (state.touchdown !== null) return "done";
+    ctx.push(
+      ...proc.chosen.map((c): Procedure => ({
+        type: "Block",
+        attackerId: attacker.id,
+        defenderId: c.defenderId,
+        blitz: false,
+        stage: "resolve",
+        dice: c.dice,
+        results: [...c.results],
+        face: c.face,
+        ...(c.extraAssist ? { extraAssist: true } : {}),
+        rerolled: true,
+        chain: [],
+        multiple: { stage: "resolve", otherId: proc.targetIds.find((id) => id !== c.defenderId)!, squares: proc.squares.map((s) => ({ ...s })) },
+      })),
+    );
+    return "done";
+  },
+  actions: () => [],
+};
+
+/**
  * One BB2025 block or blitz block: Foul Appearance -> Dump-off (Block action) or Rush (Blitz) -> Dauntless -> Trickster
  * -> block dice -> re-roll -> choice of die -> pushback -> Fend / Taunt -> follow-up -> Strip Ball -> knock-downs ->
  * loose ball -> touchdown check.
@@ -502,7 +578,7 @@ export const Block: Handler<P<"Block">> = {
       case "dauntlessResult":
         if (state.lastCheck?.kind === "dauntless" && state.lastCheck.success) {
           proc.dauntless = true;
-          proc.dice = blockDice(state, attacker, defender, { blitz: proc.blitz, dauntless: true, extraAssist: proc.extraAssist });
+          proc.dice = blockDice(state, attacker, defender, { blitz: proc.blitz, dauntless: true, extraAssist: proc.extraAssist, multiple: proc.multiple?.otherId });
           ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Dauntless" });
         }
         proc.stage = "trickster";
@@ -597,9 +673,22 @@ export const Block: Handler<P<"Block">> = {
         return "continue";
       }
       case "resolve": {
+        // Multiple Block: the die is kept until both blocks are rolled.
+        if (proc.multiple?.stage === "prepare") {
+          const parent = state.stack.findLast((p): p is P<"MultipleBlock"> => p.type === "MultipleBlock" && p.attackerId === attacker.id);
+          parent?.chosen.push({ defenderId: defender.id, dice: proc.dice, results: [...proc.results!], face: proc.face!, ...(proc.extraAssist ? { extraAssist: true } : {}) });
+          return "done";
+        }
         const result = BLOCK_FACES[proc.face! - 1]!;
+        // An attacker already down (the first block of a Multiple Block) does not fall again.
+        const down = attacker.status !== "standing";
         if (result === "attacker_down") {
-          ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+          if (!down) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+          proc.stage = "end";
+          return "continue";
+        }
+        if (result === "both_down" && down) {
+          bothDown(ctx, proc, attacker, defender);
           proc.stage = "end";
           return "continue";
         }
@@ -692,7 +781,7 @@ export const Block: Handler<P<"Block">> = {
       }
       case "followup": {
         // A rooted attacker cannot follow up, nor one held off by Fend.
-        const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !isPinned(state, attacker) && !playerAt(state, proc.vacated) && proc.fended !== true;
+        const canFollow = proc.vacated !== undefined && !proc.multiple && isOnPitch(attacker) && attacker.status === "standing" && !isPinned(state, attacker) && !playerAt(state, proc.vacated) && proc.fended !== true;
         if (canFollow && proc.fended === undefined && canFend(proc, attacker, defender)) {
           proc.stage = "fend";
           return "continue";

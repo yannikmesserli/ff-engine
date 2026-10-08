@@ -1,7 +1,7 @@
 import type { HandlerMap } from "../context";
 import { Bounce, Catch, DivingCatch, SafeHands, ThrowIn, Touchback } from "./ball";
 import { BombLanding, Explosion } from "./bomb";
-import { Block, Crowd, Trickster, Vomit } from "./block";
+import { Block, Crowd, MultipleBlock, Trickster, Vomit } from "./block";
 import { DumpOff, HandOff, Pass, Punt } from "./pass";
 import { Foul, PileDriver, SecretWeapon } from "./foul";
 import { Feed } from "./bloodlust";
@@ -51,6 +51,7 @@ export const handlers: HandlerMap = {
   HitAndRun,
   PickMeUp,
   Block,
+  MultipleBlock,
   Vomit,
   Trickster,
   ThrowTeamMate,

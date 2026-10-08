@@ -335,6 +335,11 @@ export function ActionPanel(props: ActionPanelProps) {
             Stab {state.players[id]!.name}
           </button>
         ))}
+        {pairs(findTemplate(templates, "MULTIPLE_BLOCK")?.targetIds ?? []).map(([a, b]) => (
+          <button key={`${a}+${b}`} onClick={() => dispatch({ type: "MULTIPLE_BLOCK", targetIds: [a, b] })}>
+            Multiple Block: {state.players[a]!.name} and {state.players[b]!.name}
+          </button>
+        ))}
         {findTemplate(templates, "CHOMP")?.targetIds.map((id) => (
           <button key={id} onClick={() => dispatch({ type: "CHOMP", targetId: id })}>
             Chomp {state.players[id]!.name}
@@ -477,4 +482,9 @@ function SetupControls(props: {
       )}
     </>
   );
+}
+
+/** Every pair of distinct ids, in order (Multiple Block targets). */
+function pairs(ids: string[]): Array<[string, string]> {
+  return ids.flatMap((a, i) => ids.slice(i + 1).map((b): [string, string] => [a, b]));
 }

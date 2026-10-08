@@ -273,18 +273,18 @@ export const Foul: Handler<P<"Foul">> = {
   },
 };
 
-/** Pile Driver: the attacker is still standing next to the defender, who is down and can be fouled. */
-function canPileDrive(state: GameState, proc: P<"PileDriver">) {
+/** Pile Driver: the defenders who are down next to the still standing attacker, and can be fouled. */
+function pileDriverTargets(state: GameState, proc: P<"PileDriver">) {
   const attacker = state.players[proc.attackerId]!;
-  if (state.turnover || state.touchdown !== null || !hasSkill(attacker, "Pile Driver")) return false;
-  return foulTargets(state, attacker).some((t) => t.playerId === proc.defenderId);
+  if (state.turnover || state.touchdown !== null || !hasSkill(attacker, "Pile Driver")) return [];
+  return foulTargets(state, attacker).filter((t) => proc.defenderIds.includes(t.playerId));
 }
 
 /**
- * Pile Driver: once a Block action (not a Blitz) is over, if the defender was knocked down and the attacker is still
+ * Pile Driver: once a Block action (not a Blitz) is over, if a defender was knocked down and the attacker is still
  * standing next to them, the attacker's coach may make a free foul on them (it is not the team's Foul action), as any
  * foul (assists, Chainsaw, the referee). The attacker is then placed prone, unless sent off: a turnover only if they
- * hold the ball.
+ * hold the ball. After a Multiple Block, the coach picks which defender to foul, if both are down.
  */
 export const PileDriver: Handler<P<"PileDriver">> = {
   step(ctx, proc, action) {
@@ -303,9 +303,13 @@ export const PileDriver: Handler<P<"PileDriver">> = {
       }
       return "done";
     }
-    if (action === null) return canPileDrive(state, proc) ? "wait" : "done";
-    if (!ctx.expect(action, "USE_SKILL").use) return "done";
-    const target = foulTargets(state, attacker).find((t) => t.playerId === proc.defenderId)!;
+    const targets = pileDriverTargets(state, proc);
+    if (action === null) return targets.length > 0 ? "wait" : "done";
+    const a = ctx.expect(action, "USE_SKILL", "SELECT_PLAYERS");
+    const chosen = a.type === "USE_SKILL" ? (a.use && targets.length === 1 ? targets[0]!.playerId : undefined) : a.playerIds[0];
+    if (a.type === "SELECT_PLAYERS" && (a.playerIds.length > 1 || (chosen !== undefined && !targets.some((t) => t.playerId === chosen)))) ctx.reject("Invalid Pile Driver target.");
+    const target = targets.find((t) => t.playerId === chosen);
+    if (!target) return "done";
     ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Pile Driver" });
     ctx.emit({ type: "Fouled", foulerId: attacker.id, victimId: target.playerId, assists: target.assists });
     ctx.push({ type: "Foul", foulerId: attacker.id, victimId: target.playerId, assists: target.assists, stage: "chainsaw" });
@@ -314,7 +318,9 @@ export const PileDriver: Handler<P<"PileDriver">> = {
   },
   actions(state, proc) {
     const attacker = state.players[proc.attackerId]!;
-    return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Pile Driver" }];
+    const targets = pileDriverTargets(state, proc);
+    if (targets.length === 1) return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Pile Driver" }];
+    return [{ type: "SELECT_PLAYERS", side: attacker.side, playerIds: targets.map((t) => t.playerId), max: 1, reason: `Pile Driver: choose a player for ${attacker.name} to foul` }];
   },
 };
 

@@ -548,6 +548,12 @@ export type Procedure =
       hitOnGround?: boolean;
       /** Both Down: the player whose coach is asked whether to use Wrestle. */
       wrestlerId?: string;
+      /**
+       * Multiple Block: one of the two blocks. "prepare" stops once the die is chosen (both blocks are rolled before
+       * either is resolved), "resolve" starts from the chosen die. `otherId` is the other target, `squares` where both
+       * targets stood (nobody is pushed there).
+       */
+      multiple?: { stage: "prepare" | "resolve"; otherId: string; squares: Square[] };
       /** "appearance": the defender's Foul Appearance, rolled first. */
       stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "trickster" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "pro" | "proTeam" | "proLoner" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
@@ -567,6 +573,19 @@ export type Procedure =
       bounceFrom?: Square;
     }
   | { type: "Crowd"; playerId: string; from: Square; hadBall: boolean }
+  /**
+   * Multiple Block: the blocks against both targets are prepared one after the other (`pending`: still to prepare;
+   * `chosen`: the die kept against each), then resolved in that order.
+   */
+  | {
+      type: "MultipleBlock";
+      attackerId: string;
+      targetIds: string[];
+      pending: string[];
+      chosen: Array<{ defenderId: string; dice: number; results: number[]; face: number; extraAssist?: boolean }>;
+      squares: Square[];
+      extraAssist?: boolean;
+    }
   /** Projectile Vomit, Stab, Breathe Fire, Chainsaw or a chomp (Monstrous Mouth) on an adjacent opponent, instead of a block. */
   | {
       type: "Vomit";
@@ -606,8 +625,8 @@ export type Procedure =
   | { type: "PickMeUp"; side: Side; playerIds: string[]; selected: string[]; stage: "select" | "roll" }
   /** Hit and Run: after their block (or Stab), the player may step to a free square away from any opponent. */
   | { type: "HitAndRun"; playerId: string; stage: "ask" | "move" }
-  /** Pile Driver: after a Block action, the attacker may foul the defender they knocked down ("drop": then goes prone). */
-  | { type: "PileDriver"; attackerId: string; defenderId: string; stage: "ask" | "drop" }
+  /** Pile Driver: after a Block action, the attacker may foul a defender they knocked down ("drop": then goes prone). */
+  | { type: "PileDriver"; attackerId: string; defenderIds: string[]; stage: "ask" | "drop" }
   /** Hypnotic Gaze on an adjacent standing opponent, after the defender's Foul Appearance. */
   | { type: "Gaze"; playerId: string; victimId: string; stage: "appearance" | "appearanceResult" | "gaze" | "result" }
   /** Trickster: the defender may move next to the attacker before the block or attack; "pickup": onto the loose ball. */
@@ -795,6 +814,8 @@ export type Action =
   /** Activate a player and declare an action; a Blitz names its target up front (BB2025). */
   | { type: "START_ACTION"; playerId: string; action: PlayerActionType; targetId?: string }
   | { type: "BLOCK"; targetId: string }
+  /** Multiple Block: block two adjacent opponents at once. */
+  | { type: "MULTIPLE_BLOCK"; targetIds: string[] }
   /** Projectile Vomit on an adjacent opponent instead of blocking them. */
   | { type: "VOMIT"; targetId: string }
   /** Stab an adjacent opponent instead of blocking them. */
@@ -874,6 +895,8 @@ export type ActionTemplate =
   | { type: "START_ACTION"; side: Side; choices: Array<{ playerId: string; actions: PlayerActionType[] }>; blitzTargets: string[] }
   /** Block targets with the number of block dice (negative: the defender chooses). */
   | { type: "BLOCK"; side: Side; playerId: string; targets: Array<{ playerId: string; dice: number }> }
+  /** Multiple Block: any two of `targetIds` may be blocked together. */
+  | { type: "MULTIPLE_BLOCK"; side: Side; playerId: string; targetIds: string[] }
   | { type: "VOMIT"; side: Side; playerId: string; targetIds: string[] }
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }

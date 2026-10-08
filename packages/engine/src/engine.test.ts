@@ -1788,6 +1788,56 @@ describe("engine", () => {
       });
     });
 
+    describe("Multiple Block", () => {
+      /** home-2 at (12,7), ST 5 with the skill: one die against each ST 3 orc next to it. */
+      const multi = (skills: Record<string, string[]> = {}) =>
+        edit(withSkills(toFirstTurn(), { "home-2": ["Multiple Block"], ...skills }), (c) => void (c.players["home-2"]!.st = 5));
+      const both = (s: GameState, a: string, b: string) => apply(s, declare("home-2", "block"), { type: "MULTIPLE_BLOCK", targetIds: [a, b] });
+
+      it("blocks two adjacent opponents in a Block action, at -2 ST each", () => {
+        expect(find(apply(multi(), declare("home-2", "block")), "MULTIPLE_BLOCK")?.targetIds).toEqual(["away-1", "away-2", "away-3"]);
+        expect(find(apply(multi(), declare("home-2", "blitz", "away-2")), "MULTIPLE_BLOCK")).toBeUndefined();
+        const s = both(multi(), "away-1", "away-3");
+        expect(s.log.filter((e) => e.type === "BlockDeclared")).toEqual([
+          { type: "BlockDeclared", attackerId: "home-2", defenderId: "away-1", dice: 1 },
+        ]);
+        // ST 3 - 2 = 1 against ST 3: three dice, the defender picks.
+        const weak = both(withSkills(toFirstTurn(), { "home-2": ["Multiple Block"] }), "away-1", "away-3");
+        expect(find(weak, "ROLL")?.dice).toEqual([{ kind: "block", count: 3 }]);
+      });
+
+      it("rolls both blocks before resolving either, without any follow-up", () => {
+        let s = apply(both(multi(), "away-1", "away-3"), roll(6), pick);
+        // The second block is rolled before the first is resolved.
+        expect(find(s, "ROLL")?.dice).toEqual([{ kind: "block", count: 1 }]);
+        expect(s.players["away-1"]!.at).toEqual({ x: 13, y: 6 });
+        s = apply(s, roll(3), pick);
+        expect(find(s, "PUSH")?.squares).toEqual([{ x: 13, y: 5 }, { x: 14, y: 5 }, { x: 14, y: 6 }]);
+        s = apply(s, { type: "PUSH", square: { x: 14, y: 5 } });
+        expect(find(s, "FOLLOW_UP")).toBeUndefined();
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour 8\+ \(Away 1\)/);
+        s = apply(s, roll(1, 1), { type: "PUSH", square: { x: 14, y: 9 } });
+        expect([s.players["away-1"]!.status, s.players["away-3"]!.at, s.players["home-2"]!.at]).toEqual(["prone", { x: 14, y: 9 }, { x: 12, y: 7 }]);
+        expect([s.activePlayerId, s.turnover]).toEqual([null, false]);
+      });
+
+      it("nobody is pushed into a square where a target stood", () => {
+        // away-1 is pushed away first; away-2 sidesteps, but not into (13,6).
+        const s = apply(both(multi({ "away-2": ["Sidestep"] }), "away-1", "away-2"), roll(6), pick, roll(3), pick, { type: "PUSH", square: { x: 14, y: 5 } }, roll(1, 1));
+        const squares = find(s, "PUSH")!.squares;
+        expect(squares).not.toContainEqual({ x: 13, y: 6 });
+        expect(squares).toContainEqual({ x: 14, y: 6 });
+      });
+
+      it("a failed Foul Appearance only drops that block; a Skull on the first block still lets the second one resolve", () => {
+        const s = apply(both(multi({ "away-1": ["Foul Appearance"] }), "away-1", "away-3"), roll(1), { type: "DECLINE_REROLL" });
+        expect(s.log.filter((e) => e.type === "BlockDeclared").map((e) => e.type === "BlockDeclared" && e.defenderId)).toEqual(["away-1", "away-3"]);
+        const skull = apply(both(multi(), "away-1", "away-3"), roll(1), pick, roll(6), pick, roll(1, 1));
+        expect(skull.players["home-2"]!.status).toBe("prone");
+        expect(find(skull, "PUSH")).toBeDefined();
+      });
+    });
+
     describe("Pile Driver", () => {
       /** home-2 knocks away-2 down to (14,7) and follows up; the armour holds. */
       const knockDown = (skills: string[], follow = true) =>
@@ -1812,6 +1862,19 @@ describe("engine", () => {
         const s = apply(edit(knockDown(["Pile Driver"]), (c) => (c.ball = { square: { x: 13, y: 7 }, carried: true })), { type: "USE_SKILL", use: true }, roll(2, 3));
         expect(find(s, "ROLL")?.reason).toBe("Bounce");
         expect(s.turnover).toBe(true);
+      });
+
+      it("after a Multiple Block, the coach picks which knocked-down defender to foul", () => {
+        const s = edit(withSkills(toFirstTurn(), { "home-2": ["Multiple Block", "Pile Driver"] }), (c) => void (c.players["home-2"]!.st = 5));
+        const both = apply(s, declare("home-2", "block"), { type: "MULTIPLE_BLOCK", targetIds: ["away-1", "away-3"] }, roll(6), pick, roll(6), pick);
+        // Both pushed back, out of reach: Pile Driver is not offered.
+        const away = apply(both, { type: "PUSH", square: { x: 14, y: 5 } }, roll(1, 2), { type: "PUSH", square: { x: 14, y: 9 } }, roll(1, 2));
+        expect(types(away)).not.toContain("SELECT_PLAYERS");
+        // Knocked down in place (Stand Firm): both can be fouled.
+        const firm = apply(edit(s, (c) => ["away-1", "away-3"].forEach((id) => (c.players[id]!.skills = ["Stand Firm"]))), declare("home-2", "block"), { type: "MULTIPLE_BLOCK", targetIds: ["away-1", "away-3"] }, roll(6), pick, roll(6), pick, { type: "USE_SKILL", use: true }, roll(1, 2), { type: "USE_SKILL", use: true }, roll(1, 2));
+        expect(find(firm, "SELECT_PLAYERS")).toMatchObject({ playerIds: ["away-1", "away-3"], max: 1 });
+        const fouled = apply(firm, { type: "SELECT_PLAYERS", playerIds: ["away-3"] });
+        expect(fouled.log).toContainEqual(expect.objectContaining({ type: "Fouled", foulerId: "home-2", victimId: "away-3" }));
       });
 
       it("not when the defender is no longer next to the attacker, nor after a Blitz", () => {

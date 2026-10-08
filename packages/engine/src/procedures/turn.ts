@@ -524,7 +524,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         puntOptions(state, proc) === null);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "CHAINSAW", "CHOMP", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "MULTIPLE_BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "CHAINSAW", "CHOMP", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
     if (a.type === "USE_SKILL") {
       if (!canFumblerooski(state, proc)) ctx.reject("Fumblerooski cannot be used now.");
       if (a.use) proc.fumblerooski = true;
@@ -610,6 +610,28 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ctx.push({ type: "Vomit", skill, attackerId: player.id, defenderId: a.targetId, blitz, stage: "appearance" }, ...hitAndRun(player, skill === "Stab"));
       return "continue";
     }
+    if (a.type === "MULTIPLE_BLOCK") {
+      const options = multipleBlockTargets(state, proc).map((t) => t.id);
+      if (a.targetIds.length !== 2 || a.targetIds[0] === a.targetIds[1] || !a.targetIds.every((id) => options.includes(id))) ctx.reject("Choose two adjacent opponents.");
+      proc.blocked = true;
+      const extraAssist = state.teams[player.side].extraAssist;
+      state.teams[player.side].extraAssist = false;
+      ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Multiple Block" });
+      ctx.push(
+        {
+          type: "MultipleBlock",
+          attackerId: player.id,
+          targetIds: [...a.targetIds],
+          pending: [...a.targetIds],
+          chosen: [],
+          squares: a.targetIds.map((id) => ({ ...squareOf(ctx, getPlayer(ctx, id)) })),
+          ...(extraAssist ? { extraAssist } : {}),
+        },
+        ...pileDriver(player, [...a.targetIds], proc.action),
+        ...hitAndRun(player, true),
+      );
+      return "continue";
+    }
     if (a.type === "BLOCK") {
       const target = activationTargets(state, proc).find((t) => t.id === a.targetId) ?? ctx.reject("Illegal block target.");
       proc.blocked = true;
@@ -628,7 +650,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         ...(extraAssist ? { extraAssist } : {}),
         rerolled: false,
         chain: [],
-      }, ...pileDriver(player, target, proc.action), ...hitAndRun(player, true));
+      }, ...pileDriver(player, [target.id], proc.action), ...hitAndRun(player, true));
       return "continue";
     }
     if (!activationMoves(state, proc).some((s) => sameSquare(s, a.square))) ctx.reject("Illegal move.");
@@ -649,6 +671,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const fires = specialTargets(state, proc, "Breathe Fire").map((t) => t.id);
     const chainsaws = specialTargets(state, proc, "Chainsaw").map((t) => t.id);
     const chomps = specialTargets(state, proc, "Monstrous Mouth").map((t) => t.id);
+    const multiple = multipleBlockTargets(state, proc).map((t) => t.id);
     const throws = throwOptions(state, proc);
     const handOffs = handOffOptions(state, proc).map((p) => p.id);
     const fouls = foulOptions(state, proc);
@@ -659,6 +682,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     return [
       ...(proc.action === "block" || proc.action === "bomb" ? [] : [{ type: "MOVE" as const, side: player.side, playerId: player.id, squares: legalMoves(state, player) }]),
       ...(targets.length > 0 ? [{ type: "BLOCK" as const, side: player.side, playerId: player.id, targets }] : []),
+      ...(multiple.length > 0 ? [{ type: "MULTIPLE_BLOCK" as const, side: player.side, playerId: player.id, targetIds: multiple }] : []),
       ...(vomits.length > 0 ? [{ type: "VOMIT" as const, side: player.side, playerId: player.id, targetIds: vomits }] : []),
       ...(stabs.length > 0 ? [{ type: "STAB" as const, side: player.side, playerId: player.id, targetIds: stabs }] : []),
       ...(fires.length > 0 ? [{ type: "BREATHE_FIRE" as const, side: player.side, playerId: player.id, targetIds: fires }] : []),
@@ -681,9 +705,9 @@ export const MoveAction: Handler<P<"MoveAction">> = {
 
 const holdsBall = (state: GameState, player: PlayerState) => ballCarrier(state)?.id === player.id;
 
-/** Pile Driver: offered once a Block action's block (and any Frenzy block) is over, before Hit and Run. */
-const pileDriver = (player: PlayerState, defender: PlayerState, action: PlayerActionType): Procedure[] =>
-  action === "block" && hasSkill(player, "Pile Driver") ? [{ type: "PileDriver", attackerId: player.id, defenderId: defender.id, stage: "ask" }] : [];
+/** Pile Driver: offered once a Block action's blocks (any Frenzy or Multiple Block one included) are over, before Hit and Run. */
+const pileDriver = (player: PlayerState, defenderIds: string[], action: PlayerActionType): Procedure[] =>
+  action === "block" && hasSkill(player, "Pile Driver") ? [{ type: "PileDriver", attackerId: player.id, defenderIds, stage: "ask" }] : [];
 
 /** Hit and Run runs once the block (and any Frenzy block) or Stab is over. */
 const hitAndRun = (player: PlayerState, allowed: boolean): Procedure[] =>
@@ -843,6 +867,14 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
   if (proc.action === "block") return adjacentTargets(state, player);
   if (proc.action !== "blitz" || player.movesUsed >= maxMoves(player)) return [];
   return adjacentTargets(state, player).filter((t) => t.id === proc.targetId);
+}
+
+/** Multiple Block: in a Block action (not a Blitz), the opponents the player may block two of, if there are two. */
+function multipleBlockTargets(state: GameState, proc: P<"MoveAction">) {
+  const player = state.players[proc.playerId]!;
+  if (proc.action !== "block" || !hasSkill(player, "Multiple Block")) return [];
+  const targets = activationTargets(state, proc);
+  return targets.length >= 2 ? targets : [];
 }
 
 /** The skill behind each attack made instead of a block. */

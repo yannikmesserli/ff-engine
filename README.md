@@ -233,6 +233,11 @@ const { state: next, events } = step(state, { type: "ROLL" });
   blocker held the ball.
 - Lethal Flight: an opponent the thrown player lands on (or bounces onto) gets +1 against them on the armour roll if
   that breaks it, otherwise on the injury roll. Its Star Player Points are not tracked.
+- Multiple Block: in a Block action (not a Blitz), the player may block two adjacent standing opponents at once, at
+  -2 ST each (at least 1); neither target assists against the other block. The blocks are prepared one after the
+  other, from Foul Appearance (a failure only drops that block) to the choice of the die, then both are resolved in the
+  same order: no follow-up, no Frenzy, and nobody is pushed into a square where a target stood. Pile Driver (on either
+  target) and Hit and Run may follow.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).
@@ -344,7 +349,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
   without bouncing, in the square they leave on their next step, and it is not a turnover. Not with My Ball.
 
-Not yet: Multiple Block and the Star Player Points (Violent Innovator), the pre-game shop, star players, the golden-goal overtime variant.
+Not yet: Star Player Points (so Violent Innovator does nothing), the pre-game shop, star players, the golden-goal overtime
+variant.
 
 The playground accepts `?seed=42` to replay the same dice.
 

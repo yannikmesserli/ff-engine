@@ -187,6 +187,10 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "VOMIT", targetId: pick(t.targetIds) };
     case "CHOMP":
       return { type: "CHOMP", targetId: pick(t.targetIds) };
+    case "MULTIPLE_BLOCK": {
+      const first = pick(t.targetIds);
+      return { type: "MULTIPLE_BLOCK", targetIds: [first, pick(t.targetIds.filter((id) => id !== first))] };
+    }
     case "STAB":
       return { type: "STAB", targetId: pick(t.targetIds) };
     case "CHOOSE_SKILL":
