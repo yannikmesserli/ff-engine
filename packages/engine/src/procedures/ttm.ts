@@ -105,6 +105,8 @@ const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count:
  * (a team re-roll on each roll); a player who swooped may re-roll a failed landing.
  * Bullseye: after a superb throw (not a kick), the thrower may have the player land in the target square, without
  * scattering (or swooping).
+ * Lethal Flight: an opponent the thrown player lands on gets +1 against them on the armour roll if that breaks it,
+ * otherwise on the injury roll.
  */
 export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
   step(ctx, proc, action) {
@@ -304,7 +306,15 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         if (occupant && occupant.id !== thrown.id) {
           // The player landed on is knocked down; the thrown player scatters on and will not land on their feet.
           proc.autoFail = true;
-          ctx.push({ type: "KnockDown", playerId: occupant.id, turnover: occupant.side === thrower.side, stage: "fall" });
+          // Lethal Flight: +1 to the armour roll of an opponent landed on if that breaks it, otherwise to the injury roll.
+          const lethal = occupant.side !== thrown.side && hasSkill(thrown, "Lethal Flight");
+          ctx.push({
+            type: "KnockDown",
+            playerId: occupant.id,
+            turnover: occupant.side === thrower.side,
+            stage: "fall",
+            ...(lethal ? { mightyBlow: { playerId: thrown.id, bonus: 1, skill: "Lethal Flight" } } : {}),
+          });
           proc.stage = "bounce";
           return "continue";
         }

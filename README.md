@@ -231,6 +231,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Ball & Chain move) may roll a D6 before the armour roll (and before Steady Footing): on 4+ they are Knocked Out
   without an armour roll, and the blocker is knocked down too (no armour or injury modifiers), a turnover only if the
   blocker held the ball.
+- Lethal Flight: an opponent the thrown player lands on (or bounces onto) gets +1 against them on the armour roll if
+  that breaks it, otherwise on the injury roll. Its Star Player Points are not tracked.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).

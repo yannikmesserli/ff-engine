@@ -2826,6 +2826,17 @@ describe("engine", () => {
         expect(s.activeSide).toBe("away");
       });
 
+      it("Lethal Flight: +1 to the armour or injury roll of an opponent landed on", () => {
+        // The scatters end on away-6, at (10,6) instead of home-6.
+        const lethal = withSkills(place(ttmTeam(), { "home-6": { x: 2, y: 6 }, "away-6": { x: 10, y: 6 } }), { "home-5": ["Right Stuff", "Lethal Flight"] });
+        let s = apply(declared(lethal), throwTo({ x: 9, y: 6 }), roll(5), roll(3, 1, 5));
+        expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 6) (+1 Lethal Flight)");
+        s = apply(s, roll(4, 3));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-5", skill: "Lethal Flight" });
+        expect(find(s, "ROLL")?.reason).toBe("Injury");
+        expect(find(apply(declared(lethal), throwTo({ x: 9, y: 6 }), roll(5), roll(3, 1, 5), roll(5, 4)), "ROLL")?.reason).toBe("Injury (+1 Lethal Flight)");
+      });
+
       it("leaving the pitch means the crowd and a turnover", () => {
         const s = apply(ttmTeam(place(toFirstTurn(), { "home-4": { x: 10, y: 1 } })), declare("home-4", "ttm"));
         const after = apply(edit(s, (c) => void (c.players["home-5"]!.at = { x: 10, y: 0 })), throwTo({ x: 8, y: 0 }), roll(4), roll(1, 1, 1));
