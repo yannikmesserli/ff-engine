@@ -215,6 +215,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Leader: a team with a Leader on the pitch at the first kick-off of a half gets one more team re-roll for the half,
   spent before the others (after Brilliant Coaching's), and only while one of those Leaders is on the pitch (even
   prone or stunned). An unused one is kept into overtime, without a new one.
+- Put the Boot In: the player gives a foul assist even while marked by opponents.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).

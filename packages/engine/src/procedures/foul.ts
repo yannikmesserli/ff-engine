@@ -33,16 +33,16 @@ const argueTarget = (team: TeamState) =>
 export const BRIBE_TARGET = 2;
 
 /**
- * Foul assists: +1 per team-mate next to the victim who is not marked by any
- * opponent, -1 per victim team-mate next to the fouler who is not marked by anyone but the fouler. Only players
- * exerting a tackle zone assist or mark. None against Iron Hard Skin, whose armour roll cannot be modified.
+ * Foul assists: +1 per team-mate next to the victim who is not marked by any opponent (Put the Boot In: even
+ * marked), -1 per victim team-mate next to the fouler who is not marked by anyone but the fouler. Only players exerting
+ * a tackle zone assist or mark. None against Iron Hard Skin, whose armour roll cannot be modified.
  */
 export function foulAssists(state: GameState, fouler: PlayerState & { at: Square }, victim: PlayerState & { at: Square }): number {
   if (hasSkill(victim, "Iron Hard Skin")) return 0;
   const offensive = adjacent(victim.at).filter((s) => {
     const helper = tackleZoneAt(state, s);
     if (!helper || helper.side !== fouler.side || helper.id === fouler.id) return false;
-    return adjacent(s).every((n) => tackleZoneAt(state, n)?.side !== victim.side);
+    return hasSkill(helper, "Put the Boot In") || adjacent(s).every((n) => tackleZoneAt(state, n)?.side !== victim.side);
   }).length;
   const defensive = adjacent(fouler.at).filter((s) => {
     const helper = tackleZoneAt(state, s);

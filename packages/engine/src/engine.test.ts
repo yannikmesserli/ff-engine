@@ -3156,6 +3156,13 @@ describe("engine", () => {
       expect(find(s, "FOUL")?.targets).toEqual([{ playerId: "away-1", assists: 0 }]);
     });
 
+    it("Put the Boot In: the player gives a foul assist even while marked", () => {
+      const marked = (skills: string[]) =>
+        edit(fouling({ "home-6": { x: 21, y: 2 }, "away-6": { x: 22, y: 2 } }), (c) => void (c.players["home-6"]!.skills = skills));
+      expect(find(apply(marked([]), declare("home-4", "foul")), "FOUL")?.targets).toEqual([{ playerId: "away-1", assists: 0 }]);
+      expect(find(apply(marked(["Put the Boot In"]), declare("home-4", "foul")), "FOUL")?.targets).toEqual([{ playerId: "away-1", assists: 1 }]);
+    });
+
     it("breaks armour on armour roll + assists >= AV; without doubles the referee sees nothing", () => {
       let s = foul(fouling({ "home-6": { x: 21, y: 2 } }));
       expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (foul on Away 1, +1 assists)");
