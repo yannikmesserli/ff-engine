@@ -879,6 +879,49 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "kick",
+    title: "Kick: a shorter kick-off deviation, and re-rolled punts",
+    instructions: [
+      "Away kicks off: Gorbad (#4, Kick) is the kicking player, so the away coach is asked whether to use Kick before the deviation roll. Use it: the ball deviates a D3 instead of a D6.",
+      "Enter 5 and 2 with \"Physical dice\" (south, two squares): the ball comes down on Kaelith. Roll any kick-off event, then 6 for the catch.",
+      "Home's turn: declare a Punt with Kaelith (#1, Punt, Kick) and click the square east of her. After the direction roll, and again after the distance roll, \"Re-roll (Kick)\" replaces the team re-roll: none is spent.",
+      "Undo back to the kick-off and decline Kick: the deviation is a D6 again.",
+    ],
+    home: {
+      name: "Naggaroth Nightblades",
+      roster: "Dark Elf",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Kaelith", position: "Dark Elf Runner", skills: ["Kick"] },
+        { number: 2, name: "Malus", position: "Dark Elf Lineman" },
+        { number: 3, name: "Lokhir", position: "Dark Elf Lineman" },
+        { number: 4, name: "Rakarth", position: "Dark Elf Lineman" },
+        { number: 5, name: "Tullaris", position: "Dark Elf Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+        { number: 4, name: "Gorbad", position: "Orc Lineman", skills: ["Kick"] },
+      ],
+    },
+    seed: 41,
+    actions: toKickoff(
+      {
+        home: { 1: { x: 5, y: 3 }, 2: { x: 9, y: 3 }, 3: { x: 12, y: 6 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 8 } },
+        away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 }, 4: { x: 16, y: 7 } },
+      },
+      { x: 5, y: 1 },
+    ),
+  },
+  {
     id: "hail-mary-pass",
     title: "Hail Mary Pass: throw the ball anywhere",
     instructions: [

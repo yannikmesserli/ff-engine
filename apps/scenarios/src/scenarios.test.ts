@@ -246,6 +246,15 @@ describe("scenarios", () => {
     expect(find(s, "USE_SKILL")?.skill).toBe("Dump-off");
   });
 
+  it("kick: Kick shortens the deviation, then re-rolls the punt rolls", () => {
+    let s = load("kick");
+    expect(find(s, "USE_SKILL")).toMatchObject({ side: "away", playerId: "away-4", skill: "Kick" });
+    s = applyActions(s, [{ type: "USE_SKILL", use: true, skill: "Kick" }, { type: "ROLL", values: [5, 2] }, { type: "ROLL", values: [1, 1] }, { type: "ROLL", values: [6] }]);
+    expect(s.ball).toEqual({ square: { x: 5, y: 3 }, carried: true });
+    s = applyActions(s, [{ type: "START_ACTION", playerId: "home-1", action: "punt" }, { type: "PUNT", square: { x: 6, y: 3 } }, { type: "ROLL", values: [1] }]);
+    expect(find(s, "USE_REROLL")).toMatchObject({ skill: "Kick" });
+  });
+
   it("punt: 3 and 4 put the ball on Malus; from the sideline the crowd is offered", () => {
     const start = applyActions(load("punt"), [{ type: "START_ACTION", playerId: "home-1", action: "punt" }]);
     let s = applyActions(start, [
