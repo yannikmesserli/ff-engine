@@ -78,6 +78,16 @@ export const hasTackleZone = (p: PlayerState) => p.status === "standing" && !p.d
 /** A standing player who failed a Take Root roll: cannot move, rush or be pushed. */
 export const isRooted = (p: PlayerState) => p.rooted && p.status === "standing";
 
+/** A chomp on the player holds: its Monstrous Mouth player is next to them, with a tackle zone. */
+export const chompHolds = (state: GameState, p: PlayerState, chomperId: string) => {
+  const chomper = state.players[chomperId];
+  return chomper !== undefined && isOnPitch(chomper) && isOnPitch(p) && hasTackleZone(chomper) &&
+    Math.max(Math.abs(chomper.at.x - p.at.x), Math.abs(chomper.at.y - p.at.y)) === 1;
+};
+
+/** Rooted (Take Root) or chomped (Monstrous Mouth): the player cannot move, be pushed, follow up or be thrown. */
+export const isPinned = (state: GameState, p: PlayerState) => isRooted(p) || p.chompedBy.some((id) => chompHolds(state, p, id));
+
 /** The player on a square if they exert a tackle zone (only those mark opponents and assist). */
 export function tackleZoneAt(state: GameState, s: Square): PlayerState | undefined {
   const p = playerAt(state, s);

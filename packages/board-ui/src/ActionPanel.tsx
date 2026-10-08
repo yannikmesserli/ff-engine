@@ -335,6 +335,11 @@ export function ActionPanel(props: ActionPanelProps) {
             Stab {state.players[id]!.name}
           </button>
         ))}
+        {findTemplate(templates, "CHOMP")?.targetIds.map((id) => (
+          <button key={id} onClick={() => dispatch({ type: "CHOMP", targetId: id })}>
+            Chomp {state.players[id]!.name}
+          </button>
+        ))}
         {findTemplate(templates, "BREATHE_FIRE")?.targetIds.map((id) => (
           <button key={id} onClick={() => dispatch({ type: "BREATHE_FIRE", targetId: id })}>
             Breathe fire on {state.players[id]!.name}

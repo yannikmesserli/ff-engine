@@ -185,6 +185,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
         : { type: "END_PLAYER_ACTION" };
     case "VOMIT":
       return { type: "VOMIT", targetId: pick(t.targetIds) };
+    case "CHOMP":
+      return { type: "CHOMP", targetId: pick(t.targetIds) };
     case "STAB":
       return { type: "STAB", targetId: pick(t.targetIds) };
     case "CHOOSE_SKILL":

@@ -223,6 +223,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Pile Driver: once a Block action (not a Blitz) is over, if the defender was knocked down and the attacker still
   stands next to them, the attacker's coach may make a free foul on them (not the team's Foul action), then the
   attacker is placed prone (unless sent off): a turnover only if they held the ball.
+- Monstrous Mouth: Strip Ball does not work against the player. Chomp: instead of a block (Blitz included, after
+  Foul Appearance, Dump-off and Trickster), a D6 with a team re-roll: on 3+ the target is chomped, pinned like a rooted
+  player (cannot move, be pushed, follow up or be thrown) for as long as the chomper stays next to them with a tackle
+  zone; once the chomper moves away or goes down, the chomp is over. A blitzer may move on after a chomp.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).

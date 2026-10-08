@@ -34,6 +34,7 @@ const CHECK_NAMES = {
   bombcatch: "catch of the bomb",
   pro: "Pro roll (a failure keeps the first result)",
   pickmeup: "Pick-me-up roll",
+  chomp: "Chomp roll",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -61,6 +62,7 @@ const SKILL_USES: Record<string, string> = {
   Stab: "",
   "Breathe Fire": "",
   Chainsaw: "",
+  "Monstrous Mouth": "",
   "Take Root": "and cannot be pushed",
   Brawler: "to re-roll a Both Down",
   Hatred: "to re-roll a Skull",
@@ -342,6 +344,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} bites ${who(state, e.victimId)}.`;
     case "FeedingFailed":
       return `${who(state, e.playerId)} finds nobody to bite: turnover, and they lose their tackle zone.`;
+    case "PlayerChomped":
+      return `${who(state, e.playerId)} chomps ${who(state, e.victimId)}: they cannot move or be pushed while ${who(state, e.playerId)} stays next to them.`;
     case "PlayerRooted":
       return `${who(state, e.playerId)} takes root: they cannot move until knocked down or the drive ends.`;
     case "PlayerHypnotised":

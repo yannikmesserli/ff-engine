@@ -1,6 +1,6 @@
 import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
-import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, isRooted, playerAt, sameSquare, tackleZoneAt, tackleZones } from "../pitch";
+import { adjacent, ballCarrier, chompHolds, hasTackleZone, inBounds, isOnPitch, isPinned, isRooted, playerAt, sameSquare, tackleZoneAt, tackleZones } from "../pitch";
 import { BLOCK_FACES } from "../dice";
 import { injure } from "./injury";
 import { dropBall } from "./ball";
@@ -134,12 +134,12 @@ const juggernaut = (proc: P<"Block">, attacker: PlayerState) => proc.blitz && ha
 
 /**
  * Stand Firm: the player being pushed (defender or chain-pushed) may refuse, if they exert a tackle zone. A blitzing
- * Juggernaut cancels it for opponents. A rooted player (Take Root) is never pushed.
+ * Juggernaut cancels it for opponents. A rooted (Take Root) or chomped (Monstrous Mouth) player is never pushed.
  */
 const pushStage = (state: GameState, proc: P<"Block">) => {
   const player = state.players[proc.pushing!.playerId]!;
   const attacker = state.players[proc.attackerId]!;
-  if (isRooted(player)) return "rooted";
+  if (isPinned(state, player)) return "rooted";
   if (juggernaut(proc, attacker) && player.side !== attacker.side) return "push";
   return hasSkill(player, "Stand Firm") && hasTackleZone(player) ? "standFirm" : "push";
 };
@@ -420,10 +420,10 @@ const canTaunt = (defender: PlayerState) => isOnPitch(defender) && hasSkill(defe
 /**
  * Strip Ball: an opponent the attacker pushed back (Push, or a Stumble saved by Dodge) without knocking them down drops
  * the ball in the square they were pushed to, unless they have Sure Hands and a tackle zone. Not when they did not move
- * (Stand Firm, Take Root).
+ * (Stand Firm, Take Root, chomped), nor against Monstrous Mouth.
  */
 function strips(state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState): boolean {
-  if (proc.knockDefender || !hasSkill(attacker, "Strip Ball") || attacker.side === defender.side) return false;
+  if (proc.knockDefender || !hasSkill(attacker, "Strip Ball") || attacker.side === defender.side || hasSkill(defender, "Monstrous Mouth")) return false;
   if (!isOnPitch(defender) || ballCarrier(state)?.id !== defender.id || !proc.chain.some((c) => c.playerId === defender.id)) return false;
   return !(hasSkill(defender, "Sure Hands") && hasTackleZone(defender));
 }
@@ -651,7 +651,11 @@ export const Block: Handler<P<"Block">> = {
           }
         }
         // Nobody in the chain moves, and there is no square to follow up into; a knock-down happens where they stand.
-        ctx.emit({ type: "SkillUsed", playerId: proc.pushing!.playerId, skill: proc.stage === "standFirm" ? "Stand Firm" : "Take Root" });
+        const pinned = state.players[proc.pushing!.playerId]!;
+        const chomper = pinned.chompedBy.find((id) => chompHolds(state, pinned, id));
+        if (proc.stage === "standFirm" || isRooted(pinned) || !chomper) {
+          ctx.emit({ type: "SkillUsed", playerId: pinned.id, skill: proc.stage === "standFirm" ? "Stand Firm" : "Take Root" });
+        } else ctx.emit({ type: "SkillUsed", playerId: chomper, skill: "Monstrous Mouth" });
         proc.chain = [];
         delete proc.vacated;
         proc.stage = "followup";
@@ -685,7 +689,7 @@ export const Block: Handler<P<"Block">> = {
       }
       case "followup": {
         // A rooted attacker cannot follow up, nor one held off by Fend.
-        const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !isRooted(attacker) && !playerAt(state, proc.vacated) && proc.fended !== true;
+        const canFollow = proc.vacated !== undefined && isOnPitch(attacker) && attacker.status === "standing" && !isPinned(state, attacker) && !playerAt(state, proc.vacated) && proc.fended !== true;
         if (canFollow && proc.fended === undefined && canFend(proc, attacker, defender)) {
           proc.stage = "fend";
           return "continue";
@@ -841,6 +845,16 @@ export const CHAINSAW_ARMOUR = 3;
 /** Chainsaw's +3 to an armour roll against `player`; nothing against Iron Hard Skin. */
 export const chainsawArmour = (player: PlayerState) => (hasSkill(player, "Iron Hard Skin") ? 0 : CHAINSAW_ARMOUR);
 
+/** Monstrous Mouth: a chomp works on 3+. */
+export const CHOMP_TARGET = 3;
+
+/** Monstrous Mouth: chomps that no longer hold end for good. */
+export function releaseChomps(state: GameState) {
+  for (const p of Object.values(state.players)) {
+    if (p.chompedBy.length > 0) p.chompedBy = p.chompedBy.filter((id) => chompHolds(state, p, id));
+  }
+}
+
 /** Breathe Fire avoids a turnover on 2+, knocks the target down on a natural 6 and places them prone on 4+. */
 export const BREATHE_FIRE_TARGET = 2;
 export const BREATHE_FIRE_PRONE = 4;
@@ -858,6 +872,8 @@ export const breatheFireModifier = (target: PlayerState) => (target.st >= 5 ? -1
  * fire-breather down instead (armour without modifiers), a turnover.
  * Chainsaw rolls a D6 (team re-roll): on 2+ the target rolls armour with +3 (no Mighty Blow), placed prone and injured
  * if it breaks; on a 1 it kicks back: the chainsaw player is knocked down (+3 to their armour roll), a turnover.
+ * Monstrous Mouth (a chomp) rolls a D6 (team re-roll): on 3+ the target is chomped, which pins them as long as the
+ * chomping player stays next to them with a tackle zone (see `isPinned`); a failure does nothing.
  */
 export const Vomit: Handler<P<"Vomit">> = {
   step(ctx, proc, action) {
@@ -903,6 +919,8 @@ export const Vomit: Handler<P<"Vomit">> = {
         state.lastCheck = null;
         if (proc.skill === "Chainsaw") {
           ctx.push({ type: "Check", kind: "chainsaw", playerId: attacker.id, target: CHAINSAW_TARGET, modifier: 0, stage: "roll", rerolled: false });
+        } else if (proc.skill === "Monstrous Mouth") {
+          ctx.push({ type: "Check", kind: "chomp", playerId: attacker.id, target: CHOMP_TARGET, modifier: 0, stage: "roll", rerolled: false });
         } else if (proc.skill === "Breathe Fire") {
           const modifier = breatheFireModifier(getPlayer(ctx, proc.defenderId));
           ctx.push({ type: "Check", kind: "breathefire", playerId: attacker.id, target: BREATHE_FIRE_TARGET, modifier, stage: "roll", rerolled: false, rerollBelow: 6 });
@@ -914,6 +932,15 @@ export const Vomit: Handler<P<"Vomit">> = {
       case "result":
         ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: proc.skill });
         if (proc.skill === "Breathe Fire") return breatheFire(ctx, proc, attacker);
+        if (proc.skill === "Monstrous Mouth") {
+          const defender = getPlayer(ctx, proc.defenderId);
+          if (state.lastCheck?.success && !defender.chompedBy.includes(attacker.id)) {
+            defender.chompedBy.push(attacker.id);
+            ctx.emit({ type: "PlayerChomped", playerId: attacker.id, victimId: defender.id });
+          }
+          state.lastCheck = null;
+          return "done";
+        }
         if (proc.skill === "Chainsaw" && !state.lastCheck?.success) {
           // Kick-back.
           state.lastCheck = null;

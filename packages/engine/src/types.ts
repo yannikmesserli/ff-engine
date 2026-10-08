@@ -98,6 +98,11 @@ export interface PlayerState {
   rooted: boolean;
   /** Pushed back by a player with Eye Gouge: cannot assist blocks until the player's next activation. */
   gouged: boolean;
+  /**
+   * Monstrous Mouth: the players who chomped this one. A chomp holds while its player stays next to them with a tackle
+   * zone; it ends for good otherwise (see `isPinned`).
+   */
+  chompedBy: string[];
   /** Was on the pitch for the current drive's kick-off (Secret Weapon players are sent off when the drive ends). */
   played: boolean;
 }
@@ -301,7 +306,8 @@ export type CheckKind =
   | "gaze"
   | "bombcatch"
   | "pro"
-  | "pickmeup";
+  | "pickmeup"
+  | "chomp";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -560,10 +566,10 @@ export type Procedure =
       bounceFrom?: Square;
     }
   | { type: "Crowd"; playerId: string; from: Square; hadBall: boolean }
-  /** Projectile Vomit, Stab, Breathe Fire or Chainsaw on an adjacent opponent, instead of a block. */
+  /** Projectile Vomit, Stab, Breathe Fire, Chainsaw or a chomp (Monstrous Mouth) on an adjacent opponent, instead of a block. */
   | {
       type: "Vomit";
-      skill: "Projectile Vomit" | "Stab" | "Breathe Fire" | "Chainsaw";
+      skill: "Projectile Vomit" | "Stab" | "Breathe Fire" | "Chainsaw" | "Monstrous Mouth";
       attackerId: string;
       defenderId: string;
       blitz: boolean;
@@ -793,6 +799,8 @@ export type Action =
   | { type: "BREATHE_FIRE"; targetId: string }
   /** A Chainsaw attack on an adjacent opponent instead of blocking them. */
   | { type: "CHAINSAW"; targetId: string }
+  /** Monstrous Mouth: chomp an adjacent opponent instead of blocking them. */
+  | { type: "CHOMP"; targetId: string }
   /** Pick one of the rolled block dice (index into the results). */
   | { type: "CHOOSE_BLOCK_DIE"; index: number }
   | { type: "PUSH"; square: Square }
@@ -866,6 +874,7 @@ export type ActionTemplate =
   | { type: "STAB"; side: Side; playerId: string; targetIds: string[] }
   | { type: "BREATHE_FIRE"; side: Side; playerId: string; targetIds: string[] }
   | { type: "CHAINSAW"; side: Side; playerId: string; targetIds: string[] }
+  | { type: "CHOMP"; side: Side; playerId: string; targetIds: string[] }
   | { type: "WEATHER_MAGE"; side: Side }
   | { type: "THROW_A_ROCK"; side: Side }
   /** Intensive Training: the skills `playerId` may gain. */
@@ -1007,6 +1016,8 @@ export type GameEvent =
   | { type: "FeedingFailed"; playerId: string }
   /** Failed a Take Root roll: the player cannot move until knocked down or the drive ends. */
   | { type: "PlayerRooted"; playerId: string }
+  /** Monstrous Mouth: `victimId` is chomped by `playerId` and cannot move or be pushed while it holds. */
+  | { type: "PlayerChomped"; playerId: string; victimId: string }
   /** Hypnotic Gaze worked: `victimId` is distracted until their next activation. */
   | { type: "PlayerHypnotised"; playerId: string; victimId: string }
   /** Failed an Animal Savagery roll: `playerId` knocks down the team-mate `victimId`, and the action ends. */

@@ -2,6 +2,7 @@ import { produce } from "immer";
 import { IllegalActionError, createContext, run, type Handler } from "./context";
 import { handlers } from "./procedures";
 import { createPlayer } from "./procedures/helpers";
+import { releaseChomps } from "./procedures/block";
 import type { Action, ActionTemplate, GameEvent, GameState, PlayerState, Side, TeamSetup } from "./types";
 
 export interface GameOptions {
@@ -112,6 +113,7 @@ export function step(state: GameState, action: Action): StepResult {
   const events: GameEvent[] = [];
   const next = produce(state, (draft) => {
     run(createContext(draft, events), handlers, action);
+    releaseChomps(draft);
   });
   return { state: next, events };
 }

@@ -3,7 +3,7 @@ import type { Action, CheckKind, GameState, PlayerActionType, PlayerState, Proce
 import { templateDirection } from "../dice";
 import { weatherFor } from "./kickoff";
 import { trapdoor } from "./prayers";
-import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isRooted, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isPinned, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
 import { dropBall } from "./ball";
 import { canHailMary, hailMaryNeeded, handOffTargets, puntTargets, throwTargets } from "./pass";
@@ -115,7 +115,7 @@ export function dodgeModifier(state: GameState, player: PlayerState, from: Squar
 
 /** Squares a player in a Move action may step (or jump) to, with the rolls each move requires. */
 export function legalMoves(state: GameState, player: PlayerState): Array<Square & { rolls: CheckKind[]; jump?: boolean }> {
-  if (!isOnPitch(player) || player.status !== "standing" || isRooted(player)) return [];
+  if (!isOnPitch(player) || player.status !== "standing" || isPinned(state, player)) return [];
   const left = maxMoves(player) - player.movesUsed;
   if (left <= 0) return [];
   // Ball & Chain: one of the four squares next to the player (occupied or not) gives the side the template faces.
@@ -524,7 +524,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         puntOptions(state, proc) === null);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "CHAINSAW", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "CHAINSAW", "CHOMP", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
     if (a.type === "USE_SKILL") {
       if (!canFumblerooski(state, proc)) ctx.reject("Fumblerooski cannot be used now.");
       if (a.use) proc.fumblerooski = true;
@@ -599,12 +599,13 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ctx.push(...feedFirst(proc), { type: "HandOff", throwerId: player.id, catcherId: a.targetId, stage: "animosity" });
       return "continue";
     }
-    if (a.type === "VOMIT" || a.type === "STAB" || a.type === "BREATHE_FIRE" || a.type === "CHAINSAW") {
+    if (a.type === "VOMIT" || a.type === "STAB" || a.type === "BREATHE_FIRE" || a.type === "CHAINSAW" || a.type === "CHOMP") {
       const skill = SPECIAL_ATTACKS[a.type];
       if (!specialTargets(state, proc, skill).some((t) => t.id === a.targetId)) ctx.reject(`Cannot use ${skill} on this player.`);
       proc.blocked = true;
-      // The attack ends the action, even during a Blitz (but Hit and Run may follow a Stab).
-      proc.finished = true;
+      // The attack ends the action, even during a Blitz (but Hit and Run may follow a Stab); a blitzer may move on after
+      // a chomp (which then ends if they leave).
+      if (skill !== "Monstrous Mouth") proc.finished = true;
       const blitz = proc.action === "blitz";
       ctx.push({ type: "Vomit", skill, attackerId: player.id, defenderId: a.targetId, blitz, stage: "appearance" }, ...hitAndRun(player, skill === "Stab"));
       return "continue";
@@ -647,6 +648,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const stabs = specialTargets(state, proc, "Stab").map((t) => t.id);
     const fires = specialTargets(state, proc, "Breathe Fire").map((t) => t.id);
     const chainsaws = specialTargets(state, proc, "Chainsaw").map((t) => t.id);
+    const chomps = specialTargets(state, proc, "Monstrous Mouth").map((t) => t.id);
     const throws = throwOptions(state, proc);
     const handOffs = handOffOptions(state, proc).map((p) => p.id);
     const fouls = foulOptions(state, proc);
@@ -661,6 +663,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(stabs.length > 0 ? [{ type: "STAB" as const, side: player.side, playerId: player.id, targetIds: stabs }] : []),
       ...(fires.length > 0 ? [{ type: "BREATHE_FIRE" as const, side: player.side, playerId: player.id, targetIds: fires }] : []),
       ...(chainsaws.length > 0 ? [{ type: "CHAINSAW" as const, side: player.side, playerId: player.id, targetIds: chainsaws }] : []),
+      ...(chomps.length > 0 ? [{ type: "CHOMP" as const, side: player.side, playerId: player.id, targetIds: chomps }] : []),
       ...(throws.length > 0 ? [{ type: "THROW" as const, side: player.side, playerId: player.id, squares: throws }] : []),
       ...(hailMary ? [{ type: "HAIL_MARY_PASS" as const, side: player.side, playerId: player.id, needed: hailMaryNeeded(state, hailMary) }] : []),
       ...(handOffs.length > 0 ? [{ type: "HAND_OFF" as const, side: player.side, playerId: player.id, playerIds: handOffs }] : []),
@@ -688,7 +691,7 @@ const hitAndRun = (player: PlayerState, allowed: boolean): Procedure[] =>
 
 /** Hit and Run: free squares next to the player that are not next to any opponent, standing or not. */
 export function hitAndRunSquares(state: GameState, player: PlayerState): Square[] {
-  if (!isOnPitch(player) || player.status !== "standing" || isRooted(player)) return [];
+  if (!isOnPitch(player) || player.status !== "standing" || isPinned(state, player)) return [];
   return adjacent(player.at).filter(
     (s) => !playerAt(state, s) && !adjacent(s).some((n) => playerAt(state, n)?.side === other(player.side)),
   );
@@ -843,11 +846,18 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
 }
 
 /** The skill behind each attack made instead of a block. */
-const SPECIAL_ATTACKS = { VOMIT: "Projectile Vomit", STAB: "Stab", BREATHE_FIRE: "Breathe Fire", CHAINSAW: "Chainsaw" } as const;
+const SPECIAL_ATTACKS = { VOMIT: "Projectile Vomit", STAB: "Stab", BREATHE_FIRE: "Breathe Fire", CHAINSAW: "Chainsaw", CHOMP: "Monstrous Mouth" } as const;
 
-/** Projectile Vomit, Stab, Breathe Fire and Chainsaw can replace any block the player could make now. */
-const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: P<"Vomit">["skill"]) =>
-  hasSkill(state.players[proc.playerId]!, skill) ? activationTargets(state, proc) : [];
+/**
+ * Projectile Vomit, Stab, Breathe Fire, Chainsaw and a chomp (Monstrous Mouth) can replace any block the player could
+ * make now; a chomp only on a player they have not chomped yet.
+ */
+const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: P<"Vomit">["skill"]) => {
+  const player = state.players[proc.playerId]!;
+  if (!hasSkill(player, skill)) return [];
+  const targets = activationTargets(state, proc);
+  return skill === "Monstrous Mouth" ? targets.filter((t) => !t.chompedBy.includes(player.id)) : targets;
+};
 
 /**
  * Diving Tackle: the tackler is placed prone in the square the player left, without an armour roll; a ball they held
@@ -1147,7 +1157,7 @@ export function shadowers(state: GameState, mover: PlayerState, from: Square): P
   if (playerAt(state, from)) return [];
   return adjacent(from).flatMap((s) => {
     const p = tackleZoneAt(state, s);
-    if (!p || p.side === mover.side || !hasSkill(p, "Shadowing") || isRooted(p)) return [];
+    if (!p || p.side === mover.side || !hasSkill(p, "Shadowing") || isPinned(state, p)) return [];
     return p.usedSkills.filter((u) => u === "Shadowing").length < p.ma ? [p] : [];
   });
 }
@@ -1240,7 +1250,7 @@ export const ON_THE_BALL_SQUARES = 3;
 
 /** Squares an On the Ball move may step or jump to; at the kick-off, only in the team's own half. */
 export function onTheBallMoves(state: GameState, player: PlayerState, kickoff: boolean): Array<Square & { rolls: CheckKind[]; jump?: boolean }> {
-  if (!isOnPitch(player) || player.status !== "standing" || isRooted(player)) return [];
+  if (!isOnPitch(player) || player.status !== "standing" || isPinned(state, player)) return [];
   const left = ON_THE_BALL_SQUARES - player.movesUsed;
   const allowed = (s: Square) => !kickoff || inHalf(player.side, s);
   const dodge: CheckKind[] = tackleZones(state, player.side, player.at) > 0 ? ["dodge"] : [];
@@ -1257,7 +1267,7 @@ function onTheBallPlayers(state: GameState, proc: P<"OnTheBall">): PlayerState[]
   if (proc.kickoff && proc.moved.length > 0) return [];
   return teamPlayers(state, proc.side).filter(
     (p) =>
-      isOnPitch(p) && hasTackleZone(p) && !isRooted(p) && hasSkill(p, "On the Ball") && !proc.moved.includes(p.id) &&
+      isOnPitch(p) && hasTackleZone(p) && !isPinned(state, p) && hasSkill(p, "On the Ball") && !proc.moved.includes(p.id) &&
       (!proc.kickoff || tackleZones(state, p.side, p.at) === 0),
   );
 }

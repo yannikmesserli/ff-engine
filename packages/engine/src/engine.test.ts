@@ -12,6 +12,7 @@ import {
   getAvailableActions,
   injuryOutcome,
   isStalling,
+  legalMoves,
   step,
   tackleZones,
   throwInDirection,
@@ -1869,6 +1870,40 @@ describe("engine", () => {
         expect(push(carrier(["Sure Hands"])).ball).toEqual({ square: { x: 14, y: 7 }, carried: true });
         const firm = apply(blockAway2(carrier(["Stand Firm"])), roll(3), pick, { type: "USE_SKILL", use: true });
         expect(firm.ball).toEqual({ square: { x: 13, y: 7 }, carried: true });
+      });
+    });
+
+    describe("Monstrous Mouth", () => {
+      /** home-2 chomps away-2 instead of blocking them: 3+. */
+      const chomp = (s = toFirstTurn()) => apply(withSkills(s, { "home-2": ["Monstrous Mouth"] }), declare("home-2", "block"), { type: "CHOMP", targetId: "away-2" });
+
+      it("a chomp instead of a block: on 3+ the target cannot move", () => {
+        expect(find(apply(withSkills(toFirstTurn(), { "home-2": ["Monstrous Mouth"] }), declare("home-2", "block")), "CHOMP")?.targetIds).toEqual(["away-1", "away-2", "away-3"]);
+        let s = chomp();
+        expect(find(s, "ROLL")?.reason).toBe("Chomp 3+ (Home 2)");
+        s = apply(s, roll(3));
+        expect(s.log).toContainEqual({ type: "PlayerChomped", playerId: "home-2", victimId: "away-2" });
+        expect([s.players["away-2"]!.chompedBy, s.activePlayerId, s.turnover]).toEqual([["home-2"], null, false]);
+        expect(legalMoves(s, s.players["away-2"]!)).toEqual([]);
+        // A failure does nothing (after the team re-roll offer).
+        const missed = apply(chomp(), roll(2), { type: "DECLINE_REROLL" });
+        expect([missed.players["away-2"]!.chompedBy, missed.turnover]).toEqual([[], false]);
+      });
+
+      it("a chomped player is not pushed back, and the chomp ends once the chomper leaves or goes down", () => {
+        const s = apply(chomp(), roll(4));
+        // home-1 blocks the chomped away-2 from (12,6): a Push does not move them.
+        const pushed = apply(s, declare("home-1", "block"), { type: "BLOCK", targetId: "away-2" }, roll(3), pick);
+        expect(pushed.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Monstrous Mouth" });
+        expect(pushed.players["away-2"]!.at).toEqual({ x: 13, y: 7 });
+        const down = apply(edit(s, (c) => void (c.players["home-2"]!.status = "prone")), { type: "END_TURN" });
+        expect(down.players["away-2"]!.chompedBy).toEqual([]);
+      });
+
+      it("Strip Ball does not work against the player", () => {
+        const s = edit(withSkills(toFirstTurn(), { "home-2": ["Strip Ball"], "away-2": ["Monstrous Mouth"] }), (c) => (c.ball = { square: { x: 13, y: 7 }, carried: true }));
+        const pushed = apply(blockAway2(s), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+        expect(pushed.ball).toEqual({ square: { x: 14, y: 7 }, carried: true });
       });
     });
 
