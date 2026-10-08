@@ -454,9 +454,10 @@ export type Procedure =
       range: PassRange;
       /** "hunger": Always Hungry, rolled before the throw. */
       /** "fumbled": a fumbled kick, the kicked player rolls for injury; "swoop*": Swoop instead of the scatters. */
+      /** "bullseye": the thrower may land a superb throw in the target square. */
       stage:
         | "hunger" | "hungerResult" | "escapeResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "scatter"
-        | "swoop" | "swoopDirection" | "swoopDistance" | "swoopReroll" | "swoopLoner" | "fumbled" | "land" | "bounce" | "landed";
+        | "bullseye" | "swoop" | "swoopDirection" | "swoopDistance" | "swoopReroll" | "swoopLoner" | "fumbled" | "land" | "bounce" | "landed";
       /**
        * Swoop: false when declined; otherwise the side chosen, the roll being made (each with its own team re-roll), the
        * direction and the distance rolled.
@@ -466,6 +467,8 @@ export type Procedure =
         | { facing: Square; rolling: "direction" | "distance"; rerolled: boolean; mascotFailed?: boolean; direction?: Square; distance?: number };
       /** Kick Team-mate: the same as a throw, but a fumble injures the kicked player. */
       kicked?: boolean;
+      /** Bullseye was offered after a superb throw: used or not. */
+      bullseye?: boolean;
       rerolled: boolean;
       /** The Team Mascot failed: only a team re-roll may be offered now. */
       mascotFailed?: boolean;

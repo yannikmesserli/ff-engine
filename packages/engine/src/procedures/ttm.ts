@@ -103,6 +103,8 @@ const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count:
  * Swoop: after a throw that is not fumbled, the thrown player's coach may pick a side instead of the scatters: a D6 on
  * the throw-in template facing it gives the direction, a D6 the distance travelled from the target in a straight line
  * (a team re-roll on each roll); a player who swooped may re-roll a failed landing.
+ * Bullseye: after a superb throw (not a kick), the thrower may have the player land in the target square, without
+ * scattering (or swooping).
  */
 export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
   step(ctx, proc, action) {
@@ -232,8 +234,22 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         else nextSwoopStep(proc);
         return "continue";
       }
+      case "bullseye": {
+        if (action === null) return "wait";
+        proc.bullseye = ctx.expect(action, "USE_SKILL").use;
+        if (proc.bullseye) {
+          ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Bullseye" });
+          proc.at = { ...proc.target };
+          proc.stage = "land";
+        } else proc.stage = "scatter";
+        return "continue";
+      }
       case "scatter":
       case "bounce": {
+        if (proc.stage === "scatter" && proc.bullseye === undefined && proc.result === "accurate" && !proc.kicked && hasSkill(thrower, "Bullseye")) {
+          proc.stage = "bullseye";
+          return "continue";
+        }
         // Swoop: a thrown player who is not fumbled may travel in a line instead of scattering.
         if (proc.stage === "scatter" && proc.swoop === undefined && proc.result !== "fumble" && hasSkill(thrown, "Swoop")) {
           proc.stage = "swoop";
@@ -341,6 +357,8 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       case "scatter":
         if (proc.kicked && proc.result === "fumble") return [];
         return [{ type: "ROLL", side: null, dice: scatterDice(proc), reason: "Thrown player scatters" }];
+      case "bullseye":
+        return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Bullseye" }];
       case "swoop":
         return [{ type: "SWOOP", side: state.players[proc.thrownId]!.side, playerId: proc.thrownId, squares: swoopSquares(proc.target) }];
       case "swoopDirection":

@@ -22,7 +22,7 @@ export const IMPLEMENTED_SKILLS: readonly string[] = [
   "Disturbing Presence", "Secret Weapon", "Claws", "Titchy", "Stab", "Prehensile Tail", "Strong Arm", "Take Root",
   "Plague Ridden", "Bloodlust", "Defensive", "Brawler", "Nerves of Steel", "Steady Footing",
   "Shadowing", "Animal Savagery", "Timmm-ber!", "Foul Appearance", "Strip Ball", "Hypnotic Gaze", "On the Ball", "Safe Pass", "Hit and Run", "Diving Tackle", "Hatred", "Break Tackle", "Sure Feet", "Drunkard", "Cloud Burster", "Decay", "Leap", "Iron Hard Skin", "Arm Bar", "Grab", "Safe Pair of Hands", "Diving Catch", "Insignificant", "Fumblerooski", "My Ball", "Bombardier", "Pogo", "Taunt", "Fend", "Pro", "Eye Gouge", "Pick-me-up",
-  "Two Heads", "Extra Arms", "Big Hand", "Very Long Legs", "Accurate", "Cannoneer",
+  "Two Heads", "Extra Arms", "Big Hand", "Very Long Legs", "Accurate", "Cannoneer", "Bullseye",
 ];
 
 /** BB2025 skills by category, keyed like the rosters' skill categories (G, A, S, P, D, Mutations). */

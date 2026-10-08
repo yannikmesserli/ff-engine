@@ -2595,6 +2595,20 @@ describe("engine", () => {
         expect(actionsOf(s, "home-6")).not.toContain("ttm");
       });
 
+      it("Bullseye: a superb throw may land in the target square, without scattering", () => {
+        const bullseye = (s: GameState) => withSkills(s, { "home-4": ["Throw Team-mate", "Bullseye"] });
+        let s = apply(declared(bullseye(ttmTeam())), throwTo({ x: 7, y: 4 }), roll(4));
+        expect(find(s, "USE_SKILL")).toMatchObject({ playerId: "home-4", skill: "Bullseye" });
+        s = apply(s, { type: "USE_SKILL", use: true, skill: "Bullseye" });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-4", skill: "Bullseye" });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Landing 3\+ \(Home 5\)/);
+        s = apply(s, roll(3));
+        expect(s.players["home-5"]).toMatchObject({ at: { x: 7, y: 4 }, status: "standing" });
+        // Declined: the usual three scatters. A subpar throw does not offer it.
+        expect(find(apply(declared(bullseye(ttmTeam())), throwTo({ x: 7, y: 4 }), roll(4), { type: "USE_SKILL", use: false, skill: "Bullseye" }), "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 3 }] });
+        expect(types(apply(declared(bullseye(ttmTeam())), throwTo({ x: 7, y: 4 }), roll(3), { type: "DECLINE_REROLL" }))).toEqual(["ROLL"]);
+      });
+
       it("Pro may re-roll the throw and the thrower's Always Hungry roll, not the thrown player's rolls", () => {
         const pros = (s: GameState, thrower: string[]) => withSkills(s, { "home-4": ["Throw Team-mate", "Pro", ...thrower], "home-5": ["Right Stuff", "Pro"] });
         let s = apply(declared(pros(ttmTeam(), [])), throwTo({ x: 7, y: 4 }), roll(2));
