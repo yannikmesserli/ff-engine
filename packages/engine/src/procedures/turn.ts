@@ -90,12 +90,13 @@ const prehensileTails = (state: GameState, player: PlayerState, from: Square) =>
 
 /**
  * Jump roll modifier: -1 per tackle zone on the square left or the one landed in, whichever has more; Prehensile Tail.
- * Pogo ignores both; Leap reduces the total by 1, but not below -1.
+ * Pogo ignores both; Leap reduces the total by 1, but not below -1. Very Long Legs: +1.
  */
 function jumpModifier(state: GameState, player: PlayerState, from: Square, to: Square): number {
-  if (hasSkill(player, "Pogo")) return 0;
+  const legs = hasSkill(player, "Very Long Legs") ? 1 : 0;
+  if (hasSkill(player, "Pogo")) return legs;
   const penalty = Math.max(tackleZones(state, player.side, from), tackleZones(state, player.side, to)) + prehensileTails(state, player, from);
-  return -(hasSkill(player, "Leap") && penalty > 1 ? penalty - 1 : penalty);
+  return -(hasSkill(player, "Leap") && penalty > 1 ? penalty - 1 : penalty) + legs;
 }
 
 /**

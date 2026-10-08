@@ -1180,6 +1180,17 @@ describe("engine", () => {
       expect(pickUp(["Big Hand", "Extra Arms"])).toMatch(/^Pick-up 2\+/);
     });
 
+    it("Very Long Legs: +1 to Jump rolls and +2 to interceptions", () => {
+      // home-2 jumps over prone away-2 from (12,7) to (14,7): four tackle zones on the landing square.
+      const jump = (skills: string[]) =>
+        top(apply(edit(withSkills(toFirstTurn(), { "home-2": skills }), (c) => void (c.players["away-2"]!.status = "prone")), startMove("home-2"), ...move({ x: 14, y: 7 })));
+      expect(jump(["Very Long Legs"])).toMatchObject({ kind: "jump", modifier: -3 });
+      expect(jump(["Very Long Legs", "Leap"])).toMatchObject({ kind: "jump", modifier: -2 });
+      expect(jump(["Very Long Legs", "Pogo"])).toMatchObject({ kind: "jump", modifier: 1 });
+      const interceptor = { ...toFirstTurn().players["away-2"]!, at: { x: 13, y: 7 }, skills: ["Very Long Legs"] };
+      expect(interceptionTarget(toFirstTurn(), interceptor, "accurate")).toBe(7);
+    });
+
     describe("Steady Footing", () => {
       const steady = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Steady Footing"] });
 

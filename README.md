@@ -203,6 +203,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Two Heads: +1 to the player's Dodge rolls.
 - Extra Arms: +1 to pick up, catch and intercept the ball.
 - Big Hand: tackle zones and Pouring Rain do not count when the player picks up the ball.
+- Very Long Legs: +1 to Jump rolls (Leap and Pogo jumps too), +2 to interceptions, and Cloud Burster does not stop the
+  player intercepting.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).
