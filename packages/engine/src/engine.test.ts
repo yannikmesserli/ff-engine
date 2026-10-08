@@ -1157,6 +1157,12 @@ describe("engine", () => {
         expect(needed([])).toEqual([4, 5, 6]);
         expect(needed(["Accurate"])).toEqual([3, 4, 6]);
       });
+
+      it("Cannoneer: +1 to Long passes and Long Bombs, Hail Mary Passes included", () => {
+        expect(needed(["Cannoneer"])).toEqual([4, 5, 5]);
+        const s = edit(withSkills(toFirstTurn(), { "home-8": ["Cannoneer", "Hail Mary Pass"] }), (c) => (c.ball = { square: { x: 10, y: 8 }, carried: true }));
+        expect(find(apply(s, declare("home-8", "pass")), "HAIL_MARY_PASS")?.needed).toBe(4);
+      });
     });
 
     it("Extra Arms: +1 to pick up, catch and intercept the ball", () => {

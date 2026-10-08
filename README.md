@@ -206,6 +206,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Very Long Legs: +1 to Jump rolls (Leap and Pogo jumps too), +2 to interceptions, and Cloud Burster does not stop the
   player intercepting.
 - Accurate: +1 to the player's Quick and Short passes (and bombs), not to team-mate throws.
+- Cannoneer: +1 to the player's Long passes and Long Bombs (bombs and Hail Mary Passes too), not to team-mate throws.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).
