@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyActions, createGame, getAvailableActions, step, type ActionTemplate, type GameState } from "@bb/engine";
+import { applyActions, createGame, getAvailableActions, step, type Action, type ActionTemplate, type GameState } from "@bb/engine";
 import { resolveTeam } from "@bb/data";
 import { SCENARIOS } from "./scenarios";
 
@@ -7,6 +7,16 @@ const load = (id: string) => {
   const s = SCENARIOS.find((x) => x.id === id)!;
   return applyActions(createGame(resolveTeam(s.home), resolveTeam(s.away), { seed: s.seed }), s.actions);
 };
+/** A Block action whose single die knocks the defender down, pushed to `to` with a follow-up; the armour holds. */
+const knockDownOnce = (attackerId: string, defenderId: string, to: { x: number; y: number }) => [
+  { type: "START_ACTION", playerId: attackerId, action: "block" },
+  { type: "BLOCK", targetId: defenderId },
+  { type: "ROLL", values: [6] },
+  { type: "CHOOSE_BLOCK_DIE", index: 0 },
+  { type: "PUSH", square: to },
+  { type: "FOLLOW_UP", follow: true },
+  { type: "ROLL", values: [1, 2] },
+] as const satisfies readonly Action[];
 const find = <T extends ActionTemplate["type"]>(s: GameState, type: T) =>
   getAvailableActions(s).find((t): t is Extract<ActionTemplate, { type: T }> => t.type === type);
 
@@ -262,6 +272,25 @@ describe("scenarios", () => {
     expect(find(s, "USE_REROLL")?.available).toBe(3);
     s = applyActions(s, [{ type: "USE_REROLL" }]);
     expect([s.teams.home.rerolls, s.teams.home.leaderUsed]).toEqual([2, true]);
+  });
+
+  it("dirty-tricks: Lone Fouler re-rolls, Quick Foul moves on, Pile Driver fouls after a block", () => {
+    let s = load("dirty-tricks");
+    expect(s.players["away-3"]!.status).toBe("prone");
+    s = applyActions(s, [
+      { type: "START_ACTION", playerId: "home-2", action: "foul" },
+      { type: "MOVE", square: { x: 11, y: 11 } },
+      { type: "MOVE", square: { x: 12, y: 11 } },
+      { type: "MOVE", square: { x: 13, y: 11 } },
+      { type: "FOUL", targetId: "away-3" },
+      { type: "ROLL", values: [2, 3] },
+    ]);
+    expect(find(s, "USE_SKILL")?.skill).toBe("Lone Fouler");
+    s = applyActions(s, [{ type: "USE_SKILL", use: true }, { type: "ROLL", values: [2, 4] }]);
+    expect(find(s, "MOVE")?.playerId).toBe("home-2");
+    expect(find(s, "FOUL")).toBeUndefined();
+    s = applyActions(s, [{ type: "END_PLAYER_ACTION" }, ...knockDownOnce("home-1", "away-1", { x: 14, y: 7 })]);
+    expect(find(s, "USE_SKILL")?.skill).toBe("Pile Driver");
   });
 
   it("punt: 3 and 4 put the ball on Malus; from the sideline the crowd is offered", () => {

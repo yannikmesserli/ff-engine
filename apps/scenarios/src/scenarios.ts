@@ -961,6 +961,48 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "dirty-tricks",
+    title: "Lone Fouler, Quick Foul and Pile Driver",
+    instructions: [
+      "Home's first turn: Otto (#3) has just knocked Snaga (#3) down, prone at the bottom of the line.",
+      "Foul Snaga with Klaus (#2, Lone Fouler, Quick Foul): move him next to Snaga first. Nobody assists, so when the armour holds (e.g. 2 and 3), Klaus may re-roll it with Lone Fouler. Avoid doubles, or the referee spots him.",
+      "After the foul, Klaus keeps moving with the squares he has left (Quick Foul), but cannot foul again.",
+      "Then block Grishnak (#1) with Dieter (#1, Pile Driver) and knock him down, following up: Pile Driver offers a free foul on him, then Dieter is placed prone. It is not the team's Foul action, and not a turnover unless Dieter holds the ball.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Dieter", position: "Human Lineman", skills: ["Pile Driver"] },
+        { number: 2, name: "Klaus", position: "Human Lineman", skills: ["Lone Fouler", "Quick Foul"] },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Gunther", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 47,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 12, y: 7 }, 2: { x: 10, y: 12 }, 3: { x: 12, y: 10 }, 4: { x: 12, y: 4 } },
+        away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+        ball: { x: 6, y: 7 },
+      }),
+      ...knockBack("home-3", "away-3", { x: 14, y: 10 }),
+    ],
+  },
+  {
     id: "hail-mary-pass",
     title: "Hail Mary Pass: throw the ball anywhere",
     instructions: [
