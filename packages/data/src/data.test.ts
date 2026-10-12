@@ -115,6 +115,13 @@ describe("data", () => {
     expect(resolveTeam(team).players.map((p) => p.advancements)).toEqual([3, ...human.players.slice(1).map(() => 0)]);
   });
 
+  it("gives the Team Captain Pro and the trait, without counting them as advancements", () => {
+    const human = { ...exampleTeams["human"]!, captain: exampleTeams["human"]!.players[1]!.number };
+    const captain = resolveTeam(human).players[1]!;
+    expect([captain.skills.slice(-2), captain.advancements]).toEqual([["Pro", "Team Captain"], 0]);
+    expect(() => resolveTeam({ ...human, captain: 99 })).toThrow(/Team Captain \(#99\) is not in the team/);
+  });
+
   it("writes the result of a game into the team file", () => {
     const human = { ...exampleTeams["human"]!, players: exampleTeams["human"]!.players.map((p, i) => (i === 4 ? { ...p, missNextGame: true } : p)) };
     const game = structuredClone(createGame(resolveTeam(human), resolveTeam(exampleTeams["orc"])));
@@ -134,6 +141,9 @@ describe("data", () => {
     // Sat this game out: back for the next.
     expect(after.players[3]).toMatchObject({ number: human.players[4]!.number, missNextGame: false });
     expect(() => teamAfterGame(human, createGame(resolveTeam(human), resolveTeam(exampleTeams["orc"])), "home")).toThrow(/not over/);
+    // A dead captain is no longer captain.
+    expect(teamAfterGame({ ...human, captain: human.players[2]!.number }, game, "home").captain).toBeUndefined();
+    expect(teamAfterGame({ ...human, captain: human.players[0]!.number }, game, "home").captain).toBe(human.players[0]!.number);
   });
 
   it.each(Object.keys(formations))("formation %s gives a legal setup for both sides", (name) => {
@@ -371,8 +381,8 @@ describe("random games", () => {
     const random = () => ((rng = (rng * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
     const [home, away] = matchup(seed);
     // One game in four is a cup game: a draw goes to overtime.
-    // Every other game, the home team bought a few inducements.
-    const homeTeam = { ...(rosterTeam(home) as object), ...(seed % 2 === 1 ? { inducements: RANDOM_GAME_INDUCEMENTS, specialRules: ["Low Cost Linemen"] } : {}) };
+    // Every other game, the home team bought a few inducements and has a Team Captain.
+    const homeTeam = { ...(rosterTeam(home) as object), ...(seed % 2 === 1 ? { inducements: RANDOM_GAME_INDUCEMENTS, specialRules: ["Low Cost Linemen"], captain: 1 } : {}) };
     const start = createGame(resolveTeam(homeTeam), resolveTeam(rosterTeam(away)), { seed, overtime: seed % 4 === 0 });
     let s = start;
     const taken: Action[] = [];

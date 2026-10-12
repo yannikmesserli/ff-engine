@@ -36,6 +36,7 @@ const CHECK_NAMES = {
   pickmeup: "Pick-me-up roll",
   chomp: "Chomp roll",
   saboteur: "Saboteur roll (4+ knocks the blocker down, and the saboteur out)",
+  captain: "Team Captain roll (6 saves the re-roll)",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */

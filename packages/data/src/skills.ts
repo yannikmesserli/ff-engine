@@ -97,6 +97,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   Hatred: "When blocking an opponent with keyword {X}, may re-roll one Skull result.",
   "Hypnotic Gaze": "Special action: an adjacent opponent loses their tackle zone on 3+ until their next activation.",
   Insignificant: "Only matters when building the team: there cannot be more Insignificant players than the others.",
+  "Team Captain": "While on the pitch, each team re-roll (or Team Mascot) used is saved on a 6. Must be set up when able to play.",
   "Kick Team-mate": "Special action, once per turn: kicks an adjacent team-mate with Right Stuff like a Throw Team-mate; a fumble hurts them (Stunned counts as KO'd).",
   Loner: "Using a team re-roll needs a {X}+ on a D6 first; otherwise the re-roll is lost.",
   "My Ball": "Cannot give the ball up voluntarily (no pass or hand-off).",

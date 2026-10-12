@@ -4063,4 +4063,66 @@ describe("engine", () => {
       expect(s.finished).toBe(true);
     });
   });
+
+  describe("Team Captain", () => {
+    /** home-2 (on the line of scrimmage) is the Team Captain; `skills` for home-1. */
+    const captained = (s: GameState, skills: string[] = []) =>
+      edit(s, (c) => {
+        c.players["home-2"]!.skills = ["Pro", "Team Captain"];
+        c.players["home-1"]!.skills = skills;
+      });
+    /** home-1 dodges from (12,6) to (11,5) and fails. */
+    const failedDodge = (s: GameState) => apply(s, startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1));
+
+    it("on the pitch: a 6 saves the team re-roll just used", () => {
+      let s = apply(failedDodge(captained(toFirstTurn())), { type: "USE_REROLL" });
+      expect(s.teams.home.rerolls).toBe(0);
+      expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d6", count: 1 }], reason: "Team Captain 6+ (Home 1)" });
+      const saved = apply(s, roll(6));
+      expect(saved.teams.home.rerolls).toBe(1);
+      expect(saved.log).toContainEqual({ type: "CheckResult", kind: "captain", playerId: "home-2", success: true, roll: 6, target: 6 });
+      expect(find(saved, "ROLL")?.reason).toMatch(/^Dodge/);
+      s = apply(s, roll(5));
+      expect([s.teams.home.rerolls, find(s, "ROLL")?.reason]).toEqual([0, expect.stringMatching(/^Dodge/)]);
+    });
+
+    it("off the pitch: no roll", () => {
+      const s = edit(captained(toFirstTurn()), (c) => void (c.players["home-2"]!.at = "reserves"));
+      expect(find(apply(failedDodge(s), { type: "USE_REROLL" }), "ROLL")?.reason).toMatch(/^Dodge/);
+    });
+
+    it("is rolled with Loner, and saves the re-roll even when the Loner roll fails", () => {
+      const s = apply(failedDodge(captained(toFirstTurn(), ["Loner(4)"])), { type: "USE_REROLL" });
+      expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d6", count: 2 }], reason: "Team Captain 6+, Loner 4+ (Home 1)" });
+      const lost = apply(s, roll(6, 1));
+      expect([lost.teams.home.rerolls, lost.players["home-1"]!.status]).toEqual([1, "prone"]);
+    });
+
+    it("a saved Leader re-roll comes back as a normal team re-roll", () => {
+      const s = edit(captained(toFirstTurn()), (c) => {
+        c.players["home-5"]!.skills = ["Leader"];
+        c.teams.home.leaders = ["home-5"];
+        c.teams.home.rerolls = 0;
+      });
+      const saved = apply(failedDodge(s), { type: "USE_REROLL" }, roll(6));
+      expect([saved.teams.home.leaderUsed, saved.teams.home.rerolls]).toEqual([true, 1]);
+    });
+
+    it("a successful Team Mascot saved on a 6 can be tried again this half", () => {
+      const mascot = { ...team("Home"), inducements: { teamMascot: 1 } };
+      const s = apply(failedDodge(captained(toFirstTurn(mascot))), { type: "USE_REROLL", mascot: true });
+      expect(find(s, "ROLL")?.reason).toBe("Team Mascot 4+, Team Captain 6+ (Home 1)");
+      expect(apply(s, roll(4, 6)).teams.home.mascotUsed).toBe(false);
+      expect(apply(s, roll(4, 5)).teams.home.mascotUsed).toBe(true);
+      // A failed Mascot: the Captain die is not read, and the coach may still spend a team re-roll.
+      const failed = apply(s, roll(3, 6));
+      expect([failed.teams.home.mascotUsed, find(failed, "USE_REROLL")?.available]).toEqual([true, 1]);
+    });
+
+    it("must be set up when able to play", () => {
+      const s = edit(toSetup(), (c) => void (c.players["away-1"]!.skills = ["Team Captain"]));
+      const placed = apply(s, ...setupActions("away").slice(1, -1));
+      expect(find(placed, "END_SETUP")?.errors).toContain("The Team Captain (Away 1) must be set up.");
+    });
+  });
 });

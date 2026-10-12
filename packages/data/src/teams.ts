@@ -108,6 +108,9 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
   if (team.rerolls > roster.maxRerolls) throw new TeamError(`${roster.name} can have at most ${roster.maxRerolls} re-rolls.`);
   if (team.apothecary && !roster.apothecary) throw new TeamError(`${roster.name} cannot hire an apothecary.`);
   checkInducements(team, roster);
+  if (team.captain !== undefined && !team.players.some((p) => p.number === team.captain)) {
+    throw new TeamError(`The Team Captain (#${team.captain}) is not in the team.`);
+  }
   const positionOf = (player: TeamPlayer) => {
     const position = roster.positions.find((pos) => pos.title === player.position);
     if (!position) throw new TeamError(`Unknown position "${player.position}" for ${roster.name}.`);
@@ -154,7 +157,7 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
           ag: characteristic(p, "ag", position.ag),
           pa: position.pa === null ? null : characteristic(p, "pa", position.pa),
           av: characteristic(p, "av", position.av),
-          skills: [...position.skills, ...p.skills],
+          skills: [...position.skills, ...p.skills, ...(p.number === team.captain ? captainSkills([...position.skills, ...p.skills]) : [])],
           keywords: position.keywords,
           primary: position.normal,
           nigglingInjuries: p.injuries.filter((i) => i === "niggling").length,
@@ -163,6 +166,9 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
       }), ...journeymen(roster, team)],
   };
 }
+
+/** Team Captain: the trait, and Pro unless the player has it already; neither counts as an advancement. */
+const captainSkills = (skills: string[]) => [...(skills.includes("Pro") ? [] : ["Pro"]), "Team Captain"];
 
 /** The position journeymen and Riotous Rookies come from: the one the team file names, or the roster's first. */
 const journeymanPosition = (roster: Roster, team: TeamFile) => {

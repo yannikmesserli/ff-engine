@@ -168,6 +168,8 @@ export interface TeamState {
   /** Team Mascot: tried this half (once per half); `mascotRolling`: its 4+ roll is due before the die is re-rolled. */
   mascotUsed: boolean;
   mascotRolling: boolean;
+  /** Team Captain: its 6+ roll, to save the team re-roll (or Mascot) just used, is due before the die is re-rolled. */
+  captainRolling: boolean;
   /** Argued the call and rolled a 1: cannot argue again this game. */
   coachBanned: boolean;
   /** Cheering Fans: one extra offensive block assist this drive. */
@@ -350,7 +352,8 @@ export type CheckKind =
   | "pro"
   | "pickmeup"
   | "chomp"
-  | "saboteur";
+  | "saboteur"
+  | "captain";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.

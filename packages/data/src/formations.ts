@@ -57,5 +57,9 @@ export function formationActions(state: GameState, side: Side, formation: Format
     pool.splice(pool.indexOf(best), 1);
     actions.push({ type: "PLACE_PLAYER", playerId: best.id, square });
   }
+  // The Team Captain must be set up: if left out, they take the last square filled (the least important one).
+  const captain = pool.find((p) => has(p, "Team Captain"));
+  const last = actions.at(-1);
+  if (captain && last?.type === "PLACE_PLAYER" && last.square) actions[actions.length - 1] = { ...last, playerId: captain.id };
   return actions;
 }

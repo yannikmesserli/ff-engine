@@ -2,6 +2,7 @@ import type { Handler } from "../context";
 import type { GameState, Procedure, Side } from "../types";
 import { allSquares, inHalf, inWideZone, isOnPitch, onLineOfScrimmage, playerAt, teamPlayers } from "../pitch";
 import { getPlayer } from "./helpers";
+import { hasSkill } from "../skills";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -33,6 +34,9 @@ export function setupErrors(state: GameState, side: Side): string[] {
     const n = onPitch.filter((p) => inWideZone(p.at) === zone).length;
     if (n > MAX_PER_WIDE_ZONE) errors.push(`At most ${MAX_PER_WIDE_ZONE} players in the ${zone} wide zone (${n} placed).`);
   }
+  // Team Captain: must be set up whenever they can play.
+  const captain = players.find((p) => p.at === "reserves" && hasSkill(p, "Team Captain"));
+  if (captain) errors.push(`The Team Captain (${captain.name}) must be set up.`);
   return errors;
 }
 

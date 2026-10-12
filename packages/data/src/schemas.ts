@@ -78,6 +78,8 @@ export const TeamFileSchema = z.strictObject({
   journeymen: z.union([z.boolean(), z.string().min(1)]).default(true),
   /** Team special rules (see SPECIAL_RULES). */
   specialRules: z.array(z.enum(SPECIAL_RULES)).default([]),
+  /** The number of the player who is Team Captain (gains Pro and the Team Captain trait), if any. */
+  captain: z.number().int().positive().optional(),
   /** Inducements bought for this game, by id: how many of each (see INDUCEMENT_RULES for the limits). */
   inducements: z.partialRecord(z.enum(INDUCEMENTS), count).default({}),
   players: z

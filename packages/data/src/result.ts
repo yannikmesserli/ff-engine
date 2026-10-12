@@ -37,8 +37,11 @@ export function teamAfterGame(input: unknown, state: GameState, side: Side): Tea
     const number = players.some((p) => p.number === raised.nr) ? Math.max(...players.map((p) => p.number)) + 1 : raised.nr;
     players.push({ number, name: raised.name, position: raisePosition, skills: [], improvements: {}, injuries: [], missNextGame: false, spp: starPlayerPoints(state, raised) });
   }
+  const captain = team.captain !== undefined && players.some((p) => p.number === team.captain) ? { captain: team.captain } : {};
+  const { captain: _, ...rest } = team;
   return {
-    ...team,
+    ...rest,
+    ...captain,
     dedicatedFans: Math.min(MAX_FANS, Math.max(MIN_FANS, team.dedicatedFans + result.dedicatedFans[side])),
     treasury: team.treasury + result.winnings[side],
     inducements: {},

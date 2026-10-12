@@ -52,6 +52,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     prayers: [],
     mascotUsed: false,
     mascotRolling: false,
+    captainRolling: false,
     coachBanned: false,
     extraAssist: false,
     apothecaries: teams[side].apothecary ? 1 : 0,

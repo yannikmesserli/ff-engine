@@ -70,6 +70,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   The four Star Player Point prayers: Perfect Passing (completions earn 2), Dazzling Catching (any pass a player of the
   team catches earns 1), Fan Interaction (a casualty from a crowd push, or a trapdoor the player was pushed into, earns
   the attacker 2) and Fouling Frenzy (a casualty from a foul earns the fouler 2).
+- Team Captain (named in the team file): the player gains Pro and the trait, neither an advancement. While they are
+  on the pitch, each team re-roll the team uses (or each successful Team Mascot roll) is saved on a D6 of 6, rolled
+  with the Mascot and Loner dice; a saved Leader or Brilliant Coaching re-roll comes back as a normal team re-roll.
+  The captain must be set up whenever they can play.
 - Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls). Journeymen: a team with fewer
   than 11 players available gets free ones up to 11 from its lineman position, with Loner (4+) (team file option).
 - Setup checks: 11 players (or all available), 3 on the line of scrimmage in the centre field, at most 2 per wide zone.

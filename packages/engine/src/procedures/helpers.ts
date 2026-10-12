@@ -290,7 +290,7 @@ export function stepPro(ctx: Ctx, proc: { stage: string; proRetried?: boolean },
     if (ctx.expect(action, "USE_REROLL", "DECLINE_REROLL").type === "DECLINE_REROLL") return "stands";
     useTeamReroll(ctx, player.side);
     proc.proRetried = true;
-    proc.stage = lonerTarget(player) === null ? "pro" : "proLoner";
+    proc.stage = rerollGate(state, player) ? "proLoner" : "pro";
     return "wait";
   }
   if (proc.stage === "proLoner") {
@@ -316,12 +316,20 @@ export function proTemplates(state: GameState, stage: ProStage, player: PlayerSt
   return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `Pro ${PRO_TARGET}+ (${player.name})` }];
 }
 
+/** Team Captain: the team's player with the trait, while they are on the pitch. */
+export const teamCaptain = (state: GameState, side: Side) => teamPlayers(state, side).find((p) => isOnPitch(p) && hasSkill(p, "Team Captain"));
+
+/** Team Captain: a 6 saves the team re-roll just used. */
+export const CAPTAIN_TARGET = 6;
+
 /**
  * Spend a team re-roll, drive re-rolls first, then the Leader re-roll (it may not last); or (`mascot`) try the Team Mascot, whose 4+ roll comes with the Loner
- * roll (see `rerollGate`). After a failed Mascot roll the coach is asked again, for a team re-roll only.
+ * roll (see `rerollGate`). After a failed Mascot roll the coach is asked again, for a team re-roll only. With its
+ * Team Captain on the pitch, the team also rolls to save the re-roll.
  */
 export function useTeamReroll(ctx: Ctx, side: Side, mascot = false) {
   const team = ctx.state.teams[side];
+  team.captainRolling = teamCaptain(ctx.state, side) !== undefined;
   if (mascot) {
     if (!mascotAvailable(ctx.state, side)) ctx.reject("The Team Mascot cannot be used now.");
     team.mascotUsed = true;
@@ -345,8 +353,9 @@ export function mascotFailed(proc: { rerolled: boolean; mascotFailed?: boolean }
   proc.mascotFailed = true;
 }
 
-/** A roll is due before a team re-roll happens: the Team Mascot's 4+, and Loner's. */
-export const rerollGate = (state: GameState, player: PlayerState) => state.teams[player.side].mascotRolling || lonerTarget(player) !== null;
+/** A roll is due before a team re-roll happens: the Team Mascot's 4+, the Team Captain's 6+, and Loner's. */
+export const rerollGate = (state: GameState, player: PlayerState) =>
+  state.teams[player.side].mascotRolling || state.teams[player.side].captainRolling || lonerTarget(player) !== null;
 
 /** Team Mascot: the re-roll happens on 4+. */
 export const MASCOT_TARGET = 4;
@@ -358,17 +367,21 @@ export function lonerTarget(player: PlayerState): number | null {
   return Number(/\((\d)\+?\)/.exec(loner)?.[1] ?? 4);
 }
 
-/** The reason of the rolls due before a team re-roll: the Team Mascot's, then Loner's. */
+/** The reason of the rolls due before a team re-roll: the Team Mascot's, the Team Captain's, then Loner's. */
 function gateReason(state: GameState, player: PlayerState) {
   const parts = [
     ...(state.teams[player.side].mascotRolling ? [`Team Mascot ${MASCOT_TARGET}+`] : []),
+    ...(state.teams[player.side].captainRolling ? [`Team Captain ${CAPTAIN_TARGET}+`] : []),
     ...(lonerTarget(player) !== null ? [`Loner ${lonerTarget(player)}+`] : []),
   ];
   return `${parts.join(", ")} (${player.name})`;
 }
 
-/** The dice of the rolls due before a team re-roll: one for the Team Mascot, one for Loner. */
-const gateDice = (state: GameState, player: PlayerState) => [{ kind: "d6" as const, count: (state.teams[player.side].mascotRolling ? 1 : 0) + (lonerTarget(player) !== null ? 1 : 0) }];
+/** The dice of the rolls due before a team re-roll: one for the Team Mascot, one for the Team Captain, one for Loner. */
+const gateDice = (state: GameState, player: PlayerState) => {
+  const team = state.teams[player.side];
+  return [{ kind: "d6" as const, count: (team.mascotRolling ? 1 : 0) + (team.captainRolling ? 1 : 0) + (lonerTarget(player) !== null ? 1 : 0) }];
+};
 
 /** The ROLL template of the rolls due before a team re-roll (Team Mascot, Loner). */
 export const lonerRollTemplate = (state: GameState, player: PlayerState): ActionTemplate => ({
@@ -379,20 +392,34 @@ export const lonerRollTemplate = (state: GameState, player: PlayerState): Action
 });
 
 /**
- * The rolls due before a team re-roll, in one throw: the Team Mascot (4+), then Loner (a failure loses the re-roll).
- * "reroll": the die is re-rolled; "stands": the first result stands; "offer": the Mascot failed, and the coach may
- * still spend a team re-roll (the Loner die, if any, is not read).
+ * The rolls due before a team re-roll, in one throw: the Team Mascot (4+), the Team Captain (6: the re-roll, or the
+ * Mascot, is not used up; a saved re-roll comes back as a normal team re-roll), then Loner (a failure loses the
+ * re-roll). "reroll": the die is re-rolled; "stands": the first result stands; "offer": the Mascot failed, and the
+ * coach may still spend a team re-roll (the other dice, if any, are not read).
  */
 export function rollLoner(ctx: Ctx, action: Action, player: PlayerState): "reroll" | "stands" | "offer" {
   const { state } = ctx;
   const team = state.teams[player.side];
   const rolls = ctx.roll(action, gateDice(state, player), gateReason(state, player));
+  const mascot = team.mascotRolling;
   if (team.mascotRolling) {
     team.mascotRolling = false;
     const roll = rolls.shift()!;
     const success = roll >= MASCOT_TARGET;
     ctx.emit({ type: "CheckResult", kind: "mascot", playerId: player.id, success, roll, target: MASCOT_TARGET });
-    if (!success) return rerollsLeft(state, player.side) > 0 ? "offer" : "stands";
+    if (!success) {
+      team.captainRolling = false;
+      return rerollsLeft(state, player.side) > 0 ? "offer" : "stands";
+    }
+  }
+  if (team.captainRolling) {
+    team.captainRolling = false;
+    const roll = rolls.shift()!;
+    const success = roll >= CAPTAIN_TARGET;
+    const captain = teamCaptain(state, player.side);
+    ctx.emit({ type: "CheckResult", kind: "captain", playerId: captain?.id ?? player.id, success, roll, target: CAPTAIN_TARGET });
+    if (success && mascot) team.mascotUsed = false;
+    else if (success) team.rerolls += 1;
   }
   const target = lonerTarget(player);
   if (target === null) return "reroll";
