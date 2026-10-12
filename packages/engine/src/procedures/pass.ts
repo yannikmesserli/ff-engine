@@ -372,6 +372,7 @@ export const Pass: Handler<P<"Pass">> = {
           proc.stage = "end";
         } else if (passes(roll!, 0, target)) {
           state.ball = { square: { ...square }, carried: true };
+          interceptor.spp.interceptions += 1;
           ctx.emit({ type: "Intercepted", playerId: interceptor.id });
           proc.stage = "end";
         } else {
@@ -392,6 +393,7 @@ export const Pass: Handler<P<"Pass">> = {
             scattered: proc.result === "inaccurate",
             divingCatch: true,
             accurate: proc.result === "accurate",
+            passerId: thrower.id,
           });
         }
         proc.stage = "end";

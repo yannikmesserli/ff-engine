@@ -155,7 +155,9 @@ export const Foul: Handler<P<"Foul">> = {
       case "injury": {
         if (action === null) return "wait";
         proc.injury = ctx.roll(action, [...ARMOUR_DICE], "Injury");
-        injure(ctx, victim, proc.injury[0]! + proc.injury[1]! + injuryModifier(fouler, proc));
+        // Fouling Frenzy (a prayer): a casualty caused by a foul earns the fouler Star Player Points.
+        const frenzy = state.teams[fouler.side].prayers.includes("fouling-frenzy");
+        injure(ctx, victim, proc.injury[0]! + proc.injury[1]! + injuryModifier(fouler, proc), frenzy ? { sppTo: [fouler.id] } : {});
         proc.stage = "referee";
         return "continue";
       }

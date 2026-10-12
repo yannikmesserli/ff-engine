@@ -3,7 +3,7 @@ import type { DiceSpec, GameState, PlayerState, Procedure, Side, Square } from "
 import { SCATTER, isCorner, throwInDirection } from "../dice";
 import { adjacent, inBounds, isOnPitch, offset, other, playerAt, sameSquare, teamPlayers } from "../pitch";
 import { hasSkill } from "../skills";
-import { checkTouchdown, disturbingPresences, divingCatchers, getPlayer, landBall, squareOf, weatherModifier } from "./helpers";
+import { checkTouchdown, disturbingPresences, divingCatchers, getPlayer, landBall, passCatch, squareOf, weatherModifier } from "./helpers";
 import { markingZones } from "./pass";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -117,6 +117,10 @@ export const Catch: Handler<P<"Catch">> = {
     if (state.lastCheck?.success) {
       state.ball = { square: { ...square }, carried: true };
       ctx.emit({ type: "BallCaught", playerId: player.id });
+      // A completion: an accurate pass caught by a team-mate in the target square. Dazzling Catching: any caught pass.
+      const passer = proc.passerId ? state.players[proc.passerId] : undefined;
+      if (passer && proc.completion && passer.side === player.side) passer.spp.completions += 1;
+      if (passer && state.teams[player.side].prayers.includes("dazzling-catching")) player.spp.catches += 1;
       checkTouchdown(ctx, player);
     } else {
       ctx.push({ type: "Bounce", from: { ...square }, kickoff: proc.kickoff, receiving: proc.kickoff ? player.side : null });
@@ -213,8 +217,10 @@ export const DivingCatch: Handler<P<"DivingCatch">> = {
     if (id === undefined) return next();
     const catcher = getPlayer(ctx, id);
     if (!sameSquare(squareOf(ctx, catcher), proc.square)) ctx.emit({ type: "SkillUsed", playerId: id, skill: "Diving Catch" });
-    const { kickoff, scattered, accurate } = proc.landing;
-    ctx.push({ type: "Catch", playerId: id, kickoff, scattered, stage: "check", ...(accurate ? { accurate } : {}) });
+    const { kickoff, scattered, accurate, passerId } = proc.landing;
+    // Caught from a next square: not in the target square, so not a completion.
+    const completion = accurate && sameSquare(catcher.at as Square, proc.square);
+    ctx.push({ type: "Catch", playerId: id, kickoff, scattered, stage: "check", ...(accurate ? { accurate } : {}), ...passCatch(passerId, completion) });
     return "done";
   },
   actions(state, proc) {

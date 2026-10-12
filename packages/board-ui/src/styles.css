@@ -189,4 +189,9 @@
 .bb-skill:hover .bb-tip, .bb-skill:focus .bb-tip { display: block; }
 .bb-skill .bb-tip em { display: block; margin-top: 4px; color: #ffb74d; font-style: normal; }
 .bb-casualty { font-size: 12px; color: #e57373; }
+.bb-summary { display: flex; flex-direction: column; gap: 6px; }
+.bb-summary-team { font-size: 13px; padding-left: 6px; border-left: 3px solid #555; }
+.bb-summary-team.bb-side-home { border-left-color: var(--bb-home); }
+.bb-summary-team.bb-side-away { border-left-color: var(--bb-away); }
 .bb-log { width: 320px; height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.5; }
+.bb-summary-team .bb-link { margin-left: 8px; }

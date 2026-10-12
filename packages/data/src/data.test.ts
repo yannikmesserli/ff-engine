@@ -1,6 +1,6 @@
-import { IMPLEMENTED_SKILLS, createGame, getAvailableActions, skillName, step, type Action, type ActionTemplate, type GameState } from "@bb/engine";
+import { IMPLEMENTED_SKILLS, createGame, getAvailableActions, skillName, starPlayerPoints, step, type Action, type ActionTemplate, type GameState } from "@bb/engine";
 import { afterAll, describe, expect, it } from "vitest";
-import { SKILL_DESCRIPTIONS, TeamError, exampleTeams, formationActions, formations, resolveTeam, rosters, skillDescription } from "./index";
+import { SKILL_DESCRIPTIONS, TeamError, exampleTeams, formationActions, formations, resolveTeam, rosters, skillDescription, teamAfterGame } from "./index";
 
 describe("data", () => {
   it("has the BB2025 rosters from FUMBBL", () => {
@@ -109,6 +109,33 @@ describe("data", () => {
     expect(() => resolveTeam(team(3, 2))).toThrow(/At most as many Insignificant players as other players \(3 of 5\)/);
   });
 
+  it("counts each player's advancements: gained skills and characteristic improvements", () => {
+    const human = exampleTeams["human"]!;
+    const team = { ...human, players: [{ ...human.players[0]!, skills: ["Block", "Dodge"], improvements: { ma: 1 } }, ...human.players.slice(1)] };
+    expect(resolveTeam(team).players.map((p) => p.advancements)).toEqual([3, ...human.players.slice(1).map(() => 0)]);
+  });
+
+  it("writes the result of a game into the team file", () => {
+    const human = { ...exampleTeams["human"]!, players: exampleTeams["human"]!.players.map((p, i) => (i === 4 ? { ...p, missNextGame: true } : p)) };
+    const game = structuredClone(createGame(resolveTeam(human), resolveTeam(exampleTeams["orc"])));
+    const [first, second, third, fourth] = human.players.map((p) => game.players[`home-${p.number}`]!);
+    first!.spp.touchdowns = 2;
+    second!.casualty = { result: "lasting-injury", lasting: "ag" };
+    third!.casualty = { result: "dead" };
+    fourth!.casualty = { result: "serious-injury" };
+    game.finished = true;
+    game.result = { conceded: null, concededLegally: false, penalties: null, winner: "home", winnings: { home: 60_000, away: 50_000 }, dedicatedFans: { home: 1, away: 0 }, mvps: [], leaving: [] };
+    const after = teamAfterGame({ ...human, treasury: 10_000, inducements: { bribes: 1 } }, game, "home");
+    expect([after.treasury, after.dedicatedFans, after.inducements]).toEqual([70_000, human.dedicatedFans + 1, {}]);
+    expect(after.players).toHaveLength(human.players.length - 1);
+    expect(after.players[0]).toMatchObject({ spp: 6, missNextGame: false });
+    expect(after.players[1]).toMatchObject({ injuries: ["ag"], missNextGame: true });
+    expect(after.players[2]).toMatchObject({ number: human.players[3]!.number, injuries: ["niggling"], missNextGame: true });
+    // Sat this game out: back for the next.
+    expect(after.players[3]).toMatchObject({ number: human.players[4]!.number, missNextGame: false });
+    expect(() => teamAfterGame(human, createGame(resolveTeam(human), resolveTeam(exampleTeams["orc"])), "home")).toThrow(/not over/);
+  });
+
   it.each(Object.keys(formations))("formation %s gives a legal setup for both sides", (name) => {
     // Fan factor, weather and coin toss; the toss winner kicks.
     const pregame: Action[] = [
@@ -159,7 +186,8 @@ function randomActions(state: GameState, templates: ActionTemplate[], random: ()
 
 /** One random answer to a random template; ending a turn or player action is rarer so games progress. */
 function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, random: () => number): Action {
-  const t = pick(templates.filter((t) => (t.type !== "END_TURN" && t.type !== "END_PLAYER_ACTION") || random() < 0.1));
+  // Nobody concedes: the games are played to the end.
+  const t = pick(templates.filter((t) => t.type !== "CONCEDE" && ((t.type !== "END_TURN" && t.type !== "END_PLAYER_ACTION") || random() < 0.1)));
   switch (t.type) {
     case "CALL_COIN":
       return { type: "CALL_COIN", call: pick(["heads", "tails"] as const) };
@@ -363,6 +391,12 @@ describe("random games", () => {
     if (overtime) seenOvertime++;
     expect(s.log.filter((e) => e.type === "TurnStarted").length).toBeGreaterThan(24);
     expect(s.log.at(-1)).toMatchObject({ type: "GameEnded" });
+    // The Star Player Points earned go to the team file.
+    const after = teamAfterGame(homeTeam, s, "home");
+    const kept = (p: GameState["players"][string]) => p.side === "home" && !/^(Journeyman|Riotous Rookie) #/.test(p.name) && p.casualty?.result !== "dead";
+    const earned = Object.values(s.players).filter(kept);
+    expect(after.players.reduce((sum, p) => sum + p.spp, 0)).toBe(earned.reduce((sum, p) => sum + starPlayerPoints(s, p), 0));
+    expect(s.result!.mvps).toHaveLength(2);
     for (const e of s.log) {
       if (e.type === "KickoffResult") seenKickoffResults.add(e.result);
       if (e.type === "BlockResult") seenBlockResults.add(e.face);

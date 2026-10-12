@@ -290,6 +290,8 @@ function sabotage(ctx: Ctx, proc: P<"KnockDown">, player: PlayerState) {
   const turnover = ballCarrier(state)?.id === blocker.id;
   const pending = state.stack.find((p): p is P<"KnockDown"> => p.type === "KnockDown" && p.playerId === blocker.id && p.stage === "fall");
   if (pending) pending.turnover = turnover;
+  // Taken down by the Saboteur's weapon: no Star Player Points for anyone.
+  if (pending) delete pending.sppTo;
   const knock: Procedure[] = !pending && isOnPitch(blocker) && blocker.status === "standing" ? [{ type: "KnockDown", playerId: blocker.id, turnover, stage: "fall" }] : [];
   ctx.push(knockOut(ctx, player), ...knock);
 }
@@ -416,7 +418,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Injury${mightyBlowNote(bonus, proc)}`);
         if (bonus > 0) ctx.emit({ type: "SkillUsed", playerId: proc.mightyBlow!.playerId, skill: bonusSkill(proc) });
         // The casualty roll and the apothecary run before the ball bounces.
-        injure(ctx, player, a! + b! + bonus, { attackerId: proc.blockerId });
+        injure(ctx, player, a! + b! + bonus, { attackerId: proc.blockerId, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
         proc.stage = "bounce";
         return "continue";
       }

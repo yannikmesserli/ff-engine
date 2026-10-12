@@ -32,6 +32,8 @@ export const TeamPlayerSchema = z.strictObject({
   injuries: z.array(z.enum([...CHARACTERISTICS, "niggling"])).default([]),
   /** Misses the next game: left out of the team when it is resolved. */
   missNextGame: z.boolean().default(false),
+  /** Star Player Points not spent yet. */
+  spp: count.default(0),
 });
 
 /** Team special rules, as FUMBBL names them (some rosters choose theirs, e.g. a "Favoured of..." rule). */
@@ -67,6 +69,8 @@ export const TeamFileSchema = z.strictObject({
   assistantCoaches: count.default(0),
   cheerleaders: count.default(0),
   dedicatedFans: z.number().int().min(1).max(7).default(1),
+  /** Gold pieces in the treasury. */
+  treasury: count.default(0),
   /**
    * Journeymen for a team with fewer than 11 players: `true` (from the lineman position), `false` (none), or the
    * position title when the roster has more than one (Shambling Undead).

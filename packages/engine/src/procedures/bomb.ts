@@ -2,6 +2,7 @@ import type { Handler } from "../context";
 import type { GameState, Procedure, Square } from "../types";
 import { SCATTER } from "../dice";
 import { adjacent, inBounds, isOnPitch, offset, playerAt, sameSquare } from "../pitch";
+import { hasSkill } from "../skills";
 import { catchModifier } from "./ball";
 import { getPlayer, squareOf } from "./helpers";
 
@@ -110,9 +111,12 @@ export const Explosion: Handler<P<"Explosion">> = {
 
     function hit() {
       ctx.emit({ type: "BombHit", playerId: player!.id });
+      // Violent Innovator: a casualty an opponent suffers from the bomb earns the bombardier Star Player Points.
+      const bombardier = state.activePlayerId ? state.players[state.activePlayerId] : undefined;
+      const spp = bombardier && bombardier.side !== player!.side && hasSkill(bombardier, "Violent Innovator") ? { sppTo: [bombardier.id] } : {};
       if (player!.status === "standing") {
-        ctx.push({ type: "KnockDown", playerId: player!.id, turnover: player!.side === state.activeSide, stage: "fall" });
-      } else ctx.push({ type: "KnockDown", playerId: player!.id, turnover: false, stage: "armour" });
+        ctx.push({ type: "KnockDown", playerId: player!.id, turnover: player!.side === state.activeSide, stage: "fall", ...spp });
+      } else ctx.push({ type: "KnockDown", playerId: player!.id, turnover: false, stage: "armour", ...spp });
     }
   },
   actions(state, proc) {

@@ -49,6 +49,20 @@ export interface Casualty {
   lasting?: Characteristic;
 }
 
+/**
+ * What a player did this game that earns Star Player Points (see `starPlayerPoints`). `catches`: passes caught with
+ * Dazzling Catching (a prayer); `landings`: landings on their feet after being thrown by a team-mate.
+ */
+export interface SppRecord {
+  touchdowns: number;
+  casualties: number;
+  completions: number;
+  interceptions: number;
+  landings: number;
+  catches: number;
+  mvp: number;
+}
+
 /** A player during the game, with its current (possibly modified) characteristics. */
 export interface PlayerState {
   /** "<side>-<nr>", e.g. "home-7". */
@@ -105,6 +119,12 @@ export interface PlayerState {
   chompedBy: string[];
   /** Was on the pitch for the current drive's kick-off (Secret Weapon players are sent off when the drive ends). */
   played: boolean;
+  /** Advancements from earlier games (skills and characteristic improvements), for player loss after a concession. */
+  advancements: number;
+  /** Joined the team during this game (Plague Ridden): cannot be named MVP. */
+  raised?: boolean;
+  /** Star Player Points earned this game. */
+  spp: SppRecord;
 }
 
 /** A team's game-long and drive-long resources. */
@@ -158,6 +178,26 @@ export interface TeamState {
   raisePosition: PositionStats | null;
   /** Opponents who joined the team this game (Plague Ridden: once per game). */
   raisedDead: number;
+  /** A player of the team was caught stalling (the crowd threw a rock): no winnings bonus for not stalling. */
+  stalled: boolean;
+}
+
+/** The end of the game: concession, penalty shootout, MVPs, winnings, dedicated fans and player loss. */
+export interface GameResult {
+  /** The team that conceded, if any; a concession is legal only during its setup with fewer than 3 players able to play. */
+  conceded: Side | null;
+  concededLegally: boolean;
+  /** Penalty shootout after a drawn overtime: penalties scored by each team. */
+  penalties: Record<Side, number> | null;
+  winner: Side | null;
+  /** Gold pieces won by each team. */
+  winnings: Record<Side, number>;
+  /** Change to each team's Dedicated Fans (-1, 0 or +1; more lost after an illegal concession). */
+  dedicatedFans: Record<Side, number>;
+  /** Players named Most Valuable Player. */
+  mvps: string[];
+  /** Players who leave the team (player loss after an illegal concession). */
+  leaving: string[];
 }
 
 /** Where the ball is; `square` is null while it is off the pitch (before the kick-off, during a throw-in or touchback). */
@@ -246,6 +286,8 @@ export interface TeamSetup {
       name: string;
       /** Niggling Injuries from earlier games. */
       nigglingInjuries?: number;
+      /** Advancements from earlier games (gained skills and characteristic improvements). */
+      advancements?: number;
     }
   >;
 }
@@ -315,7 +357,13 @@ export type CheckKind =
  * Their behaviour lives in `procedures/*` handlers keyed by `type`.
  */
 export type Procedure =
-  | { type: "Game"; stage: "pregame" | "half1" | "half2" | "overtime" | "end" }
+  | { type: "Game"; stage: "pregame" | "half1" | "half2" | "overtime" | "postgame" | "end" }
+  /**
+   * The end of the game. "touchdowns": after a concession, the winners name the scorers of the touchdowns they are
+   * awarded (`touchdowns` left); "shootout": a drawn overtime; "fans": the teams in `fans` roll for Dedicated Fans in
+   * turn; "loss": the players in `loss` roll to stay after an illegal concession.
+   */
+  | { type: "EndGame"; stage: "init" | "touchdowns" | "shootout" | "mvp" | "winnings" | "fans" | "loss"; touchdowns?: number; fans?: Side[]; loss?: string[] }
   /** "rookies": Riotous Rookies, rolled by the teams in `rookies` (in order). */
   | { type: "Pregame"; stage: "fans" | "weather" | "rookies"; rookies?: Side[] }
   /**
@@ -336,7 +384,8 @@ export type Procedure =
   /** `drives`: kick-offs so far in this half; `turnPlayed`: a team turn just ended (time for Throw a Rock). */
   | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number; turnPlayed?: boolean }
   /** Treacherous Trapdoor (a prayer): the player entered a trapdoor and falls through on a 1. */
-  | { type: "Trapdoor"; playerId: string; stage: "roll" | "result" | "injury" }
+  /** `sppTo`: the players earning Star Player Points if the fall causes a casualty (see `KnockDown`). */
+  | { type: "Trapdoor"; playerId: string; stage: "roll" | "result" | "injury"; sppTo?: string[] }
   /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
   /** Halfling Master Chef: each team with one rolls 3D6 (`sides` still to roll); every 4+ steals a team re-roll. */
@@ -377,7 +426,12 @@ export type Procedure =
    * team (the kicking team at the kick-off) may pick one of them, or its player in the square, to catch it; then the
    * other team ("second"); otherwise it lands as usual.
    */
-  | { type: "DivingCatch"; square: Square; landing: { kickoff: boolean; receiving: Side | null; scattered: boolean; accurate: boolean }; stage: "first" | "second" }
+  | {
+      type: "DivingCatch";
+      square: Square;
+      landing: { kickoff: boolean; receiving: Side | null; scattered: boolean; accurate: boolean; passerId?: string };
+      stage: "first" | "second";
+    }
   /**
    * Safe Pair of Hands: the player was knocked down or placed prone holding the ball, which lies on `square`; their coach
    * may place it on a free adjacent square instead of letting it bounce.
@@ -391,6 +445,10 @@ export type Procedure =
       scattered: boolean;
       /** An accurate pass to the catcher's square, or the one next to them for Diving Catch (+1 with Diving Catch). */
       accurate?: boolean;
+      /** A pass thrown by this player (Dazzling Catching: a caught pass earns Star Player Points). */
+      passerId?: string;
+      /** An accurate pass caught in the target square: a completion for the passer if it is a team-mate. */
+      completion?: boolean;
       stage: "check" | "resolve";
     }
   | { type: "KoRecovery"; playerIds: string[] }
@@ -572,7 +630,8 @@ export type Procedure =
       /** The last pushed player landed on the loose ball, which bounces from there. */
       bounceFrom?: Square;
     }
-  | { type: "Crowd"; playerId: string; from: Square; hadBall: boolean }
+  /** `sppTo`: the players earning Star Player Points if the push causes a casualty (see `KnockDown`). */
+  | { type: "Crowd"; playerId: string; from: Square; hadBall: boolean; sppTo?: string[] }
   /**
    * Multiple Block: the blocks against both targets are prepared one after the other (`pending`: still to prepare;
    * `chosen`: the die kept against each), then resolved in that order.
@@ -744,6 +803,8 @@ export type Procedure =
       mightyBlow?: { playerId: string; bonus: number; armourOnly?: boolean; skill?: string };
       /** The opponent whose block knocked the player down (Claws, Plague Ridden). */
       blockerId?: string;
+      /** The opponents who earn Star Player Points if the player suffers a casualty (the blocker, Arm Bar...). */
+      sppTo?: string[];
       /** Mighty Blow broke the armour, so it does not apply to the injury roll. */
       mightyBlowOnArmour?: boolean;
       /** Steady Footing was offered (and failed or declined). */
@@ -796,6 +857,8 @@ export interface GameState {
   /** Every event since the start of the game. */
   log: GameEvent[];
   finished: boolean;
+  /** Filled in at the end of the game. */
+  result: GameResult | null;
 }
 
 /** Input to `step`: must match one of the templates from `getAvailableActions`. */
@@ -875,7 +938,9 @@ export type Action =
   /** Quick Snap: move one open player a single square. */
   | { type: "SNAP"; playerId: string; square: Square }
   /** Finish an optional kick-off phase (Quick Snap). */
-  | { type: "DONE" };
+  | { type: "DONE" }
+  /** Concede the game: in the team's own setup or turn. */
+  | { type: "CONCEDE" };
 
 export type ActionType = Action["type"];
 
@@ -940,7 +1005,9 @@ export type ActionTemplate =
   /** `min`: players that must be chosen (none by default). */
   | { type: "SELECT_PLAYERS"; side: Side; playerIds: string[]; max: number; min?: number; reason: string }
   | { type: "SNAP"; side: Side; moves: Array<{ playerId: string; squares: Square[] }>; remaining: number }
-  | { type: "DONE"; side: Side };
+  | { type: "DONE"; side: Side }
+  /** `legal`: conceding now has no penalty (during setup, with fewer than 3 players able to play). */
+  | { type: "CONCEDE"; side: Side; legal: boolean };
 
 /** What happened during a step, for logs and animations; also kept in `state.log`. */
 export type GameEvent =
@@ -1061,4 +1128,15 @@ export type GameEvent =
   | { type: "ApothecaryResult"; playerId: string; result: "stunned" | "reserves" | "casualty"; casualty: Casualty | null }
   | { type: "Touchdown"; side: Side; playerId: string }
   | { type: "HalfEnded"; half: HalfNumber }
+  | { type: "Conceded"; side: Side; legal: boolean }
+  /** After a concession, a touchdown awarded to a player of the winning team. */
+  | { type: "TouchdownAwarded"; playerId: string }
+  /** One round of the penalty shootout; `winner`: who scored (null: both rolled the same). */
+  | { type: "PenaltyKick"; rolls: Record<Side, number>; winner: Side | null }
+  | { type: "MvpAwarded"; playerId: string }
+  | { type: "Winnings"; side: Side; amount: number }
+  /** `roll` is null when the team did not roll (a draw). */
+  | { type: "DedicatedFans"; side: Side; roll: number | null; change: number }
+  /** Player loss after an illegal concession: on 1-3 the player leaves the team. */
+  | { type: "PlayerLoss"; playerId: string; roll: number; leaves: boolean }
   | { type: "GameEnded"; winner: Side | null };

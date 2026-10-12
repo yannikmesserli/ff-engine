@@ -3,6 +3,7 @@ import { IllegalActionError, createContext, run, type Handler } from "./context"
 import { handlers } from "./procedures";
 import { createPlayer } from "./procedures/helpers";
 import { releaseChomps } from "./procedures/block";
+import { concede, concessionTemplate } from "./procedures/endgame";
 import type { Action, ActionTemplate, GameEvent, GameState, PlayerState, Side, TeamSetup } from "./types";
 
 export interface GameOptions {
@@ -56,6 +57,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     apothecaries: teams[side].apothecary ? 1 : 0,
     raisePosition: teams[side].raisePosition ?? null,
     raisedDead: 0,
+    stalled: false,
   });
   return {
     version: 1,
@@ -76,6 +78,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     stack: [{ type: "Game", stage: "pregame" }],
     log: [],
     finished: false,
+    result: null,
   };
 }
 
@@ -99,7 +102,9 @@ export function applyActions(state: GameState, actions: readonly Action[]): Game
 export function getAvailableActions(state: GameState): ActionTemplate[] {
   const top = state.stack.at(-1);
   if (!top) return [];
-  return (handlers[top.type] as Handler).actions(state, top);
+  const templates = (handlers[top.type] as Handler).actions(state, top);
+  // A coach may concede during their own setup or turn.
+  return templates.length > 0 ? [...templates, ...concessionTemplate(state, top)] : templates;
 }
 
 /**
@@ -107,12 +112,17 @@ export function getAvailableActions(state: GameState): ActionTemplate[] {
  * Pure: returns a new state and leaves the input untouched. Throws IllegalActionError on invalid input.
  */
 export function step(state: GameState, action: Action): StepResult {
-  if (!getAvailableActions(state).some((t) => t.type === action.type)) {
+  const template = getAvailableActions(state).find((t) => t.type === action.type);
+  if (!template) {
     throw new IllegalActionError(`${action.type} is not available now.`);
   }
   const events: GameEvent[] = [];
   const next = produce(state, (draft) => {
-    run(createContext(draft, events), handlers, action);
+    const ctx = createContext(draft, events);
+    if (template.type === "CONCEDE") {
+      concede(ctx, template);
+      run(ctx, handlers, null);
+    } else run(ctx, handlers, action);
     releaseChomps(draft);
   });
   return { state: next, events };

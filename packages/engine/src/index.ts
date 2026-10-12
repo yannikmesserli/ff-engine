@@ -18,4 +18,5 @@ export { LAST_STALLING_TURN, isStalling } from "./procedures/stalling";
 export { leaderReroll, lonerTarget } from "./procedures/helpers";
 export { teamMateTargets, throwableTeamMates } from "./procedures/ttm";
 export { PRAYER_NAMES } from "./procedures/prayers";
+export { SPP_VALUES, starPlayerPoints } from "./procedures/endgame";
 export { ballUnsettled, flightMarkers, scatterOrigin, type FlightMarker } from "./flight";

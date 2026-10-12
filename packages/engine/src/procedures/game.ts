@@ -29,9 +29,9 @@ function startHalf(ctx: Ctx, half: HalfNumber, kicking: Side) {
 }
 
 /**
- * Root procedure: pre-game, both halves, then the final result. Overtime (a game option): a draw after the second half
- * gives a third half of 8 turns per team, kicked off by the team that kicked off the first half, without new team
- * re-rolls; a touchdown does not end it early, and a draw after it stands.
+ * Root procedure: pre-game, both halves, then the end of the game (see `EndGame`). Overtime (a game option): a draw
+ * after the second half gives a third half of 8 turns per team, kicked off by the team that kicked off the first half,
+ * without new team re-rolls; a touchdown does not end it early, and a draw after it goes to a penalty shootout.
  */
 export const Game: Handler<P<"Game">> = {
   step(ctx, proc) {
@@ -51,15 +51,17 @@ export const Game: Handler<P<"Game">> = {
         startHalf(ctx, 2, other(state.kickingFirstHalf!));
         return "continue";
       case "overtime":
-        proc.stage = "end";
+        proc.stage = "postgame";
         if (state.overtime && state.teams.home.score === state.teams.away.score) startHalf(ctx, 3, state.kickingFirstHalf!);
         return "continue";
-      case "end": {
-        const { home, away } = state.teams;
+      case "postgame":
+        proc.stage = "end";
+        ctx.push({ type: "EndGame", stage: "init" });
+        return "continue";
+      case "end":
         state.finished = true;
-        ctx.emit({ type: "GameEnded", winner: home.score === away.score ? null : home.score > away.score ? "home" : "away" });
+        ctx.emit({ type: "GameEnded", winner: state.result?.winner ?? null });
         return "done";
-      }
     }
   },
   actions: () => [],

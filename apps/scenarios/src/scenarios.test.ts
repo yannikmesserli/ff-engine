@@ -426,4 +426,14 @@ describe("scenarios", () => {
     expect(s.teams.home.prayers).toEqual(["friends-with-the-ref", "moles-under-the-pitch", "under-scrutiny"]);
     expect(find(s, "CALL_COIN")).toBeDefined();
   });
+
+  it("end-of-game: a casualty's Star Player Points, then an illegal concession down to player loss", () => {
+    let s = load("end-of-game");
+    expect([s.players["away-1"]!.at, s.players["home-2"]!.spp.casualties]).toEqual(["cas", 1]);
+    expect(find(s, "CONCEDE")).toEqual({ type: "CONCEDE", side: "home", legal: false });
+    s = applyActions(s, [{ type: "CONCEDE" }, { type: "SELECT_PLAYERS", playerIds: ["away-2"] }, { type: "SELECT_PLAYERS", playerIds: ["away-3"] }, { type: "ROLL", values: [2] }, { type: "ROLL", values: [4] }]);
+    expect(find(s, "ROLL")?.reason).toBe("Player loss: Wilhelm leaves on 1-3");
+    s = step(s, { type: "ROLL", values: [5] }).state;
+    expect([s.finished, s.result?.winner, s.teams.away.score, s.result?.dedicatedFans]).toEqual([true, "away", 2, { home: -2, away: 1 }]);
+  });
 });

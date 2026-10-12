@@ -105,6 +105,12 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
 - Game: `createGame(home, away, { seed, overtime })` (`overtime`: a draw after the second half goes to a third half), `getAvailableActions(state)`, `step(state, action)` returning
   `{ state, events }`, `applyActions(state, actions)` (successive steps, e.g. to reach a prepared position),
   `IllegalActionError`.
+- End of the game: `state.result` (`GameResult`: concession, penalties, winner, winnings, Dedicated Fans changes,
+  MVPs, players leaving) once the `EndGame` procedure has run. `CONCEDE` is added to the templates of a team's own
+  setup or turn (`legal`: no penalty); `step` handles it directly, clearing the stack down to the root `Game`.
+- Star Player Points: each player's `spp` (`SppRecord`) counts what they did; `starPlayerPoints(state, player)` turns
+  it into points (`SPP_VALUES`, Brawlin' Brutes, Perfect Passing). Casualties are credited through `sppTo` on
+  `KnockDown`, `Crowd`, `Trapdoor` and `injure`.
 - Types: everything in `types.ts` (`GameState`, `Action`, `ActionTemplate`, `GameEvent`, `TeamSetup`, `Procedure`...),
   `GameOptions`, `StepResult`.
 - Pitch (`pitch.ts`): constants (`PITCH_WIDTH`, `PITCH_HEIGHT`, line of scrimmage, wide zones) and helpers

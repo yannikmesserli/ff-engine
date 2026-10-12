@@ -973,7 +973,8 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         turnover: !proc.onTheBall,
         stage: "fall",
         fallsOver: true,
-        ...(bar ? { mightyBlow: { playerId: bar.id, bonus: 1, skill: "Arm Bar" } } : {}),
+        // Arm Bar: a casualty earns the Arm Bar player Star Player Points.
+        ...(bar ? { mightyBlow: { playerId: bar.id, bonus: 1, skill: "Arm Bar" }, sppTo: [bar.id] } : {}),
       });
       proc.stage = "fell";
       proc.fellInPlace = inStartSquare;

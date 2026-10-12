@@ -20,6 +20,7 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 | `formationActions(state, side, formation)` | `PLACE_PLAYER` actions that clear a side's half and set up a formation. |
 | `INDUCEMENT_RULES` | BB2025 inducement limits, required special rules and costs, by inducement id. |
 | `resolveTeam(json, rosters?)` | Validates a team file against its roster and merges in position stats. Throws `TeamError`. |
+| `teamAfterGame(json, state, side)` | The team file after a finished game: Star Player Points, casualties, raised players, winnings, Dedicated Fans. |
 | `TeamFileSchema`, `RosterSchema` | zod schemas (and the `TeamFile`, `Roster` types). |
 | `SKILL_DESCRIPTIONS`, `skillDescription(skill)` | Short BB2025 descriptions of every skill and trait (our own wording), for tooltips; `skillDescription("Loner(4)")` fills in the value. |
 
@@ -75,6 +76,9 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
 - `injuries`: lasting injuries, one entry per -1 to a characteristic (AG and PA targets go up by 1), or `"niggling"`
   for a Niggling Injury (+1 to the player's casualty rolls).
 - `missNextGame`: the player is left out when the team is resolved.
+- `spp` (default 0): the player's unspent Star Player Points; `treasury` (default 0): the team's gold pieces. Both
+  grow with `teamAfterGame`; the shop to spend them does not exist yet.
+- A player's advancements (for player loss after a concession) are their gained `skills` plus their `improvements`.
 - Unknown fields are rejected, so typos don't pass silently.
 - `resolveTeam` also checks the roster exists, re-rolls are within `maxRerolls`, the roster may hire an apothecary,
   position quantities, the Big Guy limit and Insignificant (no more such players than others) are respected, and

@@ -380,6 +380,24 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `TOUCHDOWN! ${who(state, e.playerId)} scores for ${sideName(state, e.side)}.`;
     case "HalfEnded":
       return e.half === 3 ? "End of overtime." : `End of half ${e.half}.`;
+    case "Conceded":
+      return `${sideName(state, e.side)} concede${e.legal ? " (without penalty: fewer than 3 players can play)" : ""}.`;
+    case "TouchdownAwarded":
+      return `${who(state, e.playerId)} is awarded a touchdown.`;
+    case "PenaltyKick":
+      return e.winner
+        ? `Penalty: ${e.rolls.home}-${e.rolls.away}, ${sideName(state, e.winner)} score.`
+        : `Penalty: ${e.rolls.home}-${e.rolls.away}, nobody scores.`;
+    case "MvpAwarded":
+      return `${who(state, e.playerId)} is named Most Valuable Player.`;
+    case "Winnings":
+      return `${sideName(state, e.side)} win ${e.amount.toLocaleString("en")} gp.`;
+    case "DedicatedFans":
+      return e.change === 0
+        ? `${sideName(state, e.side)} keep their Dedicated Fans.`
+        : `${sideName(state, e.side)} ${e.change > 0 ? "gain" : "lose"} ${Math.abs(e.change)} Dedicated Fans.`;
+    case "PlayerLoss":
+      return e.leaves ? `${who(state, e.playerId)} leaves the team.` : `${who(state, e.playerId)} stays with the team.`;
     case "GameEnded":
       return e.winner ? `Game over: ${sideName(state, e.winner)} wins!` : "Game over: it's a draw.";
   }

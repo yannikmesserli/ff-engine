@@ -361,11 +361,24 @@ export function ActionPanel(props: ActionPanelProps) {
             End turn
           </button>
         )}
+        {findTemplate(templates, "CONCEDE") && <ConcedeButton template={findTemplate(templates, "CONCEDE")!} dispatch={dispatch} />}
       </div>
       <label className="bb-auto-roll">
         <input type="checkbox" checked={autoRoll} onChange={(e) => setAutoRoll(e.target.checked)} /> Auto-roll dice
       </label>
     </div>
+  );
+}
+
+/** Concede the game, after a confirmation that says what it costs. */
+function ConcedeButton({ template, dispatch }: { template: TemplateOf<"CONCEDE">; dispatch(...actions: Action[]): void }) {
+  const warning = template.legal
+    ? "Concede the game? With fewer than 3 players able to play, there is no penalty."
+    : "Concede the game? The opponents win at least 2-0, your team loses its Star Player Points, MVP, winnings and Dedicated Fans of this game, and experienced players may leave.";
+  return (
+    <button className="bb-link" onClick={() => window.confirm(warning) && dispatch({ type: "CONCEDE" })}>
+      Concede
+    </button>
   );
 }
 

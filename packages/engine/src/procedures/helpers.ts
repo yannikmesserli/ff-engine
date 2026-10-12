@@ -1,5 +1,5 @@
 import type { Ctx } from "../context";
-import type { Action, ActionTemplate, GameState, InducementId, PlayerState, Side, Square, TeamSetup, TeamState, Weather } from "../types";
+import type { Action, ActionTemplate, GameState, InducementId, PlayerState, Side, Square, SppRecord, TeamSetup, TeamState, Weather } from "../types";
 import { hasSkill, skillName } from "../skills";
 import { adjacent, inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, tackleZones, teamPlayers } from "../pitch";
 
@@ -39,7 +39,15 @@ export function createPlayer(side: Side, p: TeamSetup["players"][number]): Playe
     rooted: false,
     gouged: false,
     chompedBy: [],
+    advancements: p.advancements ?? 0,
+    spp: { touchdowns: 0, casualties: 0, completions: 0, interceptions: 0, landings: 0, catches: 0, mvp: 0 },
   };
+}
+
+/** Count one more of `kind` towards the player's Star Player Points. */
+export function earnSpp(state: GameState, playerId: string, kind: keyof SppRecord) {
+  const player = state.players[playerId];
+  if (player) player.spp[kind] += 1;
 }
 
 /** The square of a player on the pitch, or reject the action. */
@@ -60,6 +68,8 @@ export interface Landing {
   divingCatch?: boolean;
   /** An accurate pass: +1 to catch it with Diving Catch. */
   accurate?: boolean;
+  /** A pass thrown by this player: a catch may earn Star Player Points. */
+  passerId?: string;
 }
 
 /** Diving Catch: standing, undistracted players with the skill next to the square where the ball comes down. */
@@ -74,7 +84,7 @@ export function divingCatchers(state: GameState, square: Square): PlayerState[] 
  * The ball arrives on a square after a kick, bounce or throw-in: touchback, throw-in from `from` when it left the
  * pitch, Diving Catch from a next square, a catch by a standing player, or a bounce.
  */
-export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, receiving, bounceIfEmpty, scattered, divingCatch = false, accurate = false }: Landing) {
+export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, receiving, bounceIfEmpty, scattered, divingCatch = false, accurate = false, passerId }: Landing) {
   const { state } = ctx;
   if (kickoff && receiving && !inHalf(receiving, square)) {
     state.ball = { square: null, carried: false };
@@ -88,16 +98,19 @@ export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, rece
   }
   state.ball = { square, carried: false };
   if (divingCatch && divingCatchers(state, square).length > 0) {
-    ctx.push({ type: "DivingCatch", square: { ...square }, landing: { kickoff, receiving, scattered, accurate }, stage: "first" });
+    ctx.push({ type: "DivingCatch", square: { ...square }, landing: { kickoff, receiving, scattered, accurate, ...(passerId ? { passerId } : {}) }, stage: "first" });
     return;
   }
   const player = playerAt(state, square);
   if (player?.status === "standing") {
-    ctx.push({ type: "Catch", playerId: player.id, kickoff, scattered, stage: "check", ...(accurate ? { accurate } : {}) });
+    ctx.push({ type: "Catch", playerId: player.id, kickoff, scattered, stage: "check", ...(accurate ? { accurate } : {}), ...passCatch(passerId, accurate) });
   } else if (player || bounceIfEmpty) {
     ctx.push({ type: "Bounce", from: square, kickoff, receiving });
   }
 }
+
+/** A thrown pass being caught: who threw it, and whether it is a completion if a team-mate catches it in the target square. */
+export const passCatch = (passerId: string | undefined, completion: boolean) => (passerId ? { passerId, ...(completion ? { completion } : {}) } : {});
 
 /** The player stands in the opponents' end zone holding the ball. */
 export function inScoringPosition(state: GameState, player: PlayerState): boolean {
@@ -118,6 +131,7 @@ export function checkTouchdown(ctx: Ctx, player: PlayerState) {
   // A touchdown scored in the opponent's turn uses up one of the scoring team's turns.
   if (player.side !== state.activeSide) state.teams[player.side].turn += 1;
   state.touchdown = player.side;
+  player.spp.touchdowns += 1;
   ctx.emit({ type: "Touchdown", side: player.side, playerId: player.id });
 }
 

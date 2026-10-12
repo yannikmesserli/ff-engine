@@ -13,6 +13,7 @@ import {
   injuryOutcome,
   isStalling,
   legalMoves,
+  starPlayerPoints,
   step,
   tackleZones,
   throwInDirection,
@@ -206,7 +207,7 @@ describe("engine", () => {
       expect(s.ball).toEqual({ square: { x: 4, y: 2 }, carried: false });
       expect(s.activeSide).toBe("home");
       expect(s.teams.home.turn).toBe(1);
-      expect(types(s)).toEqual(["START_ACTION", "END_TURN"]);
+      expect(types(s)).toEqual(["START_ACTION", "END_TURN", "CONCEDE"]);
     });
 
     it("gives a touchback when the ball leaves the receiving half", () => {
@@ -3040,7 +3041,7 @@ describe("engine", () => {
       s = apply(s, roll(3), { type: "DECLINE_REROLL" });
       expect(s.players["home-1"]).toMatchObject({ status: "prone", activated: true });
       expect(s.activeSide).toBe("home");
-      expect(types(s)).toEqual(["START_ACTION", "END_TURN"]);
+      expect(types(s)).toEqual(["START_ACTION", "END_TURN", "CONCEDE"]);
     });
 
     it("turns stunned players face up at the start of their turn, but they cannot act in it", () => {
@@ -3847,14 +3848,21 @@ describe("engine", () => {
       expect([s.finished, s.log.at(-1)]).toEqual([true, { type: "GameEnded", winner: null }]);
     });
 
-    it("on a draw: a third half kicked off by the first-half kicker, without new team re-rolls; a draw then stands", () => {
+    it("on a draw: a third half kicked off by the first-half kicker, without new team re-rolls; then a penalty shootout", () => {
       let s = toEndOfSecondHalf(true);
       expect(s.log).toContainEqual({ type: "HalfStarted", half: 3 });
       expect([s.half, s.finished, top(s)]).toEqual([3, false, { type: "Setup", side: "away" }]);
       expect([s.teams.home.turn, s.teams.home.rerolls, s.teams.away.rerolls]).toEqual([0, 0, 1]);
       s = endTurnsUntilSetup(kickOff(s, "away", { x: 5, y: 1 }));
       expect(s.log.filter((e) => e.type === "HalfEnded").map((e) => e.type === "HalfEnded" && e.half)).toEqual([1, 2, 3]);
-      expect([s.finished, s.log.at(-1)]).toEqual([true, { type: "GameEnded", winner: null }]);
+      expect(find(s, "ROLL")?.reason).toBe("Penalty shootout (home, away)");
+      // Ties score nothing; the shootout ends once 5 penalties are scored (here 3-2 to away).
+      s = apply(s, roll(4, 4), roll(6, 1), roll(1, 6), roll(2, 5), roll(5, 3), roll(1, 2));
+      expect(s.result).toMatchObject({ penalties: { home: 2, away: 3 }, winner: "away" });
+      expect(s.log.filter((e) => e.type === "PenaltyKick")).toHaveLength(6);
+      // The penalty winners roll for Dedicated Fans as winners.
+      s = apply(s, roll(6), roll(6));
+      expect([s.finished, s.log.at(-1)]).toEqual([true, { type: "GameEnded", winner: "away" }]);
     });
 
     it("keeps an unused Leader re-roll, without a new one", () => {
@@ -3872,7 +3880,8 @@ describe("engine", () => {
         c.overtime = true;
         c.teams.home.score = 1;
       });
-      expect(endTurnsUntilSetup(kickOff(s, "home", { x: 20, y: 1 })).log.at(-1)).toEqual({ type: "GameEnded", winner: "home" });
+      const ended = apply(endTurnsUntilSetup(kickOff(s, "home", { x: 20, y: 1 })), roll(6), roll(6));
+      expect(ended.log.at(-1)).toEqual({ type: "GameEnded", winner: "home" });
     });
   });
 
@@ -3911,6 +3920,147 @@ describe("engine", () => {
         { x: -1, y: -1 },
         { x: 0, y: -1 },
       ]);
+    });
+  });
+
+  describe("Star Player Points", () => {
+    /** home-5 at (8,5) walks to the ball at (4,2) and picks it up for a pass. */
+    const pickUp = (s: GameState) => apply(s, declare("home-5", "pass"), ...move({ x: 7, y: 4 }, { x: 6, y: 3 }, { x: 5, y: 2 }, { x: 4, y: 2 }), roll(3));
+    const spp = (s: GameState, id: string) => starPlayerPoints(s, s.players[id]!);
+    /** home-2 knocks away-2 down (POW), the armour breaks and the injury roll is `injury`. */
+    const casualty = (s: GameState) =>
+      apply(s, declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(6), { type: "CHOOSE_BLOCK_DIE", index: 0 }, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(5, 4), roll(6, 5));
+
+    it("an accurate pass caught by a team-mate is a completion (1); an inaccurate one is not", () => {
+      const s = apply(pickUp(toFirstTurn()), { type: "THROW", square: { x: 10, y: 4 } }, roll(5), roll(3));
+      expect([s.players["home-5"]!.spp.completions, spp(s, "home-5"), spp(s, "home-4")]).toEqual([1, 1, 0]);
+      // Scatters S, N, S onto home-4, who catches it.
+      const inaccurate = apply(pickUp(toFirstTurn()), { type: "THROW", square: { x: 10, y: 3 } }, roll(3), { type: "DECLINE_REROLL" }, roll(5, 1, 5), roll(4));
+      expect(inaccurate.ball).toEqual({ square: { x: 10, y: 4 }, carried: true });
+      expect(spp(inaccurate, "home-5")).toBe(0);
+    });
+
+    it("Perfect Passing: completions earn 2; Dazzling Catching: any caught pass earns the catcher 1", () => {
+      const prayed = edit(toFirstTurn(), (c) => void (c.teams.home.prayers = ["perfect-passing", "dazzling-catching"]));
+      const s = apply(pickUp(prayed), { type: "THROW", square: { x: 10, y: 4 } }, roll(5), roll(3));
+      expect([spp(s, "home-5"), spp(s, "home-4")]).toEqual([2, 1]);
+    });
+
+    it("an interception earns 2", () => {
+      const s = apply(pickUp(place(toFirstTurn(), { "away-4": { x: 9, y: 3 } })), { type: "THROW", square: { x: 12, y: 4 } }, roll(6), { type: "SELECT_PLAYERS", playerIds: ["away-4"] }, roll(6));
+      expect([s.players["away-4"]!.spp.interceptions, spp(s, "away-4")]).toEqual([1, 2]);
+    });
+
+    it("a touchdown earns 3, 2 for Brawlin' Brutes", () => {
+      const scoring = edit(place(toFirstTurn(), { "home-6": { x: 24, y: 3 } }), (c) => (c.ball = { square: { x: 24, y: 3 }, carried: true }));
+      const s = apply(scoring, startMove("home-6"), ...move({ x: 25, y: 3 }));
+      expect([s.players["home-6"]!.spp.touchdowns, spp(s, "home-6")]).toEqual([1, 3]);
+      expect(spp(edit(s, (c) => void (c.teams.home.specialRules = ["Brawlin' Brutes"])), "home-6")).toBe(2);
+    });
+
+    it("a casualty from a block earns the blocker 2 (3 for Brawlin' Brutes), even if the apothecary heals it", () => {
+      const s = apply(casualty(toFirstTurn()), roll(1, 1));
+      expect(s.players["away-2"]!.at).toBe("cas");
+      expect([s.players["home-2"]!.spp.casualties, spp(s, "home-2")]).toEqual([1, 2]);
+      expect(spp(edit(s, (c) => void (c.teams.home.specialRules = ["Brawlin' Brutes"])), "home-2")).toBe(3);
+      const healed = apply(casualty(edit(toFirstTurn(), (c) => void (c.teams.away.apothecaries = 1))), roll(1, 1), { type: "USE_APOTHECARY", use: true });
+      expect([healed.players["away-2"]!.at, spp(healed, "home-2")]).toEqual(["reserves", 2]);
+    });
+
+    it("the defender earns it when the attacker falls on their own block; a KO earns nothing", () => {
+      const s = apply(toFirstTurn(), declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(1), { type: "CHOOSE_BLOCK_DIE", index: 0 }, roll(5, 4), roll(6, 5), roll(1, 1));
+      expect(spp(s, "away-2")).toBe(2);
+      const ko = apply(toFirstTurn(), declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(6), { type: "CHOOSE_BLOCK_DIE", index: 0 }, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(5, 4), roll(4, 4));
+      expect([ko.players["away-2"]!.at, spp(ko, "home-2")]).toEqual(["ko", 0]);
+    });
+
+    it("a casualty from a foul earns nothing, unless the team has Fouling Frenzy", () => {
+      const fouling = (prayers: GameState["teams"]["home"]["prayers"]) =>
+        edit(place(toFirstTurn(), { "away-1": { x: 20, y: 2 }, "home-4": { x: 19, y: 2 } }), (c) => {
+          c.players["away-1"]!.status = "prone";
+          c.teams.home.prayers = prayers;
+        });
+      const foul = (s: GameState) => apply(s, declare("home-4", "foul"), { type: "FOUL", targetId: "away-1" }, roll(5, 4), roll(6, 5), roll(1, 1));
+      expect(foul(fouling([])).players["away-1"]!.at).toBe("cas");
+      expect(spp(foul(fouling([])), "home-4")).toBe(0);
+      expect(spp(foul(fouling(["fouling-frenzy"])), "home-4")).toBe(2);
+    });
+
+    it("Violent Innovator: a casualty from a Stab earns Star Player Points", () => {
+      const stabbing = (skills: string[]) => edit(toFirstTurn(), (c) => void (c.players["home-2"]!.skills = skills));
+      const stab = (s: GameState) => apply(s, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(5, 4), roll(6, 5), roll(1, 1));
+      expect(stab(stabbing(["Stab"])).players["away-2"]!.at).toBe("cas");
+      expect(spp(stab(stabbing(["Stab"])), "home-2")).toBe(0);
+      expect(spp(stab(stabbing(["Stab", "Violent Innovator"])), "home-2")).toBe(2);
+    });
+  });
+
+  describe("end of the game", () => {
+    /** Both teams set up (the kicking one first) and the ball comes down in the receiving half; turns can start. */
+    const kickOff = (s: GameState, kicking: Side, ball: Square) =>
+      apply(s, ...setupActions(kicking), ...setupActions(kicking === "home" ? "away" : "home"), { type: "PLACE_BALL", square: ball }, roll(7, 1), QUIET_EVENT, roll(5));
+    /** Both halves played out (with `change` made before the second one): the end-of-game rolls are due. */
+    const spp = (s: GameState, id: string) => starPlayerPoints(s, s.players[id]!);
+    const toEnd = (change: (c: GameState) => void = () => {}) => endTurnsUntilSetup(kickOff(edit(endTurnsUntilSetup(toFirstTurn()), change), "home", { x: 20, y: 1 }));
+
+    it("names an MVP in each team, pays winnings and rolls for Dedicated Fans", () => {
+      let s = toEnd((c) => {
+        c.teams.home.score = 1;
+        c.teams.home.fanFactor = 3;
+        c.teams.away.fanFactor = 4;
+        c.teams.away.stalled = true;
+      });
+      expect(s.result).toMatchObject({ winner: "home", winnings: { home: 55_000, away: 35_000 } });
+      expect(s.result!.mvps.map((id) => s.players[id]!.side)).toEqual(["home", "away"]);
+      expect(spp(s, s.result!.mvps[0]!)).toBe(4);
+      // The winners gain a fan on 2+ (their Dedicated Fans), the losers lose one below 2.
+      expect(find(s, "ROLL")).toMatchObject({ side: "home", reason: "Dedicated Fans (Home won): +1 on 2+" });
+      s = apply(s, roll(2), roll(1));
+      expect(s.result!.dedicatedFans).toEqual({ home: 1, away: -1 });
+      expect([s.finished, s.log.at(-1)]).toEqual([true, { type: "GameEnded", winner: "home" }]);
+    });
+
+    it("a draw: no Dedicated Fans rolls", () => {
+      const s = toEnd();
+      expect([s.finished, s.result!.dedicatedFans, s.result!.winner]).toEqual([true, { home: 0, away: 0 }, null]);
+    });
+
+    it("conceding in a turn: the winners get 2 touchdowns and 2 MVPs; the conceding team loses its SPP, winnings, fans and maybe players", () => {
+      let s = edit(toFirstTurn(), (c) => {
+        c.players["home-3"]!.spp.touchdowns = 1;
+        c.players["home-1"]!.advancements = 3;
+        c.teams.home.fanFactor = 3;
+        c.teams.away.fanFactor = 4;
+      });
+      expect(find(s, "CONCEDE")).toEqual({ type: "CONCEDE", side: "home", legal: false });
+      s = apply(s, { type: "CONCEDE" });
+      expect(s.log).toContainEqual({ type: "Conceded", side: "home", legal: false });
+      expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", max: 1, min: 1 });
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-7"] }, { type: "SELECT_PLAYERS", playerIds: ["away-7"] });
+      expect([s.teams.home.score, s.teams.away.score, s.players["away-7"]!.spp.touchdowns, s.players["home-3"]!.spp.touchdowns]).toEqual([0, 2, 2, 0]);
+      expect(s.result!.mvps.map((id) => s.players[id]!.side)).toEqual(["away", "away"]);
+      expect(s.result!.winnings).toEqual({ home: 0, away: 100_000 });
+      // The conceding team rolls a D3 and loses that many fans (keeping 1).
+      expect(find(s, "ROLL")).toMatchObject({ side: "home", dice: [{ kind: "d3", count: 1 }] });
+      s = apply(s, roll(3), roll(6));
+      expect(s.result!.dedicatedFans).toEqual({ home: -1, away: 1 });
+      // home-1, with 3 advancements, leaves on 1-3.
+      expect(find(s, "ROLL")?.reason).toBe("Player loss: Home 1 leaves on 1-3");
+      s = apply(s, roll(3));
+      expect([s.result!.leaving, s.finished, s.log.at(-1)]).toEqual([["home-1"], true, { type: "GameEnded", winner: "away" }]);
+    });
+
+    it("conceding during setup with fewer than 3 players able to play is legal: no penalty", () => {
+      const setup = edit(toSetup(), (c) => {
+        for (let i = 3; i <= 11; i++) c.players[`away-${i}`]!.at = "cas";
+        c.teams.home.score = 3;
+      });
+      expect(find(setup, "CONCEDE")).toEqual({ type: "CONCEDE", side: "away", legal: true });
+      const s = apply(setup, { type: "CONCEDE" }, roll(6), roll(6));
+      expect(s.result).toMatchObject({ conceded: "away", concededLegally: true, leaving: [] });
+      expect(s.result!.mvps.map((id) => s.players[id]!.side)).toEqual(["home", "away"]);
+      expect(s.result!.winnings.away).toBeGreaterThan(0);
+      expect(s.finished).toBe(true);
     });
   });
 });

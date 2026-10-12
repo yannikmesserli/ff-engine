@@ -158,6 +158,7 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
           keywords: position.keywords,
           primary: position.normal,
           nigglingInjuries: p.injuries.filter((i) => i === "niggling").length,
+          advancements: p.skills.length + Object.values(p.improvements).reduce((sum, n) => sum + (n ?? 0), 0),
         };
       }), ...journeymen(roster, team)],
   };

@@ -306,14 +306,18 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         if (occupant && occupant.id !== thrown.id) {
           // The player landed on is knocked down; the thrown player scatters on and will not land on their feet.
           proc.autoFail = true;
-          // Lethal Flight: +1 to the armour roll of an opponent landed on if that breaks it, otherwise to the injury roll.
+          // Lethal Flight: +1 to the armour roll of an opponent landed on if that breaks it, otherwise to the injury roll,
+          // and Star Player Points for a casualty. Violent Innovator: the kicker of a kicked team-mate earns them too.
           const lethal = occupant.side !== thrown.side && hasSkill(thrown, "Lethal Flight");
+          const violent = occupant.side !== thrower.side && !!proc.kicked && hasSkill(thrower, "Violent Innovator");
+          const sppTo = [...(lethal ? [thrown.id] : []), ...(violent ? [thrower.id] : [])];
           ctx.push({
             type: "KnockDown",
             playerId: occupant.id,
             turnover: occupant.side === thrower.side,
             stage: "fall",
             ...(lethal ? { mightyBlow: { playerId: thrown.id, bonus: 1, skill: "Lethal Flight" } } : {}),
+            ...(sppTo.length > 0 ? { sppTo } : {}),
           });
           proc.stage = "bounce";
           return "continue";
@@ -336,6 +340,9 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
           return "done";
         }
         const { ball } = state;
+        // A landing earns the thrown player Star Player Points, and a superb throw is a completion for the thrower.
+        thrown.spp.landings += 1;
+        if (proc.result === "accurate") thrower.spp.completions += 1;
         // Landing on a loose ball does not catch it: it bounces.
         if (ball.square && !ball.carried && sameSquare(ball.square, proc.at!)) {
           ctx.push({ type: "Bounce", from: { ...proc.at! }, kickoff: false, receiving: null });

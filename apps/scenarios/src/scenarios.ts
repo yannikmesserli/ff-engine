@@ -1528,4 +1528,57 @@ export const SCENARIOS: Scenario[] = [
     seed: 73,
     actions: [roll(1, 1), roll(3, 4)],
   },
+  {
+    id: "end-of-game",
+    title: "End of the game: Star Player Points, a concession, MVPs, winnings and fans",
+    instructions: [
+      "Home's first turn: Klaus (#2) has just blocked Grishnak (#1) into the reserves as a casualty: 2 Star Player Points.",
+      "Click \"Concede\" and confirm: conceding during a turn is not legal, so Gouged Eye win 2-0. Click two of their players to name the scorers of the awarded touchdowns.",
+      "The MVPs (both for Gouged Eye) and the winnings are worked out, then roll Dedicated Fans: a D3 for the Altdorf Pros, who lose that many (keeping 1), a D6 for Gouged Eye.",
+      "Wilhelm (#1, 3 advancements) rolls to stay: he leaves on 1-3. The summary lists each team's Star Player Points; \"Download team\" saves the updated team file.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      dedicatedFans: 3,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Wilhelm", position: "Human Lineman", skills: ["Dodge", "Fend"], improvements: { av: 1 } },
+        { number: 2, name: "Klaus", position: "Human Blitzer" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Hans", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      dedicatedFans: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 79,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 12, y: 5 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 9 }, 4: { x: 5, y: 7 } },
+        away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 5 }, 3: { x: 13, y: 9 } },
+        ball: { x: 5, y: 7 },
+      }),
+      // Klaus knocks Grishnak down; the armour breaks (11), the injury roll (10) and the casualty roll make him Badly Hurt.
+      { type: "START_ACTION", playerId: "home-2", action: "block" },
+      { type: "BLOCK", targetId: "away-1" },
+      roll(6),
+      { type: "CHOOSE_BLOCK_DIE", index: 0 },
+      { type: "PUSH", square: { x: 14, y: 7 } },
+      { type: "FOLLOW_UP", follow: false },
+      roll(6, 5),
+      roll(6, 4),
+      roll(1, 1),
+    ],
+  },
 ];

@@ -67,15 +67,34 @@ const { state: next, events } = step(state, { type: "ROLL" });
   skill the coach picks), Treacherous Trapdoor (for both teams: a player moving, pushed or following up into (6,1) or
   (19,13) falls through on a 1, an injury roll as for the crowd, the ball bouncing from there, a turnover for the
   moving team).
-  The four that only award Star Player Points (Perfect Passing, Dazzling Catching, Fan Interaction, Fouling Frenzy) have
-  no effect: the engine does not track them.
+  The four Star Player Point prayers: Perfect Passing (completions earn 2), Dazzling Catching (any pass a player of the
+  team catches earns 1), Fan Interaction (a casualty from a crowd push, or a trapdoor the player was pushed into, earns
+  the attacker 2) and Fouling Frenzy (a casualty from a foul earns the fouler 2).
 - Pre-game: fan factor (dedicated fans + D3), weather (2D6), coin toss (home calls). Journeymen: a team with fewer
   than 11 players available gets free ones up to 11 from its lineman position, with Loner (4+) (team file option).
 - Setup checks: 11 players (or all available), 3 on the line of scrimmage in the centre field, at most 2 per wide zone.
   Built-in formations are available as one-click setups.
 - Overtime (the `overtime` game option, off by default, for cup games): a draw after the second half is played on in
   a third half of 8 turns per team, kicked off by the team that kicked off the first half, without new team re-rolls;
-  a touchdown does not end it early, and a draw after it stands. The hot-seat playground has a checkbox for it.
+  a touchdown does not end it early, and a draw after it goes to a penalty shootout (each round both coaches roll a
+  D6, the higher one scores, a tie scores nothing, until 5 penalties are scored). The hot-seat playground has a
+  checkbox for it.
+- Star Player Points, counted per player during the game: touchdown 3, casualty 2, completion (an accurate pass
+  caught by a team-mate in the target square, or a superb team-mate throw that lands) 1, interception 2, MVP 4, and 1
+  for a thrown player landing on their feet. Brawlin' Brutes teams: touchdowns 2, casualties 3. A casualty counts when
+  the injury roll gives it, whatever the apothecary or Regeneration does after, and only for an opponent's block
+  (the attacker's, or the defender's when the attacker falls), an Arm Bar, the prayers above, or Violent Innovator.
+- End of the game: MVP (a random player of each team, not killed or raised during the game), winnings ((half the fan
+  attendance + touchdowns + 1 for not stalling) x 10,000 gp), Dedicated Fans (the winners gain one on a D6 of at least
+  their Dedicated Fans, the losers lose one below theirs, nothing on a draw).
+- Concession: during their own setup or turn, a coach may concede. The opponents win at least 2-0 (their coach names
+  the scorers of the touchdowns awarded) and the conceding team loses the Star Player Points of the game. It is legal
+  only in setup, with fewer than 3 players able to play; otherwise the conceding team also gets no MVP (the winners
+  get two), no winnings (the winners get the whole attendance), loses a D3 Dedicated Fans (keeping 1), and each of its
+  players with 3 or more advancements leaves the team on a D6 of 1-3.
+- After the game, `teamAfterGame` (`@bb/data`) writes the result into the team file: Star Player Points, casualties
+  (missing the next game, Niggling and Lasting Injuries, the dead and departed removed), raised players, winnings and
+  Dedicated Fans. The end-of-game summary has a "Download team" button for it.
 - Kick-off: D8 + D6 deviation, all 11 kick-off events (Solid Defence, High Kick, Quick Snap, Charge, Weather
   Change with wind gusts, Dodgy Snack, Pitch Invasion...), resolved before the ball lands; touchback.
 - Ball: bounce, throw-in (BB2025 template, D3 in corners, 2D6 counting the starting square), catch (+1 harder
@@ -232,12 +251,15 @@ const { state: next, events } = step(state, { type: "ROLL" });
   without an armour roll, and the blocker is knocked down too (no armour or injury modifiers), a turnover only if the
   blocker held the ball.
 - Lethal Flight: an opponent the thrown player lands on (or bounces onto) gets +1 against them on the armour roll if
-  that breaks it, otherwise on the injury roll. Its Star Player Points are not tracked.
+  that breaks it, otherwise on the injury roll, and a casualty earns the thrown player Star Player Points.
 - Multiple Block: in a Block action (not a Blitz), the player may block two adjacent standing opponents at once, at
   -2 ST each (at least 1); neither target assists against the other block. The blocks are prepared one after the
   other, from Foul Appearance (a failure only drops that block) to the choice of the die, then both are resolved in the
   same order: no follow-up, no Frenzy, and nobody is pushed into a square where a target stood. Pile Driver (on either
   target) and Hit and Run may follow.
+- Violent Innovator: a casualty an opponent suffers from the player's special action earns them Star Player Points:
+  Stab, Chainsaw, Breathe Fire, a bomb, a kicked team-mate landing on them (Kick Team-mate), a Ball & Chain hit on a
+  player already down.
 - Stab: instead of a block (a Blitz pays the square and ends there), an unmodified armour roll against the opponent
   (no Mighty Blow or Claws); if it breaks, they are placed prone and roll for injury without modifiers. No turnover.
 - Prehensile Tail: -1 to the Dodge and Jump rolls of an opponent leaving the player's tackle zone (per tail).
@@ -349,7 +371,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
   without bouncing, in the square they leave on their next step, and it is not a turnover. Not with My Ball.
 
-Not yet: Star Player Points (so Violent Innovator does nothing), the pre-game shop, star players, the golden-goal overtime
+Not yet: the pre-game shop (and so spending winnings and Star Player Points), star players, the golden-goal overtime
 variant.
 
 The playground accepts `?seed=42` to replay the same dice.

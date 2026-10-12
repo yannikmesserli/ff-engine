@@ -173,10 +173,14 @@ export const TRAPDOORS = [
 /** A player entering a trapdoor falls through on a 1. */
 export const TRAPDOOR_TARGET = 2;
 
-/** The Trapdoor roll due for a player who just entered `square`, if it is a trapdoor and a team prayed for them. */
-export function trapdoor(state: GameState, player: PlayerState, square: Square): Procedure[] {
+/**
+ * The Trapdoor roll due for a player who just entered `square`, if it is a trapdoor and a team prayed for them.
+ * `sppTo`: who earns Star Player Points if the fall is a casualty (a pushed player, with Fan Interaction).
+ */
+export function trapdoor(state: GameState, player: PlayerState, square: Square, sppTo: string[] = []): Procedure[] {
   if (!Object.values(state.teams).some((t) => t.prayers.includes("treacherous-trapdoor"))) return [];
-  return TRAPDOORS.some((t) => sameSquare(t, square)) ? [{ type: "Trapdoor", playerId: player.id, stage: "roll" }] : [];
+  if (!TRAPDOORS.some((t) => sameSquare(t, square))) return [];
+  return [{ type: "Trapdoor", playerId: player.id, stage: "roll", ...(sppTo.length > 0 ? { sppTo } : {}) }];
 }
 
 /**
@@ -214,7 +218,7 @@ export const Trapdoor: Handler<P<"Trapdoor">> = {
       state.ball = { square: { ...square }, carried: false };
       ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
     }
-    injure(ctx, player, a! + b!, { crowd: true });
+    injure(ctx, player, a! + b!, { crowd: true, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
     return "done";
   },
   actions(state, proc) {

@@ -58,6 +58,8 @@ export const Stalling: Handler<P<"Stalling">> = {
   step(ctx, proc, action) {
     const player = getPlayer(ctx, proc.playerId);
     const turn = ctx.state.teams[player.side].turn;
+    // Caught stalling: the team loses the winnings bonus for not stalling.
+    ctx.state.teams[player.side].stalled = true;
     if (turn > LAST_STALLING_TURN) {
       ctx.emit({ type: "RockThrown", playerId: player.id, roll: null, hit: false });
       return "done";

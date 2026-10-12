@@ -7,6 +7,7 @@ import {
   getAvailableActions,
   leaderReroll,
   skillName,
+  starPlayerPoints,
   step,
   type Action,
   type ActionTemplate,
@@ -15,7 +16,7 @@ import {
   type PlayerState,
   type Side,
 } from "@bb/engine";
-import { resolveTeam, skillDescription } from "@bb/data";
+import { resolveTeam, skillDescription, teamAfterGame } from "@bb/data";
 import { ActionPanel } from "./ActionPanel";
 import { Board, type ActionMenuState, type Aiming } from "./Board";
 import { DiceRolls } from "./Dice";
@@ -71,7 +72,9 @@ export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, overtime =
     }
   }, [home, away, seed, overtime, actions]);
   if ("error" in initial) return <div className="bb-game bb-error">{initial.error}</div>;
-  return <Game key={JSON.stringify([home, away, seed, overtime, actions])} initial={initial.state} assets={assetsUrl} onChange={onChange} online={online} />;
+  return (
+    <Game key={JSON.stringify([home, away, seed, overtime, actions])} initial={initial.state} teams={{ home, away }} assets={assetsUrl} onChange={onChange} online={online} />
+  );
 }
 
 /** The state after applying the batches of actions in order; a batch that is not legal is skipped as a whole. */
@@ -98,7 +101,7 @@ function useReplay(initial: GameState, batches: Action[][] | undefined): GameSta
 }
 
 /** The game screen: owns the state history (for undo) and the board's interaction state. */
-function Game(props: { initial: GameState; assets: string; onChange?(s: GameState): void; online?: OnlineControl }) {
+function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets: string; onChange?(s: GameState): void; online?: OnlineControl }) {
   const { initial, assets, onChange, online } = props;
   const [history, setHistory] = useState<GameState[]>([initial]);
   const [error, setError] = useState<string | null>(null);
@@ -185,6 +188,7 @@ function Game(props: { initial: GameState; assets: string; onChange?(s: GameStat
       />
       <div className="bb-bottom">
         <div className="bb-left">
+          {state.finished && state.result && <GameSummary state={state} teams={props.teams} />}
           <ActionPanel
             state={state}
             assets={assets}
@@ -241,6 +245,80 @@ function TeamBanner({ state, side, assets }: { state: GameState; side: Side; ass
           {leaderReroll(state, side) ? " +1 Leader" : ""}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** What a player did for their Star Player Points, e.g. "2 TD, 1 CAS, MVP". */
+function sppDetails(player: PlayerState): string {
+  const { spp } = player;
+  const parts: Array<[number, string]> = [
+    [spp.touchdowns, "TD"],
+    [spp.casualties, "CAS"],
+    [spp.completions, "CP"],
+    [spp.interceptions, "INT"],
+    [spp.landings, "landing"],
+    [spp.catches, "catch"],
+    [spp.mvp, "MVP"],
+  ];
+  return parts
+    .filter(([n]) => n > 0)
+    .map(([n, label]) => (n === 1 ? label : `${n} ${label}`))
+    .join(", ");
+}
+
+/** Save the team file after the game, with its Star Player Points, injuries, winnings and fans. */
+function downloadTeam(state: GameState, side: Side, team: unknown) {
+  const file = teamAfterGame(team, state, side);
+  const url = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: "application/json" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${file.name}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+/** The end of the game: winner, then per team its winnings, Dedicated Fans, Star Player Points and lost players. */
+function GameSummary({ state, teams }: { state: GameState; teams: Record<Side, unknown> }) {
+  const result = state.result!;
+  const { penalties } = result;
+  return (
+    <div className="bb-panel bb-summary">
+      <div>
+        <strong>{result.winner ? `${state.teams[result.winner].name} win` : "A draw"}</strong>
+        {result.conceded && ` (${state.teams[result.conceded].name} conceded)`}
+        {penalties && ` · penalties ${penalties.home}-${penalties.away}`}
+      </div>
+      {(["home", "away"] as const).map((side) => {
+        const team = state.teams[side];
+        const earners = Object.values(state.players)
+          .filter((p) => p.side === side && starPlayerPoints(state, p) > 0)
+          .sort((a, b) => starPlayerPoints(state, b) - starPlayerPoints(state, a));
+        const fans = result.dedicatedFans[side];
+        return (
+          <div key={side} className={`bb-summary-team bb-side-${side}`}>
+            <div>
+              <strong>{team.name}</strong>: {result.winnings[side].toLocaleString("en")} gp
+              {fans !== 0 && ` · Dedicated Fans ${fans > 0 ? "+" : ""}${fans}`}
+              <button className="bb-link" onClick={() => downloadTeam(state, side, teams[side])}>
+                Download team
+              </button>
+            </div>
+            {earners.map((p) => (
+              <div key={p.id}>
+                {p.name}: {starPlayerPoints(state, p)} SPP ({sppDetails(p)})
+              </div>
+            ))}
+            {result.leaving
+              .filter((id) => state.players[id]!.side === side)
+              .map((id) => (
+                <div key={id} className="bb-casualty">
+                  {state.players[id]!.name} leaves the team
+                </div>
+              ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -10,7 +10,7 @@ export const MIN_ON_LINE_OF_SCRIMMAGE = 3;
 export const MAX_PER_WIDE_ZONE = 2;
 
 /** Players who may be set up this drive: not KO'd, injured, sent off or exhausted. */
-const availablePlayers = (state: GameState, side: Side) =>
+export const availablePlayers = (state: GameState, side: Side) =>
   teamPlayers(state, side).filter((p) => p.at !== "ko" && p.at !== "cas" && p.at !== "banned" && !p.exhausted);
 
 /** Why the current setup of `side` is illegal; empty when it can be confirmed. */

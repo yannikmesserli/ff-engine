@@ -2,7 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { Action, Casualty, Characteristic, DiceSpec, InjuryOutcome, PlayerState, Procedure, TeamState } from "../types";
 import { hasSkill } from "../skills";
 import { teamPlayers } from "../pitch";
-import { createPlayer, getPlayer, inducementsLeft, spendInducement } from "./helpers";
+import { createPlayer, earnSpp, getPlayer, inducementsLeft, spendInducement } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -91,15 +91,20 @@ export interface InjuryCause {
   bitten?: boolean;
   /** A Stunned result counts as KO'd (a fumbled Kick Team-mate). */
   stunnedIsKo?: boolean;
+  /** Opponents who earn Star Player Points if this is a casualty (whatever the apothecary or Regeneration does after). */
+  sppTo?: string[];
 }
 
 /** Resolve an injury roll total on `player`: emits the table result and pushes the casualty / apothecary follow-up. */
-export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = false, attackerId, bitten = false, stunnedIsKo = false }: InjuryCause = {}) {
+export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = false, attackerId, bitten = false, stunnedIsKo = false, sppTo = [] }: InjuryCause = {}) {
   const rolled = injuryOutcome(player, total);
   // Ball & Chain: a Stunned result is always a KO.
   const stunnedKo = stunnedIsKo || hasSkill(player, "Ball & Chain");
   const outcome = bitten && rolled === "casualty" ? "badly-hurt" : stunnedKo && rolled === "stunned" ? "ko" : rolled;
   ctx.emit({ type: "PlayerInjured", playerId: player.id, result: outcome === "stunned" ? "stunned" : outcome === "ko" ? "ko" : "cas" });
+  if (outcome === "casualty" || outcome === "badly-hurt") {
+    for (const id of new Set(sppTo)) if (ctx.state.players[id]?.side !== player.side) earnSpp(ctx.state, id, "casualties");
+  }
   ctx.push({
     type: "Injury",
     playerId: player.id,
@@ -277,7 +282,7 @@ function raiseInfected(ctx: Ctx, dead: PlayerState, attacker: PlayerState) {
   if (!hasSkill(attacker, "Plague Ridden") || attacker.side === dead.side || !team.raisePosition || team.raisedDead > 0) return;
   if (dead.keywords.includes("big guy") || UNRAISABLE_SKILLS.some((s) => hasSkill(dead, s))) return;
   const nr = 1 + Math.max(...teamPlayers(state, attacker.side).map((p) => p.nr));
-  const raised = createPlayer(attacker.side, { ...team.raisePosition, nr, name: dead.name });
+  const raised = { ...createPlayer(attacker.side, { ...team.raisePosition, nr, name: dead.name }), raised: true };
   state.players[raised.id] = raised;
   team.raisedDead += 1;
   ctx.emit({ type: "PlayerRaised", playerId: raised.id, fromId: dead.id });

@@ -161,10 +161,12 @@ const pushStage = (state: GameState, proc: P<"Block">) => {
 /**
  * The attacker's Mighty Blow, Claws and Plague Ridden, for a knock-down of an opponent caused by the block. Knocking
  * down a standing team-mate (Ball & Chain) is a turnover. Saboteur: an opponent with the skill and a tackle zone,
- * knocked down by a Block or Blitz action (not a Ball & Chain move), may take the attacker down too.
+ * knocked down by a Block or Blitz action (not a Ball & Chain move), may take the attacker down too. A casualty earns
+ * the attacker Star Player Points, unless a Ball & Chain player hit a player already down (Violent Innovator: even then).
  */
 function knockDownDefender(proc: P<"Block">, attacker: PlayerState, defender: PlayerState): P<"KnockDown"> {
   const opponent = attacker.side !== defender.side;
+  const spp = opponent && (defender.status === "standing" || hasSkill(attacker, "Violent Innovator"));
   const bonus = opponent ? skillValue(attacker, "Mighty Blow", 1) : null;
   const saboteur = opponent && !proc.ballAndChain && hasSkill(defender, "Saboteur") && hasTackleZone(defender);
   return {
@@ -174,9 +176,19 @@ function knockDownDefender(proc: P<"Block">, attacker: PlayerState, defender: Pl
     stage: "fall",
     ...(bonus ? { mightyBlow: { playerId: attacker.id, bonus } } : {}),
     ...(opponent ? { blockerId: attacker.id } : {}),
+    ...(spp ? { sppTo: [attacker.id] } : {}),
     ...(saboteur ? { saboteurTargetId: attacker.id } : {}),
   };
 }
+
+/** The attacker knocked down by their own block: a casualty earns the defender Star Player Points. */
+const knockDownAttacker = (attacker: PlayerState, defender: PlayerState): P<"KnockDown"> => ({
+  type: "KnockDown",
+  playerId: attacker.id,
+  turnover: true,
+  stage: "fall",
+  ...(attacker.side !== defender.side ? { sppTo: [defender.id] } : {}),
+});
 
 /**
  * Frenzy: after a Push or a dodged Stumble, a second block against the same defender if both still stand next to each
@@ -227,7 +239,7 @@ function bothDown(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: P
   const attackerFalls = !hasSkill(attacker, "Block") && attacker.status === "standing";
   ctx.push(
     ...(defenderBlocks ? [] : [knockDownDefender(proc, attacker, defender)]),
-    ...(attackerFalls ? [{ type: "KnockDown" as const, playerId: attacker.id, turnover: true, stage: "fall" as const }] : []),
+    ...(attackerFalls ? [knockDownAttacker(attacker, defender)] : []),
   );
 }
 
@@ -449,10 +461,17 @@ function strips(state: GameState, proc: P<"Block">, attacker: PlayerState, defen
   return !(hasSkill(defender, "Sure Hands") && hasTackleZone(defender));
 }
 
-/** Move every pushed player, last of the chain first, carrying the ball along; off the pitch means the crowd. */
+/**
+ * Move every pushed player, last of the chain first, carrying the ball along; off the pitch means the crowd. Fan
+ * Interaction (a prayer): a casualty from the crowd, or from a trapdoor the player was pushed into, earns the attacker
+ * Star Player Points.
+ */
 function applyPushes(ctx: Ctx, proc: P<"Block">) {
   const { state } = ctx;
   const { ball } = state;
+  const attacker = state.players[proc.attackerId]!;
+  const sppTo = state.teams[attacker.side].prayers.includes("fan-interaction") ? [attacker.id] : [];
+  const spp = sppTo.length > 0 ? { sppTo } : {};
   for (const { playerId, to } of [...proc.chain].reverse()) {
     const p = state.players[playerId]!;
     const from = squareOf(ctx, p);
@@ -461,12 +480,12 @@ function applyPushes(ctx: Ctx, proc: P<"Block">) {
     if (to === null) {
       p.at = "reserves";
       if (carrying) state.ball = { square: null, carried: false };
-      ctx.push({ type: "Crowd", playerId, from: { ...from }, hadBall: carrying });
+      ctx.push({ type: "Crowd", playerId, from: { ...from }, hadBall: carrying, ...spp });
       continue;
     }
     p.at = { ...to };
     if (carrying) ball.square = { ...to };
-    ctx.push(...trapdoor(state, p, to));
+    ctx.push(...trapdoor(state, p, to, sppTo));
   }
 }
 
@@ -683,7 +702,7 @@ export const Block: Handler<P<"Block">> = {
         // An attacker already down (the first block of a Multiple Block) does not fall again.
         const down = attacker.status !== "standing";
         if (result === "attacker_down") {
-          if (!down) ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
+          if (!down) ctx.push(knockDownAttacker(attacker, defender));
           proc.stage = "end";
           return "continue";
         }
@@ -916,7 +935,7 @@ export const Crowd: Handler<P<"Crowd">> = {
     const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury (crowd)");
     // The throw-in waits for the casualty roll and the apothecary.
     if (proc.hadBall) ctx.push({ type: "ThrowIn", from: proc.from });
-    injure(ctx, player, a! + b!, { crowd: true });
+    injure(ctx, player, a! + b!, { crowd: true, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
     return "done";
   },
   actions(state, proc) {
@@ -1073,7 +1092,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury");
         // The ball bounces once the injury is resolved.
         if (proc.dropped) ctx.push(dropBall(victim, square));
-        injure(ctx, victim, a! + b!);
+        injure(ctx, victim, a! + b!, specialActionSpp(state, proc, victim));
         return "done";
       }
     }
@@ -1086,6 +1105,16 @@ export const Vomit: Handler<P<"Vomit">> = {
   },
 };
 
+/**
+ * Violent Innovator: a casualty an opponent suffers from the player's Stab, Chainsaw or Breathe Fire earns them Star
+ * Player Points (not Projectile Vomit).
+ */
+function specialActionSpp(state: GameState, proc: P<"Vomit">, victim: PlayerState): { sppTo?: string[] } {
+  const attacker = state.players[proc.attackerId]!;
+  const special = proc.skill === "Stab" || proc.skill === "Chainsaw" || proc.skill === "Breathe Fire";
+  return special && victim.side !== attacker.side && hasSkill(attacker, "Violent Innovator") ? { sppTo: [attacker.id] } : {};
+}
+
 /** The Breathe Fire result, from the roll kept by the check. */
 function breatheFire(ctx: Ctx, proc: P<"Vomit">, attacker: PlayerState): StepResult {
   const { state } = ctx;
@@ -1097,10 +1126,10 @@ function breatheFire(ctx: Ctx, proc: P<"Vomit">, attacker: PlayerState): StepRes
   if (!check.success) {
     ctx.push({ type: "KnockDown", playerId: attacker.id, turnover: true, stage: "fall" });
   } else if (natural === 6) {
-    ctx.push({ type: "KnockDown", playerId: defender.id, turnover: false, stage: "fall" });
+    ctx.push({ type: "KnockDown", playerId: defender.id, turnover: false, stage: "fall", ...specialActionSpp(state, proc, defender) });
   } else if (roll >= BREATHE_FIRE_PRONE && hasSkill(defender, "Ball & Chain")) {
     // Placed prone, a Ball & Chain player rolls for injury.
-    ctx.push({ type: "KnockDown", playerId: defender.id, turnover: false, stage: "fall" });
+    ctx.push({ type: "KnockDown", playerId: defender.id, turnover: false, stage: "fall", ...specialActionSpp(state, proc, defender) });
   } else if (roll >= BREATHE_FIRE_PRONE) {
     const square = squareOf(ctx, defender);
     const carrying = ballCarrier(state)?.id === defender.id;
