@@ -102,8 +102,9 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
 
 ## Public API (`src/index.ts`)
 
-- Game: `createGame(home, away, { seed, overtime })` (`overtime`: a draw after the second half goes to a third half), `getAvailableActions(state)`, `step(state, action)` returning
-  `{ state, events }`, `applyActions(state, actions)` (successive steps, e.g. to reach a prepared position),
+- Game: `createGame(home, away, { seed, overtime, shop })` (`overtime`: a draw after the second half goes to a third
+  half; `shop`: inducements are bought in the pre-game shop, with the teams' `teamValue`, `treasury` and
+  `inducementPrices`), `getAvailableActions(state)`, `step(state, action)` returning `{ state, events }`, `applyActions(state, actions)` (successive steps, e.g. to reach a prepared position),
   `IllegalActionError`.
 - End of the game: `state.result` (`GameResult`: concession, penalties, winner, winnings, Dedicated Fans changes,
   MVPs, players leaving) once the `EndGame` procedure has run. `CONCEDE` is added to the templates of a team's own

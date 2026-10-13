@@ -12,6 +12,7 @@ import { Stalling } from "./stalling";
 import { CoinToss, Game, Half, KoRecovery, MasterChef, ThrowRock } from "./game";
 import { Charge, HighKick, Kickoff, KickoffEvent, Pregame, QuickSnap, SolidDefence, SwelteringHeat } from "./kickoff";
 import { Setup } from "./setup";
+import { Shop } from "./shop";
 import { EndGame } from "./endgame";
 import { ThrowTeamMate } from "./ttm";
 import { Gaze, HitAndRun, MoveAction, MoveStep, OnTheBall, PickMeUp, Shadow, Tentacles, Turn, WeatherMage } from "./turn";
@@ -20,6 +21,7 @@ import { Gaze, HitAndRun, MoveAction, MoveStep, OnTheBall, PickMeUp, Shadow, Ten
 export const handlers: HandlerMap = {
   Game,
   Pregame,
+  Shop,
   Prayers,
   Trapdoor,
   CoinToss,

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { DIE_FACES, hasSkill, type Action, type ActionTemplate, type GameState, type PassRange, type Side } from "@bb/engine";
+import { DIE_FACES, hasSkill, type Action, type ActionTemplate, type GameState, type InducementId, type PassRange, type Side } from "@bb/engine";
 import { formationActions, formations } from "@bb/data";
 import { DieFace } from "./Dice";
-import { WEATHER_NAMES, blockFaceName, casualtyName } from "./describe";
+import { SHOP_NAMES, WEATHER_NAMES, blockFaceName, casualtyName, gold } from "./describe";
 import type { Aiming } from "./Board";
 import { findTemplate, type TemplateOf } from "./templates";
 
@@ -40,6 +40,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   PUSH: "click a square to push the player to",
   CHOOSE_WEATHER: "Weather Mage: apply a modifier to the roll on the weather table",
   CHOOSE_SKILL: "Intensive Training: choose the skill the player gains",
+  BUY_INDUCEMENTS: "pre-game shop: buy inducements",
   THROW_A_ROCK: "Throw a Rock (once per game): a random standing opponent is knocked down on 4+",
   SWOOP: "Swoop: click a square next to the target to face the throw-in template that way, or scatter as usual",
   TRICKSTER: "Trickster: click a square next to the attacker to move to before being hit, or stay",
@@ -107,6 +108,13 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   if (select) return `${select.reason} (click players)`;
   if (snap) return `${PROMPTS.SNAP} (${snap.remaining} left)`;
   if (main.type === "USE_REROLL" && main.skill) return `use ${main.skill} to re-roll?`;
+  if (main.type === "BUY_INDUCEMENTS") {
+    const budget = [
+      ...(main.pettyCash > 0 ? [`${gold(main.pettyCash)} of petty cash (lost if unspent)`] : []),
+      ...(main.treasury > 0 ? [`up to ${gold(main.treasury)} from the treasury`] : []),
+    ];
+    return `pre-game shop: buy inducements with ${budget.join(" plus ")}`;
+  }
   if (main.type === "USE_SKILL") return `use ${main.skill} (${state.players[main.playerId]!.name})?`;
   if (state.stack.at(-1)?.type === "SecretWeapon" && (main.type === "ARGUE_THE_CALL" || main.type === "BRIBE")) {
     const name = state.players[main.playerId]!.name;
@@ -287,6 +295,7 @@ export function ActionPanel(props: ActionPanelProps) {
             formations={state.stack.at(-1)?.type === "Setup"}
           />
         )}
+        {main.type === "BUY_INDUCEMENTS" && <ShopControls key={main.side} template={main} dispatch={dispatch} />}
         {findTemplate(templates, "CHOOSE_SKILL")?.skills.map((skill) => (
           <button key={skill} onClick={() => dispatch({ type: "CHOOSE_SKILL", skill })}>
             {skill}
@@ -461,6 +470,44 @@ function RollControls({ template, dispatch }: { template: TemplateOf<"ROLL">; di
         </form>
       )}
     </>
+  );
+}
+
+/** The pre-game shop: a counter per inducement on offer, the total against the budget, and the purchase. */
+function ShopControls({ template, dispatch }: { template: TemplateOf<"BUY_INDUCEMENTS">; dispatch(a: Action): void }) {
+  const [counts, setCounts] = useState<Partial<Record<InducementId, number>>>({});
+  const offer = (Object.entries(template.prices) as Array<[InducementId, { cost: number; max: number }]>).filter(([, p]) => p.max > 0);
+  const total = offer.reduce((sum, [id, p]) => sum + (counts[id] ?? 0) * p.cost, 0);
+  const budget = template.pettyCash + template.treasury;
+  const change = (id: InducementId, delta: number) => setCounts((c) => ({ ...c, [id]: (c[id] ?? 0) + delta }));
+  return (
+    <div className="bb-shop">
+      <table>
+        <tbody>
+          {offer.map(([id, price]) => {
+            const n = counts[id] ?? 0;
+            return (
+              <tr key={id}>
+                <td>{SHOP_NAMES[id]}</td>
+                <td>{gold(price.cost)}</td>
+                <td>
+                  <button disabled={n === 0} onClick={() => change(id, -1)}>
+                    −
+                  </button>{" "}
+                  {n}/{price.max}{" "}
+                  <button disabled={n >= price.max || total + price.cost > budget} onClick={() => change(id, 1)}>
+                    +
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <button className="bb-confirm" disabled={total > budget} onClick={() => dispatch({ type: "BUY_INDUCEMENTS", inducements: counts })}>
+        {total === 0 ? "Buy nothing" : `Buy for ${gold(total)} (${gold(budget - total)} left)`}
+      </button>
+    </div>
   );
 }
 

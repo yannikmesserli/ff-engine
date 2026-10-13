@@ -11,6 +11,11 @@ export interface GameOptions {
   seed?: number;
   /** A draw after the second half goes to overtime: a third half (cup games). Off by default: a draw stands. */
   overtime?: boolean;
+  /**
+   * Inducements are bought in the pre-game shop, with petty cash from the difference in Current Team Value and the
+   * treasury. Off by default: the team files list what each team bought.
+   */
+  shop?: boolean;
 }
 
 /** Result of `step`: the next state and the events emitted while getting there. */
@@ -20,7 +25,7 @@ export interface StepResult {
 }
 
 /** Teams in their reserves, before anything is rolled; player ids are "<side>-<nr>". */
-function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: boolean): GameState {
+function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: boolean, shop: boolean): GameState {
   const players: Record<string, PlayerState> = {};
   const teams = { home, away };
   for (const side of ["home", "away"] as const) {
@@ -48,6 +53,11 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     specialRules: [...(teams[side].specialRules ?? [])],
     journeymanPosition: teams[side].journeymanPosition ?? null,
     inducements: { ...(teams[side].inducements ?? {}) },
+    teamValue: teams[side].teamValue ?? 0,
+    treasury: teams[side].treasury ?? 0,
+    inducementPrices: { ...(teams[side].inducementPrices ?? {}) },
+    inducementsCost: 0,
+    treasurySpent: 0,
     inducementsUsed: {},
     prayers: [],
     mascotUsed: false,
@@ -66,6 +76,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     half: 1,
     kickingFirstHalf: null,
     overtime,
+    shop,
     teams: { home: team("home"), away: team("away") },
     players,
     ball: { square: null, carried: false },
@@ -86,7 +97,11 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
 /** Create a game and advance it to the first decision (the fan factor roll). */
 export function createGame(home: TeamSetup, away: TeamSetup, options: GameOptions = {}): GameState {
   const seed = options.seed ?? Math.floor(Math.random() * 2 ** 32);
-  return produce(initialState(home, away, seed, options.overtime ?? false), (draft) => {
+  const shop = options.shop ?? false;
+  if (shop && [home, away].some((t) => Object.values(t.inducements ?? {}).some((n) => n > 0))) {
+    throw new Error("With the pre-game shop, inducements are bought before the game, not listed in the team file.");
+  }
+  return produce(initialState(home, away, seed, options.overtime ?? false, shop), (draft) => {
     run(createContext(draft, []), handlers, null);
   });
 }

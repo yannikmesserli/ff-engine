@@ -10,7 +10,8 @@ const MAX_FANS = 7;
  * Seriously Hurt, Serious Injury or Lasting Injury misses the next game; a Serious Injury adds a Niggling Injury, a
  * Lasting Injury a -1; the dead and the players who left after a concession are removed), players who sat this game out
  * are back, an opponent raised by Plague Ridden joins (if there is room), winnings go to the treasury and Dedicated Fans
- * change. Journeymen and Riotous Rookies are not kept; the inducements bought for the game are used up.
+ * change, less what the pre-game shop took from the treasury. Journeymen and Riotous Rookies are not kept; the
+ * inducements bought for the game are used up.
  */
 export function teamAfterGame(input: unknown, state: GameState, side: Side): TeamFile {
   const team = TeamFileSchema.parse(input);
@@ -43,7 +44,7 @@ export function teamAfterGame(input: unknown, state: GameState, side: Side): Tea
     ...rest,
     ...captain,
     dedicatedFans: Math.min(MAX_FANS, Math.max(MIN_FANS, team.dedicatedFans + result.dedicatedFans[side])),
-    treasury: team.treasury + result.winnings[side],
+    treasury: team.treasury - state.teams[side].treasurySpent + result.winnings[side],
     inducements: {},
     players,
   };

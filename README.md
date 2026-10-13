@@ -43,8 +43,15 @@ const { state: next, events } = step(state, { type: "ROLL" });
 
 ## Implemented so far (BB2025)
 
-- Inducements: listed in the team file (no pre-game shop yet) and checked against the BB2025 limits and the team's
-  special rules. Bribes: one each to keep a fouler (or a Secret Weapon) on the pitch on 2+ (Bribery and Corruption
+- Pre-game shop (the `shop` game option; without it, the team files list the inducements, checked against the same
+  limits): after the weather, the team with the higher Current Team Value may spend its treasury on inducements first.
+  The other team then gets petty cash, the difference in value plus what the first team spent, and may add up to 50k
+  from its treasury; petty cash it does not spend is lost. With equal values nobody buys anything. Then the team with
+  the lower value, counting what each team bought, gets a free Prayer to Nuffle per 50k of difference. The Current
+  Team Value counts the players available for the game (position cost, +20k per primary skill and +30k per secondary
+  skill gained, +30k MA, +60k ST, +30k AG, +20k PA, +10k AV), the journeymen, the team re-rolls, the assistant coaches,
+  cheerleaders and apothecary. What the shop took from the treasury is gone after the game.
+- Inducements, within the BB2025 limits and the team's special rules. Bribes: one each to keep a fouler (or a Secret Weapon) on the pitch on 2+ (Bribery and Corruption
   teams may also re-roll a natural 1 on Argue the Call, once per game). Part-time Assistant
   Coaches and Temp Agency Cheerleaders: added to the team's own for Brilliant Coaching and Cheering Fans. Blitzer's
   Best Kegs: +1 each to the team's KO recovery rolls (a natural 1 still fails). Biased Referee: an opposing foul the
@@ -57,7 +64,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Plague Doctor (Favoured of Nurgle): once per game, re-roll a failed Regeneration roll; the Plague Doctor's single use
   may go to treating a player as an apothecary instead. Weather Mage: once per game, at the start of the team's turn,
   2D6 on the weather table, with a modifier of +1 or +2, or -1 or -2, if the coach wants one.
-- Prayers to Nuffle (bought as inducements, up to 3): before the coin toss, a D16 each on the BB2025 table, re-rolled
+- Prayers to Nuffle (bought as inducements, up to 3, plus the underdog's free ones after the shop): before the coin toss, a D16 each on the BB2025 table, re-rolled
   when the team already has the result; they last the whole game. Stiletto (a random player gains Stab), Iron Man
   (+1 AV, up to 11+, to a player the coach picks), Knuckle Dusters (Mighty Blow, likewise), Bad Habits (D3 random
   opponents gain Loner (2+)), Greasy Cleats (a random opponent -1 MA), Blessing of Nuffle (a random player gains Pro),
@@ -375,8 +382,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
   without bouncing, in the square they leave on their next step, and it is not a turnover. Not with My Ball.
 
-Not yet: the pre-game shop (and so spending winnings and Star Player Points), star players, the golden-goal overtime
-variant.
+Not yet: spending winnings and Star Player Points between games, star players and mercenaries, Infamous Coaching
+Staff, wizards, the golden-goal overtime variant.
 
 The playground accepts `?seed=42` to replay the same dice.
 

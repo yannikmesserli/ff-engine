@@ -170,6 +170,8 @@
 .bb-auto-roll { display: block; margin-top: 6px; font-size: 12px; opacity: 0.8; }
 .bb-manual-dice { display: flex; gap: 4px; }
 .bb-manual-dice input { width: 44px; }
+.bb-shop { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.bb-shop td { padding: 1px 8px 1px 0; }
 .bb-errors { margin: 4px 0 0; padding-left: 18px; color: #ffb74d; font-size: 12px; width: 100%; }
 .bb-error { color: #ff8a80; }
 .bb-last-roll { display: flex; align-items: center; gap: 10px; }

@@ -19,7 +19,8 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 | `formations` | Setups in a text format (`src/formations.json`: `def_boat`, `def_spread`, `def_zone`, `off_line`, `off_wedge`). |
 | `formationActions(state, side, formation)` | `PLACE_PLAYER` actions that clear a side's half and set up a formation. |
 | `INDUCEMENT_RULES` | BB2025 inducement limits, required special rules and costs, by inducement id. |
-| `resolveTeam(json, rosters?)` | Validates a team file against its roster and merges in position stats. Throws `TeamError`. |
+| `resolveTeam(json, rosters?)` | Validates a team file against its roster and merges in position stats, the Current Team Value, treasury and the shop's prices. Throws `TeamError`. |
+| `teamValue(json, rosters?)` | The Current Team Value of a team file: players available and their advancements, journeymen, re-rolls and staff. |
 | `teamAfterGame(json, state, side)` | The team file after a finished game: Star Player Points, casualties, raised players, winnings, Dedicated Fans. |
 | `TeamFileSchema`, `RosterSchema` | zod schemas (and the `TeamFile`, `Roster` types). |
 | `SKILL_DESCRIPTIONS`, `skillDescription(skill)` | Short BB2025 descriptions of every skill and trait (our own wording), for tooltips; `skillDescription("Loner(4)")` fills in the value. |
@@ -67,7 +68,8 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
   `teamMascot` (1), `partTimeCoaches` (3, at most 9 coaches in all), `tempCheerleaders` (4, at most 16 cheerleaders),
   `blitzersBestKegs` (2), `halflingMasterChef` (1), `riotousRookies` (1, Low Cost Linemen), `plagueDoctor` (1,
   Favoured of Nurgle), `mortuaryAssistant` (1, Masters of Undeath), `weatherMage` (1), `biasedReferee` (1), `prayers`
-  (3). There is no pre-game shop yet: the team file says what was bought, not how it was paid for.
+  (3). The team file says what was bought, not how it was paid for; with the engine's `shop` option the inducements
+  are bought in the game instead (then the team file must not list any).
 - `journeymen` (default `true`): a team with fewer than 11 players left for the game gets journeymen up to 11, from
   the roster's 0-12 or 0-16 lineman position, with Loner (4+), numbered with the smallest free numbers. `false` takes
   none; a position title picks the position when the roster has more than one (Shambling Undead: Skeleton or Zombie
@@ -78,8 +80,9 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
 - `injuries`: lasting injuries, one entry per -1 to a characteristic (AG and PA targets go up by 1), or `"niggling"`
   for a Niggling Injury (+1 to the player's casualty rolls).
 - `missNextGame`: the player is left out when the team is resolved.
-- `spp` (default 0): the player's unspent Star Player Points; `treasury` (default 0): the team's gold pieces. Both
-  grow with `teamAfterGame`; the shop to spend them does not exist yet.
+- `spp` (default 0): the player's unspent Star Player Points; `treasury` (default 0): the team's gold pieces, which the
+  pre-game shop may spend. Both grow with `teamAfterGame` (less what the shop took from the treasury); spending them
+  between games is not done yet.
 - A player's advancements (for player loss after a concession) are their gained `skills` plus their `improvements`.
 - Unknown fields are rejected, so typos don't pass silently.
 - `resolveTeam` also checks the roster exists, re-rolls are within `maxRerolls`, the roster may hire an apothecary,

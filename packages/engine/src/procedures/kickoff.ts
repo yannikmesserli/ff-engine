@@ -5,6 +5,7 @@ import { adjacent, allSquares, inHalf, inWideZone, isOnPitch, offset, onLineOfSc
 import { hasSkill } from "../skills";
 import { createPlayer, getPlayer, landBall } from "./helpers";
 import { setupErrors } from "./setup";
+import { freePrayers, openShop } from "./shop";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -90,12 +91,23 @@ function checkSelection(ctx: Ctx, side: Side, playerIds: string[], allowed: numb
 }
 
 /**
- * Fan factor (dedicated fans + D3 per team), then the weather, then Prayers to Nuffle (see `Prayers`), then Riotous
- * Rookies: a team that bought them rolls 2D3 + 1 players of its lineman position into its reserves for the game, with
- * Loner (4+).
+ * Fan factor (dedicated fans + D3 per team), then the weather, then the pre-game shop (a game option, see `Shop`), then
+ * Prayers to Nuffle (see `Prayers`; bought, plus the underdog's free ones after the shop), then Riotous Rookies: a team
+ * that bought them rolls 2D3 + 1 players of its lineman position into its reserves for the game, with Loner (4+).
  */
 export const Pregame: Handler<P<"Pregame">> = {
   step(ctx, proc, action) {
+    if (proc.stage === "inducements") {
+      proc.rookies = SIDES.filter((side) => (ctx.state.teams[side].inducements.riotousRookies ?? 0) > 0 && ctx.state.teams[side].journeymanPosition);
+      proc.stage = "rookies";
+      const free = freePrayers(ctx.state);
+      if (free) ctx.emit({ type: "FreePrayers", ...free });
+      // Prayers to Nuffle come first.
+      const prayers = (side: Side) => (ctx.state.teams[side].inducements.prayers ?? 0) + (free?.side === side ? free.count : 0);
+      const draws = SIDES.flatMap((side) => Array.from({ length: prayers(side) }, () => side));
+      if (draws.length > 0) ctx.push({ type: "Prayers", draws, stage: "draw" });
+      return "continue";
+    }
     if (proc.stage === "rookies" && proc.rookies!.length === 0) return "done";
     if (action === null) return "wait";
     if (proc.stage === "fans") {
@@ -110,11 +122,8 @@ export const Pregame: Handler<P<"Pregame">> = {
     }
     if (proc.stage === "weather") {
       rollWeather(ctx, action, "Weather");
-      proc.rookies = SIDES.filter((side) => (ctx.state.teams[side].inducements.riotousRookies ?? 0) > 0 && ctx.state.teams[side].journeymanPosition);
-      proc.stage = "rookies";
-      // Prayers to Nuffle come first.
-      const draws = SIDES.flatMap((side) => Array.from({ length: ctx.state.teams[side].inducements.prayers ?? 0 }, () => side));
-      if (draws.length > 0) ctx.push({ type: "Prayers", draws, stage: "draw" });
+      proc.stage = "inducements";
+      openShop(ctx);
       return "continue";
     }
     const side = proc.rookies!.shift()!;

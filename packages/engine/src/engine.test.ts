@@ -3734,6 +3734,55 @@ describe("engine", () => {
     });
   });
 
+  describe("pre-game shop", () => {
+    const PRICES = { bribes: { cost: 100_000, max: 3 }, teamMascot: { cost: 25_000, max: 1 }, prayers: { cost: 50_000, max: 3 } };
+    /** A game with the shop, between teams with the given team values and treasuries; fan factor and weather rolled. */
+    const shopping = (home: Partial<TeamSetup>, away: Partial<TeamSetup>) =>
+      apply(
+        createGame({ ...team("Home"), inducementPrices: PRICES, ...home }, { ...team("Away"), inducementPrices: PRICES, ...away }, { seed: 1, shop: true }),
+        roll(1, 1),
+        roll(3, 4),
+      );
+
+    it("the higher team value spends its treasury first, then the underdog gets petty cash and up to 50,000 of its treasury", () => {
+      let s = shopping({ teamValue: 1_100_000, treasury: 120_000 }, { teamValue: 1_000_000, treasury: 200_000 });
+      expect(getAvailableActions(s)).toEqual([{ type: "BUY_INDUCEMENTS", side: "home", prices: PRICES, pettyCash: 0, treasury: 120_000 }]);
+      expect(() => step(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 2 } })).toThrow(/cannot spend 200000/);
+      s = apply(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 1 } });
+      // The 100,000 difference, plus the 100,000 home spent.
+      expect(s.log).toContainEqual({ type: "PettyCash", side: "away", amount: 200_000 });
+      expect(find(s, "BUY_INDUCEMENTS")).toMatchObject({ side: "away", pettyCash: 200_000, treasury: 50_000 });
+      expect(() => step(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 2, teamMascot: 1, prayers: 1 } })).toThrow(/cannot spend/);
+      s = apply(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 2, prayers: 1 } });
+      expect(s.log).toContainEqual({ type: "InducementsBought", side: "away", inducements: { bribes: 2, prayers: 1 }, cost: 250_000, treasury: 50_000 });
+      expect([s.teams.home.treasurySpent, s.teams.away.treasurySpent, s.teams.home.bribes, s.teams.away.bribes]).toEqual([100_000, 50_000, 1, 2]);
+      // Team values with the inducements: 1,200,000 and 1,250,000, so home gets a free prayer; away draws the one it bought.
+      expect(s.log).toContainEqual({ type: "FreePrayers", side: "home", count: 1 });
+      s = apply(s, roll(2));
+      expect(find(s, "ROLL")?.reason).toBe("Prayer to Nuffle (Away)");
+      s = apply(s, roll(2));
+      expect([s.teams.home.prayers, s.teams.away.prayers, types(s)]).toEqual([["friends-with-the-ref"], ["friends-with-the-ref"], ["CALL_COIN"]]);
+    });
+
+    it("only what is on offer, up to its limit; petty cash left over is lost", () => {
+      let s = shopping({ teamValue: 1_000_000 }, { teamValue: 1_130_000 });
+      // Away has no treasury: nothing to buy, home shops straight away.
+      expect(find(s, "BUY_INDUCEMENTS")).toMatchObject({ side: "home", pettyCash: 130_000, treasury: 0 });
+      expect(() => step(s, { type: "BUY_INDUCEMENTS", inducements: { teamMascot: 2 } })).toThrow(/At most 1 teamMascot/);
+      expect(() => step(s, { type: "BUY_INDUCEMENTS", inducements: { weatherMage: 1 } })).toThrow(/Home cannot buy weatherMage/);
+      s = apply(s, { type: "BUY_INDUCEMENTS", inducements: { teamMascot: 1 } });
+      expect([s.teams.home.inducements, s.teams.home.treasurySpent]).toEqual([{ teamMascot: 1 }, 0]);
+      // 105,000 of difference left: two free prayers.
+      expect(s.log).toContainEqual({ type: "FreePrayers", side: "home", count: 2 });
+    });
+
+    it("equal team values: no shop; without the option, the team files' inducements stand", () => {
+      expect(types(shopping({ teamValue: 1_000_000, treasury: 500_000 }, { teamValue: 1_000_000 }))).toEqual(["CALL_COIN"]);
+      expect(types(pregame(createGame({ ...team("Home"), teamValue: 900_000 }, team("Away"), { seed: 1 })))).toEqual(["CALL_COIN"]);
+      expect(() => createGame({ ...team("Home"), inducements: { bribes: 1 } }, team("Away"), { shop: true })).toThrow(/not listed in the team file/);
+    });
+  });
+
   describe("Weather Mage", () => {
     it("once per game, at the start of the team's turn: 2D6 on the weather table, with a modifier of -2 to +2 if desired", () => {
       let s = toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } });

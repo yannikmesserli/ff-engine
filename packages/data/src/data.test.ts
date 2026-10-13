@@ -1,6 +1,6 @@
 import { IMPLEMENTED_SKILLS, createGame, getAvailableActions, skillName, starPlayerPoints, step, type Action, type ActionTemplate, type GameState } from "@bb/engine";
 import { afterAll, describe, expect, it } from "vitest";
-import { SKILL_DESCRIPTIONS, TeamError, exampleTeams, formationActions, formations, resolveTeam, rosters, skillDescription, teamAfterGame } from "./index";
+import { SKILL_DESCRIPTIONS, TeamError, exampleTeams, formationActions, formations, resolveTeam, rosters, skillDescription, teamAfterGame, teamValue } from "./index";
 
 describe("data", () => {
   it("has the BB2025 rosters from FUMBBL", () => {
@@ -75,6 +75,42 @@ describe("data", () => {
     expect(() => resolveTeam({ ...human({ partTimeCoaches: 3 }), assistantCoaches: 8 })).toThrow(/At most 1 partTimeCoaches/);
   });
 
+  it("offers each team the inducements it may buy, at its prices", () => {
+    const prices = resolveTeam({ ...exampleTeams["human"]!, assistantCoaches: 8, specialRules: ["Bribery and Corruption"] }).inducementPrices!;
+    expect(prices).toMatchObject({ bribes: { cost: 50_000, max: 6 }, biasedReferee: { cost: 80_000, max: 1 }, partTimeCoaches: { cost: 20_000, max: 1 } });
+    expect(prices.plagueDoctor).toBeUndefined();
+    const halflings = { name: "H", roster: "Halfling", rerolls: 0, journeymen: false, players: [{ number: 1, name: "A", position: "Halfling Hopeful" }] };
+    expect(resolveTeam(halflings).inducementPrices!.halflingMasterChef).toEqual({ cost: 100_000, max: 1 });
+  });
+
+  it("works out the Current Team Value: players and their advancements, journeymen, re-rolls and staff", () => {
+    const team = {
+      name: "V",
+      roster: "Human",
+      rerolls: 2,
+      apothecary: true,
+      assistantCoaches: 1,
+      cheerleaders: 2,
+      dedicatedFans: 4,
+      treasury: 70_000,
+      journeymen: false,
+      players: [
+        // Block is a primary skill of a Blitzer, Dodge a secondary one.
+        { number: 1, name: "A", position: "Human Blitzer", skills: ["Block", "Dodge"], improvements: { ma: 1 }, injuries: ["av" as const] },
+        { number: 2, name: "B", position: "Human Lineman" },
+        { number: 3, name: "C", position: "Human Lineman", missNextGame: true },
+      ],
+    };
+    const blitzer = 85_000 + 20_000 + 30_000 + 30_000;
+    const human = rosters.find((r) => r.name === "Human")!;
+    const lineman = human.positions.find((p) => p.title === "Human Lineman")!.cost;
+    const staff = 50_000 + 3 * 10_000 + 2 * human.rerollCost;
+    expect(teamValue(team)).toBe(blitzer + lineman + staff);
+    // Nine journeymen fill the team up to 11.
+    expect(teamValue({ ...team, journeymen: true })).toBe(blitzer + 10 * lineman + staff);
+    expect(resolveTeam(team)).toMatchObject({ teamValue: blitzer + lineman + staff, treasury: 70_000 });
+  });
+
   it("gives teams with Plague Ridden their lineman position for raised players", () => {
     const nurgle = resolveTeam({ name: "N", roster: "Nurgle", rerolls: 0, players: [{ number: 1, name: "A", position: "Rotter Lineman" }] });
     expect(nurgle.raisePosition).toMatchObject({ position: "Rotter Lineman", skills: ["Decay", "Plague Ridden"] });
@@ -134,6 +170,9 @@ describe("data", () => {
     game.result = { conceded: null, concededLegally: false, penalties: null, winner: "home", winnings: { home: 60_000, away: 50_000 }, dedicatedFans: { home: 1, away: 0 }, mvps: [], leaving: [] };
     const after = teamAfterGame({ ...human, treasury: 10_000, inducements: { bribes: 1 } }, game, "home");
     expect([after.treasury, after.dedicatedFans, after.inducements]).toEqual([70_000, human.dedicatedFans + 1, {}]);
+    // What the pre-game shop took from the treasury is gone.
+    game.teams.home.treasurySpent = 5_000;
+    expect(teamAfterGame({ ...human, treasury: 10_000 }, game, "home").treasury).toBe(65_000);
     expect(after.players).toHaveLength(human.players.length - 1);
     expect(after.players[0]).toMatchObject({ spp: 6, missNextGame: false });
     expect(after.players[1]).toMatchObject({ injuries: ["ag"], missNextGame: true });
@@ -201,6 +240,18 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
   switch (t.type) {
     case "CALL_COIN":
       return { type: "CALL_COIN", call: pick(["heads", "tails"] as const) };
+    case "BUY_INDUCEMENTS": {
+      // A few random inducements, as long as the budget lasts.
+      let budget = t.pettyCash + t.treasury;
+      const inducements: Record<string, number> = {};
+      for (const [id, price] of Object.entries(t.prices)) {
+        while (random() < 0.5 && (inducements[id] ?? 0) < price.max && price.cost <= budget) {
+          inducements[id] = (inducements[id] ?? 0) + 1;
+          budget -= price.cost;
+        }
+      }
+      return { type: "BUY_INDUCEMENTS", inducements };
+    }
     case "CHOOSE_KICK":
       return { type: "CHOOSE_KICK", kick: random() < 0.5 };
     case "PLACE_BALL":
@@ -381,9 +432,11 @@ describe("random games", () => {
     const random = () => ((rng = (rng * 1103515245 + 12345) % 2 ** 31) / 2 ** 31);
     const [home, away] = matchup(seed);
     // One game in four is a cup game: a draw goes to overtime.
-    // Every other game, the home team bought a few inducements and has a Team Captain.
-    const homeTeam = { ...(rosterTeam(home) as object), ...(seed % 2 === 1 ? { inducements: RANDOM_GAME_INDUCEMENTS, specialRules: ["Low Cost Linemen"], captain: 1 } : {}) };
-    const start = createGame(resolveTeam(homeTeam), resolveTeam(rosterTeam(away)), { seed, overtime: seed % 4 === 0 });
+    // Every other game, the home team bought a few inducements and has a Team Captain; in the others, both teams buy
+    // theirs in the pre-game shop, home with some gold in the treasury.
+    const shop = seed % 2 === 0;
+    const homeTeam = { ...(rosterTeam(home) as object), ...(shop ? { treasury: 150_000 } : { inducements: RANDOM_GAME_INDUCEMENTS, specialRules: ["Low Cost Linemen"], captain: 1 }) };
+    const start = createGame(resolveTeam(homeTeam), resolveTeam(rosterTeam(away)), { seed, overtime: seed % 4 === 0, shop });
     let s = start;
     const taken: Action[] = [];
     let steps = 0;
@@ -421,6 +474,7 @@ describe("random games", () => {
       if (e.type === "SkillUsed") ballEvents.add(`skill ${e.skill}`);
       if (e.type === "TeamMateThrown") ballEvents.add(`team-mate throw ${e.result}`);
       if (e.type === "PlayerDistracted") ballEvents.add(`distracted (${e.skill})`);
+      if (e.type === "InducementsBought" || e.type === "FreePrayers") ballEvents.add(e.type);
     }
   }, GAME_TIMEOUT_MS);
 });

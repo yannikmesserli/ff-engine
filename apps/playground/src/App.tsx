@@ -54,6 +54,7 @@ function LocalGame() {
   const [gameId, setGameId] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [overtime, setOvertime] = useState(false);
+  const [shop, setShop] = useState(true);
   const locked = playing ? "Finish the game first (or reload the page)" : undefined;
   return (
     <main>
@@ -62,6 +63,9 @@ function LocalGame() {
         <TeamPicker label="Away" value={away} disabled={playing} onChange={setAway} />
         <label title="Cup games: a draw after the second half is played on in a third half">
           <input type="checkbox" checked={overtime} disabled={playing} onChange={(e) => setOvertime(e.target.checked)} /> Overtime on a draw
+        </label>
+        <label title="Buy inducements before the game with petty cash and the treasury (otherwise the team files list them)">
+          <input type="checkbox" checked={shop} disabled={playing} onChange={(e) => setShop(e.target.checked)} /> Pre-game shop
         </label>
         <button
           disabled={playing}
@@ -81,6 +85,7 @@ function LocalGame() {
         assetsUrl="/img"
         seed={gameId === 0 ? SEED : undefined}
         overtime={overtime}
+        shop={shop}
         onChange={(state) => setPlaying(inProgress(state))}
       />
     </main>

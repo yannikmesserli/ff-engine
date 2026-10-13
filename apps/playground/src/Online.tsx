@@ -7,8 +7,8 @@ import { TeamPicker, teamError } from "./TeamPicker";
 
 /** What the players send each other through the relay. */
 type Payload =
-  /** A player is ready with this team; home also picks the dice seed both browsers use. */
-  | { kind: "team"; team: unknown; seed?: number }
+  /** A player is ready with this team; home also picks the dice seed both browsers use, and the pre-game shop. */
+  | { kind: "team"; team: unknown; seed?: number; shop?: boolean }
   /** Actions taken in the game, applied by both browsers in the relay's order. */
   | { kind: "actions"; actions: Action[] };
 
@@ -61,6 +61,7 @@ export function OnlineGame({ gameId }: { gameId: string }) {
   const [team, setTeam] = useState<unknown>(exampleTeams["human"]);
   const [ready, setReady] = useState<Partial<Record<Side, unknown>>>({});
   const [seed, setSeed] = useState<number | null>(null);
+  const [shop, setShop] = useState(true);
   const [batches, setBatches] = useState<Action[][]>([]);
   const [opponent, setOpponent] = useState(false);
   const [opponentLeft, setOpponentLeft] = useState(false);
@@ -73,6 +74,7 @@ export function OnlineGame({ gameId }: { gameId: string }) {
       if (data?.kind === "team") {
         setReady((r) => ({ ...r, [from]: data.team }));
         if (from === "home" && typeof data.seed === "number") setSeed(data.seed);
+        if (from === "home") setShop(data.shop === true);
       } else if (data?.kind === "actions" && Array.isArray(data.actions)) setBatches((b) => [...b, data.actions]);
     },
     (present) => {
@@ -99,6 +101,7 @@ export function OnlineGame({ gameId }: { gameId: string }) {
         home={ready.home}
         away={ready.away}
         seed={seed}
+        shop={shop}
         assetsUrl="/img"
         online={{ side, actions: batches, send: (actions) => relay.send({ kind: "actions", actions }) }}
       />
@@ -108,7 +111,7 @@ export function OnlineGame({ gameId }: { gameId: string }) {
   const error = teamError(team);
   const imReady = ready[side] !== undefined;
   const sendTeam = () => {
-    const payload: Payload = side === "home" ? { kind: "team", team, seed: Math.floor(Math.random() * 2 ** 32) } : { kind: "team", team };
+    const payload: Payload = side === "home" ? { kind: "team", team, seed: Math.floor(Math.random() * 2 ** 32), shop } : { kind: "team", team };
     mine.current = payload;
     relay.send(payload);
   };
@@ -126,6 +129,11 @@ export function OnlineGame({ gameId }: { gameId: string }) {
         </p>
       )}
       <TeamPicker label="Your team" value={team} disabled={imReady} onChange={setTeam} />
+      {side === "home" && (
+        <label title="Buy inducements before the game with petty cash and the treasury (otherwise the team files list them)">
+          <input type="checkbox" checked={shop} disabled={imReady} onChange={(e) => setShop(e.target.checked)} /> Pre-game shop
+        </label>
+      )}
       {error && <div className="pg-error">{error}</div>}
       <button className="pg-primary" disabled={imReady || error !== null} onClick={sendTeam}>
         {imReady ? "Ready, waiting for the opponent…" : "Ready"}

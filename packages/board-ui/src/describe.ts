@@ -110,6 +110,25 @@ export const INDUCEMENT_NAMES: Record<InducementId, string> = {
   prayers: "a Prayer to Nuffle",
 };
 
+/** Inducement names as listed in the pre-game shop. */
+export const SHOP_NAMES: Record<InducementId, string> = {
+  bribes: "Bribes",
+  teamMascot: "Team Mascot",
+  partTimeCoaches: "Part-time Assistant Coaches",
+  tempCheerleaders: "Temp Agency Cheerleaders",
+  blitzersBestKegs: "Blitzer's Best Kegs",
+  halflingMasterChef: "Halfling Master Chef",
+  riotousRookies: "Riotous Rookies",
+  plagueDoctor: "Plague Doctor",
+  mortuaryAssistant: "Mortuary Assistant",
+  weatherMage: "Weather Mage",
+  biasedReferee: "Biased Referee",
+  prayers: "Prayers to Nuffle",
+};
+
+/** Gold pieces in thousands, as team values are usually written ("120k"). */
+export const gold = (gp: number) => `${gp / 1000}k`;
+
 /** Display names of the weather conditions. */
 export const WEATHER_NAMES = {
   "sweltering-heat": "Sweltering Heat",
@@ -319,6 +338,15 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${sideName(state, e.side)}'s Halfling Master Chef steals ${e.count} re-roll${e.count === 1 ? "" : "s"} for the half.`;
     case "SpecialRuleUsed":
       return `${sideName(state, e.side)} uses ${e.rule}.`;
+    case "PettyCash":
+      return `${sideName(state, e.side)} gets ${gold(e.amount)} of petty cash for the pre-game shop.`;
+    case "InducementsBought": {
+      const bought = (Object.entries(e.inducements) as Array<[InducementId, number]>).map(([id, n]) => `${SHOP_NAMES[id]} x${n}`).join(", ");
+      if (!bought) return `${sideName(state, e.side)} buys no inducements.`;
+      return `${sideName(state, e.side)} buys ${bought} for ${gold(e.cost)}${e.treasury > 0 ? ` (${gold(e.treasury)} from the treasury)` : ""}.`;
+    }
+    case "FreePrayers":
+      return `${sideName(state, e.side)}, the underdog, gets ${e.count} free Prayer${e.count === 1 ? "" : "s"} to Nuffle.`;
     case "InducementUsed":
       return `${sideName(state, e.side)} uses ${INDUCEMENT_NAMES[e.inducement]}.`;
     case "BallCaught":

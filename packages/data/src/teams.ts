@@ -1,4 +1,4 @@
-import type { InducementId, PositionStats, TeamSetup } from "@bb/engine";
+import { SKILL_CATEGORIES, type InducementId, type InducementPrices, type PositionStats, type TeamSetup } from "@bb/engine";
 import rosterData from "./generated/rosters.json";
 import teamData from "./teams.json";
 import { RosterSchema, TeamFileSchema, type Characteristic, type Roster, type TeamFile, type TeamPlayer } from "./schemas";
@@ -50,7 +50,7 @@ const positionStats = (position: Roster["positions"][number]): PositionStats => 
 
 /**
  * BB2025 inducements: the most a team may buy, the special rule it needs, a special rule (or roster keyword) that
- * raises the limit or lowers the cost, and the cost in gold pieces (for reference: the team file lists what was bought).
+ * raises the limit or lowers the cost, and the cost in gold pieces.
  */
 export const INDUCEMENT_RULES: Record<InducementId, { max: number; cost: number; requires?: string; discount?: { rule: string; cost: number; max?: number } }> = {
   bribes: { max: 3, cost: 100_000, discount: { rule: "Bribery and Corruption", cost: 50_000, max: 6 } },
@@ -71,19 +71,64 @@ export const INDUCEMENT_RULES: Record<InducementId, { max: number; cost: number;
 const MAX_COACHES = 9;
 const MAX_CHEERLEADERS = 16;
 
-/** Check the inducements a team bought against INDUCEMENT_RULES. */
-function checkInducements(team: TeamFile, roster: Roster) {
+/** What the team may buy (INDUCEMENT_RULES with its special rules and roster applied): cost and limit of each inducement. */
+function inducementPrices(team: TeamFile, roster: Roster): InducementPrices {
+  const has = (name: string) => (team.specialRules as string[]).includes(name) || roster.keywords.includes(name);
+  const prices: InducementPrices = {};
+  for (const [id, rule] of Object.entries(INDUCEMENT_RULES) as Array<[InducementId, (typeof INDUCEMENT_RULES)[InducementId]]>) {
+    if (rule.requires && !has(rule.requires)) continue;
+    const discount = rule.discount && has(rule.discount.rule) ? rule.discount : undefined;
+    let max = discount?.max ?? rule.max;
+    if (id === "partTimeCoaches") max = Math.min(max, MAX_COACHES - team.assistantCoaches);
+    if (id === "tempCheerleaders") max = Math.min(max, MAX_CHEERLEADERS - team.cheerleaders);
+    prices[id] = { cost: discount?.cost ?? rule.cost, max: Math.max(0, max) };
+  }
+  return prices;
+}
+
+/** Check the inducements a team file lists against what the team may buy. */
+function checkInducements(team: TeamFile, prices: InducementPrices) {
   for (const [id, bought] of Object.entries(team.inducements) as Array<[InducementId, number]>) {
     if (bought === 0) continue;
     const rule = INDUCEMENT_RULES[id];
-    const has = (name: string) => (team.specialRules as string[]).includes(name) || roster.keywords.includes(name);
-    if (rule.requires && !has(rule.requires)) throw new TeamError(`Only teams with ${rule.requires} may buy ${id}.`);
-    let max = rule.discount && has(rule.discount.rule) ? (rule.discount.max ?? rule.max) : rule.max;
-    if (id === "partTimeCoaches") max = Math.min(max, MAX_COACHES - team.assistantCoaches);
-    if (id === "tempCheerleaders") max = Math.min(max, MAX_CHEERLEADERS - team.cheerleaders);
-    if (bought > max) throw new TeamError(`At most ${max} ${id} for this team (${bought} bought).`);
+    if (!prices[id]) throw new TeamError(`Only teams with ${rule.requires} may buy ${id}.`);
+    if (bought > prices[id].max) throw new TeamError(`At most ${prices[id].max} ${id} for this team (${bought} bought).`);
   }
 }
+
+/** BB2025 value of the sideline staff: each assistant coach and cheerleader, and the apothecary. */
+const STAFF_VALUE = 10_000;
+const APOTHECARY_VALUE = 50_000;
+/** Value added by each characteristic improvement. */
+const IMPROVEMENT_VALUE: Record<Characteristic, number> = { ma: 30_000, st: 60_000, ag: 30_000, pa: 20_000, av: 10_000 };
+/** Value added by a gained skill: from a primary category (or none), or from a secondary one. */
+const PRIMARY_SKILL_VALUE = 20_000;
+const SECONDARY_SKILL_VALUE = 30_000;
+
+/** A player's value: the position's cost plus their advancements (lasting injuries do not lower it). */
+function playerValue(player: TeamPlayer, position: Roster["positions"][number]) {
+  const secondary = (skill: string) => position.double.some((c) => SKILL_CATEGORIES[c]?.includes(skill));
+  const skills = player.skills.reduce((sum, s) => sum + (secondary(s) ? SECONDARY_SKILL_VALUE : PRIMARY_SKILL_VALUE), 0);
+  const improvements = (Object.entries(player.improvements) as Array<[Characteristic, number]>).reduce((sum, [stat, n]) => sum + n * IMPROVEMENT_VALUE[stat], 0);
+  return position.cost + skills + improvements;
+}
+
+/**
+ * Current Team Value: the players available for the game (not those who miss it) at their value, the journeymen hired
+ * for it, the team re-rolls at the roster's price, the assistant coaches, cheerleaders and apothecary. Dedicated Fans and
+ * the treasury do not count.
+ */
+function currentTeamValue(team: TeamFile, roster: Roster) {
+  const players = team.players
+    .filter((p) => !p.missNextGame)
+    .reduce((sum, p) => sum + playerValue(p, roster.positions.find((pos) => pos.title === p.position)!), 0);
+  const hired = journeymen(roster, team).length * (journeymanPosition(roster, team)?.cost ?? 0);
+  const staff = (team.assistantCoaches + team.cheerleaders) * STAFF_VALUE + (team.apothecary ? APOTHECARY_VALUE : 0);
+  return players + hired + team.rerolls * roster.rerollCost + staff;
+}
+
+/** The Current Team Value of a valid team file (see `resolveTeam`, which checks it first). */
+export const teamValue = (input: unknown, availableRosters: Roster[] = rosters) => resolveTeam(input, availableRosters).teamValue!;
 
 /** A team takes journeymen when it has fewer players than this available for the game. */
 export const JOURNEYMEN_UP_TO = 11;
@@ -107,7 +152,8 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
   if (!roster) throw new TeamError(`Unknown roster "${team.roster}".`);
   if (team.rerolls > roster.maxRerolls) throw new TeamError(`${roster.name} can have at most ${roster.maxRerolls} re-rolls.`);
   if (team.apothecary && !roster.apothecary) throw new TeamError(`${roster.name} cannot hire an apothecary.`);
-  checkInducements(team, roster);
+  const prices = inducementPrices(team, roster);
+  checkInducements(team, prices);
   if (team.captain !== undefined && !team.players.some((p) => p.number === team.captain)) {
     throw new TeamError(`The Team Captain (#${team.captain}) is not in the team.`);
   }
@@ -143,6 +189,9 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
     specialRules: [...team.specialRules],
     ...(journeymanPosition(roster, team) ? { journeymanPosition: positionStats(journeymanPosition(roster, team)!) } : {}),
     inducements: { ...team.inducements },
+    inducementPrices: prices,
+    teamValue: currentTeamValue(team, roster),
+    treasury: team.treasury,
     ...(plagueRidden && lineman ? { raisePosition: positionStats(lineman) } : {}),
     players: [...team.players
       .filter((p) => !p.missNextGame)

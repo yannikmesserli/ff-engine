@@ -35,6 +35,8 @@ export interface BloodBowlGameProps {
   seed?: number;
   /** A draw after the second half goes to overtime (a third half). Off by default. */
   overtime?: boolean;
+  /** Inducements are bought in the pre-game shop, not listed in the team files. Off by default. */
+  shop?: boolean;
   /** Actions applied right after the game is created, to start from a prepared position; undo stops there. */
   actions?: readonly Action[];
   /** Called with the new state after every successful action. */
@@ -62,18 +64,18 @@ const AUTO_ROLL_DELAY_MS = 350;
 /** Default for `actions`: a stable empty list, so the game is not recreated on every render. */
 const NO_ACTIONS: readonly Action[] = [];
 
-/** A complete hot-seat Blood Bowl game between two teams; restarts when `home`, `away`, `seed`, `overtime` or `actions` change. */
-export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, overtime = false, actions = NO_ACTIONS, onChange, online }: BloodBowlGameProps) {
+/** A complete hot-seat Blood Bowl game between two teams; restarts when the teams, `seed`, the game options or `actions` change. */
+export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, overtime = false, shop = false, actions = NO_ACTIONS, onChange, online }: BloodBowlGameProps) {
   const initial = useMemo(() => {
     try {
-      return { state: applyActions(createGame(resolveTeam(home), resolveTeam(away), { seed, overtime }), actions) };
+      return { state: applyActions(createGame(resolveTeam(home), resolveTeam(away), { seed, overtime, shop }), actions) };
     } catch (e) {
       return { error: (e as Error).message };
     }
-  }, [home, away, seed, overtime, actions]);
+  }, [home, away, seed, overtime, shop, actions]);
   if ("error" in initial) return <div className="bb-game bb-error">{initial.error}</div>;
   return (
-    <Game key={JSON.stringify([home, away, seed, overtime, actions])} initial={initial.state} teams={{ home, away }} assets={assetsUrl} onChange={onChange} online={online} />
+    <Game key={JSON.stringify([home, away, seed, overtime, shop, actions])} initial={initial.state} teams={{ home, away }} assets={assetsUrl} onChange={onChange} online={online} />
   );
 }
 

@@ -159,6 +159,15 @@ export interface TeamState {
   journeymanPosition: PositionStats | null;
   /** Inducements bought for this game; what is left of them is tracked where they are used. */
   inducements: Inducements;
+  /** Current Team Value, which sets the petty cash of the pre-game shop. */
+  teamValue: number;
+  /** Gold pieces in the treasury before the game. */
+  treasury: number;
+  /** What the pre-game shop offers the team: each inducement's cost and the most it may buy. */
+  inducementPrices: InducementPrices;
+  /** Gold spent in the pre-game shop (petty cash and treasury), and the part of it paid from the treasury. */
+  inducementsCost: number;
+  treasurySpent: number;
   /** Bribery and Corruption (a team special rule): its once-per-game re-roll of an Argue the Call 1 was used. */
   briberyRerollUsed?: boolean;
   /** Prayers to Nuffle granted to the team for the game. */
@@ -264,6 +273,9 @@ export type Prayer = (typeof PRAYERS)[number];
 /** Inducements bought for the game, by id (missing: none). */
 export type Inducements = Partial<Record<InducementId, number>>;
 
+/** The pre-game shop's offer to a team, by inducement id (missing: not on offer): cost in gold pieces, and the most it may buy. */
+export type InducementPrices = Partial<Record<InducementId, { cost: number; max: number }>>;
+
 /** Input shape used to create a game: a fully resolved team (stats already merged from the roster). */
 export interface TeamSetup {
   name: string;
@@ -280,8 +292,14 @@ export interface TeamSetup {
   specialRules?: string[];
   /** The lineman position journeymen and Riotous Rookies come from. */
   journeymanPosition?: PositionStats;
-  /** Inducements bought for this game. */
+  /** Inducements bought for this game (without the pre-game shop). */
   inducements?: Inducements;
+  /** Current Team Value, for the pre-game shop's petty cash. */
+  teamValue?: number;
+  /** Gold pieces in the treasury, which the pre-game shop may spend. */
+  treasury?: number;
+  /** What the pre-game shop offers the team (none when missing). */
+  inducementPrices?: InducementPrices;
   players: Array<
     PositionStats & {
       nr: number;
@@ -368,7 +386,9 @@ export type Procedure =
    */
   | { type: "EndGame"; stage: "init" | "touchdowns" | "shootout" | "mvp" | "winnings" | "fans" | "loss"; touchdowns?: number; fans?: Side[]; loss?: string[] }
   /** "rookies": Riotous Rookies, rolled by the teams in `rookies` (in order). */
-  | { type: "Pregame"; stage: "fans" | "weather" | "rookies"; rookies?: Side[] }
+  | { type: "Pregame"; stage: "fans" | "weather" | "inducements" | "rookies"; rookies?: Side[] }
+  /** The pre-game shop: the teams still to buy, the higher Current Team Value first. */
+  | { type: "Shop"; sides: Side[] }
   /**
    * Prayers to Nuffle, before the coin toss: `draws` lists the team of each prayer still to draw (a D16, re-rolled when
    * the team already has the result); "choose": the coach picks the player (Iron Man, Knuckle Dusters); "badHabits":
@@ -838,6 +858,8 @@ export interface GameState {
   kickingFirstHalf: Side | null;
   /** A draw after the second half goes to overtime (a game option, for cup games). */
   overtime: boolean;
+  /** Inducements are bought in the pre-game shop (a game option), instead of being listed in the team files. */
+  shop: boolean;
   teams: Record<Side, TeamState>;
   players: Record<string, PlayerState>;
   ball: BallState;
@@ -911,6 +933,8 @@ export type Action =
   | { type: "TRICKSTER"; square: Square | null; pickUp?: boolean }
   /** Intensive Training (a prayer): the skill the player gains. */
   | { type: "CHOOSE_SKILL"; skill: string }
+  /** Pre-game shop: how many of each inducement to buy (nothing: buy none). */
+  | { type: "BUY_INDUCEMENTS"; inducements: Inducements }
   /** Throw a Rock (a prayer): throw it now or keep it. */
   | { type: "THROW_A_ROCK"; use: boolean }
   /** Use the Weather Mage at the start of the team's turn. */
@@ -974,6 +998,8 @@ export type ActionTemplate =
   | { type: "THROW_A_ROCK"; side: Side }
   /** Intensive Training: the skills `playerId` may gain. */
   | { type: "CHOOSE_SKILL"; side: Side; playerId: string; skills: string[] }
+  /** Pre-game shop: the offer, and the budget: petty cash first, then the treasury that may be spent. */
+  | { type: "BUY_INDUCEMENTS"; side: Side; prices: InducementPrices; pettyCash: number; treasury: number }
   /** Weather Mage: the 2D6 rolled, and the weather each modifier gives. */
   | { type: "CHOOSE_WEATHER"; side: Side; roll: number; options: Array<{ modifier: number; total: number; weather: Weather }> }
   /** Swoop: the squares next to the target square (not diagonally) that give the side the template faces. */
@@ -1087,6 +1113,12 @@ export type GameEvent =
   | { type: "RookiesJoined"; side: Side; playerIds: string[] }
   /** A team special rule was used (Bribery and Corruption's re-roll...). */
   | { type: "SpecialRuleUsed"; side: Side; rule: string }
+  /** Pre-game shop: `side` gets petty cash, the difference in Current Team Value (plus what the other team spent). */
+  | { type: "PettyCash"; side: Side; amount: number }
+  /** Pre-game shop: `side` bought these inducements for `cost` gold pieces, `treasury` of them from the treasury. */
+  | { type: "InducementsBought"; side: Side; inducements: Inducements; cost: number; treasury: number }
+  /** The underdog gets free Prayers to Nuffle, one per 50,000 gold pieces of Team Value difference left. */
+  | { type: "FreePrayers"; side: Side; count: number }
   /** An inducement bought for the game was used (the Team Mascot was tried...). */
   | { type: "InducementUsed"; side: Side; inducement: InducementId }
   | { type: "BallCaught"; playerId: string }
