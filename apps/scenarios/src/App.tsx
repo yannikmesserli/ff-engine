@@ -32,7 +32,7 @@ export function App() {
           <li key={line}>{line}</li>
         ))}
       </ol>
-      <BloodBowlGame key={`${scenario.id}-${run}`} home={scenario.home} away={scenario.away} seed={scenario.seed} actions={scenario.actions} />
+      <BloodBowlGame key={`${scenario.id}-${run}`} home={scenario.home} away={scenario.away} seed={scenario.seed} shop={scenario.shop} actions={scenario.actions} />
     </main>
   );
 }

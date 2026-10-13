@@ -10,6 +10,8 @@ export interface Scenario {
   home: unknown;
   away: unknown;
   seed: number;
+  /** The game uses the pre-game shop. */
+  shop?: boolean;
   actions: Action[];
 }
 
@@ -1492,6 +1494,45 @@ export const SCENARIOS: Scenario[] = [
       away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
       ball: { x: 9, y: 7 },
     }),
+  },
+  {
+    id: "pre-game-shop",
+    title: "Pre-game shop: petty cash, treasury and free prayers",
+    instructions: [
+      "Fan factor and weather are rolled. Gouged Eye has the higher Current Team Value (425k: three Orc Linemen, a Big Un Blocker and three re-rolls, against 335k), so they shop first, with only their 60k treasury: buy a Team Mascot (25k), or nothing.",
+      "The Altdorf Pros then get petty cash: the 90k difference plus what Gouged Eye spent. They may add up to 50k from their 100k treasury; unspent petty cash is lost.",
+      "After the shop, the team with the lower value, counting what each team bought, gets a free Prayer to Nuffle per 50k of difference, drawn after any it bought. Buy little to see one.",
+      "The log lists what each team bought, and how much of it came from the treasury.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      treasury: 100_000,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Wilhelm", position: "Human Lineman" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Klaus", position: "Human Blitzer" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 3,
+      treasury: 60_000,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+        { number: 4, name: "Gorbag", position: "Big Un Blocker" },
+      ],
+    },
+    seed: 83,
+    shop: true,
+    actions: [roll(1, 1), roll(3, 4)],
   },
   {
     id: "prayers",

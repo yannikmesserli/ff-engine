@@ -5,7 +5,7 @@ import { SCENARIOS } from "./scenarios";
 
 const load = (id: string) => {
   const s = SCENARIOS.find((x) => x.id === id)!;
-  return applyActions(createGame(resolveTeam(s.home), resolveTeam(s.away), { seed: s.seed }), s.actions);
+  return applyActions(createGame(resolveTeam(s.home), resolveTeam(s.away), { seed: s.seed, shop: s.shop }), s.actions);
 };
 /** A Block action whose single die knocks the defender down, pushed to `to` with a follow-up; the armour holds. */
 const knockDownOnce = (attackerId: string, defenderId: string, to: { x: number; y: number }) => [
@@ -23,6 +23,20 @@ const find = <T extends ActionTemplate["type"]>(s: GameState, type: T) =>
 describe("scenarios", () => {
   it.each(SCENARIOS.map((s) => s.id))("%s loads: its actions are all legal", (id) => {
     expect(getAvailableActions(load(id)).length).toBeGreaterThan(0);
+  });
+
+  it("pre-game-shop: the orcs spend their treasury first, then the humans get petty cash; free prayers for what is left", () => {
+    let s = load("pre-game-shop");
+    expect(find(s, "BUY_INDUCEMENTS")).toMatchObject({ side: "away", pettyCash: 0, treasury: 60_000 });
+    s = step(s, { type: "BUY_INDUCEMENTS", inducements: { teamMascot: 1 } }).state;
+    expect(find(s, "BUY_INDUCEMENTS")).toMatchObject({ side: "home", pettyCash: 115_000, treasury: 50_000 });
+    // Nothing bought: 450k against 335k, two free prayers.
+    expect(step(s, { type: "BUY_INDUCEMENTS", inducements: {} }).state.log).toContainEqual({ type: "FreePrayers", side: "home", count: 2 });
+    s = step(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 1 } }).state;
+    // 450k against 435k: no free prayer.
+    expect(s.teams.home.treasurySpent).toBe(0);
+    expect(s.log.some((e) => e.type === "FreePrayers")).toBe(false);
+    expect(find(s, "CALL_COIN")).toBeDefined();
   });
 
   it("pro-block: a two-dice block where Pro can re-roll a die", () => {
