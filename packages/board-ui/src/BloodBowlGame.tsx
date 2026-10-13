@@ -372,7 +372,7 @@ function PlayerCard({ player, pinned, onClose }: { player: PlayerState; pinned: 
       <strong>
         #{player.nr} {player.name}
       </strong>{" "}
-      — {player.position}
+      — {player.hired === "star" ? "Star player" : player.position}
       <div className="bb-stats">
         MA {player.ma} · ST {player.st} · AG {player.ag}+ · PA {player.pa === null ? "–" : `${player.pa}+`} · AV {player.av}+
       </div>

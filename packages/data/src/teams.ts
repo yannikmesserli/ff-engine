@@ -1,10 +1,13 @@
-import { SKILL_CATEGORIES, type InducementId, type InducementPrices, type PositionStats, type TeamSetup } from "@bb/engine";
+import { SKILL_CATEGORIES, type HireOffer, type InducementId, type InducementPrices, type PositionStats, type TeamSetup } from "@bb/engine";
 import rosterData from "./generated/rosters.json";
 import teamData from "./teams.json";
-import { RosterSchema, TeamFileSchema, type Characteristic, type Roster, type TeamFile, type TeamPlayer } from "./schemas";
+import { MAX_PLAYERS, RosterSchema, StarPlayerSchema, TeamFileSchema, type Characteristic, type Roster, type StarPlayer, type TeamFile, type TeamPlayer } from "./schemas";
 
 /** BB2025 rosters, fetched from FUMBBL (see scripts/fetch-rosters.ts). */
 export const rosters: Roster[] = RosterSchema.array().parse(rosterData.rosters);
+
+/** BB2025 star players, fetched from FUMBBL; each roster lists those it may hire (`Roster.stars`). */
+export const starPlayers: StarPlayer[] = StarPlayerSchema.array().parse(rosterData.starPlayers);
 
 /** Bundled example teams, keyed by name, e.g. "human". */
 export const exampleTeams: Record<string, TeamFile> = Object.fromEntries(
@@ -130,6 +133,81 @@ function currentTeamValue(team: TeamFile, roster: Roster) {
 /** The Current Team Value of a valid team file (see `resolveTeam`, which checks it first). */
 export const teamValue = (input: unknown, availableRosters: Roster[] = rosters) => resolveTeam(input, availableRosters).teamValue!;
 
+/** A team may hire up to this many star players for a game (a pair hired together counts as one). */
+const MAX_STARS = 2;
+/** A mercenary costs the position's price plus this; an extra skill costs this much more. */
+const MERCENARY_EXTRA_COST = 30_000;
+const MERCENARY_SKILL_COST = 50_000;
+
+/** A star player's characteristics and skills, as the engine's PositionStats (the position is their name). */
+const starStats = (star: StarPlayer): PositionStats => ({
+  position: star.name,
+  ma: star.ma,
+  st: star.st,
+  ag: star.ag,
+  pa: star.pa,
+  av: star.av,
+  skills: [...star.skills],
+  keywords: star.keywords,
+  primary: [],
+});
+
+/**
+ * Star players and mercenaries the team may hire for a game: the star players its roster lists; mercenaries from any
+ * of its positions with room left (counting the players available and the journeymen), Big Guys only within the
+ * roster's limit, each with an optional extra skill from the position's primary categories.
+ */
+function hireOffer(team: TeamFile, roster: Roster, journeymen: string[]): HireOffer {
+  const available = [...team.players.filter((p) => !p.missNextGame), ...journeymen.map((position) => ({ position }))];
+  const bigGuys = available.filter((p) => roster.positions.find((pos) => pos.title === p.position)?.type === "Big Guy").length;
+  return {
+    stars: roster.stars.flatMap((name) => {
+      const star = starPlayers.find((s) => s.name === name);
+      return star ? [{ ...starStats(star), cost: star.cost, ...(star.partner ? { partner: star.partner } : {}) }] : [];
+    }),
+    maxStars: MAX_STARS,
+    mercenaries: roster.positions.map((position) => ({
+      stats: positionStats(position),
+      cost: position.cost + MERCENARY_EXTRA_COST,
+      max: Math.max(0, position.quantity - available.filter((p) => p.position === position.title).length),
+      bigGuy: position.type === "Big Guy",
+      skills: position.normal.flatMap((c) => SKILL_CATEGORIES[c] ?? []).filter((s) => !position.skills.includes(s)).sort(),
+    })),
+    maxBigGuys: Math.max(0, roster.maxBigGuys - bigGuys),
+    mercenarySkillCost: MERCENARY_SKILL_COST,
+  };
+}
+
+/** The star players and mercenaries a team file lists, checked against its offer, as players for the game. */
+function hiredPlayers(team: TeamFile, offer: HireOffer, firstNr: number): TeamSetup["players"] {
+  let nr = firstNr;
+  const stars = team.starPlayers.map((name) => {
+    const star = offer.stars.find((s) => s.position === name);
+    if (!star) throw new TeamError(`${team.roster} cannot hire the star player ${name}.`);
+    if (star.partner && !team.starPlayers.includes(star.partner)) throw new TeamError(`${name} and ${star.partner} are hired together.`);
+    const { cost: _, partner: __, ...stats } = star;
+    return { ...stats, nr: nr++, name, hired: "star" as const };
+  });
+  if (new Set(team.starPlayers).size !== team.starPlayers.length) throw new TeamError("A star player can only be hired once.");
+  const counted = team.starPlayers.filter((name) => {
+    const partner = offer.stars.find((s) => s.position === name)!.partner;
+    return !partner || name < partner;
+  });
+  if (counted.length > offer.maxStars) throw new TeamError(`At most ${offer.maxStars} star players.`);
+  let bigGuys = 0;
+  const mercenaries = team.mercenaries.map((choice) => {
+    const merc = offer.mercenaries.find((m) => m.stats.position === choice.position);
+    if (!merc) throw new TeamError(`Unknown position "${choice.position}" for ${team.roster} mercenaries.`);
+    if (team.mercenaries.filter((m) => m.position === choice.position).length > merc.max) throw new TeamError(`At most ${merc.max} ${choice.position} mercenaries.`);
+    if (choice.skill !== undefined && !merc.skills.includes(choice.skill)) throw new TeamError(`A ${choice.position} mercenary cannot gain ${choice.skill}.`);
+    if (merc.bigGuy && ++bigGuys > offer.maxBigGuys) throw new TeamError(`At most ${offer.maxBigGuys} more Big Guys.`);
+    const loner = merc.stats.skills.some((s) => s.startsWith("Loner")) ? [] : ["Loner(4)"];
+    const skills = [...merc.stats.skills, ...loner, ...(choice.skill !== undefined ? [choice.skill] : [])];
+    return { ...merc.stats, skills, nr: nr++, name: `${choice.position} (mercenary)`, hired: "mercenary" as const };
+  });
+  return [...stars, ...mercenaries];
+}
+
 /** A team takes journeymen when it has fewer players than this available for the game. */
 export const JOURNEYMEN_UP_TO = 11;
 
@@ -178,22 +256,10 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
   // Plague Ridden: a killed opponent may join the team as a lineman.
   const plagueRidden = team.players.some((p) => [...positionOf(p).skills, ...p.skills].includes("Plague Ridden"));
   const lineman = roster.positions.find((pos) => pos.keywords.includes("lineman"));
-  return {
-    name: team.name,
-    roster: team.roster,
-    rerolls: team.rerolls,
-    apothecary: team.apothecary,
-    dedicatedFans: team.dedicatedFans,
-    cheerleaders: team.cheerleaders,
-    assistantCoaches: team.assistantCoaches,
-    specialRules: [...team.specialRules],
-    ...(journeymanPosition(roster, team) ? { journeymanPosition: positionStats(journeymanPosition(roster, team)!) } : {}),
-    inducements: { ...team.inducements },
-    inducementPrices: prices,
-    teamValue: currentTeamValue(team, roster),
-    treasury: team.treasury,
-    ...(plagueRidden && lineman ? { raisePosition: positionStats(lineman) } : {}),
-    players: [...team.players
+  const hired = journeymen(roster, team);
+  const offer = hireOffer(team, roster, hired.map((p) => p.position));
+  const players = [
+    ...team.players
       .filter((p) => !p.missNextGame)
       .map((p) => {
         const position = positionOf(p);
@@ -212,7 +278,28 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
           nigglingInjuries: p.injuries.filter((i) => i === "niggling").length,
           advancements: p.skills.length + Object.values(p.improvements).reduce((sum, n) => sum + (n ?? 0), 0),
         };
-      }), ...journeymen(roster, team)],
+      }),
+    ...hired,
+  ];
+  const stars = hiredPlayers(team, offer, 1 + Math.max(0, ...team.players.map((p) => p.number), ...players.map((p) => p.nr)));
+  if (players.length + stars.length > MAX_PLAYERS) throw new TeamError(`At most ${MAX_PLAYERS} players, star players and mercenaries included.`);
+  return {
+    name: team.name,
+    roster: team.roster,
+    rerolls: team.rerolls,
+    apothecary: team.apothecary,
+    dedicatedFans: team.dedicatedFans,
+    cheerleaders: team.cheerleaders,
+    assistantCoaches: team.assistantCoaches,
+    specialRules: [...team.specialRules],
+    ...(journeymanPosition(roster, team) ? { journeymanPosition: positionStats(journeymanPosition(roster, team)!) } : {}),
+    inducements: { ...team.inducements },
+    inducementPrices: prices,
+    teamValue: currentTeamValue(team, roster),
+    treasury: team.treasury,
+    hires: offer,
+    ...(plagueRidden && lineman ? { raisePosition: positionStats(lineman) } : {}),
+    players: [...players, ...stars],
   };
 }
 

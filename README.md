@@ -51,6 +51,11 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Team Value counts the players available for the game (position cost, +20k per primary skill and +30k per secondary
   skill gained, +30k MA, +60k ST, +30k AG, +20k PA, +10k AV), the journeymen, the team re-rolls, the assistant coaches,
   cheerleaders and apothecary. What the shop took from the treasury is gone after the game.
+- Star players and mercenaries (hired in the shop, or listed in the team file): up to 2 star players from those the
+  roster may hire (a pair, Grak and Crumbleberry, comes together and counts as one), and mercenaries from the team's
+  positions with room left (position cost + 30k, Loner (4+), an extra primary skill for 50k more; Big Guys within the
+  roster's limit), 16 players in all. A star player both teams hire plays for neither (both have paid). Hired players
+  are never MVP, and prayers that pick players leave star players out.
 - Inducements, within the BB2025 limits and the team's special rules. Bribes: one each to keep a fouler (or a Secret Weapon) on the pitch on 2+ (Bribery and Corruption
   teams may also re-roll a natural 1 on Argue the Call, once per game). Part-time Assistant
   Coaches and Temp Agency Cheerleaders: added to the team's own for Brilliant Coaching and Cheering Fans. Blitzer's
@@ -382,8 +387,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
   without bouncing, in the square they leave on their next step, and it is not a turnover. Not with My Ball.
 
-Not yet: spending winnings and Star Player Points between games, star players and mercenaries, Infamous Coaching
-Staff, wizards, the golden-goal overtime variant.
+Not yet: spending winnings and Star Player Points between games, Infamous Coaching Staff, wizards, the golden-goal
+overtime variant.
 
 The playground accepts `?seed=42` to replay the same dice.
 

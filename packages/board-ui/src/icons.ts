@@ -44,6 +44,10 @@ const SHARED_ICONS: Record<string, string> = {
   "Altern Forest Treeman": "treeman",
   "Goblin Lineman": "goblin",
   "Halfling Hopeful": "halfling",
+  // Star players.
+  "Morg 'n' Thorg": "morgnthorg",
+  "Grak": "ogre",
+  "Crumbleberry": "halfling",
 };
 
 /** Sprite URL of a player, or null if unknown. Home players use the "b" (blue) variant, active players the "an" (animated) one. */

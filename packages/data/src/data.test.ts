@@ -111,6 +111,32 @@ describe("data", () => {
     expect(resolveTeam(team)).toMatchObject({ teamValue: blitzer + lineman + staff, treasury: 70_000 });
   });
 
+  it("offers the roster's star players, and mercenaries from its positions with room left", () => {
+    const human = { ...exampleTeams["human"]!, journeymen: false };
+    const offer = resolveTeam(human).hires!;
+    expect(offer.stars.map((s) => s.position)).toEqual(rosters.find((r) => r.name === "Human")!.stars);
+    expect(offer.stars.find((s) => s.position === "Grak")).toMatchObject({ cost: 250_000, partner: "Crumbleberry", st: 5 });
+    const lineman = offer.mercenaries.find((m) => m.stats.position === "Human Lineman")!;
+    const linemen = human.players.filter((p) => p.position === "Human Lineman").length;
+    expect(lineman).toMatchObject({ cost: 80_000, max: 16 - linemen, bigGuy: false });
+    expect(lineman.skills).toContain("Block");
+    expect(lineman.skills).not.toContain("Dodge");
+    expect(offer).toMatchObject({ maxStars: 2, mercenarySkillCost: 50_000 });
+  });
+
+  it("hires the star players and mercenaries a team file lists", () => {
+    const human = (more: object) => ({ ...exampleTeams["human"]!, journeymen: false, ...more });
+    const team = resolveTeam(human({ starPlayers: ["Grak", "Crumbleberry"], mercenaries: [{ position: "Human Lineman", skill: "Block" }] }));
+    const hired = team.players.filter((p) => p.hired);
+    expect(hired.map((p) => [p.name, p.hired])).toEqual([["Grak", "star"], ["Crumbleberry", "star"], ["Human Lineman (mercenary)", "mercenary"]]);
+    expect(hired[2]!.skills).toEqual(["Loner(4)", "Block"]);
+    expect(new Set(team.players.map((p) => p.nr)).size).toBe(team.players.length);
+    expect(() => resolveTeam(human({ starPlayers: ["Grak"] }))).toThrow(/hired together/);
+    expect(() => resolveTeam(human({ starPlayers: ["Nobody"] }))).toThrow(/cannot hire the star player Nobody/);
+    expect(() => resolveTeam(human({ mercenaries: [{ position: "Human Lineman", skill: "Dodge" }] }))).toThrow(/cannot gain Dodge/);
+    expect(() => createGame(team, resolveTeam(exampleTeams["orc"]), { shop: true })).toThrow(/not listed in the team file/);
+  });
+
   it("gives teams with Plague Ridden their lineman position for raised players", () => {
     const nurgle = resolveTeam({ name: "N", roster: "Nurgle", rerolls: 0, players: [{ number: 1, name: "A", position: "Rotter Lineman" }] });
     expect(nurgle.raisePosition).toMatchObject({ position: "Rotter Lineman", skills: ["Decay", "Plague Ridden"] });
@@ -169,7 +195,7 @@ describe("data", () => {
     game.finished = true;
     game.result = { conceded: null, concededLegally: false, penalties: null, winner: "home", winnings: { home: 60_000, away: 50_000 }, dedicatedFans: { home: 1, away: 0 }, mvps: [], leaving: [] };
     const after = teamAfterGame({ ...human, treasury: 10_000, inducements: { bribes: 1 } }, game, "home");
-    expect([after.treasury, after.dedicatedFans, after.inducements]).toEqual([70_000, human.dedicatedFans + 1, {}]);
+    expect([after.treasury, after.dedicatedFans, after.inducements, after.starPlayers]).toEqual([70_000, human.dedicatedFans + 1, {}, []]);
     // What the pre-game shop took from the treasury is gone.
     game.teams.home.treasurySpent = 5_000;
     expect(teamAfterGame({ ...human, treasury: 10_000 }, game, "home").treasury).toBe(65_000);
@@ -241,8 +267,23 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
     case "CALL_COIN":
       return { type: "CALL_COIN", call: pick(["heads", "tails"] as const) };
     case "BUY_INDUCEMENTS": {
-      // A few random inducements, as long as the budget lasts.
       let budget = t.pettyCash + t.treasury;
+      // Now and then a star player (with their partner) and a mercenary, when there is room.
+      const stars: string[] = [];
+      const star = t.hires && random() < 0.7 ? pick(t.hires.stars) : undefined;
+      const pair = star ? [star, ...t.hires!.stars.filter((s) => s.position === star.partner)] : [];
+      const pairCost = pair.reduce((sum, s) => sum + s.cost, 0);
+      if (pair.length > 0 && pair.length <= t.freeSlots && pairCost <= budget) {
+        stars.push(...pair.map((s) => s.position));
+        budget -= pairCost;
+      }
+      const mercenaries: Array<{ position: string; skill?: string }> = [];
+      const merc = t.hires && random() < 0.5 ? pick(t.hires.mercenaries.filter((m) => m.max > 0 && !m.bigGuy)) : undefined;
+      if (merc && stars.length < t.freeSlots && merc.cost + t.hires!.mercenarySkillCost <= budget) {
+        mercenaries.push({ position: merc.stats.position, ...(merc.skills.length > 0 ? { skill: pick(merc.skills) } : {}) });
+        budget -= merc.cost + t.hires!.mercenarySkillCost;
+      }
+      // Then a few random inducements, as long as the budget lasts.
       const inducements: Record<string, number> = {};
       for (const [id, price] of Object.entries(t.prices)) {
         while (random() < 0.5 && (inducements[id] ?? 0) < price.max && price.cost <= budget) {
@@ -250,7 +291,7 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
           budget -= price.cost;
         }
       }
-      return { type: "BUY_INDUCEMENTS", inducements };
+      return { type: "BUY_INDUCEMENTS", inducements, stars, mercenaries };
     }
     case "CHOOSE_KICK":
       return { type: "CHOOSE_KICK", kick: random() < 0.5 };
@@ -435,7 +476,7 @@ describe("random games", () => {
     // Every other game, the home team bought a few inducements and has a Team Captain; in the others, both teams buy
     // theirs in the pre-game shop, home with some gold in the treasury.
     const shop = seed % 2 === 0;
-    const homeTeam = { ...(rosterTeam(home) as object), ...(shop ? { treasury: 150_000 } : { inducements: RANDOM_GAME_INDUCEMENTS, specialRules: ["Low Cost Linemen"], captain: 1 }) };
+    const homeTeam = { ...(rosterTeam(home) as object), ...(shop ? { treasury: 400_000 } : { inducements: RANDOM_GAME_INDUCEMENTS, specialRules: ["Low Cost Linemen"], captain: 1 }) };
     const start = createGame(resolveTeam(homeTeam), resolveTeam(rosterTeam(away)), { seed, overtime: seed % 4 === 0, shop });
     let s = start;
     const taken: Action[] = [];
@@ -456,7 +497,7 @@ describe("random games", () => {
     expect(s.log.at(-1)).toMatchObject({ type: "GameEnded" });
     // The Star Player Points earned go to the team file.
     const after = teamAfterGame(homeTeam, s, "home");
-    const kept = (p: GameState["players"][string]) => p.side === "home" && !/^(Journeyman|Riotous Rookie) #/.test(p.name) && p.casualty?.result !== "dead";
+    const kept = (p: GameState["players"][string]) => p.side === "home" && !p.hired && !/^(Journeyman|Riotous Rookie) #/.test(p.name) && p.casualty?.result !== "dead";
     const earned = Object.values(s.players).filter(kept);
     expect(after.players.reduce((sum, p) => sum + p.spp, 0)).toBe(earned.reduce((sum, p) => sum + starPlayerPoints(s, p), 0));
     expect(s.result!.mvps).toHaveLength(2);
@@ -475,6 +516,7 @@ describe("random games", () => {
       if (e.type === "TeamMateThrown") ballEvents.add(`team-mate throw ${e.result}`);
       if (e.type === "PlayerDistracted") ballEvents.add(`distracted (${e.skill})`);
       if (e.type === "InducementsBought" || e.type === "FreePrayers") ballEvents.add(e.type);
+      if (e.type === "InducementsBought") for (const name of e.hired) ballEvents.add(`hired ${name.replace(/^.* \(mercenary\)$/, "a mercenary")}`);
     }
   }, GAME_TIMEOUT_MS);
 });

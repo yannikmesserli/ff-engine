@@ -56,6 +56,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     teamValue: teams[side].teamValue ?? 0,
     treasury: teams[side].treasury ?? 0,
     inducementPrices: { ...(teams[side].inducementPrices ?? {}) },
+    hires: teams[side].hires ?? null,
     inducementsCost: 0,
     treasurySpent: 0,
     inducementsUsed: {},
@@ -98,7 +99,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
 export function createGame(home: TeamSetup, away: TeamSetup, options: GameOptions = {}): GameState {
   const seed = options.seed ?? Math.floor(Math.random() * 2 ** 32);
   const shop = options.shop ?? false;
-  if (shop && [home, away].some((t) => Object.values(t.inducements ?? {}).some((n) => n > 0))) {
+  if (shop && [home, away].some((t) => Object.values(t.inducements ?? {}).some((n) => n > 0) || t.players.some((p) => p.hired))) {
     throw new Error("With the pre-game shop, inducements are bought before the game, not listed in the team file.");
   }
   return produce(initialState(home, away, seed, options.overtime ?? false, shop), (draft) => {

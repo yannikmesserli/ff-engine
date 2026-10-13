@@ -65,8 +65,11 @@ export function concede(ctx: Ctx, template: Extract<ActionTemplate, { type: "CON
   state.activePlayerId = null;
 }
 
-/** Players who can be named MVP or awarded a touchdown: not killed this game, and not raised during it. */
-const awardable = (state: GameState, side: Side) => teamPlayers(state, side).filter((p) => p.casualty?.result !== "dead" && !p.raised);
+/**
+ * Players who can be named MVP or awarded a touchdown: not killed this game, not raised during it, and not star players
+ * or mercenaries.
+ */
+const awardable = (state: GameState, side: Side) => teamPlayers(state, side).filter((p) => p.casualty?.result !== "dead" && !p.raised && !p.hired);
 
 /** The penalty shootout ends once this many penalties are scored in all. */
 export const SHOOTOUT_PENALTIES = 5;
@@ -87,7 +90,7 @@ const illegalConcession = (result: GameResult, side: Side) => result.conceded ==
  *   team none, and it loses the Star Player Points of the game.
  * - Penalty shootout after a drawn overtime: each round both coaches roll a D6, the higher one scores (a tie scores
  *   nothing), until 5 penalties are scored.
- * - MVP: one random player of each team (not killed or raised this game). After an illegal concession the conceding
+ * - MVP: one random player of each team (not killed or raised this game, nor hired for it). After an illegal concession the conceding
  *   team gets none and the winners two.
  * - Winnings: (half the fan attendance + touchdowns + 1 for not stalling) x 10,000 gp. After an illegal concession the
  *   conceding team wins nothing and the winners get the whole attendance.

@@ -40,6 +40,7 @@ export function createPlayer(side: Side, p: TeamSetup["players"][number]): Playe
     gouged: false,
     chompedBy: [],
     advancements: p.advancements ?? 0,
+    ...(p.hired ? { hired: p.hired } : {}),
     spp: { touchdowns: 0, casualties: 0, completions: 0, interceptions: 0, landings: 0, catches: 0, mvp: 0 },
   };
 }

@@ -1,5 +1,16 @@
 import { useState } from "react";
-import { DIE_FACES, hasSkill, type Action, type ActionTemplate, type GameState, type InducementId, type PassRange, type Side } from "@bb/engine";
+import {
+  DIE_FACES,
+  hasSkill,
+  type Action,
+  type ActionTemplate,
+  type GameState,
+  type HireOffer,
+  type InducementId,
+  type MercenaryChoice,
+  type PassRange,
+  type Side,
+} from "@bb/engine";
 import { formationActions, formations } from "@bb/data";
 import { DieFace } from "./Dice";
 import { SHOP_NAMES, WEATHER_NAMES, blockFaceName, casualtyName, gold } from "./describe";
@@ -473,13 +484,32 @@ function RollControls({ template, dispatch }: { template: TemplateOf<"ROLL">; di
   );
 }
 
-/** The pre-game shop: a counter per inducement on offer, the total against the budget, and the purchase. */
+/**
+ * The pre-game shop: a counter per inducement on offer, the star players (a pair is picked together) and mercenaries
+ * to hire, the total against the budget, and the purchase.
+ */
 function ShopControls({ template, dispatch }: { template: TemplateOf<"BUY_INDUCEMENTS">; dispatch(a: Action): void }) {
   const [counts, setCounts] = useState<Partial<Record<InducementId, number>>>({});
+  const [stars, setStars] = useState<string[]>([]);
+  const [mercs, setMercs] = useState<MercenaryChoice[]>([]);
+  const hires = template.hires;
   const offer = (Object.entries(template.prices) as Array<[InducementId, { cost: number; max: number }]>).filter(([, p]) => p.max > 0);
-  const total = offer.reduce((sum, [id, p]) => sum + (counts[id] ?? 0) * p.cost, 0);
+  const starCost = (name: string) => hires?.stars.find((s) => s.position === name)?.cost ?? 0;
+  const mercCost = (m: MercenaryChoice) =>
+    (hires?.mercenaries.find((o) => o.stats.position === m.position)?.cost ?? 0) + (m.skill ? (hires?.mercenarySkillCost ?? 0) : 0);
+  const total =
+    offer.reduce((sum, [id, p]) => sum + (counts[id] ?? 0) * p.cost, 0) +
+    stars.reduce((sum, name) => sum + starCost(name), 0) +
+    mercs.reduce((sum, m) => sum + mercCost(m), 0);
   const budget = template.pettyCash + template.treasury;
+  const slotsLeft = template.freeSlots - stars.length - mercs.length;
   const change = (id: InducementId, delta: number) => setCounts((c) => ({ ...c, [id]: (c[id] ?? 0) + delta }));
+  /** A star and their partner, picked or dropped together. */
+  const toggleStar = (name: string) => {
+    const partner = hires?.stars.find((s) => s.position === name)?.partner;
+    const pair = [name, ...(partner ? [partner] : [])];
+    setStars((picked) => (picked.includes(name) ? picked.filter((n) => !pair.includes(n)) : [...picked, ...pair]));
+  };
   return (
     <div className="bb-shop">
       <table>
@@ -502,10 +532,84 @@ function ShopControls({ template, dispatch }: { template: TemplateOf<"BUY_INDUCE
               </tr>
             );
           })}
+          {hires?.stars.map((star) => {
+            const picked = stars.includes(star.position);
+            const pairCost = star.cost + (star.partner ? starCost(star.partner) : 0);
+            return (
+              <tr key={star.position} title={star.skills.join(", ")}>
+                <td>
+                  ★ {star.position} ({star.ma}/{star.st}/{star.ag}+/{star.pa === null ? "-" : `${star.pa}+`}/{star.av}+){star.partner ? `, with ${star.partner}` : ""}
+                </td>
+                <td>{gold(star.cost)}</td>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={picked}
+                    disabled={!picked && (total + pairCost > budget || slotsLeft < (star.partner ? 2 : 1))}
+                    onChange={() => toggleStar(star.position)}
+                  />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-      <button className="bb-confirm" disabled={total > budget} onClick={() => dispatch({ type: "BUY_INDUCEMENTS", inducements: counts })}>
+      {hires && hires.mercenaries.some((m) => m.max > 0) && (
+        <MercenaryPicker hires={hires} disabled={slotsLeft === 0} add={(m) => setMercs([...mercs, m])} budgetLeft={budget - total} cost={mercCost} />
+      )}
+      {mercs.map((m, i) => (
+        <div key={i}>
+          Mercenary {m.position}
+          {m.skill ? ` with ${m.skill}` : ""} ({gold(mercCost(m))}){" "}
+          <button className="bb-link" onClick={() => setMercs(mercs.filter((_, j) => j !== i))}>
+            Remove
+          </button>
+        </div>
+      ))}
+      <button
+        className="bb-confirm"
+        disabled={total > budget}
+        onClick={() => dispatch({ type: "BUY_INDUCEMENTS", inducements: counts, stars, mercenaries: mercs })}
+      >
         {total === 0 ? "Buy nothing" : `Buy for ${gold(total)} (${gold(budget - total)} left)`}
+      </button>
+    </div>
+  );
+}
+
+/** A position and an optional extra skill, to add a mercenary to the purchase. */
+function MercenaryPicker(props: { hires: HireOffer; disabled: boolean; budgetLeft: number; cost(m: MercenaryChoice): number; add(m: MercenaryChoice): void }) {
+  const positions = props.hires.mercenaries.filter((m) => m.max > 0);
+  const [position, setPosition] = useState(positions[0]!.stats.position);
+  const [skill, setSkill] = useState("");
+  const merc = positions.find((m) => m.stats.position === position)!;
+  const choice: MercenaryChoice = { position, ...(skill ? { skill } : {}) };
+  return (
+    <div>
+      Mercenary:{" "}
+      <select
+        value={position}
+        onChange={(e) => {
+          setPosition(e.target.value);
+          setSkill("");
+        }}
+      >
+        {positions.map((m) => (
+          <option key={m.stats.position} value={m.stats.position}>
+            {m.stats.position} ({gold(m.cost)})
+          </option>
+        ))}
+      </select>{" "}
+      <select value={skill} onChange={(e) => setSkill(e.target.value)}>
+        <option value="">No extra skill</option>
+        {merc.skills.map((s) => (
+          <option key={s} value={s}>
+            {s} (+{gold(props.hires.mercenarySkillCost)})
+          </option>
+        ))}
+      </select>{" "}
+      <button disabled={props.disabled || props.cost(choice) > props.budgetLeft} onClick={() => props.add(choice)}>
+        Add
       </button>
     </div>
   );

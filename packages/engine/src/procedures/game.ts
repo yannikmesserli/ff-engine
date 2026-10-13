@@ -3,6 +3,7 @@ import type { GameState, HalfNumber, PlayerState, Procedure, Side } from "../typ
 import { isOnPitch, other, teamPlayers } from "../pitch";
 import { endDrive, resetForKickoff } from "./helpers";
 import { secretWeapons } from "./foul";
+import { hiredTwice } from "./shop";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -39,6 +40,8 @@ export const Game: Handler<P<"Game">> = {
     switch (proc.stage) {
       case "pregame":
         ctx.emit({ type: "GameStarted" });
+        // Star players both team files hired play for neither team.
+        hiredTwice(ctx, "home");
         proc.stage = "half1";
         ctx.push({ type: "Pregame", stage: "fans" }, { type: "CoinToss", stage: "call" });
         return "continue";

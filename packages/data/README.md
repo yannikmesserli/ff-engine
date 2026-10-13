@@ -14,7 +14,8 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 
 | Export | What |
 |---|---|
-| `rosters` | The 30 BB2025 rosters from FUMBBL ruleset 2014 (`src/generated/rosters.json`), star players excluded. |
+| `rosters` | The 30 BB2025 rosters from FUMBBL ruleset 2014 (`src/generated/rosters.json`); `stars` names the star players each may hire. |
+| `starPlayers` | The BB2025 star players from the same rosters: characteristics, skills and special rules, cost, and the partner a pair is hired with. |
 | `exampleTeams` | 13 example teams (`src/teams.json`), keyed by name (`"human"`, `"wood-elf"`...). |
 | `formations` | Setups in a text format (`src/formations.json`: `def_boat`, `def_spread`, `def_zone`, `off_line`, `off_wedge`). |
 | `formationActions(state, side, formation)` | `PLACE_PLAYER` actions that clear a side's half and set up a formation. |
@@ -70,6 +71,11 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
   Favoured of Nurgle), `mortuaryAssistant` (1, Masters of Undeath), `weatherMage` (1), `biasedReferee` (1), `prayers`
   (3). The team file says what was bought, not how it was paid for; with the engine's `shop` option the inducements
   are bought in the game instead (then the team file must not list any).
+- `starPlayers`: the star players hired for this game, by name (from the roster's `stars`): at most 2, a pair hired
+  together (Grak and Crumbleberry) counting as one. `mercenaries`: `{ "position": "Human Lineman", "skill": "Block" }`
+  per mercenary, from any position of the roster with room left (Big Guys within the roster's limit), with Loner (4+)
+  and an optional extra primary skill. Both count towards the 16 players; with the engine's `shop` option they are
+  hired in the game instead. Neither comes back in `teamAfterGame`.
 - `journeymen` (default `true`): a team with fewer than 11 players left for the game gets journeymen up to 11, from
   the roster's 0-12 or 0-16 lineman position, with Loner (4+), numbered with the smallest free numbers. `false` takes
   none; a position title picks the position when the roster has more than one (Shambling Undead: Skeleton or Zombie
@@ -104,7 +110,7 @@ Run from `frontend/`.
 
 - `pnpm fetch-rosters` (`scripts/fetch-rosters.ts`, needs network): reads the roster list of
   <https://fumbbl.com/api/ruleset/get/2014>, keeps the enabled rosters except "Test roster", downloads each one from
-  `https://fumbbl.com/xml:roster?id=<id>` (300 ms apart), drops star players, converts skill categories to
+  `https://fumbbl.com/xml:roster?id=<id>` (300 ms apart), moves star players to their own list (each roster names those it may hire), converts skill categories to
   letters (G, A, S, P, M, D) and valued skills to `"Loner(4)"`, validates the result with `RosterSchema` and writes
   `src/generated/rosters.json` sorted by name.
 

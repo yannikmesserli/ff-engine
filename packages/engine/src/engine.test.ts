@@ -21,6 +21,7 @@ import {
   type ActionTemplate,
   type GameState,
   type PlayerActionType,
+  type HireOffer,
   type PlayerState,
   type Side,
   type Square,
@@ -3746,7 +3747,7 @@ describe("engine", () => {
 
     it("the higher team value spends its treasury first, then the underdog gets petty cash and up to 50,000 of its treasury", () => {
       let s = shopping({ teamValue: 1_100_000, treasury: 120_000 }, { teamValue: 1_000_000, treasury: 200_000 });
-      expect(getAvailableActions(s)).toEqual([{ type: "BUY_INDUCEMENTS", side: "home", prices: PRICES, pettyCash: 0, treasury: 120_000 }]);
+      expect(getAvailableActions(s)).toEqual([{ type: "BUY_INDUCEMENTS", side: "home", prices: PRICES, pettyCash: 0, treasury: 120_000, hires: null, freeSlots: 5 }]);
       expect(() => step(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 2 } })).toThrow(/cannot spend 200000/);
       s = apply(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 1 } });
       // The 100,000 difference, plus the 100,000 home spent.
@@ -3754,7 +3755,7 @@ describe("engine", () => {
       expect(find(s, "BUY_INDUCEMENTS")).toMatchObject({ side: "away", pettyCash: 200_000, treasury: 50_000 });
       expect(() => step(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 2, teamMascot: 1, prayers: 1 } })).toThrow(/cannot spend/);
       s = apply(s, { type: "BUY_INDUCEMENTS", inducements: { bribes: 2, prayers: 1 } });
-      expect(s.log).toContainEqual({ type: "InducementsBought", side: "away", inducements: { bribes: 2, prayers: 1 }, cost: 250_000, treasury: 50_000 });
+      expect(s.log).toContainEqual({ type: "InducementsBought", side: "away", inducements: { bribes: 2, prayers: 1 }, hired: [], cost: 250_000, treasury: 50_000 });
       expect([s.teams.home.treasurySpent, s.teams.away.treasurySpent, s.teams.home.bribes, s.teams.away.bribes]).toEqual([100_000, 50_000, 1, 2]);
       // Team values with the inducements: 1,200,000 and 1,250,000, so home gets a free prayer; away draws the one it bought.
       expect(s.log).toContainEqual({ type: "FreePrayers", side: "home", count: 1 });
@@ -3774,6 +3775,54 @@ describe("engine", () => {
       expect([s.teams.home.inducements, s.teams.home.treasurySpent]).toEqual([{ teamMascot: 1 }, 0]);
       // 105,000 of difference left: two free prayers.
       expect(s.log).toContainEqual({ type: "FreePrayers", side: "home", count: 2 });
+    });
+
+    describe("star players and mercenaries", () => {
+      const stats = { ma: 5, st: 5, ag: 4, pa: 4, av: 10, keywords: ["big guy"] };
+      const HIRES: HireOffer = {
+        stars: [
+          { position: "Grak", ...stats, skills: ["Loner(4)", "I'll Carry You(Carrier)"], cost: 250_000, partner: "Crumbleberry" },
+          { position: "Crumbleberry", ...stats, st: 2, skills: ["Loner(4)", "I'll Carry You(Carried)"], cost: 0, partner: "Grak" },
+          { position: "Akhorne the Squirrel", ...stats, skills: ["Loner(4)", "Blind Rage"], cost: 80_000 },
+          { position: "Morg 'n' Thorg", ...stats, skills: ["Loner(4)", "The Ballista"], cost: 340_000 },
+        ],
+        maxStars: 2,
+        mercenaries: [
+          { stats: { position: "Human Lineman", ma: 6, st: 3, ag: 3, pa: 4, av: 8, skills: [] }, cost: 80_000, max: 5, bigGuy: false, skills: ["Block", "Dodge"] },
+          { stats: { position: "Ogre", ma: 5, st: 5, ag: 4, pa: 5, av: 10, skills: ["Loner(4)"] }, cost: 170_000, max: 1, bigGuy: true, skills: [] },
+        ],
+        maxBigGuys: 0,
+        mercenarySkillCost: 50_000,
+      };
+      const hiring = (treasury = 1_000_000) => shopping({ teamValue: 1_100_000, treasury, hires: HIRES }, { teamValue: 1_000_000, treasury: 1_000_000, hires: HIRES });
+      const buy = (stars: string[], mercenaries: Array<{ position: string; skill?: string }> = []): Action => ({ type: "BUY_INDUCEMENTS", inducements: {}, stars, mercenaries });
+
+      it("star players and mercenaries join the reserves; a mercenary gains Loner (4+) and an extra skill for 50k", () => {
+        let s = hiring();
+        expect(find(s, "BUY_INDUCEMENTS")).toMatchObject({ hires: HIRES, freeSlots: 5 });
+        s = apply(s, buy(["Akhorne the Squirrel"], [{ position: "Human Lineman", skill: "Block" }]));
+        expect(s.players["home-12"]).toMatchObject({ name: "Akhorne the Squirrel", hired: "star", at: "reserves", skills: ["Loner(4)", "Blind Rage"] });
+        expect(s.players["home-13"]).toMatchObject({ name: "Human Lineman (mercenary)", hired: "mercenary", skills: ["Loner(4)", "Block"] });
+        expect(s.log).toContainEqual(expect.objectContaining({ type: "InducementsBought", side: "home", hired: ["Akhorne the Squirrel", "Human Lineman (mercenary)"], cost: 210_000 }));
+      });
+
+      it("pairs come together and count as one star player; at most two; within the roster's limits", () => {
+        const s = hiring();
+        expect(() => step(s, buy(["Grak"]))).toThrow(/Grak and Crumbleberry are hired together/);
+        expect(() => step(s, buy(["Grak", "Crumbleberry", "Akhorne the Squirrel"]))).not.toThrow();
+        expect(() => step(s, buy(["Grak", "Crumbleberry", "Akhorne the Squirrel", "Morg 'n' Thorg"]))).toThrow(/At most 2 star players/);
+        expect(() => step(s, buy([], [{ position: "Ogre" }]))).toThrow(/At most 0 more Big Guys/);
+        expect(() => step(s, buy([], [{ position: "Human Lineman", skill: "Tackle" }]))).toThrow(/cannot gain Tackle/);
+        expect(() => step(s, buy([], Array.from({ length: 6 }, () => ({ position: "Human Lineman" }))))).toThrow(/at most 5 players/);
+        expect(() => step(hiring(300_000), buy(["Morg 'n' Thorg"]))).toThrow(/cannot spend 340000/);
+      });
+
+      it("a star player both teams hire plays for neither; the gold is spent", () => {
+        const s = apply(hiring(), buy(["Akhorne the Squirrel", "Morg 'n' Thorg"]), buy(["Akhorne the Squirrel"]));
+        expect(s.log).toContainEqual({ type: "StarHiredTwice", name: "Akhorne the Squirrel", playerIds: ["home-12", "away-12"] });
+        expect(Object.values(s.players).filter((p) => p.hired).map((p) => p.name)).toEqual(["Morg 'n' Thorg"]);
+        expect([s.teams.home.inducementsCost, s.teams.away.inducementsCost]).toEqual([420_000, 80_000]);
+      });
     });
 
     it("equal team values: no shop; without the option, the team files' inducements stand", () => {
@@ -4067,6 +4116,13 @@ describe("engine", () => {
       s = apply(s, roll(2), roll(1));
       expect(s.result!.dedicatedFans).toEqual({ home: 1, away: -1 });
       expect([s.finished, s.log.at(-1)]).toEqual([true, { type: "GameEnded", winner: "home" }]);
+    });
+
+    it("star players and mercenaries are never MVP", () => {
+      const s = toEnd((c) => {
+        for (const p of Object.values(c.players)) if (p.side === "home" && p.nr > 1) p.hired = p.nr % 2 ? "star" : "mercenary";
+      });
+      expect(s.result!.mvps[0]).toBe("home-1");
     });
 
     it("a draw: no Dedicated Fans rolls", () => {

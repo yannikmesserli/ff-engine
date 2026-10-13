@@ -123,6 +123,8 @@ export interface PlayerState {
   advancements: number;
   /** Joined the team during this game (Plague Ridden): cannot be named MVP. */
   raised?: boolean;
+  /** A star player or mercenary hired for this game: not named MVP, nor chosen by a prayer. */
+  hired?: Hired;
   /** Star Player Points earned this game. */
   spp: SppRecord;
 }
@@ -165,6 +167,8 @@ export interface TeamState {
   treasury: number;
   /** What the pre-game shop offers the team: each inducement's cost and the most it may buy. */
   inducementPrices: InducementPrices;
+  /** Star players and mercenaries the pre-game shop offers the team. */
+  hires: HireOffer | null;
   /** Gold spent in the pre-game shop (petty cash and treasury), and the part of it paid from the treasury. */
   inducementsCost: number;
   treasurySpent: number;
@@ -273,6 +277,39 @@ export type Prayer = (typeof PRAYERS)[number];
 /** Inducements bought for the game, by id (missing: none). */
 export type Inducements = Partial<Record<InducementId, number>>;
 
+/** How a player was hired for the game. */
+export type Hired = "star" | "mercenary";
+
+/** A star player on offer: their characteristics and skills (`position` is their name), cost and partner, if any. */
+export type StarOffer = PositionStats & { cost: number; partner?: string };
+
+/** A position the team may hire mercenaries from: cost, how many, and the extra skill each may get (a primary one). */
+export interface MercenaryOffer {
+  stats: PositionStats;
+  cost: number;
+  max: number;
+  bigGuy: boolean;
+  skills: string[];
+}
+
+/**
+ * Star players and mercenaries the pre-game shop offers a team: up to `maxStars` star players (a pair hired together
+ * counts as one), mercenaries (at most `maxBigGuys` more Big Guys), each extra mercenary skill for `mercenarySkillCost`.
+ */
+export interface HireOffer {
+  stars: StarOffer[];
+  maxStars: number;
+  mercenaries: MercenaryOffer[];
+  maxBigGuys: number;
+  mercenarySkillCost: number;
+}
+
+/** A mercenary to hire: the position, and an extra skill if any. */
+export interface MercenaryChoice {
+  position: string;
+  skill?: string;
+}
+
 /** The pre-game shop's offer to a team, by inducement id (missing: not on offer): cost in gold pieces, and the most it may buy. */
 export type InducementPrices = Partial<Record<InducementId, { cost: number; max: number }>>;
 
@@ -300,6 +337,8 @@ export interface TeamSetup {
   treasury?: number;
   /** What the pre-game shop offers the team (none when missing). */
   inducementPrices?: InducementPrices;
+  /** Star players and mercenaries the pre-game shop offers (none when missing). */
+  hires?: HireOffer;
   players: Array<
     PositionStats & {
       nr: number;
@@ -308,6 +347,8 @@ export interface TeamSetup {
       nigglingInjuries?: number;
       /** Advancements from earlier games (gained skills and characteristic improvements). */
       advancements?: number;
+      /** A star player or mercenary hired for this game. */
+      hired?: Hired;
     }
   >;
 }
@@ -934,7 +975,7 @@ export type Action =
   /** Intensive Training (a prayer): the skill the player gains. */
   | { type: "CHOOSE_SKILL"; skill: string }
   /** Pre-game shop: how many of each inducement to buy (nothing: buy none). */
-  | { type: "BUY_INDUCEMENTS"; inducements: Inducements }
+  | { type: "BUY_INDUCEMENTS"; inducements: Inducements; stars?: string[]; mercenaries?: MercenaryChoice[] }
   /** Throw a Rock (a prayer): throw it now or keep it. */
   | { type: "THROW_A_ROCK"; use: boolean }
   /** Use the Weather Mage at the start of the team's turn. */
@@ -999,7 +1040,16 @@ export type ActionTemplate =
   /** Intensive Training: the skills `playerId` may gain. */
   | { type: "CHOOSE_SKILL"; side: Side; playerId: string; skills: string[] }
   /** Pre-game shop: the offer, and the budget: petty cash first, then the treasury that may be spent. */
-  | { type: "BUY_INDUCEMENTS"; side: Side; prices: InducementPrices; pettyCash: number; treasury: number }
+  | {
+      type: "BUY_INDUCEMENTS";
+      side: Side;
+      prices: InducementPrices;
+      pettyCash: number;
+      treasury: number;
+      /** Star players and mercenaries on offer, and how many more players the team may have (16 at most). */
+      hires: HireOffer | null;
+      freeSlots: number;
+    }
   /** Weather Mage: the 2D6 rolled, and the weather each modifier gives. */
   | { type: "CHOOSE_WEATHER"; side: Side; roll: number; options: Array<{ modifier: number; total: number; weather: Weather }> }
   /** Swoop: the squares next to the target square (not diagonally) that give the side the template faces. */
@@ -1115,8 +1165,13 @@ export type GameEvent =
   | { type: "SpecialRuleUsed"; side: Side; rule: string }
   /** Pre-game shop: `side` gets petty cash, the difference in Current Team Value (plus what the other team spent). */
   | { type: "PettyCash"; side: Side; amount: number }
-  /** Pre-game shop: `side` bought these inducements for `cost` gold pieces, `treasury` of them from the treasury. */
-  | { type: "InducementsBought"; side: Side; inducements: Inducements; cost: number; treasury: number }
+  /**
+   * Pre-game shop: `side` bought these inducements and hired these players (`hired`, by name) for `cost` gold pieces, `treasury`
+   * of them from the treasury.
+   */
+  | { type: "InducementsBought"; side: Side; inducements: Inducements; hired: string[]; cost: number; treasury: number }
+  /** Both teams hired the same star player: neither gets them (the gold is spent). */
+  | { type: "StarHiredTwice"; name: string; playerIds: string[] }
   /** The underdog gets free Prayers to Nuffle, one per 50,000 gold pieces of Team Value difference left. */
   | { type: "FreePrayers"; side: Side; count: number }
   /** An inducement bought for the game was used (the Team Mascot was tried...). */

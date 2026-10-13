@@ -36,7 +36,7 @@ export const PRAYER_NAMES: Record<Prayer, string> = {
 
 /** The team's players a prayer may change: in the reserves (not KO'd or injured) and `fits`. */
 const candidates = (state: GameState, side: Side, fits: (p: PlayerState) => boolean) =>
-  teamPlayers(state, side).filter((p) => p.at === "reserves" && fits(p));
+  teamPlayers(state, side).filter((p) => p.at === "reserves" && p.hired !== "star" && fits(p));
 
 /** Players a coach-chosen prayer may go to: Iron Man (AV below 11+), Knuckle Dusters (without Mighty Blow). */
 export function prayerChoices(state: GameState, side: Side, prayer: Prayer): PlayerState[] {

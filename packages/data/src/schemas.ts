@@ -82,6 +82,10 @@ export const TeamFileSchema = z.strictObject({
   captain: z.number().int().positive().optional(),
   /** Inducements bought for this game, by id: how many of each (see INDUCEMENT_RULES for the limits). */
   inducements: z.partialRecord(z.enum(INDUCEMENTS), count).default({}),
+  /** Star players hired for this game, by name (see `starPlayers`). */
+  starPlayers: z.array(z.string().min(1)).default([]),
+  /** Mercenaries hired for this game: a position of the roster, and an extra primary skill if any. */
+  mercenaries: z.array(z.strictObject({ position: z.string().min(1), skill: z.string().min(1).optional() })).default([]),
   players: z
     .array(TeamPlayerSchema)
     .min(1)
@@ -108,6 +112,8 @@ export const RosterSchema = z.object({
   necromancer: z.boolean(),
   maxBigGuys: z.number(),
   keywords: z.array(z.string()),
+  /** Names of the star players the roster may hire (see StarPlayerSchema). */
+  stars: z.array(z.string()),
   positions: z.array(
     z.object({
       id: z.number(),
@@ -133,3 +139,23 @@ export const RosterSchema = z.object({
 
 /** A BB2025 roster with its positions. */
 export type Roster = z.infer<typeof RosterSchema>;
+
+/** A BB2025 star player as published by FUMBBL: hired as an inducement by the rosters that list them. */
+export const StarPlayerSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  cost: z.number(),
+  ma: z.number(),
+  st: z.number(),
+  ag: z.number(),
+  pa: z.number().nullable(),
+  av: z.number(),
+  /** Skills and special rules, e.g. "Loner(4)", "I'll Carry You". */
+  skills: z.array(z.string()),
+  keywords: z.array(z.string()),
+  /** A star hired together with this one (Grak and Crumbleberry), as one star player. */
+  partner: z.string().optional(),
+});
+
+/** A BB2025 star player. */
+export type StarPlayer = z.infer<typeof StarPlayerSchema>;

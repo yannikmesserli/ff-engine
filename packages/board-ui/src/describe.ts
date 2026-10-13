@@ -341,10 +341,12 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     case "PettyCash":
       return `${sideName(state, e.side)} gets ${gold(e.amount)} of petty cash for the pre-game shop.`;
     case "InducementsBought": {
-      const bought = (Object.entries(e.inducements) as Array<[InducementId, number]>).map(([id, n]) => `${SHOP_NAMES[id]} x${n}`).join(", ");
+      const bought = [...(Object.entries(e.inducements) as Array<[InducementId, number]>).map(([id, n]) => `${SHOP_NAMES[id]} x${n}`), ...e.hired].join(", ");
       if (!bought) return `${sideName(state, e.side)} buys no inducements.`;
       return `${sideName(state, e.side)} buys ${bought} for ${gold(e.cost)}${e.treasury > 0 ? ` (${gold(e.treasury)} from the treasury)` : ""}.`;
     }
+    case "StarHiredTwice":
+      return `Both teams hired ${e.name}: the star player plays for neither, and both have paid.`;
     case "FreePrayers":
       return `${sideName(state, e.side)}, the underdog, gets ${e.count} free Prayer${e.count === 1 ? "" : "s"} to Nuffle.`;
     case "InducementUsed":

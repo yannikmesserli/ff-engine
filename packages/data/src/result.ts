@@ -11,7 +11,7 @@ const MAX_FANS = 7;
  * Lasting Injury a -1; the dead and the players who left after a concession are removed), players who sat this game out
  * are back, an opponent raised by Plague Ridden joins (if there is room), winnings go to the treasury and Dedicated Fans
  * change, less what the pre-game shop took from the treasury. Journeymen and Riotous Rookies are not kept; the
- * inducements bought for the game are used up.
+ * inducements, star players and mercenaries bought for the game are gone.
  */
 export function teamAfterGame(input: unknown, state: GameState, side: Side): TeamFile {
   const team = TeamFileSchema.parse(input);
@@ -46,6 +46,8 @@ export function teamAfterGame(input: unknown, state: GameState, side: Side): Tea
     dedicatedFans: Math.min(MAX_FANS, Math.max(MIN_FANS, team.dedicatedFans + result.dedicatedFans[side])),
     treasury: team.treasury - state.teams[side].treasurySpent + result.winnings[side],
     inducements: {},
+    starPlayers: [],
+    mercenaries: [],
     players,
   };
 }

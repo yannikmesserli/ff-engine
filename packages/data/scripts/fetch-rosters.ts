@@ -1,13 +1,14 @@
 /**
  * Downloads the BB2025 rosters from FUMBBL into
- * src/generated/rosters.json. Star players are dropped: they are inducements, not roster positions.
+ * src/generated/rosters.json. Star players are inducements, not roster positions: they go to a separate list, and each
+ * roster names those it may hire.
  *
  * Run with: pnpm fetch-rosters
  */
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { XMLParser } from "fast-xml-parser";
-import { RosterSchema, type Roster } from "../src/schemas";
+import { RosterSchema, StarPlayerSchema, type Roster, type StarPlayer } from "../src/schemas";
 
 /** FUMBBL ruleset holding the BB2025 rosters. */
 const RULESET_ID = 2014;
@@ -55,6 +56,8 @@ interface PositionXml {
   agility: Xml;
   passing?: Xml;
   armour: Xml;
+  /** Star players hired together: the other one's position id. */
+  teamWithPositionId?: Xml;
   skillList?: { skill?: Xml[] };
   skillCategoryList?: { normal?: Xml[]; double?: Xml[] };
   keywords?: { keyword?: Xml[] };
@@ -95,9 +98,40 @@ const parser = new XMLParser({
   isArray: (name) => ["position", "skill", "keyword", "normal", "double"].includes(name),
 });
 
+/** Skills with a value (e.g. Loner) become "Loner(4)". */
+const skillList = (p: PositionXml) =>
+  (p.skillList?.skill ?? []).map((s) => {
+    const value = typeof s === "object" && !Array.isArray(s) ? text(s.value) : "";
+    return value ? `${text(s)}(${value})` : text(s);
+  });
+
+/** Star players seen in any roster, by position id. */
+const starPlayers = new Map<number, StarPlayer>();
+
+/** A star player's characteristics and skills; their partner, if they are hired together, by name. */
+function convertStar(p: PositionXml, positions: PositionXml[]): StarPlayer {
+  const name = text(p.name);
+  const partner = positions.find((q) => text(q.id) === text(p.teamWithPositionId));
+  return {
+    id: Number(p.id),
+    name,
+    cost: Number(text(p.cost)),
+    ma: requiredStat(p.movement, `MA of ${name}`),
+    st: requiredStat(p.strength, `ST of ${name}`),
+    ag: requiredStat(p.agility, `AG of ${name}`),
+    pa: stat(p.passing),
+    av: requiredStat(p.armour, `AV of ${name}`),
+    skills: skillList(p),
+    keywords: (p.keywords?.keyword ?? []).map(text),
+    ...(partner ? { partner: text(partner.name) } : {}),
+  };
+}
+
 function convertRoster(xml: string, tier: number): Roster {
   const r = (parser.parse(xml) as { roster: RosterXml }).roster;
   const name = text(r.name);
+  const stars = (r.position ?? []).filter((p) => text(p.type) === "Star");
+  for (const star of stars) starPlayers.set(Number(star.id), convertStar(star, r.position ?? []));
   return {
     id: Number(r.id),
     name,
@@ -109,6 +143,7 @@ function convertRoster(xml: string, tier: number): Roster {
     necromancer: text(r.necromancer) === "true",
     maxBigGuys: Number(text(r.maxBigGuys) || 0),
     keywords: (r.keywords?.keyword ?? []).map(text),
+    stars: stars.map((p) => text(p.name)).sort(),
     positions: (r.position ?? [])
       .filter((p) => text(p.type) !== "Star")
       .map((p) => {
@@ -124,11 +159,7 @@ function convertRoster(xml: string, tier: number): Roster {
           ag: requiredStat(p.agility, `AG of ${name} ${title}`),
           pa: stat(p.passing),
           av: requiredStat(p.armour, `AV of ${name} ${title}`),
-          // Skills with a value (e.g. Loner) become "Loner(4)".
-          skills: (p.skillList?.skill ?? []).map((s) => {
-            const value = typeof s === "object" && !Array.isArray(s) ? text(s.value) : "";
-            return value ? `${text(s)}(${value})` : text(s);
-          }),
+          skills: skillList(p),
           normal: (p.skillCategoryList?.normal ?? []).map(category),
           double: (p.skillCategoryList?.double ?? []).map(category),
           keywords: (p.keywords?.keyword ?? []).map(text),
@@ -147,5 +178,7 @@ for (const entry of entries) {
 rosters.sort((a, b) => a.name.localeCompare(b.name));
 // Fail here rather than when the package loads.
 RosterSchema.array().parse(rosters);
-writeFileSync(OUT, JSON.stringify({ source: `${FUMBBL}/api/ruleset/get/${RULESET_ID}`, rosters }, null, 2) + "\n");
+const stars = [...starPlayers.values()].sort((a, b) => a.name.localeCompare(b.name));
+StarPlayerSchema.array().parse(stars);
+writeFileSync(OUT, JSON.stringify({ source: `${FUMBBL}/api/ruleset/get/${RULESET_ID}`, rosters, starPlayers: stars }, null, 2) + "\n");
 console.log(`Wrote ${rosters.length} rosters to ${OUT}`);
