@@ -39,6 +39,20 @@ describe("scenarios", () => {
     expect(find(s, "CALL_COIN")).toBeDefined();
   });
 
+  it("star-players: Grak picks up Crumbleberry after his Bone Head roll, then puts her down", () => {
+    let s = load("star-players");
+    expect(s.players["home-5"]).toMatchObject({ name: "Grak", hired: "star" });
+    expect(s.players["home-7"]).toMatchObject({ hired: "mercenary", skills: ["Loner(4)", "Block"] });
+    s = step(s, { type: "START_ACTION", playerId: "home-5", action: "move" }).state;
+    s = step(s, { type: "ROLL", values: [4] }).state;
+    expect(find(s, "USE_SKILL")?.skill).toBe("I'll Carry You");
+    s = step(s, { type: "USE_SKILL", use: true, skill: "I'll Carry You" }).state;
+    s = step(s, { type: "MOVE", square: { x: 7, y: 7 } }).state;
+    s = step(s, { type: "END_PLAYER_ACTION" }).state;
+    s = step(s, { type: "PLACE_CARRIED", square: { x: 6, y: 7 } }).state;
+    expect(s.players["home-6"]!.at).toEqual({ x: 6, y: 7 });
+  });
+
   it("pro-block: a two-dice block where Pro can re-roll a die", () => {
     let s = load("pro-block");
     s = step(s, { type: "START_ACTION", playerId: "home-1", action: "block" }).state;

@@ -1535,6 +1535,48 @@ export const SCENARIOS: Scenario[] = [
     actions: [roll(1, 1), roll(3, 4)],
   },
   {
+    id: "star-players",
+    title: "Star players: Grak and Crumbleberry, Akhorne, a mercenary",
+    instructions: [
+      "Home's first turn. The Altdorf Pros hired Grak and Crumbleberry (a pair, 250k) and a Human Lineman mercenary with Block; Gouged Eye hired Akhorne the Squirrel (the team files' starPlayers and mercenaries).",
+      "Click Grak (#5) and choose Move: after his Bone Head roll, he may pick up Crumbleberry (#6), next to him (I'll Carry You, once per half). She leaves the pitch and Grak gains Dodge and Break Tackle.",
+      "Move Grak, then end his action: click a highlighted square next to him to put Crumbleberry down, as she was.",
+      "Hover a star player for their skills and special rules; the mercenary (#7) has Loner (4+). Akhorne's Blind Rage re-rolls a failed Dauntless roll when he blocks someone stronger.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      starPlayers: ["Grak", "Crumbleberry"],
+      mercenaries: [{ position: "Human Lineman", skill: "Block" }],
+      players: [
+        { number: 1, name: "Wilhelm", position: "Human Lineman" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Klaus", position: "Human Blitzer" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      starPlayers: ["Akhorne the Squirrel"],
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 89,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 }, 4: { x: 4, y: 7 }, 5: { x: 8, y: 7 }, 6: { x: 8, y: 8 }, 7: { x: 9, y: 11 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 }, 4: { x: 16, y: 7 } },
+      ball: { x: 4, y: 7 },
+    }),
+  },
+  {
     id: "prayers",
     title: "Prayers to Nuffle: the pre-game draw",
     instructions: [
