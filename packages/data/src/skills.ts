@@ -98,6 +98,10 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Hypnotic Gaze": "Special action: an adjacent opponent loses their tackle zone on 3+ until their next activation.",
   Insignificant: "Only matters when building the team: there cannot be more Insignificant players than the others.",
   "Team Captain": "While on the pitch, each team re-roll (or Team Mascot) used is saved on a 6. Must be set up when able to play.",
+  // Star player special rules
+  "Blind Rage": "May re-roll the D6 of a failed Dauntless roll.",
+  "The Ballista": "Once per game, may re-roll a failed pass or team-mate throw.",
+  "I'll Carry You": "Grak and Crumbleberry are hired together. Once per half, Grak may pick up Crumbleberry at the start of his activation (gaining Dodge and Break Tackle) and puts her down next to him at its end.",
   "Kick Team-mate": "Special action, once per turn: kicks an adjacent team-mate with Right Stuff like a Throw Team-mate; a fumble hurts them (Stunned counts as KO'd).",
   Loner: "Using a team re-roll needs a {X}+ on a D6 first; otherwise the re-roll is lost.",
   "My Ball": "Cannot give the ball up voluntarily (no pass or hand-off).",

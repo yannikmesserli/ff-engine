@@ -3023,6 +3023,72 @@ describe("engine", () => {
     });
   });
 
+  describe("star player special rules", () => {
+    const withSkills = (s: GameState, skills: Record<string, string[]>) =>
+      edit(s, (c) => {
+        for (const [id, list] of Object.entries(skills)) c.players[id]!.skills = list;
+      });
+    const blockAway2 = (s: GameState) => apply(s, declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" });
+
+    it("Blind Rage: a failed Dauntless roll is re-rolled", () => {
+      const s = apply(blockAway2(withSkills(toFirstTurn(team("Home"), team("Away", { st: 4 })), { "home-2": ["Dauntless", "Blind Rage"] })), roll(1));
+      expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Blind Rage" });
+      expect(find(apply(s, roll(2)), "ROLL")?.reason).toBe("Block (1 die)");
+    });
+
+    it("The Ballista: once per game, re-roll a failed pass instead of a team re-roll", () => {
+      const passing = (s: GameState) =>
+        apply(
+          edit(s, (c) => void (c.ball = { square: { x: 12, y: 6 }, carried: true })),
+          declare("home-1", "pass"),
+          { type: "THROW", square: { x: 10, y: 4 } },
+          roll(1),
+        );
+      let s = passing(withSkills(toFirstTurn(), { "home-1": ["The Ballista"] }));
+      expect(find(s, "USE_REROLL")).toMatchObject({ skill: "The Ballista" });
+      s = apply(s, { type: "USE_REROLL" });
+      expect([s.players["home-1"]!.usedThisGame, s.teams.home.rerolls, find(s, "ROLL")?.reason]).toEqual([["The Ballista"], 1, "Pass 6+ (quick)"]);
+      // Used up: only the team re-roll is left.
+      const again = passing(edit(withSkills(toFirstTurn(), { "home-1": ["The Ballista"] }), (c) => void (c.players["home-1"]!.usedThisGame = ["The Ballista"])));
+      expect(find(again, "USE_REROLL")?.skill).toBeUndefined();
+    });
+
+    describe("I'll Carry You", () => {
+      /** Grak (home-1) next to Crumbleberry (home-2) in the home half, away from the opponents. */
+      const pair = (squares: Record<string, Square> = {}) =>
+        place(withSkills(toFirstTurn(), { "home-1": ["I'll Carry You(Carrier)"], "home-2": ["I'll Carry You(Carried)"] }), {
+          "home-1": { x: 5, y: 7 },
+          "home-2": { x: 5, y: 8 },
+          ...squares,
+        });
+      const pickUp = (s: GameState) => apply(s, startMove("home-1"), { type: "USE_SKILL", use: true, skill: "I'll Carry You" });
+
+      it("once per half, the carrier picks up the partner, gains Dodge and Break Tackle, and puts them down next to them", () => {
+        let s = pair();
+        expect(apply(s, startMove("home-1"))).toSatisfy((t: GameState) => find(t, "USE_SKILL")?.skill === "I'll Carry You");
+        s = pickUp(s);
+        expect([s.players["home-2"]!.at, s.players["home-1"]!.skills]).toEqual(["carried", ["I'll Carry You(Carrier)", "Dodge", "Break Tackle"]]);
+        s = apply(s, ...move({ x: 6, y: 7 }), { type: "END_PLAYER_ACTION" });
+        expect(find(s, "PLACE_CARRIED")?.squares).toHaveLength(8);
+        expect(() => step(s, { type: "PLACE_CARRIED", square: { x: 9, y: 9 } })).toThrow(/next to the carrier/);
+        s = apply(s, { type: "PLACE_CARRIED", square: { x: 7, y: 7 } });
+        expect([s.players["home-2"]!.at, s.players["home-1"]!.skills, s.players["home-1"]!.usedThisHalf]).toEqual([{ x: 7, y: 7 }, ["I'll Carry You(Carrier)"], ["I'll Carry You"]]);
+        // Declining is fine too; a partner who is not adjacent cannot be picked up.
+        expect(find(apply(pair({ "home-2": { x: 5, y: 10 } }), startMove("home-1")), "USE_SKILL")).toBeUndefined();
+      });
+
+      it("a single free square: put down there; none on a sideline: into the crowd, a turnover", () => {
+        const corner = pair({ "home-1": { x: 0, y: 0 }, "home-2": { x: 1, y: 0 }, "home-3": { x: 0, y: 1 }, "home-4": { x: 1, y: 1 } });
+        let s = apply(pickUp(corner), { type: "END_PLAYER_ACTION" });
+        expect(s.players["home-2"]!.at).toEqual({ x: 1, y: 0 });
+        s = apply(place(pickUp(corner), { "home-5": { x: 1, y: 0 } }), { type: "END_PLAYER_ACTION" });
+        expect(s.log).toContainEqual({ type: "PlayerPushed", playerId: "home-2", from: { x: 0, y: 0 }, to: null });
+        expect(find(s, "ROLL")?.reason).toMatch(/pushed into the crowd/);
+        expect(s.turnover).toBe(true);
+      });
+    });
+  });
+
   describe("standing up and stunned players", () => {
     /** Knock home-1 down with a failed dodge, then get back to home's next turn. */
     function proneHomeOne(home = team("Home"), injury = false) {

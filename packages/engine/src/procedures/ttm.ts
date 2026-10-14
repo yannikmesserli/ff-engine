@@ -3,7 +3,7 @@ import type { GameState, PassRange, PlayerState, Procedure, Square } from "../ty
 import { SCATTER, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, isPinned, offset, playerAt, sameSquare, tackleZones } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
+import { ballista, canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
 import { evaluatePass, passModifiers, passRange, shownNeeded } from "./pass";
 import { injure } from "./injury";
 
@@ -153,7 +153,7 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
           proc.result = evaluatePass(thrower, roll!, modifiers);
         }
         ctx.emit({ type: "TeamMateThrown", playerId: thrower.id, thrownId: thrown.id, result: proc.result, ...(proc.kicked ? { kicked: true } : {}) });
-        const canReroll = canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
+        const canReroll = ballista(thrower, proc.rerolled) || canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
         proc.stage = proc.result !== "accurate" && canReroll ? "reroll" : "scatter";
         return "continue";
       }
@@ -164,6 +164,11 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
           if ((a.skill ?? "Pro") !== "Pro" || proc.mascotFailed || !canUsePro(state, thrower, proc.rerolled)) ctx.reject("Pro cannot be used now.");
           proc.rerolled = true;
           proc.stage = "pro";
+        } else if (a.type === "USE_REROLL" && ballista(thrower, proc.rerolled)) {
+          // The Ballista: no team re-roll is spent, so Loner does not apply.
+          useOncePerGame(ctx, thrower, "The Ballista");
+          proc.rerolled = true;
+          proc.stage = "roll";
         } else if (a.type === "USE_REROLL") {
           if (!canTeamReroll(state, thrower.side, proc.rerolled)) ctx.reject("No re-roll available.");
           useTeamReroll(ctx, thrower.side, a.mascot);
@@ -361,7 +366,11 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       }
       case "reroll":
         return [
-          ...(canTeamReroll(state, thrower.side, proc.rerolled) ? [teamRerollTemplate(state, thrower.side)] : []),
+          ...(ballista(thrower, proc.rerolled)
+            ? [{ type: "USE_REROLL" as const, side: thrower.side, available: rerollsLeft(state, thrower.side), skill: "The Ballista" }]
+            : canTeamReroll(state, thrower.side, proc.rerolled)
+              ? [teamRerollTemplate(state, thrower.side)]
+              : []),
           ...(proc.mascotFailed ? [] : proTemplate(state, thrower, proc.rerolled)),
           { type: "DECLINE_REROLL", side: thrower.side },
         ];

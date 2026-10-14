@@ -7,8 +7,8 @@ export interface Square {
   y: number;
 }
 
-/** "banned": sent off by the referee for the rest of the game. */
-export type DugoutBox = "reserves" | "ko" | "cas" | "banned";
+/** "banned": sent off by the referee for the rest of the game; "carried": held by a team-mate (I'll Carry You). */
+export type DugoutBox = "reserves" | "ko" | "cas" | "banned" | "carried";
 
 /** BB2025 weather table results (see weatherFor). */
 export type Weather = "sweltering-heat" | "very-sunny" | "nice" | "pouring-rain" | "blizzard";
@@ -100,6 +100,9 @@ export interface PlayerState {
   casualty: Casualty | null;
   /** Once-per-turn skills used this team turn, e.g. "Dodge". */
   usedSkills: string[];
+  /** Once-per-half and once-per-game skills used: "I'll Carry You" (cleared at each half), "The Ballista". */
+  usedThisHalf?: string[];
+  usedThisGame?: string[];
   /**
    * Failed a Bone Head or Really Stupid roll: no tackle zone, cannot catch, intercept or assist, until the player's
    * next activation or the end of the drive.
@@ -538,7 +541,10 @@ export type Procedure =
        * "savagery": a failed Animal Savagery roll, lashing out at a team-mate; "thirst": a thirsty player may take a Move
        * action instead; "root": after the Take Root roll.
        */
-      stage: "start" | "confusion" | "savagery" | "thirst" | "root" | "standup" | "main";
+      /** "carry": the player may pick up their partner (I'll Carry You). */
+      stage: "start" | "confusion" | "savagery" | "thirst" | "root" | "standup" | "carry" | "main";
+      /** I'll Carry You: the partner picked up, as they were, and the skills the carrier gained for the activation. */
+      carry?: { playerId: string; status: PlayerStatus; hadBall: boolean; skills: string[] };
       /** "block" only allows a single block; "blitz" a move with one block of `targetId` on the way. */
       action: PlayerActionType;
       targetId?: string;
@@ -787,6 +793,8 @@ export type Procedure =
   | { type: "Shadow"; playerId: string; from: Square; stage: "select" | "result"; shadowerId?: string }
   /** The crowd throws a rock at a stalling ball carrier. */
   | { type: "Stalling"; playerId: string }
+  /** I'll Carry You: the partner is put down next to the carrier, or (stage "bounce") bounces on from `at`. */
+  | { type: "Carried"; carrierId: string; playerId: string; from: Square; status: PlayerStatus; hadBall: boolean; stage: "place" | "bounce"; at?: Square }
   | {
       /** What happens after an injury roll: casualty roll, apothecary, then the player is placed. */
       type: "Injury";
@@ -1005,6 +1013,8 @@ export type Action =
   | { type: "SELECT_PLAYERS"; playerIds: string[] }
   /** Quick Snap: move one open player a single square. */
   | { type: "SNAP"; playerId: string; square: Square }
+  /** I'll Carry You: where the carried player is put down. */
+  | { type: "PLACE_CARRIED"; square: Square }
   /** Finish an optional kick-off phase (Quick Snap). */
   | { type: "DONE" }
   /** Concede the game: in the team's own setup or turn. */
@@ -1084,6 +1094,7 @@ export type ActionTemplate =
   /** `min`: players that must be chosen (none by default). */
   | { type: "SELECT_PLAYERS"; side: Side; playerIds: string[]; max: number; min?: number; reason: string }
   | { type: "SNAP"; side: Side; moves: Array<{ playerId: string; squares: Square[] }>; remaining: number }
+  | { type: "PLACE_CARRIED"; side: Side; playerId: string; squares: Square[] }
   | { type: "DONE"; side: Side }
   /** `legal`: conceding now has no penalty (during setup, with fewer than 3 players able to play). */
   | { type: "CONCEDE"; side: Side; legal: boolean };
@@ -1159,6 +1170,8 @@ export type GameEvent =
   | { type: "PrayerRepeated"; side: Side; prayer: Prayer }
   /** A Prayer to Nuffle was granted to `side`; `playerIds`: the players it changed, if any. */
   | { type: "PrayerGranted"; side: Side; prayer: Prayer; playerIds: string[] }
+  /** I'll Carry You: the player picked up their partner. */
+  | { type: "PartnerPickedUp"; playerId: string; partnerId: string }
   /** Riotous Rookies: `playerIds` joined `side`'s reserves for the game. */
   | { type: "RookiesJoined"; side: Side; playerIds: string[] }
   /** A team special rule was used (Bribery and Corruption's re-roll...). */

@@ -4,7 +4,7 @@ import { SCATTER, passes, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName } from "../skills";
 import { explosion, rethrow } from "./bomb";
-import { canTeamReroll, canUsePro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
+import { ballista, canTeamReroll, canUsePro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -137,8 +137,12 @@ export const interceptionTarget = (state: GameState, interceptor: PlayerState & 
       (hasSkill(interceptor, "Very Long Legs") ? 2 : 0),
   );
 
-/** Pass: the thrower may re-roll an inaccurate pass or a fumble with the skill instead of a team re-roll. */
-const passSkillReroll = (thrower: PlayerState, proc: P<"Pass">) => !proc.rerolled && hasSkill(thrower, "Pass");
+/**
+ * The skill that lets the thrower re-roll an inaccurate pass or a fumble instead of a team re-roll: Pass, or The
+ * Ballista (once per game).
+ */
+const passSkillReroll = (thrower: PlayerState, proc: P<"Pass">) =>
+  proc.rerolled ? null : hasSkill(thrower, "Pass") ? "Pass" : ballista(thrower, proc.rerolled) ? "The Ballista" : null;
 
 /** Animosity is overcome on 2+. */
 export const ANIMOSITY_TARGET = 2;
@@ -260,7 +264,9 @@ export const Pass: Handler<P<"Pass">> = {
           proc.stage = "pro";
         } else if (a.type === "USE_REROLL" && passSkillReroll(thrower, proc)) {
           // A skill re-roll: no team re-roll is spent, so Loner does not apply.
-          ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Pass" });
+          const skill = passSkillReroll(thrower, proc)!;
+          if (skill === "The Ballista") useOncePerGame(ctx, thrower, skill);
+          else ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill });
           proc.rerolled = true;
           proc.stage = "roll";
         } else if (a.type === "USE_REROLL") {
@@ -417,7 +423,7 @@ export const Pass: Handler<P<"Pass">> = {
       case "reroll":
         return [
           ...(passSkillReroll(thrower, proc)
-            ? [{ type: "USE_REROLL" as const, side: thrower.side, available: rerollsLeft(state, thrower.side), skill: "Pass" }]
+            ? [{ type: "USE_REROLL" as const, side: thrower.side, available: rerollsLeft(state, thrower.side), skill: passSkillReroll(thrower, proc)! }]
             : canTeamReroll(state, thrower.side, proc.rerolled)
               ? [teamRerollTemplate(state, thrower.side)]
               : []),

@@ -45,6 +45,15 @@ export function createPlayer(side: Side, p: TeamSetup["players"][number]): Playe
   };
 }
 
+/** The Ballista: once per game, the player may re-roll a failed pass or team-mate throw, instead of a team re-roll. */
+export const ballista = (player: PlayerState, rerolled: boolean) => !rerolled && hasSkill(player, "The Ballista") && !player.usedThisGame?.includes("The Ballista");
+
+/** Use up a once-per-game skill. */
+export function useOncePerGame(ctx: Ctx, player: PlayerState, skill: string) {
+  player.usedThisGame = [...(player.usedThisGame ?? []), skill];
+  ctx.emit({ type: "SkillUsed", playerId: player.id, skill });
+}
+
 /** Count one more of `kind` towards the player's Star Player Points. */
 export function earnSpp(state: GameState, playerId: string, kind: keyof SppRecord) {
   const player = state.players[playerId];

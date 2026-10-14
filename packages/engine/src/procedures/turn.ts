@@ -9,6 +9,7 @@ import { dropBall } from "./ball";
 import { canHailMary, hailMaryNeeded, handOffTargets, puntTargets, throwTargets } from "./pass";
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
+import { CARRY_SKILL, carryPartner, pickUp, putDown } from "./carry";
 import { checkTouchdown, getPlayer, inducementsLeft, inScoringPosition, pickupModifier, rushModifier, spendInducement, squareOf } from "./helpers";
 import { isStalling } from "./stalling";
 import { TURNS_PER_HALF } from "./game";
@@ -503,6 +504,13 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         if (jumpUp) ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Jump Up" });
         ctx.emit({ type: "PlayerStoodUp", playerId: player.id });
       }
+      proc.stage = carryPartner(state, player) ? "carry" : "main";
+      return "continue";
+    }
+    if (proc.stage === "carry") {
+      if (action === null) return "wait";
+      const { use } = ctx.expect(action, "USE_SKILL");
+      if (use) proc.carry = pickUp(ctx, player, carryPartner(state, player)!);
       proc.stage = "main";
       return "continue";
     }
@@ -661,6 +669,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "thirst") return [{ type: "MOVE_INSTEAD", side: player.side, playerId: player.id }];
+    if (proc.stage === "carry") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: CARRY_SKILL }];
     if (proc.stage === "savagery") {
       const playerIds = lashOutTargets(state, player).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: player.side, playerIds, max: 1, min: 1, reason: `Animal Savagery: choose a team-mate for ${player.name} to lash out at` }];
@@ -794,6 +803,8 @@ function endActivation(ctx: Ctx, proc: P<"MoveAction">, player: PlayerState) {
   if (proc.stalling && state.touchdown === null && player.status === "standing" && holdsBall(state, player)) {
     ctx.push({ type: "Stalling", playerId: player.id });
   }
+  // I'll Carry You: the partner is put down before anything else.
+  if (proc.carry) ctx.push(putDown(ctx, player, proc.carry));
   state.activePlayerId = null;
   return "done" as const;
 }

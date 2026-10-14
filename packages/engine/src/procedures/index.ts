@@ -12,6 +12,7 @@ import { Stalling } from "./stalling";
 import { CoinToss, Game, Half, KoRecovery, MasterChef, ThrowRock } from "./game";
 import { Charge, HighKick, Kickoff, KickoffEvent, Pregame, QuickSnap, SolidDefence, SwelteringHeat } from "./kickoff";
 import { Setup } from "./setup";
+import { Carried } from "./carry";
 import { Shop } from "./shop";
 import { EndGame } from "./endgame";
 import { ThrowTeamMate } from "./ttm";
@@ -73,5 +74,6 @@ export const handlers: HandlerMap = {
   KnockDown,
   Injury,
   Stalling,
+  Carried,
   EndGame,
 };

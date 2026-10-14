@@ -72,6 +72,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   USE_SKILL: "use a skill?",
   MOVE_INSTEAD: "Bloodlust: take a Move action instead of the declared action?",
   SNAP: "Quick Snap: click an open player, then an adjacent square",
+  PLACE_CARRIED: "I'll Carry You: click a square next to the carrier to put the carried player down",
 };
 
 /** Buttons of the skills offered next to another decision (block dice, a team re-roll, a move). */

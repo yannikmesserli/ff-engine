@@ -10,12 +10,14 @@ type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 export const TURNS_PER_HALF = 8;
 
 /**
- * Reset turn counters and team re-rolls, the Leader re-roll included (not for overtime: teams keep what is left), then
- * run the half's drives.
+ * Reset turn counters, once-per-half skills and team re-rolls, the Leader re-roll included (not for overtime: teams keep
+ * what is left), then run the half's drives.
  */
 function startHalf(ctx: Ctx, half: HalfNumber, kicking: Side) {
   const { state } = ctx;
   state.half = half;
+  // Once-per-half skills (I'll Carry You) come back.
+  for (const player of Object.values(state.players)) delete player.usedThisHalf;
   for (const team of Object.values(state.teams)) {
     team.turn = 0;
     if (half < 3) {

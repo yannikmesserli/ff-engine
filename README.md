@@ -386,6 +386,14 @@ const { state: next, events } = step(state, { type: "ROLL" });
   players without it. It has no effect during the game.
 - Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
   without bouncing, in the square they leave on their next step, and it is not a turnover. Not with My Ball.
+- Star player special rules (FUMBBL lists four star players so far): Blind Rage (Akhorne the Squirrel: a failed
+  Dauntless roll is re-rolled), The Ballista (Morg 'n' Thorg: once per game, re-roll a failed pass or team-mate throw
+  instead of a team re-roll), I'll Carry You (Grak and Crumbleberry: once per half, when Grak's activation starts next
+  to Crumbleberry, after his Bone Head roll, he may pick her up; she leaves the pitch, with the ball if she holds it, and
+  Grak has Dodge and Break Tackle; at the end of the activation the coach puts her down, as she was, in a free square
+  next to Grak, or where he last stood if he left the pitch. With no free square: from a sideline or an end zone she
+  goes into the crowd, a turnover; otherwise she is dropped on an adjacent player, who is knocked down, and bounces on
+  until she comes down, knocked down).
 
 Not yet: spending winnings and Star Player Points between games, Infamous Coaching Staff, wizards, the golden-goal
 overtime variant.

@@ -332,6 +332,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     }
     case "FellThroughTrapdoor":
       return `${who(state, e.playerId)} falls through the trapdoor!`;
+    case "PartnerPickedUp":
+      return `${who(state, e.playerId)} picks up ${who(state, e.partnerId)} and carries them (Dodge and Break Tackle for the activation).`;
     case "RookiesJoined":
       return `${e.playerIds.length} Riotous Rookies join ${sideName(state, e.side)} for the game.`;
     case "RerollsStolen":

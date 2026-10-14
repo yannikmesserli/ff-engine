@@ -53,8 +53,8 @@ export const neededRoll = (target: number, modifier: number) => Math.min(6, Math
 
 /**
  * The skill that re-rolls a failed check of this kind, if the player can use it now: Sure Hands for a pick-up, Catch
- * for a catch, Sure Feet for a Rush once per turn, Dodge once per turn and not when dodging away from an opponent with
- * Tackle.
+ * for a catch, Sure Feet for a Rush once per turn, Blind Rage for Dauntless, Dodge once per turn and not when dodging
+ * away from an opponent with Tackle.
  * The rules say the player "may" re-roll, but these re-rolls are used without asking: there is almost never a reason
  * to keep a failed dodge, rush, pick-up or catch, and a prompt on each of them would slow the game down.
  */
@@ -63,6 +63,7 @@ function skillReroll(state: GameState, proc: P<"Check">, player: PlayerState): s
   if (proc.kind === "pickup") return hasSkill(player, "Sure Hands") ? "Sure Hands" : null;
   if (proc.kind === "catch") return hasSkill(player, "Catch") ? "Catch" : null;
   if (proc.kind === "rush") return hasSkill(player, "Sure Feet") && !player.usedSkills.includes("Sure Feet") ? "Sure Feet" : null;
+  if (proc.kind === "dauntless") return hasSkill(player, "Blind Rage") ? "Blind Rage" : null;
   if (proc.kind !== "dodge" || !hasSkill(player, "Dodge") || player.usedSkills.includes("Dodge")) return null;
   const tacklers = isOnPitch(player) ? adjacent(player.at).map((s) => playerAt(state, s)) : [];
   const cancelled = tacklers.some((p) => p !== undefined && p.side !== player.side && hasTackleZone(p) && hasSkill(p, "Tackle"));

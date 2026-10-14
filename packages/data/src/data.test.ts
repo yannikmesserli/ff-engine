@@ -345,6 +345,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "GAZE", targetId: pick(t.targetIds) };
     case "CHOOSE_BLOCK_DIE":
       return { type: "CHOOSE_BLOCK_DIE", index: Math.floor(random() * t.results.length) };
+    case "PLACE_CARRIED":
+      return { type: "PLACE_CARRIED", square: pick(t.squares) };
     case "PUSH":
       return { type: "PUSH", square: pick(t.squares) };
     case "THROW":
@@ -515,7 +517,7 @@ describe("random games", () => {
       if (e.type === "SkillUsed") ballEvents.add(`skill ${e.skill}`);
       if (e.type === "TeamMateThrown") ballEvents.add(`team-mate throw ${e.result}`);
       if (e.type === "PlayerDistracted") ballEvents.add(`distracted (${e.skill})`);
-      if (e.type === "InducementsBought" || e.type === "FreePrayers") ballEvents.add(e.type);
+      if (e.type === "InducementsBought" || e.type === "FreePrayers" || e.type === "PartnerPickedUp") ballEvents.add(e.type);
       if (e.type === "InducementsBought") for (const name of e.hired) ballEvents.add(`hired ${name.replace(/^.* \(mercenary\)$/, "a mercenary")}`);
     }
   }, GAME_TIMEOUT_MS);
