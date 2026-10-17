@@ -483,6 +483,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
     opponents' tackle zones until the end of her activation (Rushes, jumps and Shadowing still apply).
   - Wisdom of the White Dwarf (Grombrindal): once per game, when he is activated, a team-mate within 2 squares gains
     Break Tackle, Dauntless, Mighty Blow or Sure Feet (one they lack, the coach picks) until the end of the turn.
+  - Raiding Party (Ivar Eriksson): once per drive, at the start of his activation, an open team-mate within 5 squares
+    (standing, not marked) moves one square, to a free square next to an opponent, without any roll (a loose ball there
+    bounces).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

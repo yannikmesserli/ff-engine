@@ -1517,6 +1517,18 @@ describe("engine", () => {
       expect(s.players["home-2"]!.skills).toEqual([]);
     });
 
+    it("Raiding Party: once per drive, an open team-mate within 5 squares moves 1 square to end next to an opponent", () => {
+      // home-4 at (10,4) is open; away-4 at (12,3) is two squares away from them.
+      const ivar = withSkills(place(toFirstTurn(), { "away-4": { x: 12, y: 3 } }), { "home-1": ["Raiding Party"] });
+      let s = apply(ivar, startMove("home-1"), { type: "ACTIVATION_SKILL", skill: "Raiding Party" });
+      const raid = find(s, "SNAP")!.moves.find((m) => m.playerId === "home-4")!;
+      expect(raid.squares).toContainEqual({ x: 11, y: 4 });
+      expect(raid.squares).not.toContainEqual({ x: 9, y: 4 });
+      s = apply(s, { type: "SNAP", playerId: "home-4", square: { x: 11, y: 4 } });
+      expect(s.players["home-4"]!.at).toEqual({ x: 11, y: 4 });
+      expect([s.players["home-1"]!.usedThisDrive, types(s).includes("MOVE")]).toEqual([["Raiding Party"], true]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

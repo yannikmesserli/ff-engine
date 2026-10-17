@@ -1,6 +1,7 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerActionType, PlayerState, Procedure, Square } from "../types";
-import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, tackleZones } from "../pitch";
+import { trapdoor } from "./prayers";
 import { hasSkill } from "../skills";
 import { checkTouchdown, getPlayer, squareOf, useOncePerGame } from "./helpers";
 
@@ -21,7 +22,11 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Slashing Nails": "half",
   Incorporeal: "game",
   "Wisdom of the White Dwarf": "game",
+  "Raiding Party": "drive",
 };
+
+/** Raiding Party: how far the team-mate may be. */
+export const RAIDING_PARTY_RANGE = 5;
 
 /** Wisdom of the White Dwarf: the skills a team-mate may gain until the end of the turn. */
 export const WISDOM_SKILLS = ["Break Tackle", "Dauntless", "Mighty Blow", "Sure Feet"];
@@ -64,12 +69,24 @@ const UNTARGETED: Record<string, (state: GameState, player: PlayerState, action:
   "Frenzied Rush": (_state, player, action) => action === "blitz" && !hasSkill(player, "Frenzy"),
   "Slashing Nails": (_state, player, action) => action === "blitz" && !hasSkill(player, "Claws"),
   Incorporeal: () => true,
+  "Raiding Party": (state, player) => raiders(state, player).length > 0,
   // A standing player within 3 squares of the ball on the ground.
   "Catch of the Day": (state, player) => {
     const { ball } = state;
     return player.status === "standing" && isOnPitch(player) && !ball.carried && ball.square !== null && Math.max(Math.abs(ball.square.x - player.at.x), Math.abs(ball.square.y - player.at.y)) <= 3;
   },
 };
+
+/** Raiding Party: the open team-mates within 5 squares, and the free squares next to them that are next to an opponent. */
+function raiders(state: GameState, player: PlayerState) {
+  if (!isOnPitch(player)) return [];
+  return Object.values(state.players).flatMap((p) => {
+    if (p.id === player.id || p.side !== player.side || !isOnPitch(p) || p.status !== "standing" || !hasTackleZone(p)) return [];
+    if (Math.max(Math.abs(p.at.x - player.at.x), Math.abs(p.at.y - player.at.y)) > RAIDING_PARTY_RANGE || tackleZones(state, p.side, p.at) > 0) return [];
+    const squares = adjacent(p.at).filter((s) => !playerAt(state, s) && adjacent(s).some((n) => playerAt(state, n)?.side === other(p.side)));
+    return squares.length > 0 ? [{ playerId: p.id, squares }] : [];
+  });
+}
 
 /** "Blastin' Solves Everything" on a 2: the standing players within 3 squares of the target, but the player. */
 const redirectTargets = (state: GameState, player: PlayerState, target: PlayerState) =>
@@ -175,6 +192,8 @@ export function activationSkills(state: GameState, player: PlayerState, action: 
  * - Slashing Nails (once per half): declaring a Blitz, the player gains Claws until the end of the activation.
  * - Wisdom of the White Dwarf (once per game): a team-mate within 2 squares gains Break Tackle, Dauntless, Mighty Blow or
  *   Sure Feet (one they lack, the coach picks) until the end of the turn.
+ * - Raiding Party (once per drive): an open team-mate within 5 squares (standing, not marked) moves one square, to a
+ *   free square next to an opponent, without any roll.
  * - Incorporeal (once per game): until the end of the activation, the player makes no Dodge rolls for leaving opponents'
  *   tackle zones.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
@@ -185,6 +204,27 @@ export const StartSkill: Handler<P<"StartSkill">> = {
     const { state } = ctx;
     const player = getPlayer(ctx, proc.playerId);
     const choices = targets(state, player, proc.skill);
+    if (proc.skill === "Raiding Party") {
+      if (action === null) return "wait";
+      const a = ctx.expect(action, "SNAP", "DONE");
+      if (a.type === "DONE") return "done";
+      const move = raiders(state, player).find((m) => m.playerId === a.playerId);
+      if (!move?.squares.some((s) => s.x === a.square.x && s.y === a.square.y)) ctx.reject("Move an open team-mate next to an opponent.");
+      useRule(ctx, player, proc.skill);
+      const raider = getPlayer(ctx, a.playerId);
+      const from = squareOf(ctx, raider);
+      const { ball } = state;
+      if (ball.carried && ball.square && ball.square.x === from.x && ball.square.y === from.y) ball.square = { ...a.square };
+      raider.at = { ...a.square };
+      ctx.emit({ type: "PlayerMoved", playerId: raider.id, from: { ...from }, to: { ...a.square } });
+      ctx.push(...trapdoor(state, raider, a.square));
+      // A loose ball where the team-mate stops bounces (there is no pick-up).
+      if (!ball.carried && ball.square && ball.square.x === a.square.x && ball.square.y === a.square.y) {
+        ctx.push({ type: "Bounce", from: { ...a.square }, kickoff: false, receiving: null });
+      }
+      checkTouchdown(ctx, raider);
+      return "done";
+    }
     if (proc.stage === "target" && UNTARGETED[proc.skill]) {
       useRule(ctx, player, proc.skill);
       proc.stage = ROLLS[proc.skill] ? "roll" : "effect";
@@ -286,6 +326,12 @@ export const StartSkill: Handler<P<"StartSkill">> = {
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
+    if (proc.skill === "Raiding Party") {
+      return [
+        { type: "SNAP", side: player.side, moves: raiders(state, player), remaining: 1 },
+        { type: "DONE", side: player.side },
+      ];
+    }
     if (proc.stage === "choose") {
       const target = state.players[proc.targetId!]!;
       return [{ type: "CHOOSE_SKILL", side: player.side, playerId: target.id, skills: WISDOM_SKILLS.filter((s) => !hasSkill(target, s)) }];
