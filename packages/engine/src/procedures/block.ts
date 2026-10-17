@@ -815,7 +815,11 @@ export const Block: Handler<P<"Block">> = {
           else resolveBothDown(ctx, proc, attacker, defender);
           return "continue";
         }
-        const dodges = result === "defender_stumbles" && hasSkill(defender, "Dodge") && !hasSkill(attacker, "Tackle");
+        // Watch Out!: the first block by an opponent each drive, the defender counts as having Dodge.
+        const watchOut = defender.side !== attacker.side && hasSkill(defender, "Watch Out!") && !defender.usedThisDrive?.includes("Watch Out!");
+        if (watchOut) defender.usedThisDrive = [...(defender.usedThisDrive ?? []), "Watch Out!"];
+        const dodges = result === "defender_stumbles" && (hasSkill(defender, "Dodge") || watchOut) && !hasSkill(attacker, "Tackle");
+        if (dodges && watchOut && !hasSkill(defender, "Dodge")) ctx.emit({ type: "SkillUsed", playerId: defender.id, skill: "Watch Out!" });
         proc.knockDefender = result === "defender_down" || (result === "defender_stumbles" && !dodges) || proc.hitOnGround === true;
         const from = squareOf(ctx, defender);
         const at = squareOf(ctx, attacker);

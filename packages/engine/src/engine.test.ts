@@ -1546,6 +1546,17 @@ describe("engine", () => {
       expect([actionsOf(second, "home-2"), actionsOf(second, "home-3")]).toEqual([expect.arrayContaining(["foul"]), expect.not.arrayContaining(["foul"])]);
     });
 
+    it("Watch Out!: the first block by an opponent each drive, the defender counts as having Dodge", () => {
+      const withergrasp = withSkills(toFirstTurn(), { "away-2": ["Watch Out!"] });
+      // Defender Stumbles (5): pushed, not knocked down.
+      const s = apply(blockAway2(withergrasp), roll(5), pick, { type: "PUSH", square: { x: 14, y: 7 } });
+      expect(s.players["away-2"]!.status).toBe("standing");
+      expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "away-2", skill: "Watch Out!" });
+      // Any first block uses it up, a Push too: a later Defender Stumbles in the drive knocks them down.
+      const pushed = apply(blockAway2(withergrasp), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } });
+      expect(pushed.players["away-2"]!.usedThisDrive).toEqual(["Watch Out!"]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

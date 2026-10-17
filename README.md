@@ -492,6 +492,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     the team may foul twice, once with him.
   - A Sneaky Pair (Dribl and Drull): when one of them fouls or stabs an opponent both of them mark, +1 to the roll: to
     the armour roll if it needs it, otherwise to the injury roll.
+  - Watch Out! (Withergrasp Doubledrool): the first time each drive an opponent blocks him, he counts as having Dodge
+    (against a Defender Stumbles; Tackle still cancels it).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
