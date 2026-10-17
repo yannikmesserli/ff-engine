@@ -1345,6 +1345,19 @@ describe("engine", () => {
       expect(s.players["home-2"]!.usedThisGame).toEqual(["Savage Blow"]);
     });
 
+    it("Gored by the Bull: once per game, one more block die in a Blitz, for Frenzy's second block too", () => {
+      const grashnak = (skills: string[] = []) => withSkills(toFirstTurn(), { "home-2": ["Gored by the Bull", ...skills] });
+      let s = apply(grashnak(["Frenzy"]), declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" });
+      expect(find(s, "USE_SKILL")?.skill).toBe("Gored by the Bull");
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(find(s, "ROLL")?.dice).toEqual([{ kind: "block", count: 2 }]);
+      // A Push into (14,7), then Frenzy's second block: two dice again, without asking.
+      s = apply(s, roll(3, 3), { type: "CHOOSE_BLOCK_DIE", index: 0 }, { type: "PUSH", square: { x: 14, y: 7 } });
+      expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "block", count: 2 }] });
+      // Not in a Block action.
+      expect(find(blockAway2(grashnak()), "ROLL")?.dice).toEqual([{ kind: "block", count: 1 }]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

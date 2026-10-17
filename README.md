@@ -452,6 +452,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     range modifier.
   - Savage Blow (Anqi Panqi): once per game, when he blocks an opponent, he may re-roll any number of the block dice,
     as the block's one re-roll.
+  - Gored by the Bull (Grashnak Blackhoof): once per game, when he blocks during a Blitz and picks the die, he may roll
+    one more block die (up to 3); a Frenzy second block of that Blitz gets it too.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

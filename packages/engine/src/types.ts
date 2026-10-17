@@ -695,6 +695,8 @@ export type Procedure =
       dieSkill?: string;
       /** Savage Blow: the block dice picked to re-roll. */
       savage?: number[];
+      /** Gored by the Bull: asked (false: declined); used in this Blitz, Frenzy's second block included. */
+      gored?: boolean;
       /** A team re-roll was spent on a failed Pro roll. */
       proRetried?: boolean;
       /** The skill re-rolling a single die (Brawler: a Both Down, Hatred: a Skull). */
@@ -716,7 +718,7 @@ export type Procedure =
        */
       multiple?: { stage: "prepare" | "resolve"; otherId: string; squares: Square[] };
       /** "appearance": the defender's Foul Appearance, rolled first. */
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "trickster" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "savageDice" | "savageReroll" | "pro" | "proTeam" | "proLoner" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "trickster" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "savageDice" | "savageReroll" | "gored" | "pro" | "proTeam" | "proLoner" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];

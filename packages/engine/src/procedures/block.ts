@@ -201,8 +201,10 @@ function frenzyBlock(state: GameState, proc: P<"Block">, attacker: PlayerState, 
   if (!isOnPitch(attacker) || !hasTackleZone(attacker) || !isOnPitch(defender) || defender.status !== "standing") return null;
   if (!adjacent(attacker.at).some((s) => sameSquare(s, defender.at))) return null;
   if (proc.blitz && attacker.movesUsed >= maxMoves(attacker)) return null;
-  const dice = blockDice(state, attacker, defender, { blitz: proc.blitz });
-  return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: "appearance", dice, rerolled: false, chain: [] };
+  const base = blockDice(state, attacker, defender, { blitz: proc.blitz });
+  // Gored by the Bull, used on the first block of the Blitz, gives the second one its extra die too.
+  const dice = proc.gored && base > 0 && base < 3 ? base + 1 : base;
+  return { type: "Block", attackerId: attacker.id, defenderId: defender.id, blitz: proc.blitz, second: true, stage: "appearance", dice, rerolled: false, chain: [], ...(proc.gored ? { gored: true } : {}) };
 }
 
 /**
@@ -399,6 +401,13 @@ const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, de
   canReroll(state, proc, attacker) ||
   (!proc.mascotFailed &&
     (singleDieSkills(proc, attacker, defender).length > 0 || anyDieSkills(state, proc, attacker, defender).length > 0 || savageBlow(proc, attacker, defender) || canUsePro(state, attacker, proc.rerolled)));
+
+/**
+ * Gored by the Bull: once per game, in a Blitz, the attacker may roll one more block die (up to 3) when they pick the
+ * die; a Frenzy second block of the same Blitz gets it too.
+ */
+const goredByTheBull = (proc: P<"Block">, attacker: PlayerState) =>
+  proc.blitz && proc.dice > 0 && proc.dice < 3 && hasSkill(attacker, "Gored by the Bull") && !attacker.usedThisGame?.includes("Gored by the Bull");
 
 /** Savage Blow: once per game, when blocking an opponent, the attacker may re-roll any number of the block dice. */
 const savageBlow = (proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
@@ -676,10 +685,24 @@ export const Block: Handler<P<"Block">> = {
           proc.stage = "resolve";
           return "continue";
         }
+        if (proc.gored === undefined && goredByTheBull(proc, attacker)) {
+          proc.stage = "gored";
+          return "continue";
+        }
         if (action === null) return "wait";
         proc.results = ctx.roll(action, [{ kind: "block", count: Math.abs(proc.dice) }], "Block");
         // The attacker may re-roll from the choice of die; when the defender chooses, the re-roll is decided first.
         proc.stage = proc.dice < 0 && anyReroll(state, proc, attacker, defender) ? "reroll" : "choose";
+        return "continue";
+      }
+      case "gored": {
+        if (action === null) return "wait";
+        proc.gored = ctx.expect(action, "USE_SKILL").use;
+        if (proc.gored) {
+          useOncePerGame(ctx, attacker, "Gored by the Bull");
+          proc.dice += 1;
+        }
+        proc.stage = "roll";
         return "continue";
       }
       case "reroll": {
@@ -959,6 +982,8 @@ export const Block: Handler<P<"Block">> = {
         ];
       case "proDie":
         return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: proc.dieSkill ?? "Pro" }];
+      case "gored":
+        return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Gored by the Bull" }];
       case "savageDice":
         return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: "Savage Blow", multiple: true }];
       case "savageReroll":
