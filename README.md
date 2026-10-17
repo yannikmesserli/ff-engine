@@ -505,6 +505,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     in the catcher's square instead of being thrown again.
   - Yoink! (Scrappa Sorehead): once per game, when he tries to intercept, he may roll a D6 instead: on 2+, whatever
     the modifiers, he intercepts the pass (or the bomb).
+  - Strong Passing Game (Skrull Halfheight): once per game, in a Pass action, he may add his ST to the passing roll (at
+    most 6), after the roll, when it improves the result (a natural 1 still fumbles).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

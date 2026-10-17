@@ -3896,6 +3896,17 @@ describe("engine", () => {
       expect(s.activeSide).toBe("away");
     });
 
+    it("Strong Passing Game: once per game, the thrower may add their ST to the passing roll, at most 6", () => {
+      const skrull = edit(toFirstTurn(), (c) => void (c.players["home-5"]!.skills = ["Strong Passing Game"]));
+      // A short pass from (4,2): a 2 is a fumble (2 - 1); 2 + ST 3 = 5 is accurate.
+      let s = apply(pickUp(skrull), { type: "THROW", square: { x: 10, y: 4 } }, roll(2));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-5", skill: "Strong Passing Game" });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(s.log.filter((e) => e.type === "PassResult").map((e) => e.type === "PassResult" && e.result)).toEqual(["fumble", "accurate"]);
+      // A natural 1 still fumbles.
+      expect(find(apply(pickUp(skrull), { type: "THROW", square: { x: 10, y: 4 } }, roll(1)), "USE_SKILL")?.skill).not.toBe("Strong Passing Game");
+    });
+
     it("Yoink!: once per game, the interceptor may roll a D6 instead: on 2+ the pass is intercepted", () => {
       let s = edit(place(toFirstTurn(), { "away-4": { x: 9, y: 3 } }), (c) => void (c.players["away-4"]!.skills = ["Yoink!"]));
       s = apply(pickUp(s), { type: "THROW", square: { x: 12, y: 4 } }, roll(6), { type: "SELECT_PLAYERS", playerIds: ["away-4"] });

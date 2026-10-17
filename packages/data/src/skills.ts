@@ -107,6 +107,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  "Strong Passing Game": "Once per game, in a Pass action, may add this player's ST to the passing roll (at most 6), after the roll.",
   "Yoink!": "Once per game, when trying to intercept, may roll a D6 instead: on 2+ the pass is intercepted.",
   "Kaboom!": "Once per game, when an opponent catches a bomb this player threw, it may explode instead of being thrown again.",
   "Whirling Dervish": "Once per activation, may re-roll the D6 for the direction of a Ball & Chain move.",

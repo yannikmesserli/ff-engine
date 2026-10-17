@@ -625,7 +625,9 @@ export type Procedure =
       /** "safePass": a natural 1 may be saved by Safe Pass. */
       /** "aim": a player who caught a bomb picks where to throw it again, or a Dump-off thrower picks the target. */
       /** "yoink": the interceptor may use Yoink! (`yoink` if they did). */
-      stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "intercept" | "yoink" | "interceptRoll" | "land" | "end";
+      /** "strongPass": the thrower may use Strong Passing Game (`strong` once used). */
+      stage: "aim" | "animosity" | "animosityResult" | "roll" | "strongPass" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "intercept" | "yoink" | "interceptRoll" | "land" | "end";
+      strong?: boolean;
       yoink?: boolean;
       rerolled: boolean;
       /** The Team Mascot failed: only a team re-roll may be offered now. */

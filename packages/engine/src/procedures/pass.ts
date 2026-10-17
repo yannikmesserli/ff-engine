@@ -203,6 +203,27 @@ function giveAndGo(ctx: Ctx, thrower: PlayerState) {
 const aimTargets = (state: GameState, thrower: PlayerState, proc: P<"Pass">) =>
   throwTargets(state, thrower).filter((s) => !proc.dumpOff || s.range === "quick");
 
+/** After the pass roll: the re-roll decision, or the outcome. */
+function afterPassRoll(state: GameState, proc: P<"Pass">, thrower: PlayerState): "continue" {
+  const canReroll = passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
+  const wantsReroll = proc.hailMary ? proc.result === "fumble" : proc.result !== "accurate";
+  proc.stage = wantsReroll && canReroll ? "reroll" : "outcome";
+  return "continue";
+}
+
+/** Pass results from worst to best. */
+const PASS_RANK: PassResult[] = ["fumble", "inaccurate", "accurate"];
+
+/**
+ * Strong Passing Game: once per game, in a Pass action (not a bomb nor a Hail Mary Pass), the thrower may add their ST
+ * to the passing roll, at most 6, after the roll: offered when it improves the result (a natural 1 still fumbles).
+ */
+function strongPass(thrower: PlayerState, proc: P<"Pass">, modifiers: number) {
+  if (proc.bomb || proc.hailMary || proc.dumpOff || proc.strong || proc.roll === 1) return false;
+  if (!hasSkill(thrower, "Strong Passing Game") || thrower.usedThisGame?.includes("Strong Passing Game")) return false;
+  return PASS_RANK.indexOf(evaluatePass(thrower, Math.min(6, proc.roll! + thrower.st), modifiers)) > PASS_RANK.indexOf(proc.result!);
+}
+
 /** Yoink!: the interception succeeds on 2+, whatever the modifiers. */
 export const YOINK_TARGET = 2;
 
@@ -261,10 +282,23 @@ export const Pass: Handler<P<"Pass">> = {
         // A Hail Mary Pass is never accurate, and only a fumble is worth a re-roll.
         if (proc.hailMary && proc.result === "accurate") proc.result = "inaccurate";
         ctx.emit({ type: "PassResult", playerId: thrower.id, result: proc.result });
-        const canReroll = passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
-        const wantsReroll = proc.hailMary ? proc.result === "fumble" : proc.result !== "accurate";
-        proc.stage = wantsReroll && canReroll ? "reroll" : "outcome";
-        return "continue";
+        if (strongPass(thrower, proc, modifiers)) {
+          proc.stage = "strongPass";
+          return "wait";
+        }
+        return afterPassRoll(state, proc, thrower);
+      }
+      case "strongPass": {
+        if (action === null) return "wait";
+        if (ctx.expect(action, "USE_SKILL").use) {
+          // Strong Passing Game: the roll counts ST higher, at most 6.
+          const modifiers = passModifiers(state, { ...thrower, at: throwerSquare() }, proc.range, false, proc.target);
+          useOncePerGame(ctx, thrower, "Strong Passing Game");
+          proc.result = evaluatePass(thrower, Math.min(6, proc.roll! + thrower.st), modifiers);
+          proc.strong = true;
+          ctx.emit({ type: "PassResult", playerId: thrower.id, result: proc.result });
+        }
+        return afterPassRoll(state, proc, thrower);
       }
       case "reroll": {
         if (action === null) return "wait";
@@ -472,6 +506,8 @@ export const Pass: Handler<P<"Pass">> = {
             reason: "Interception: choose a player to try to intercept",
           },
         ];
+      case "strongPass":
+        return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Strong Passing Game" }];
       case "yoink":
         return [{ type: "USE_SKILL", side: other(thrower.side), playerId: proc.interceptorId!, skill: "Yoink!" }];
       case "interceptRoll": {
