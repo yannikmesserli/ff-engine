@@ -527,6 +527,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Kick 'em While They're Down! (Nobbla Blackwart): once per game, in a Block action, he may make a Chainsaw attack on
     an adjacent prone or stunned opponent (who stays down as they are); it is not a foul, so he cannot be sent off for
     it.
+  - Maximum Carnage (Max Spleenripper): once per game, right after a Chainsaw attack, he may make a second one against
+    another adjacent standing opponent.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

@@ -655,6 +655,12 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       if (!specialTargets(state, proc, skill).some((t) => t.id === a.targetId)) ctx.reject(`Cannot use ${skill} on this player.`);
       // Putrid Regurgitation: the vomit of a player without the skill, or after their block.
       if (skill === "Chainsaw" && state.players[a.targetId]!.status !== "standing") useOncePerGame(ctx, player, "Kick 'em While They're Down!");
+      // Maximum Carnage: the second Chainsaw attack uses it up; after a first one, the player may make it.
+      const carnage = skill === "Chainsaw" && hasSkill(player, "Maximum Carnage") && !player.usedThisGame?.includes("Maximum Carnage");
+      if (carnage && proc.carnage !== undefined) {
+        useOncePerGame(ctx, player, "Maximum Carnage");
+        delete proc.carnage;
+      } else if (carnage && !proc.blocked) proc.carnage = a.targetId;
       if (skill === "Projectile Vomit" && (!hasSkill(player, skill) || proc.blocked)) {
         player.usedThisHalf = [...(player.usedThisHalf ?? []), "Putrid Regurgitation"];
         ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Putrid Regurgitation" });
@@ -662,7 +668,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       proc.blocked = true;
       // The attack ends the action, even during a Blitz (but Hit and Run may follow a Stab); a blitzer may move on after
       // a chomp (which then ends if they leave).
-      if (skill !== "Monstrous Mouth") proc.finished = true;
+      if (skill !== "Monstrous Mouth" && proc.carnage === undefined) proc.finished = true;
       const blitz = proc.action === "blitz";
       ctx.push({ type: "Vomit", skill, attackerId: player.id, defenderId: a.targetId, blitz, stage: "appearance" }, ...hitAndRun(player, skill === "Stab"));
       return "continue";
@@ -972,12 +978,16 @@ const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: P<"Vomit
 /**
  * Special attacks a star player's rule gives: Putrid Regurgitation (once per half, a Projectile Vomit, even after the
  * player blocked in a Block or Blitz action), Kick 'em While They're Down! (once per game, in a Block action, a Chainsaw
- * attack on an adjacent prone or stunned opponent; not a foul).
+ * attack on an adjacent prone or stunned opponent; not a foul), Maximum Carnage (once per game, right after a Chainsaw
+ * attack, a second one on another adjacent standing opponent).
  */
 function extraSpecialTargets(state: GameState, proc: P<"MoveAction">, skill: P<"Vomit">["skill"]): PlayerState[] {
   const player = state.players[proc.playerId]!;
   if (skill === "Projectile Vomit" && putrid(player) && isOnPitch(player) && player.status === "standing" && (proc.action === "block" || proc.action === "blitz")) {
     return proc.blocked ? adjacentTargets(state, player) : activationTargets(state, proc);
+  }
+  if (skill === "Chainsaw" && proc.carnage !== undefined && isOnPitch(player) && player.status === "standing") {
+    return adjacentTargets(state, player).filter((p) => p.id !== proc.carnage);
   }
   if (skill === "Chainsaw" && proc.action === "block" && !proc.blocked) return downedTargets(state, player);
   return [];

@@ -1648,6 +1648,19 @@ describe("engine", () => {
       expect(find(apply(plain, declare("home-2", "block")), "CHAINSAW")?.targetIds).not.toContain("away-2");
     });
 
+    it("Maximum Carnage: once per game, right after a Chainsaw attack, another one on a different opponent", () => {
+      const max = withSkills(toFirstTurn(), { "home-2": ["Chainsaw", "Maximum Carnage"] });
+      let s = apply(max, declare("home-2", "block"), { type: "CHAINSAW", targetId: "away-2" });
+      while (find(s, "ROLL")?.reason.startsWith("Chainsaw")) s = apply(s, roll(6));
+      s = apply(s, roll(1, 1));
+      expect(find(s, "CHAINSAW")?.targetIds).toEqual(["away-1", "away-3"]);
+      s = apply(s, { type: "CHAINSAW", targetId: "away-1" });
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Maximum Carnage"]);
+      while (find(s, "ROLL")?.reason.startsWith("Chainsaw")) s = apply(s, roll(6));
+      s = apply(s, roll(1, 1));
+      expect([s.activePlayerId, types(s).includes("CHAINSAW")]).toEqual([null, false]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

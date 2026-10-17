@@ -590,6 +590,8 @@ export type Procedure =
       /** "primal": a failed Animal Savagery roll may lash out at an opponent instead (Primal Savagery, `primal`). */
       stage: "start" | "confusion" | "primal" | "savagery" | "thirst" | "root" | "standup" | "carry" | "special" | "main";
       primal?: boolean;
+      /** Maximum Carnage: the target of the first Chainsaw attack (another one may follow). */
+      carnage?: string;
       /** The start-of-activation rules were offered; `ended`: one of them ended the activation. */
       specialAsked?: boolean;
       ended?: boolean;
