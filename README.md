@@ -490,6 +490,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     game (no Argue the Call for it).
   - Sneakiest of the Lot (The Black Gobbo): his Foul action does not use up the team's one Foul action per turn, so
     the team may foul twice, once with him.
+  - A Sneaky Pair (Dribl and Drull): when one of them fouls or stabs an opponent both of them mark, +1 to the roll: to
+    the armour roll if it needs it, otherwise to the injury roll.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

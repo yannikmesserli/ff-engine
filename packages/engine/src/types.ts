@@ -696,6 +696,9 @@ export type Procedure =
       injury?: number[];
       /** Dirty Player's +1 went to the armour roll, so it does not apply to the injury roll. */
       dirtyPlayerOnArmour?: boolean;
+      /** A Sneaky Pair applies (`sneaky`); its +1 went to the armour roll (`sneakyOnArmour`). */
+      sneaky?: boolean;
+      sneakyOnArmour?: boolean;
     }
   | {
       type: "Block";
@@ -783,6 +786,9 @@ export type Procedure =
       assassin?: boolean;
       injuryRoll?: number;
       mauled?: boolean;
+      /** A Sneaky Pair on a Stab: its +1 went to the armour roll (`sneakyOnArmour`), or goes to the injury roll. */
+      sneaky?: boolean;
+      sneakyOnArmour?: boolean;
       /** Who the vomit hits: the defender, or the attacker after a failed roll. */
       victimId?: string;
       /** The victim held the ball when placed prone. */

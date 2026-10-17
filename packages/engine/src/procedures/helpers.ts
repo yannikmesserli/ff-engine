@@ -1,7 +1,7 @@
 import type { Ctx } from "../context";
 import type { Action, ActionTemplate, GameState, InducementId, PlayerState, Side, Square, SppRecord, TeamSetup, TeamState, Weather } from "../types";
 import { hasSkill, skillName } from "../skills";
-import { adjacent, inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, tackleZones, teamPlayers } from "../pitch";
+import { adjacent, hasTackleZone, inBounds, inHalf, isOnPitch, other, playerAt, sameSquare, scoringEndZoneX, tackleZones, teamPlayers } from "../pitch";
 
 /** The player with this id, or reject the action. */
 export function getPlayer(ctx: Ctx, id: string): PlayerState {
@@ -53,6 +53,19 @@ export function useOncePerGame(ctx: Ctx, player: PlayerState, skill: string) {
   player.usedThisGame = [...(player.usedThisGame ?? []), skill];
   ctx.emit({ type: "SkillUsed", playerId: player.id, skill });
 }
+
+/**
+ * A Sneaky Pair: the attacker (one of the pair) fouls or stabs an opponent both of the pair mark (standing next to them
+ * with a tackle zone): +1 to the armour roll if it needs it, otherwise to the injury roll.
+ */
+export const sneakyPair = (state: GameState, attacker: PlayerState, victim: PlayerState) =>
+  hasSkill(attacker, "A Sneaky Pair") &&
+  victim.side !== attacker.side &&
+  isOnPitch(victim) &&
+  adjacent(victim.at).filter((s) => {
+    const p = playerAt(state, s);
+    return p !== undefined && p.side === attacker.side && hasTackleZone(p) && hasSkill(p, "A Sneaky Pair");
+  }).length >= 2;
 
 /** Count one more of `kind` towards the player's Star Player Points. */
 export function earnSpp(state: GameState, playerId: string, kind: keyof SppRecord) {

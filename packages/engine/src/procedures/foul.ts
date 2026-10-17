@@ -4,7 +4,7 @@ import { adjacent, ballCarrier, isOnPitch, playerAt, tackleZoneAt } from "../pit
 import { ARMOUR_DICE, dwarfenGrit } from "./checks";
 import { injure, savageMauling } from "./injury";
 import { hasSkill } from "../skills";
-import { getPlayer, squareOf, useOncePerGame } from "./helpers";
+import { getPlayer, sneakyPair, squareOf, useOncePerGame } from "./helpers";
 import { dropBall } from "./ball";
 import { CHAINSAW_TARGET, chainsawArmour } from "./block";
 
@@ -79,7 +79,8 @@ export function foulTargets(state: GameState, fouler: PlayerState) {
 }
 
 /** Dirty Player's +1 on the injury roll, when it was not needed on the armour roll. */
-const injuryModifier = (fouler: PlayerState, proc: P<"Foul">) => (hasSkill(fouler, "Dirty Player") && !proc.dirtyPlayerOnArmour ? 1 : 0);
+const injuryModifier = (fouler: PlayerState, proc: P<"Foul">) =>
+  (hasSkill(fouler, "Dirty Player") && !proc.dirtyPlayerOnArmour ? 1 : 0) + (proc.sneaky && !proc.sneakyOnArmour ? 1 : 0);
 
 /** Natural doubles on a 2D6 roll, which the referee spots. */
 const isDouble = (dice: number[] | undefined) => dice !== undefined && dice[0] === dice[1];
@@ -135,7 +136,11 @@ export const Foul: Handler<P<"Foul">> = {
         const unmodified = proc.armour[0]! + proc.armour[1]! + proc.assists + (proc.chainsaw ? chainsawArmour(victim) : 0);
         // Dirty Player goes to the armour roll unless the assists alone break it (or Iron Hard Skin forbids it).
         proc.dirtyPlayerOnArmour = hasSkill(fouler, "Dirty Player") && !hasSkill(victim, "Iron Hard Skin") && unmodified < victim.av;
-        const roll = unmodified + (proc.dirtyPlayerOnArmour ? 1 : 0);
+        let roll = unmodified + (proc.dirtyPlayerOnArmour ? 1 : 0);
+        // A Sneaky Pair: +1 to the armour roll if it still needs it, otherwise to the injury roll.
+        proc.sneaky = sneakyPair(state, fouler, victim);
+        proc.sneakyOnArmour = proc.sneaky && !hasSkill(victim, "Iron Hard Skin") && roll < victim.av;
+        if (proc.sneakyOnArmour) roll += 1;
         const broken = roll >= victim.av;
         ctx.emit(broken ? { type: "ArmourBroken", playerId: victim.id, roll } : { type: "ArmourHeld", playerId: victim.id, roll });
         proc.stage = broken ? (!proc.grit && dwarfenGrit(victim) ? "grit" : "injury") : loneFouler(state, fouler, victim) ? "loneFouler" : "referee";

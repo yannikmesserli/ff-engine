@@ -4844,6 +4844,20 @@ describe("engine", () => {
       expect(types(apply(broken, roll(3, 3)))).not.toContain("USE_SKILL");
     });
 
+    it("A Sneaky Pair: +1 to a Stab (or a Foul) against an opponent both of the pair mark, to the armour roll if it needs it", () => {
+      const pair = (partner: string[]) =>
+        edit(toFirstTurn(), (c) => {
+          c.players["home-2"]!.skills = ["Stab", "A Sneaky Pair"];
+          c.players["home-1"]!.skills = partner;
+        });
+      const stab = (s: GameState) => apply(s, declare("home-2", "block"), { type: "STAB", targetId: "away-2" });
+      // home-1 at (12,6) also marks away-2 at (13,7): 7 becomes 8.
+      expect(apply(stab(pair(["A Sneaky Pair"])), roll(3, 4)).log).toContainEqual({ type: "ArmourBroken", playerId: "away-2", roll: 8 });
+      expect(apply(stab(pair([])), roll(3, 4)).log).toContainEqual({ type: "ArmourHeld", playerId: "away-2", roll: 7 });
+      // The armour broke without it: +1 to the injury roll (7, Stunned, becomes 8, KO'd).
+      expect(apply(stab(pair(["A Sneaky Pair"])), roll(5, 5), roll(3, 4)).log).toContainEqual({ type: "PlayerInjured", playerId: "away-2", result: "ko" });
+    });
+
     it("Violent Innovator: a casualty from a Stab earns Star Player Points", () => {
       const stabbing = (skills: string[]) => edit(toFirstTurn(), (c) => void (c.players["home-2"]!.skills = skills));
       const stab = (s: GameState) => apply(s, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(5, 4), roll(6, 5), roll(1, 1));

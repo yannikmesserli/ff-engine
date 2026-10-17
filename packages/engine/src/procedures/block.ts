@@ -6,7 +6,7 @@ import { hatedKeywords, injure, injuryOutcome, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
 import { hasSkill, skillName, skillValue, tandemRole } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, sneakyPair, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -1173,7 +1173,11 @@ export const Vomit: Handler<P<"Vomit">> = {
         const chained = hasSkill(victim, "Ball & Chain");
         if (!chained && action === null) return "wait";
         const [a, b] = chained ? [0, 0] : ctx.roll(action!, [{ kind: "d6", count: 2 }], `Armour ${victim.av}+ (${attackName(proc)})`);
-        const roll = a! + b! + (proc.skill === "Chainsaw" ? chainsawArmour(victim) : 0);
+        let roll = a! + b! + (proc.skill === "Chainsaw" ? chainsawArmour(victim) : 0);
+        // A Sneaky Pair on a Stab: +1 to the armour roll if it needs it, otherwise to the injury roll.
+        proc.sneaky = proc.skill === "Stab" && sneakyPair(state, attacker, victim);
+        proc.sneakyOnArmour = proc.sneaky && !hasSkill(victim, "Iron Hard Skin") && roll < victim.av;
+        if (proc.sneakyOnArmour) roll += 1;
         if (!chained && roll < victim.av) {
           ctx.emit({ type: "ArmourHeld", playerId: victim.id, roll });
           if (masterAssassin(proc, attacker, victim)) {
@@ -1199,7 +1203,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         const victim = getPlayer(ctx, proc.victimId!);
         const square = squareOf(ctx, victim);
         const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury");
-        proc.injuryRoll = a! + b!;
+        proc.injuryRoll = a! + b! + (proc.sneaky && !proc.sneakyOnArmour ? 1 : 0);
         if (toxin(proc, attacker, victim) && injuryOutcome(victim, proc.injuryRoll + 1) !== injuryOutcome(victim, proc.injuryRoll)) {
           proc.stage = "injuryBonus";
           return "wait";
