@@ -1421,6 +1421,16 @@ describe("engine", () => {
       expect(types(apply(withSkills(toFirstTurn(), { "home-5": ["Catch of the Day"] }), startMove("home-5")))).not.toContain("ACTIVATION_SKILL");
     });
 
+    it("Treacherous: once per game, the player takes the ball from an adjacent team-mate, who is knocked down without a turnover", () => {
+      // home-2 at (12,7) holds the ball; home-1 at (12,6) is next to them.
+      const hakflem = edit(withSkills(toFirstTurn(), { "home-1": ["Treacherous"] }), (c) => void (c.ball = { square: { x: 12, y: 7 }, carried: true }));
+      let s = apply(hakflem, startMove("home-1"), { type: "ACTIVATION_SKILL", skill: "Treacherous" }, { type: "SELECT_PLAYERS", playerIds: ["home-2"] });
+      expect(s.ball).toEqual({ square: { x: 12, y: 6 }, carried: true });
+      expect(s.players["home-2"]!.status).toBe("prone");
+      s = apply(s, roll(6, 6), roll(6, 6), roll(16, 1));
+      expect([s.turnover, types(s).includes("MOVE")]).toEqual([false, true]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

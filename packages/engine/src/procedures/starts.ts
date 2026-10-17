@@ -13,6 +13,7 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Baleful Hex": "game",
   "Look Into My Eyes": "game",
   "Catch of the Day": "half",
+  Treacherous: "game",
 };
 
 /** Baleful Hex works on 2+. */
@@ -85,6 +86,8 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
       return opponentsWithin(state, player, 5);
     case "Look Into My Eyes":
       return marked(state, player).filter((p) => ballCarrier(state)?.id === p.id);
+    case "Treacherous":
+      return isOnPitch(player) ? adjacent(player.at).flatMap((s) => (ballCarrier(state)?.id === playerAt(state, s)?.id && playerAt(state, s)?.side === player.side ? [playerAt(state, s)!] : [])) : [];
     default:
       return [];
   }
@@ -103,6 +106,8 @@ export function activationSkills(state: GameState, player: PlayerState): string[
  *   activated during their team's next turn.
  * - Look Into My Eyes (once per game): a D6 against the opponent with the ball the player marks: on 2+ the player takes
  *   the ball, and their activation ends.
+ * - Treacherous (once per game): the player takes the ball from the team-mate next to them who holds it; the team-mate is
+ *   knocked down, without a turnover (even if they are hurt).
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
  *   pick it up, without a roll; the activation goes on.
  */
@@ -147,6 +152,12 @@ export const StartSkill: Handler<P<"StartSkill">> = {
         target.distracted = true;
         target.hexed = true;
         ctx.emit({ type: "DistractedBy", playerId: target.id, byId: player.id, skill: proc.skill });
+        return "done";
+      case "Treacherous":
+        state.ball = { square: { ...squareOf(ctx, player) }, carried: true };
+        ctx.emit({ type: "BallStolen", playerId: player.id, fromId: target.id, skill: proc.skill });
+        ctx.push({ type: "KnockDown", playerId: target.id, turnover: false, stage: "fall" });
+        checkTouchdown(ctx, player);
         return "done";
       case "Catch of the Day":
         state.ball = { square: { ...squareOf(ctx, player) }, carried: true };

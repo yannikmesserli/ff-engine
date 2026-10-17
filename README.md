@@ -465,6 +465,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     D6: on 2+ he takes the ball and his activation ends; on a 1 nothing happens.
   - Catch of the Day (Rodney Roachbait): once per half, starting his activation standing within 3 squares of the ball
     on the ground, a D6: on 3+ he gets the ball (no roll to pick it up); the activation goes on.
+  - Treacherous (Hakflem Skuttlespike): once per game, at the start of his activation, he takes the ball from the
+    team-mate next to him who holds it; the team-mate is knocked down, without a turnover even if hurt.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
