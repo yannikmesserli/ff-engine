@@ -520,6 +520,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Halfling Luck (Puggy Baconbreath): once per game, he may re-roll a single die he rolled (a failed single-die roll, a
     pass, a block die), not for an armour, injury or casualty roll; offered next to the team re-roll.
   - Thinking Man's Troll (Ripper Bolgrot): as Halfling Luck, once per half.
+  - Bounding Leap (Rowana Forestfoot): once per game, before rolling a Leap (or any jump), she may ignore its negative
+    modifiers; a failed roll is then re-rolled.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

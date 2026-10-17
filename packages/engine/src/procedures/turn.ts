@@ -1088,14 +1088,28 @@ export const MoveStep: Handler<P<"MoveStep">> = {
           ctx.push({ type: "Tentacles", playerId: player.id, from: { ...squareOf(ctx, player) }, stage: "select" });
           return "continue";
         }
+        // Bounding Leap: once per game, before the jump roll, the player may ignore its negative modifiers.
+        if (proc.jump && proc.bounding === undefined && hasSkill(player, "Bounding Leap") && !player.usedThisGame?.includes("Bounding Leap")) {
+          proc.stage = "bounding";
+          return "continue";
+        }
         state.lastCheck = null;
         proc.stage = "move";
         const leaving = { from: { ...squareOf(ctx, player) }, to: { ...proc.to } };
-        if (proc.jump) {
+        if (proc.jump && proc.bounding) {
+          // ...and re-roll it if it fails.
+          ctx.push({ type: "Check", kind: "jump", playerId: player.id, target: player.ag, modifier: Math.max(0, jumpModifier(state, player, leaving.from, proc.to)), stage: "roll", rerolled: false, leaving, skillReroll: "Bounding Leap" });
+        } else if (proc.jump) {
           check("jump", player.ag, jumpModifier(state, player, leaving.from, proc.to), leaving);
         } else if (!proc.hitAndRun && !player.incorporeal && tackleZones(state, player.side, leaving.from) > 0) {
           check("dodge", player.ag, dodgeModifier(state, player, leaving.from, proc.to), leaving);
         }
+        return "continue";
+      case "bounding":
+        if (action === null) return "wait";
+        proc.bounding = ctx.expect(action, "USE_SKILL").use;
+        if (proc.bounding) useOncePerGame(ctx, player, "Bounding Leap");
+        proc.stage = "dodge";
         return "continue";
       case "move":
         if (failed(ctx)) return fall(proc.jump && state.lastCheck?.roll === 1, true);
@@ -1128,6 +1142,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "chainReroll") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Whirling Dervish" }];
+    if (proc.stage === "bounding") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Bounding Leap" }];
     if (proc.stage !== "chain") return [];
     return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `Ball & Chain direction (${player.name})` }];
   },

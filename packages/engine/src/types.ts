@@ -910,7 +910,9 @@ export type Procedure =
       /** "arrive": after the step (and any Shadowing), pick up the ball or score. */
       /** "chain*": a Ball & Chain step (direction on the throw-in template, a block or a move, then any Rush). */
       /** "chainReroll": Whirling Dervish may re-roll the direction rolled for the side picked (`chainSide`). */
-      stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup" | "chain" | "chainReroll" | "chainGo" | "chainBlock" | "chainArrive";
+      /** "bounding": the jumper may use Bounding Leap (`bounding`: used, or declined). */
+      stage: "rush" | "rush2" | "dodge" | "bounding" | "move" | "arrive" | "fell" | "pickup" | "chain" | "chainReroll" | "chainGo" | "chainBlock" | "chainArrive";
+      bounding?: boolean;
       chainSide?: Square;
       /** The failed roll left the player in the starting square. */
       fellInPlace?: boolean;

@@ -1931,6 +1931,19 @@ describe("engine", () => {
       expect(actionsOf(withSkills(s, { "home-4": ["My Ball"] }), "home-4")).not.toContain("handoff");
     });
 
+    it("Bounding Leap: once per game, a jump ignores its negative modifiers and is re-rolled if it fails", () => {
+      // home-2 jumps from (12,7) over prone away-2 to (14,7): -4 for the tackle zones.
+      const rowana = edit(withSkills(toFirstTurn(), { "home-2": ["Bounding Leap"] }), (c) => void (c.players["away-2"]!.status = "prone"));
+      let s = apply(rowana, startMove("home-2"), ...move({ x: 14, y: 7 }));
+      expect(find(s, "USE_SKILL")?.skill).toBe("Bounding Leap");
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(find(s, "ROLL")?.reason).toBe("Jump 3+ (Home 2)");
+      s = apply(s, roll(1));
+      expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Bounding Leap" });
+      s = apply(s, roll(3));
+      expect(s.players["home-2"]).toMatchObject({ at: { x: 14, y: 7 }, status: "standing" });
+    });
+
     it("Leap: jumps over any square; the tackle zone penalty is reduced by 1, not below -1", () => {
       // home-2 at (12,7) is marked by three opponents: a jump to (10,7) over home's empty (11,7).
       const s = withSkills(toFirstTurn(), { "home-2": ["Leap"] });
