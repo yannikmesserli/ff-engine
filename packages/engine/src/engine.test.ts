@@ -1680,6 +1680,21 @@ describe("engine", () => {
       expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
     });
 
+    it("Swift as the Breeze: once per game, a failed Dodge, Jump or Rush passes on a natural 2+", () => {
+      // home-1 dodges from (12,6) to (11,5): 3+ needed, a 2 fails.
+      const swift = (s = toFirstTurn()) => withSkills(s, { "home-1": ["Swift as the Breeze"] });
+      let s = apply(swift(), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(2));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-1", skill: "Swift as the Breeze" });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(s.players["home-1"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing", usedThisGame: ["Swift as the Breeze"] });
+      // Once per game: the next failure only gets the team re-roll.
+      s = apply(s, ...move({ x: 12, y: 5 }), ...move({ x: 11, y: 4 }), roll(2));
+      expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+      // A natural 1 still fails; declined, the team re-roll is offered.
+      expect(types(apply(swift(), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1)))).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+      expect(types(apply(swift(), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(2), { type: "USE_SKILL", use: false }))).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
+    });
+
     describe("Pro", () => {
       // home-1 dodges from (12,6) to (11,5).
       const dodge = (value: number) => apply(withSkills(toFirstTurn(), { "home-1": ["Pro"] }), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(value));

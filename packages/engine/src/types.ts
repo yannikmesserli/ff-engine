@@ -877,7 +877,10 @@ export type Procedure =
        * "loner": a Loner player rolls to use the team re-roll; "pro" / "proTeam" / "proLoner": the Pro roll to re-roll
        * (see `stepPro`); "divingTackle": an opponent may use Diving Tackle.
        */
-      stage: "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "divingTackle";
+      /** "rescue": a once-per-game skill may still turn the failure into a success (see `rescueSkill`). */
+      stage: "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "divingTackle" | "rescue";
+      /** The rescue skill was offered on this roll. */
+      rescued?: boolean;
       rerolled: boolean;
       /** The Team Mascot failed: only a team re-roll may be offered now. */
       mascotFailed?: boolean;

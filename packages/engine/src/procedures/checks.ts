@@ -3,7 +3,7 @@ import type { GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, getPlayer, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 import { injure, knockOut } from "./injury";
 import { dropBall } from "./ball";
 
@@ -129,9 +129,24 @@ const kept = (proc: P<"Check">) => proc.rerollBelow !== undefined && passes(proc
 /** A re-roll is wanted: after a failure, or a success below `rerollBelow`. */
 const wantsReroll = (proc: P<"Check">, success: boolean) => !success || (proc.rerollBelow !== undefined && proc.roll! < proc.rerollBelow);
 
-/** After a roll: a skill re-roll, the team re-roll decision, or the result. */
+/**
+ * A once-per-game skill that may turn this failed roll into a success, offered before any re-roll: Swift as the Breeze
+ * (a Dodge, Jump or Rush passes on a natural 2+, whatever the modifiers).
+ */
+function rescueSkill(proc: P<"Check">, player: PlayerState): string | null {
+  if (proc.rescued || proc.roll === undefined) return null;
+  const unused = (skill: string) => hasSkill(player, skill) && !player.usedThisGame?.includes(skill);
+  if (unused("Swift as the Breeze") && ["dodge", "jump", "rush"].includes(proc.kind) && proc.roll >= 2) return "Swift as the Breeze";
+  return null;
+}
+
+/** After a roll: a rescue skill, a skill re-roll, the team re-roll decision, or the result. */
 function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolean): StepResult {
   const { state } = ctx;
+  if (!success && rescueSkill(proc, player)) {
+    proc.stage = "rescue";
+    return "wait";
+  }
   // A skill re-roll is used automatically, before any team re-roll; a roll is only ever re-rolled once.
   const skill = success || proc.rerolled ? null : skillReroll(state, proc, player);
   if (skill) {
@@ -177,6 +192,15 @@ export const Check: Handler<P<"Check">> = {
       proc.rerolled = true;
       proc.stage = rerollGate(state, player) ? "loner" : "roll";
       return "wait";
+    }
+    if (proc.stage === "rescue") {
+      const skill = rescueSkill(proc, player)!;
+      proc.rescued = true;
+      if (ctx.expect(action, "USE_SKILL").use) {
+        useOncePerGame(ctx, player, skill);
+        return finish(state, proc, true);
+      }
+      return settle(ctx, proc, player, false);
     }
     if (proc.stage === "loner") {
       // A failed Loner roll keeps the first result.
@@ -228,6 +252,7 @@ export const Check: Handler<P<"Check">> = {
       ];
     }
     if (proc.stage === "loner") return [lonerRollTemplate(state, player)];
+    if (proc.stage === "rescue") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: rescueSkill(proc, player)! }];
     if (proc.stage === "pro" || proc.stage === "proTeam" || proc.stage === "proLoner") return proTemplates(state, proc.stage, player);
     if (proc.stage === "divingTackle") {
       const playerIds = divingTacklers(state, proc, player).map((p) => p.id);
