@@ -920,7 +920,8 @@ export const Block: Handler<P<"Block">> = {
       }
       case "followup": {
         // A rooted attacker cannot follow up, nor one held off by Fend.
-        const canFollow = proc.vacated !== undefined && !proc.multiple && isOnPitch(attacker) && attacker.status === "standing" && !isPinned(state, attacker) && !playerAt(state, proc.vacated) && proc.fended !== true;
+        // Vicious Vines: no follow-up from two squares away.
+        const canFollow = proc.vacated !== undefined && !proc.multiple && !proc.vines && isOnPitch(attacker) && attacker.status === "standing" && !isPinned(state, attacker) && !playerAt(state, proc.vacated) && proc.fended !== true;
         if (canFollow && proc.fended === undefined && canFend(proc, attacker, defender)) {
           proc.stage = "fend";
           return "continue";

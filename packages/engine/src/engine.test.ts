@@ -1661,6 +1661,18 @@ describe("engine", () => {
       expect([s.activePlayerId, types(s).includes("CHAINSAW")]).toEqual([null, false]);
     });
 
+    it("Vicious Vines: once per half, a Block action may target an opponent 2 squares away, without a follow-up", () => {
+      const maple = withSkills(place(toFirstTurn(), { "away-4": { x: 14, y: 7 } }), { "home-2": ["Vicious Vines"] });
+      let s = apply(maple, declare("home-2", "block"));
+      expect(find(s, "BLOCK")?.targets.map((t) => t.playerId)).toContain("away-4");
+      // A Push: away-4 goes back to (15,7), the only free square straight away, and there is no follow-up.
+      s = apply(s, { type: "BLOCK", targetId: "away-4" }, roll(3), pick);
+      expect(s.players["away-4"]!.at).toEqual({ x: 15, y: 7 });
+      expect(types(s)).not.toContain("FOLLOW_UP");
+      expect(s.players["home-2"]!.at).toEqual({ x: 12, y: 7 });
+      expect(s.players["home-2"]!.usedThisHalf).toEqual(["Vicious Vines"]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

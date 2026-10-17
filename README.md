@@ -529,6 +529,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     it.
   - Maximum Carnage (Max Spleenripper): once per game, right after a Chainsaw attack, he may make a second one against
     another adjacent standing opponent.
+  - Vicious Vines (Maple Highgrove): once per half, a Block action may target a standing opponent 2 squares away,
+    following the usual rules, but without a follow-up.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

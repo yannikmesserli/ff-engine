@@ -344,7 +344,7 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   const free = (a: PlayerActionType) => !proc.used.includes(a);
   // Jump Up: a prone player may declare a Block, standing up with an AG roll.
   const canBlock = player.status === "standing" || hasSkill(player, "Jump Up");
-  if (!proc.charge && canBlock && (adjacentTargets(state, player).length > 0 || downedTargets(state, player).length > 0)) actions.push("block");
+  if (!proc.charge && canBlock && (adjacentTargets(state, player).length > 0 || downedTargets(state, player).length > 0 || vineTargets(state, player).length > 0)) actions.push("block");
   if (free("blitz") && blitzTargets(state, player.side).length > 0) actions.push("blitz");
   if (proc.charge) return actions;
   if (free("pass") && ballAvailable(state, player) && !keepsBall(player)) actions.push("pass");
@@ -563,7 +563,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       state.touchdown !== null ||
       !isOnPitch(player) ||
       (activationMoves(state, proc).length === 0 &&
-        activationTargets(state, proc).length === 0 &&
+        blockTargets(state, proc).length === 0 &&
         extraSpecialTargets(state, proc, "Projectile Vomit").length === 0 &&
         extraSpecialTargets(state, proc, "Chainsaw").length === 0 &&
         throwOptions(state, proc).length === 0 &&
@@ -696,8 +696,14 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       return "continue";
     }
     if (a.type === "BLOCK") {
-      const target = activationTargets(state, proc).find((t) => t.id === a.targetId) ?? ctx.reject("Illegal block target.");
+      const target = blockTargets(state, proc).find((t) => t.id === a.targetId) ?? ctx.reject("Illegal block target.");
       proc.blocked = true;
+      // Vicious Vines: a block two squares away, once per half.
+      const vines = !adjacentTargets(state, player).some((t) => t.id === target.id);
+      if (vines) {
+        player.usedThisHalf = [...(player.usedThisHalf ?? []), "Vicious Vines"];
+        ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Vicious Vines" });
+      }
       const dice = blockDice(state, player, target, { blitz: proc.action === "blitz" });
       // Cheering Fans: the extra assist is used up by the team's first block.
       const extraAssist = state.teams[player.side].extraAssist;
@@ -710,6 +716,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         blitz: proc.action === "blitz",
         stage: "appearance",
         dice,
+        ...(vines ? { vines } : {}),
         ...(extraAssist ? { extraAssist } : {}),
         rerolled: false,
         chain: [],
@@ -731,7 +738,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const playerIds = (proc.primal ? primalTargets(state, player) : lashOutTargets(state, player, proc.action)).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: player.side, playerIds, max: 1, min: 1, reason: `Animal Savagery: choose a team-mate for ${player.name} to lash out at` }];
     }
-    const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
+    const targets = blockTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
     const vomits = specialTargets(state, proc, "Projectile Vomit").map((t) => t.id);
     const stabs = specialTargets(state, proc, "Stab").map((t) => t.id);
     const fires = specialTargets(state, proc, "Breathe Fire").map((t) => t.id);
@@ -949,6 +956,21 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
   if (proc.action === "block") return adjacentTargets(state, player);
   if (proc.action !== "blitz" || player.movesUsed >= maxMoves(player)) return [];
   return adjacentTargets(state, player).filter((t) => t.id === proc.targetId);
+}
+
+/** The players the player may block now: those next to them, and in a Block action, with Vicious Vines, those 2 squares away. */
+function blockTargets(state: GameState, proc: P<"MoveAction">) {
+  const targets = activationTargets(state, proc);
+  return proc.action === "block" && !proc.blocked ? [...targets, ...vineTargets(state, state.players[proc.playerId]!)] : targets;
+}
+
+/** Vicious Vines (once per half): the standing opponents exactly 2 squares away from the standing player. */
+function vineTargets(state: GameState, player: PlayerState) {
+  if (!hasSkill(player, "Vicious Vines") || player.usedThisHalf?.includes("Vicious Vines") || !isOnPitch(player) || player.status !== "standing") return [];
+  return Object.values(state.players).filter(
+    (p): p is PlayerState & { at: Square } =>
+      p.side !== player.side && isOnPitch(p) && p.status === "standing" && Math.max(Math.abs(p.at.x - player.at.x), Math.abs(p.at.y - player.at.y)) === 2,
+  );
 }
 
 /** Multiple Block: in a Block action (not a Blitz), the opponents the player may block two of, if there are two. */

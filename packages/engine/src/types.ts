@@ -729,6 +729,8 @@ export type Procedure =
       dieSkill?: string;
       /** Savage Blow: the block dice picked to re-roll. */
       savage?: number[];
+      /** Vicious Vines: a block of a player 2 squares away (no follow-up). */
+      vines?: boolean;
       /** Gored by the Bull: asked (false: declined); used in this Blitz, Frenzy's second block included. */
       gored?: boolean;
       /** A team re-roll was spent on a failed Pro roll. */
