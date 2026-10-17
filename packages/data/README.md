@@ -22,7 +22,7 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 | `INDUCEMENT_RULES` | BB2025 inducement limits, required special rules and costs, by inducement id. |
 | `resolveTeam(json, rosters?)` | Validates a team file against its roster and merges in position stats, the Current Team Value, treasury and the shop's prices. Throws `TeamError`. |
 | `teamValue(json, rosters?)` | The Current Team Value of a team file: players available and their advancements, journeymen, re-rolls and staff. |
-| `teamAfterGame(json, state, side)` | The team file after a finished game: Star Player Points, casualties, raised players, winnings, Dedicated Fans. |
+| `teamAfterGame(json, state, side)` | The team file after a finished game: Star Player Points, casualties, Getting Even, raised players, winnings, Dedicated Fans. |
 | `TeamFileSchema`, `RosterSchema` | zod schemas (and the `TeamFile`, `Roster` types). |
 | `SKILL_DESCRIPTIONS`, `skillDescription(skill)` | Short BB2025 descriptions of every skill and trait (our own wording), for tooltips; `skillDescription("Loner(4)")` fills in the value. |
 
@@ -82,6 +82,8 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
   none; a position title picks the position when the roster has more than one (Shambling Undead: Skeleton or Zombie
   Lineman).
 - `skills`: skills gained on top of the position's skills.
+- `hatred`: keywords the player gained Hatred against by Getting Even (`["orc"]`, each one a `Hatred(orc)` skill);
+  `teamAfterGame` adds those of the game. They are neither advancements nor counted in the team value.
 - `improvements`: characteristic improvements per characteristic (`ma`, `st`, `ag`, `pa`, `av`). Each one is +1 to MA,
   ST or AV; for AG and PA, which are target numbers, each one lowers the target by 1 (AG 3+ becomes 2+).
 - `injuries`: lasting injuries, one entry per -1 to a characteristic (AG and PA targets go up by 1), or `"niggling"`

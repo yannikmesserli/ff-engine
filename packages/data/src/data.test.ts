@@ -184,6 +184,18 @@ describe("data", () => {
     expect(() => resolveTeam({ ...human, captain: 99 })).toThrow(/Team Captain \(#99\) is not in the team/);
   });
 
+  it("keeps the Hatred gained by Getting Even: a skill, but neither an advancement nor team value", () => {
+    const human = exampleTeams["human"]!;
+    const team = { ...human, players: [{ ...human.players[0]!, hatred: ["orc"] }, ...human.players.slice(1)] };
+    expect(resolveTeam(team).players[0]).toMatchObject({ skills: [...resolveTeam(human).players[0]!.skills, "Hatred(orc)"], advancements: 0 });
+    expect(teamValue(team)).toBe(teamValue(human));
+    const game = structuredClone(createGame(resolveTeam(team), resolveTeam(exampleTeams["orc"])));
+    game.players[`home-${human.players[0]!.number}`]!.gainedHatred = ["goblin"];
+    game.finished = true;
+    game.result = { conceded: null, concededLegally: false, penalties: null, winner: null, winnings: { home: 0, away: 0 }, dedicatedFans: { home: 0, away: 0 }, mvps: [], leaving: [] };
+    expect(teamAfterGame(team, game, "home").players[0]!.hatred).toEqual(["orc", "goblin"]);
+  });
+
   it("writes the result of a game into the team file", () => {
     const human = { ...exampleTeams["human"]!, players: exampleTeams["human"]!.players.map((p, i) => (i === 4 ? { ...p, missNextGame: true } : p)) };
     const game = structuredClone(createGame(resolveTeam(human), resolveTeam(exampleTeams["orc"])));
@@ -326,6 +338,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "STAB", targetId: pick(t.targetIds) };
     case "CHOOSE_SKILL":
       return { type: "CHOOSE_SKILL", skill: pick(t.skills) };
+    case "CHOOSE_KEYWORD":
+      return { type: "CHOOSE_KEYWORD", keyword: pick(t.keywords) };
     case "THROW_A_ROCK":
       return { type: "THROW_A_ROCK", use: random() < 0.3 };
     case "DWARFEN_WISDOM":

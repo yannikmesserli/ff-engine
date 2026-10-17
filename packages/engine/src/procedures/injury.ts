@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { Action, Casualty, Characteristic, DiceSpec, InjuryOutcome, PlayerState, Procedure, TeamState } from "../types";
-import { hasSkill } from "../skills";
+import { hasSkill, skillName } from "../skills";
 import { teamPlayers } from "../pitch";
 import { createPlayer, earnSpp, getPlayer, inducementsLeft, spendInducement } from "./helpers";
 
@@ -87,6 +87,8 @@ export interface InjuryCause {
   crowd?: boolean;
   /** The opponent whose block caused it (Plague Ridden). */
   attackerId?: string;
+  /** The opponent who caused it (Getting Even); by default the blocker, or the opponent who earns Star Player Points. */
+  byId?: string;
   /** Bitten by a Bloodlust player: a casualty is only Badly Hurt. */
   bitten?: boolean;
   /** A Stunned result counts as KO'd (a fumbled Kick Team-mate). */
@@ -96,7 +98,8 @@ export interface InjuryCause {
 }
 
 /** Resolve an injury roll total on `player`: emits the table result and pushes the casualty / apothecary follow-up. */
-export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = false, attackerId, bitten = false, stunnedIsKo = false, sppTo = [] }: InjuryCause = {}) {
+export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = false, attackerId, byId, bitten = false, stunnedIsKo = false, sppTo = [] }: InjuryCause = {}) {
+  const by = byId ?? attackerId ?? sppTo.find((id) => ctx.state.players[id]?.side !== player.side);
   const rolled = injuryOutcome(player, total);
   // Ball & Chain: a Stunned result is always a KO.
   const stunnedKo = stunnedIsKo || hasSkill(player, "Ball & Chain");
@@ -111,6 +114,7 @@ export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = f
     outcome,
     crowd,
     ...(attackerId ? { attackerId } : {}),
+    ...(by ? { byId: by } : {}),
     stage: outcome === "casualty" ? "casualty" : outcome === "badly-hurt" ? afterCasualty(player) : "apothecary",
     ...(outcome === "badly-hurt" ? { casualty: { result: "badly-hurt" as const } } : {}),
   });
@@ -261,12 +265,70 @@ function place(ctx: Ctx, player: PlayerState, proc: P<"Injury">) {
     player.status = "standing";
     player.casualty = proc.casualty!;
     if (proc.casualty!.result === "dead" && proc.attackerId) raiseInfected(ctx, player, getPlayer(ctx, proc.attackerId));
+    if (proc.byId) gettingEven(ctx, player, getPlayer(ctx, proc.byId));
   }
   if (proc.treated) {
     const result = proc.healed ? "reserves" : proc.outcome === "stunned" ? "stunned" : "casualty";
     ctx.emit({ type: "ApothecaryResult", playerId: player.id, result, casualty: result === "casualty" ? proc.casualty! : null });
   }
 }
+
+/** Getting Even: the casualties that give the player a chance to gain Hatred. */
+const GETTING_EVEN_CASUALTIES = ["seriously-hurt", "serious-injury", "lasting-injury"];
+
+/** Keywords of a position's role, not of a race: no Hatred against them. */
+const ROLE_KEYWORDS = ["big guy", "blitzer", "blocker", "bugman", "catcher", "lineman", "runner", "special", "thrower"];
+
+/** Getting Even succeeds on 4+. */
+export const GETTING_EVEN_TARGET = 4;
+
+/** The keywords the player hates already (Hatred(X), several separated by ";"). */
+export const hatedKeywords = (player: PlayerState) =>
+  player.skills.filter((s) => skillName(s) === "Hatred").flatMap((s) => (/\((.*)\)$/.exec(s)?.[1] ?? "").toLowerCase().split(";").map((k) => k.trim()));
+
+/**
+ * Getting Even: a player left Seriously Hurt, with a Serious Injury or with a Lasting Injury (after the apothecary) by
+ * an opponent's block, foul or special action may gain Hatred against one of that opponent's keywords, not a role
+ * (Lineman, Blitzer, Big Guy...) nor one they hate already. Star players and mercenaries do not.
+ */
+function gettingEven(ctx: Ctx, player: PlayerState, by: PlayerState) {
+  if (by.side === player.side || player.hired || !GETTING_EVEN_CASUALTIES.includes(player.casualty!.result)) return;
+  const hated = hatedKeywords(player);
+  const options = by.keywords.filter((k) => !ROLE_KEYWORDS.includes(k) && !hated.includes(k));
+  if (options.length === 0) return;
+  ctx.push({ type: "GettingEven", playerId: player.id, options, ...(options.length === 1 ? { stage: "roll", keyword: options[0]! } : { stage: "choose" }) });
+}
+
+/** Getting Even: the player's coach picks the keyword if there are several, then a D6 (re-rollable): on 4+ Hatred is gained. */
+export const GettingEven: Handler<P<"GettingEven">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const player = getPlayer(ctx, proc.playerId);
+    if (proc.stage === "choose") {
+      if (action === null) return "wait";
+      const { keyword } = ctx.expect(action, "CHOOSE_KEYWORD");
+      if (!proc.options.includes(keyword)) ctx.reject("Choose one of the attacker's keywords.");
+      proc.keyword = keyword;
+      proc.stage = "roll";
+    }
+    if (proc.stage === "roll") {
+      state.lastCheck = null;
+      ctx.push({ type: "Check", kind: "gettingEven", playerId: player.id, target: GETTING_EVEN_TARGET, modifier: 0, stage: "roll", rerolled: false });
+      proc.stage = "result";
+      return "continue";
+    }
+    if (state.lastCheck?.success) {
+      player.skills.push(`Hatred(${proc.keyword})`);
+      player.gainedHatred = [...(player.gainedHatred ?? []), proc.keyword!];
+      ctx.emit({ type: "HatredGained", playerId: player.id, keyword: proc.keyword! });
+    }
+    return "done";
+  },
+  actions(state, proc) {
+    const player = state.players[proc.playerId]!;
+    return [{ type: "CHOOSE_KEYWORD", side: player.side, playerId: player.id, keywords: proc.options }];
+  },
+};
 
 /** A killed player with one of these skills cannot be raised (Plague Ridden). */
 const UNRAISABLE_SKILLS = ["Stunty", "Regeneration", "Decay"];

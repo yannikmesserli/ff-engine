@@ -775,6 +775,47 @@ describe("engine", () => {
       });
     });
 
+    describe("Getting Even", () => {
+      /** home-2 knocks away-2 down: armour 12, injury 12, then the casualty roll (9: Seriously Hurt). */
+      const hurt = (s: GameState, casualty = 9) =>
+        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(casualty, 1));
+      const keywords = (home2: string[], away2Skills: string[] = []) =>
+        edit(toFirstTurn(), (c) => {
+          c.players["home-2"]!.keywords = home2;
+          c.players["away-2"]!.skills = away2Skills;
+        });
+
+      it("a player Seriously Hurt by an opponent's block gains Hatred against their keyword on 4+, not a role keyword", () => {
+        let s = hurt(keywords(["human", "lineman"]));
+        expect(s.players["away-2"]!.casualty).toEqual({ result: "seriously-hurt" });
+        // Not in the away team's turn: no team re-roll.
+        expect(getAvailableActions(s)).toEqual([{ type: "ROLL", side: "away", dice: [{ kind: "d6", count: 1 }], reason: "Getting Even 4+ (Away 2)" }]);
+        s = apply(s, roll(4));
+        expect(s.log).toContainEqual({ type: "HatredGained", playerId: "away-2", keyword: "human" });
+        expect(s.players["away-2"]).toMatchObject({ skills: ["Hatred(human)"], gainedHatred: ["human"] });
+        expect(apply(hurt(keywords(["human"])), roll(3)).players["away-2"]!.gainedHatred).toBeUndefined();
+      });
+
+      it("the injured player's coach picks among several keywords; none they hate already, nor after a Badly Hurt or a death", () => {
+        const s = hurt(keywords(["human", "elf", "lineman"], ["Hatred(elf)"]));
+        expect(types(s)).toEqual(["ROLL"]);
+        const several = hurt(keywords(["human", "elf"]));
+        expect(getAvailableActions(several)).toEqual([{ type: "CHOOSE_KEYWORD", side: "away", playerId: "away-2", keywords: ["human", "elf"] }]);
+        expect(apply(several, { type: "CHOOSE_KEYWORD", keyword: "elf" }, roll(6)).players["away-2"]!.gainedHatred).toEqual(["elf"]);
+        expect(types(hurt(keywords(["human"]), 1))).toContain("START_ACTION");
+        expect(types(hurt(keywords(["human"]), 16))).toContain("START_ACTION");
+        expect(types(hurt(keywords(["lineman"])))).toContain("START_ACTION");
+      });
+
+      it("a gained Hatred works like the skill: re-roll a Skull against the keyword", () => {
+        const s = edit(toFirstTurn(), (c) => {
+          c.players["home-2"]!.skills = ["Hatred(goblin)", "Hatred(human)"];
+          c.players["away-2"]!.keywords = ["human"];
+        });
+        expect(find(apply(blockAway2(s), roll(1)), "USE_SKILL")?.skill).toBe("Hatred");
+      });
+    });
+
     describe("Frenzy", () => {
       const frenzy = (s = toFirstTurn()) => withSkills(s, { "home-2": ["Frenzy"] });
 

@@ -149,7 +149,11 @@ const { state: next, events } = step(state, { type: "ROLL" });
   D6, Dead; a characteristic at its limit becomes Seriously Hurt instead), apothecary once per game (KO'd to Stunned,
   or to the reserves from the crowd; Badly Hurt healed; worse casualties re-rolled, Badly Hurt heals, otherwise the
   coach keeps either result). Regeneration (4+, team re-roll in the player's own turn) heals any casualty before the
-  apothecary.
+  apothecary. Getting Even: a player left Seriously Hurt, with a Serious Injury or a Lasting Injury (after the
+  apothecary) by an opponent's block, foul or special action rolls a D6 (a team re-roll in their own turn): on 4+ they
+  gain Hatred against one of that opponent's keywords (not a role such as Lineman or Big Guy, nor one they hate
+  already; their coach picks among several). It is kept in the team file (`hatred`), not as an advancement. Not for
+  star players or mercenaries.
 - Jumping over a prone or stunned player (either team) into the square beyond, two squares away: costs 2 squares (a
   Rush for each past MA), an AG Jump roll with -1 per tackle zone on the busier of the two squares instead of a Dodge;
   a failed Rush or a natural 1 falls in the starting square, any other failure in the target square.

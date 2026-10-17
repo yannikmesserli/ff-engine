@@ -37,6 +37,7 @@ const CHECK_NAMES = {
   chomp: "Chomp roll",
   saboteur: "Saboteur roll (4+ knocks the blocker down, and the saboteur out)",
   captain: "Team Captain roll (6 saves the re-roll)",
+  gettingEven: "Getting Even roll",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */
@@ -414,6 +415,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} fails the ${e.skill} roll and roars in rage: the action is lost.`;
     case "PlayerRaised":
       return `${who(state, e.fromId)} rises again, infected, and joins ${sideName(state, state.players[e.playerId]!.side)} as ${state.players[e.playerId]!.position}!`;
+    case "HatredGained":
+      return `${who(state, e.playerId)} gets even: they gain Hatred (${e.keyword}), for the next games too.`;
     case "PlayerEaten":
       return `${who(state, e.byId)} eats ${who(state, e.playerId)}!`;
     case "Regenerated":

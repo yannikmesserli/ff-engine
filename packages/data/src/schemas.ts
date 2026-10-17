@@ -20,6 +20,8 @@ export const TeamPlayerSchema = z.strictObject({
   position: z.string().min(1),
   /** Skills gained on top of the position's skills. */
   skills: z.array(z.string().min(1)).default([]),
+  /** Keywords the player gained Hatred against by Getting Even ("orc"): not advancements, no value added. */
+  hatred: z.array(z.string().min(1)).default([]),
   /**
    * Characteristic improvements, per characteristic: +1 MA, ST or AV each; for AG and PA each one lowers the target
    * number by 1 (3+ becomes 2+).

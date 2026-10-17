@@ -128,6 +128,8 @@ export interface PlayerState {
   raised?: boolean;
   /** A star player or mercenary hired for this game: not named MVP, nor chosen by a prayer. */
   hired?: Hired;
+  /** Getting Even: keywords the player gained Hatred against this game (not an advancement). */
+  gainedHatred?: string[];
   /** Zap!: turned into a frog until the end of the drive; the player's own characteristics and skills, restored then. */
   frog?: Pick<PlayerState, "ma" | "st" | "ag" | "pa" | "av" | "skills">;
   /** Star Player Points earned this game. */
@@ -422,7 +424,8 @@ export type CheckKind =
   | "pickmeup"
   | "chomp"
   | "saboteur"
-  | "captain";
+  | "captain"
+  | "gettingEven";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.
@@ -462,6 +465,11 @@ export type Procedure =
   | { type: "Trapdoor"; playerId: string; stage: "roll" | "result" | "injury"; sppTo?: string[] }
   /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
+  /**
+   * Getting Even: a player badly injured by an opponent may gain Hatred against one of their keywords (`options`, chosen
+   * by the player's coach when there are several), on a D6 of 4+ that a re-roll may help.
+   */
+  | { type: "GettingEven"; playerId: string; options: string[]; stage: "choose" | "roll" | "result"; keyword?: string }
   /**
    * Wizard (once per game, between turns): pick a spell, then its target ("target"); Fireball rolls for each player
    * in `hit` still to roll, Zap! for `targetId`.
@@ -818,6 +826,8 @@ export type Procedure =
       crowd: boolean;
       /** The opponent whose block caused the injury (Plague Ridden). */
       attackerId?: string;
+      /** The opponent who caused it, by a block, a foul or a special action (Getting Even). */
+      byId?: string;
       /** "regenerationReroll": a Mortuary Assistant or Plague Doctor may re-roll a failed Regeneration roll. */
       stage: "casualty" | "regeneration" | "regenerated" | "regenerationReroll" | "apothecary" | "apothecaryRoll" | "apothecaryChoice" | "place";
       /** The inducement re-rolling Regeneration was offered. */
@@ -997,6 +1007,8 @@ export type Action =
   | { type: "TRICKSTER"; square: Square | null; pickUp?: boolean }
   /** Intensive Training (a prayer): the skill the player gains. */
   | { type: "CHOOSE_SKILL"; skill: string }
+  /** Getting Even: the keyword the player rolls to gain Hatred against. */
+  | { type: "CHOOSE_KEYWORD"; keyword: string }
   /** Pre-game shop: how many of each inducement to buy (nothing: buy none). */
   | { type: "BUY_INDUCEMENTS"; inducements: Inducements; stars?: string[]; mercenaries?: MercenaryChoice[] }
   /** Throw a Rock (a prayer): throw it now or keep it. */
@@ -1079,6 +1091,8 @@ export type ActionTemplate =
   | { type: "ZAP"; side: Side; targetIds: string[] }
   /** Intensive Training: the skills `playerId` may gain. */
   | { type: "CHOOSE_SKILL"; side: Side; playerId: string; skills: string[] }
+  /** Getting Even: the attacker's keywords `playerId` may roll to gain Hatred against. */
+  | { type: "CHOOSE_KEYWORD"; side: Side; playerId: string; keywords: string[] }
   /** Pre-game shop: the offer, and the budget: petty cash first, then the treasury that may be spent. */
   | {
       type: "BUY_INDUCEMENTS";
@@ -1261,6 +1275,8 @@ export type GameEvent =
   | { type: "Regenerated"; playerId: string }
   /** Plague Ridden: the killed player `fromId` joins the other team in the reserves as `playerId`. */
   | { type: "PlayerRaised"; playerId: string; fromId: string }
+  /** Getting Even: the player gained Hatred against `keyword`, for this game and the next ones. */
+  | { type: "HatredGained"; playerId: string; keyword: string }
   /** Always Hungry: the thrown player did not escape and is eaten (dead). */
   | { type: "PlayerEaten"; playerId: string; byId: string }
   /** The apothecary's work is done: the player is stunned, back in the reserves, or keeps `casualty`. */

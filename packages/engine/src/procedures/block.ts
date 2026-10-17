@@ -2,7 +2,7 @@ import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, chompHolds, hasTackleZone, inBounds, isOnPitch, isPinned, isRooted, playerAt, sameSquare, tackleZoneAt, tackleZones } from "../pitch";
 import { BLOCK_FACES } from "../dice";
-import { injure } from "./injury";
+import { hatedKeywords, injure } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
 import { hasSkill, skillName, skillValue } from "../skills";
@@ -379,11 +379,7 @@ const SINGLE_DIE_SKILLS = { Brawler: BOTH_DOWN_FACE, Hatred: SKULL_FACE } as con
 type SingleDieSkill = keyof typeof SINGLE_DIE_SKILLS;
 
 /** Hatred(X): the attacker hates the defender, who has keyword X (several separated by ";"). */
-export function hates(attacker: PlayerState, defender: PlayerState): boolean {
-  const skill = attacker.skills.find((s) => skillName(s) === "Hatred");
-  const value = skill && /\((.*)\)$/.exec(skill)?.[1];
-  return !!value && value.toLowerCase().split(";").some((k) => defender.keywords.includes(k.trim()));
-}
+export const hates = (attacker: PlayerState, defender: PlayerState) => hatedKeywords(attacker).some((k) => defender.keywords.includes(k));
 
 /**
  * The skills that may re-roll a single die instead of the block re-roll: Brawler a Both Down (once per activation, not
@@ -1092,7 +1088,7 @@ export const Vomit: Handler<P<"Vomit">> = {
         const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury");
         // The ball bounces once the injury is resolved.
         if (proc.dropped) ctx.push(dropBall(victim, square));
-        injure(ctx, victim, a! + b!, specialActionSpp(state, proc, victim));
+        injure(ctx, victim, a! + b!, { byId: proc.attackerId, ...specialActionSpp(state, proc, victim) });
         return "done";
       }
     }

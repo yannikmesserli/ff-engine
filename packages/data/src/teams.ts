@@ -274,7 +274,12 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
           ag: characteristic(p, "ag", position.ag),
           pa: position.pa === null ? null : characteristic(p, "pa", position.pa),
           av: characteristic(p, "av", position.av),
-          skills: [...position.skills, ...p.skills, ...(p.number === team.captain ? captainSkills([...position.skills, ...p.skills]) : [])],
+          skills: [
+            ...position.skills,
+            ...p.skills,
+            ...p.hatred.map((keyword) => `Hatred(${keyword})`),
+            ...(p.number === team.captain ? captainSkills([...position.skills, ...p.skills]) : []),
+          ],
           keywords: position.keywords,
           primary: position.normal,
           nigglingInjuries: p.injuries.filter((i) => i === "niggling").length,

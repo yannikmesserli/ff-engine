@@ -46,6 +46,7 @@ const CHECK_NAMES = {
   chomp: "Chomp",
   saboteur: "Saboteur",
   captain: "Team Captain",
+  gettingEven: "Getting Even",
 } as const;
 
 /** The natural d6 result needed, for display ("4+"). */
