@@ -103,6 +103,16 @@ describe("scenarios", () => {
     expect(s.log).toContainEqual({ type: "LashedOut", playerId: "home-1", victimId: "home-2" });
   });
 
+  it("bomb-diving-catch: an accurate bomb next to Lugdush may be caught by him with Diving Catch", () => {
+    let s = load("bomb-diving-catch");
+    s = step(s, { type: "START_ACTION", playerId: "home-1", action: "bomb" }).state;
+    s = step(s, { type: "THROW", square: { x: 17, y: 6 } }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    // No interception: the bomb comes down on (17,6), next to Lugdush.
+    s = step(s, { type: "SELECT_PLAYERS", playerIds: [] }).state;
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-6"], reason: "Diving Catch: choose a player to catch the bomb" });
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });
