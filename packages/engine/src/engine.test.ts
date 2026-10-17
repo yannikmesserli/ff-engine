@@ -1505,6 +1505,18 @@ describe("engine", () => {
       expect(s.players["home-1"]!.incorporeal).toBeUndefined();
     });
 
+    it("Wisdom of the White Dwarf: once per game, a team-mate within 2 squares gains a skill until the end of the turn", () => {
+      const grombrindal = withSkills(toFirstTurn(), { "home-1": ["Wisdom of the White Dwarf"], "home-2": [] });
+      let s = apply(grombrindal, startMove("home-1"), { type: "ACTIVATION_SKILL", skill: "Wisdom of the White Dwarf" });
+      expect(find(s, "SELECT_PLAYERS")?.playerIds).toContain("home-2");
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-2"] });
+      expect(find(s, "CHOOSE_SKILL")).toEqual({ type: "CHOOSE_SKILL", side: "home", playerId: "home-2", skills: ["Break Tackle", "Dauntless", "Mighty Blow", "Sure Feet"] });
+      s = apply(s, { type: "CHOOSE_SKILL", skill: "Mighty Blow" });
+      expect(s.players["home-2"]!.skills).toEqual(["Mighty Blow"]);
+      s = apply(s, { type: "END_PLAYER_ACTION" }, { type: "END_TURN" });
+      expect(s.players["home-2"]!.skills).toEqual([]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

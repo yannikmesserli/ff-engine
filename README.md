@@ -481,6 +481,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Slashing Nails (Roxanna Darknail): once per half, declaring a Blitz, she gains Claws until the end of her activation.
   - Incorporeal (Gretchen Wächter): once per game, when she is activated, she makes no Dodge rolls for leaving
     opponents' tackle zones until the end of her activation (Rushes, jumps and Shadowing still apply).
+  - Wisdom of the White Dwarf (Grombrindal): once per game, when he is activated, a team-mate within 2 squares gains
+    Break Tackle, Dauntless, Mighty Blow or Sure Feet (one they lack, the coach picks) until the end of the turn.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

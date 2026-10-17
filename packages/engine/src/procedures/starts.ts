@@ -20,7 +20,17 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Frenzied Rush": "half",
   "Slashing Nails": "half",
   Incorporeal: "game",
+  "Wisdom of the White Dwarf": "game",
 };
+
+/** Wisdom of the White Dwarf: the skills a team-mate may gain until the end of the turn. */
+export const WISDOM_SKILLS = ["Break Tackle", "Dauntless", "Mighty Blow", "Sure Feet"];
+
+/** The start of a turn: the skills gained until the end of the previous one are lost. */
+export function loseTurnSkills(player: PlayerState) {
+  for (const skill of player.turnSkills ?? []) player.skills.splice(player.skills.lastIndexOf(skill), 1);
+  delete player.turnSkills;
+}
 
 /** Rules that give the player a skill until the end of their activation. */
 const GAINS: Record<string, string> = {
@@ -124,6 +134,12 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
       return player.status === "standing" ? opponentsWithin(state, player, 3).filter((p) => p.status === "standing") : [];
     case "Blastin' Solves Everything":
       return opponentsWithin(state, player, 3).filter((p) => p.status === "standing");
+    case "Wisdom of the White Dwarf":
+      return !isOnPitch(player)
+        ? []
+        : Object.values(state.players).filter(
+            (p) => p.id !== player.id && p.side === player.side && isOnPitch(p) && Math.max(Math.abs(p.at.x - player.at.x), Math.abs(p.at.y - player.at.y)) <= 2 && WISDOM_SKILLS.some((s) => !hasSkill(p, s)),
+          );
     case "Treacherous":
       return isOnPitch(player) ? adjacent(player.at).flatMap((s) => (ballCarrier(state)?.id === playerAt(state, s)?.id && playerAt(state, s)?.side === player.side ? [playerAt(state, s)!] : [])) : [];
     default:
@@ -157,6 +173,8 @@ export function activationSkills(state: GameState, player: PlayerState, action: 
  * - Frenzied Rush (once per half): declaring a Blitz, the player gains Frenzy until the end of the activation; they may
  *   not use Grab that turn.
  * - Slashing Nails (once per half): declaring a Blitz, the player gains Claws until the end of the activation.
+ * - Wisdom of the White Dwarf (once per game): a team-mate within 2 squares gains Break Tackle, Dauntless, Mighty Blow or
+ *   Sure Feet (one they lack, the coach picks) until the end of the turn.
  * - Incorporeal (once per game): until the end of the activation, the player makes no Dodge rolls for leaving opponents'
  *   tackle zones.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
@@ -181,10 +199,19 @@ export const StartSkill: Handler<P<"StartSkill">> = {
       if (playerIds.length > 1) ctx.reject("Choose one player.");
       useRule(ctx, player, proc.skill);
       proc.targetId = target.id;
-      proc.stage = ROLLS[proc.skill] ? "roll" : "effect";
-      if (proc.stage === "roll") return "wait";
+      proc.stage = ROLLS[proc.skill] ? "roll" : proc.skill === "Wisdom of the White Dwarf" ? "choose" : "effect";
+      if (proc.stage !== "effect") return "wait";
     }
     const target = proc.targetId === undefined ? player : getPlayer(ctx, proc.targetId);
+    if (proc.stage === "choose") {
+      if (action === null) return "wait";
+      const { skill } = ctx.expect(action, "CHOOSE_SKILL");
+      if (!WISDOM_SKILLS.includes(skill) || hasSkill(target, skill)) ctx.reject("Choose a skill the player does not have.");
+      target.skills.push(skill);
+      target.turnSkills = [...(target.turnSkills ?? []), skill];
+      ctx.emit({ type: "SkillGained", playerId: target.id, skill });
+      return "done";
+    }
     if (proc.stage === "redirect") {
       const victims = redirectTargets(state, player, target);
       if (victims.length === 0) return "done";
@@ -259,6 +286,10 @@ export const StartSkill: Handler<P<"StartSkill">> = {
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
+    if (proc.stage === "choose") {
+      const target = state.players[proc.targetId!]!;
+      return [{ type: "CHOOSE_SKILL", side: player.side, playerId: target.id, skills: WISDOM_SKILLS.filter((s) => !hasSkill(target, s)) }];
+    }
     if (proc.stage === "redirect") {
       const playerIds = redirectTargets(state, player, state.players[proc.targetId!]!).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: other(player.side), playerIds, max: 1, min: 1, reason: `${proc.skill}: choose the player hit instead` }];

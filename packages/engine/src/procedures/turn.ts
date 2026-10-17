@@ -14,7 +14,7 @@ import { checkTouchdown, getPlayer, inducementsLeft, inScoringPosition, pickupMo
 import { isStalling } from "./stalling";
 import { TURNS_PER_HALF } from "./game";
 import { teamMateTargets, throwableTeamMates } from "./ttm";
-import { activationSkills, loseGainedSkills } from "./starts";
+import { activationSkills, loseGainedSkills, loseTurnSkills } from "./starts";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -179,6 +179,8 @@ export const Turn: Handler<P<"Turn">> = {
     if (proc.stage === "start") {
       const team = state.teams[proc.side];
       team.turn += 1;
+      // Skills gained until the end of the turn (Wisdom of the White Dwarf) are lost.
+      for (const p of Object.values(state.players)) loseTurnSkills(p);
       for (const p of teamPlayers(state, proc.side)) {
         p.activated = false;
         p.movesUsed = 0;

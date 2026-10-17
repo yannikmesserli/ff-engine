@@ -107,6 +107,8 @@ export interface PlayerState {
   usedThisDrive?: string[];
   /** Skills gained until the end of the activation by a special rule (Shot to Nothing...), lost then. */
   gained?: string[];
+  /** Skills gained until the end of the turn (Wisdom of the White Dwarf), lost when the next turn starts. */
+  turnSkills?: string[];
   /** Incorporeal is in use: no Dodge rolls until the end of the activation. */
   incorporeal?: boolean;
   /** Baleful Hex: cannot be activated during the team's next turn. */
@@ -477,7 +479,8 @@ export type Procedure =
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
   /** A special rule used at the start of an activation (Black Ink...): its target, rolls and effect. */
   /** "redirect": the opposing coach picks who is hit instead ("Blastin' Solves Everything"). */
-  | { type: "StartSkill"; playerId: string; skill: string; stage: "target" | "roll" | "redirect" | "effect"; targetId?: string; roll?: number }
+  /** "choose": the skill the target gains (Wisdom of the White Dwarf). */
+  | { type: "StartSkill"; playerId: string; skill: string; stage: "target" | "roll" | "redirect" | "choose" | "effect"; targetId?: string; roll?: number }
   /** A killed opponent joins the team (Plague Ridden, Masters of Undeath): its coach picks among several positions. */
   | { type: "RaiseDead"; side: Side; deadId: string; undead: boolean }
   /**
@@ -1313,6 +1316,8 @@ export type GameEvent =
   | { type: "ApothecaryUsed"; playerId: string }
   /** A skill was used, e.g. Dodge to re-roll a failed Dodge roll. */
   | { type: "SkillUsed"; playerId: string; skill: string }
+  /** The player gains `skill` for a while (Wisdom of the White Dwarf: until the end of the turn). */
+  | { type: "SkillGained"; playerId: string; skill: string }
   /** Failed a Bone Head or Really Stupid roll: the action is lost and the player is distracted. */
   | { type: "PlayerDistracted"; playerId: string; skill: string }
   /** A special rule (Look Into My Eyes...) took the ball from `fromId` to `playerId`. */
