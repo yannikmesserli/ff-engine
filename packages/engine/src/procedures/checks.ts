@@ -66,6 +66,7 @@ function skillReroll(state: GameState, proc: P<"Check">, player: PlayerState): s
   if (proc.kind === "catch") return hasSkill(player, "Catch") ? "Catch" : null;
   if (proc.kind === "rush") return hasSkill(player, "Sure Feet") && !player.usedSkills.includes("Sure Feet") ? "Sure Feet" : null;
   if (proc.kind === "dauntless") return hasSkill(player, "Blind Rage") ? "Blind Rage" : null;
+  if (proc.kind === "gaze") return hasSkill(player, "Mesmerising Dance") && !player.usedThisHalf?.includes("Mesmerising Dance") ? "Mesmerising Dance" : null;
   if (proc.kind !== "dodge" || !hasSkill(player, "Dodge") || player.usedSkills.includes("Dodge")) return null;
   const tacklers = isOnPitch(player) ? adjacent(player.at).map((s) => playerAt(state, s)) : [];
   const cancelled = tacklers.some((p) => p !== undefined && p.side !== player.side && hasTackleZone(p) && hasSkill(p, "Tackle"));
@@ -158,6 +159,8 @@ function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolea
   const skill = success || proc.rerolled ? null : skillReroll(state, proc, player);
   if (skill) {
     if (ONCE_PER_TURN_REROLLS.includes(skill)) player.usedSkills.push(skill);
+    // Mesmerising Dance: once per half.
+    if (skill === "Mesmerising Dance") player.usedThisHalf = [...(player.usedThisHalf ?? []), skill];
     ctx.emit({ type: "SkillUsed", playerId: player.id, skill });
     proc.rerolled = true;
     proc.stage = "roll";

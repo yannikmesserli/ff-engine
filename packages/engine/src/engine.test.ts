@@ -2443,6 +2443,14 @@ describe("engine", () => {
         expect([s.players["away-2"]!.distracted, s.activePlayerId, s.turnover]).toEqual([false, null, false]);
       });
 
+      it("Mesmerising Dance: once per half, a failed gaze roll is re-rolled", () => {
+        const eldril = withSkills(toFirstTurn(), { "home-2": ["Hypnotic Gaze", "Mesmerising Dance"] });
+        const s = apply(gaze(eldril), roll(2));
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-2", skill: "Mesmerising Dance" });
+        expect(apply(s, roll(3)).players["away-2"]!.distracted).toBe(true);
+        expect(s.players["home-2"]!.usedThisHalf).toEqual(["Mesmerising Dance"]);
+      });
+
       it("Foul Appearance comes first", () => {
         const s = gaze(withSkills(gazer(), { "away-2": ["Foul Appearance"] }));
         expect(find(s, "ROLL")?.reason).toBe("Foul Appearance 2+ (Home 2)");
