@@ -10,7 +10,7 @@ import { Injury } from "./injury";
 import { Prayers, Trapdoor } from "./prayers";
 import { Stalling } from "./stalling";
 import { CoinToss, Game, Half, KoRecovery, MasterChef, ThrowRock } from "./game";
-import { Charge, HighKick, Kickoff, KickoffEvent, Pregame, QuickSnap, SolidDefence, SwelteringHeat } from "./kickoff";
+import { Charge, DwarfenWisdom, HighKick, Kickoff, KickoffEvent, Pregame, QuickSnap, SolidDefence, SwelteringHeat } from "./kickoff";
 import { Setup } from "./setup";
 import { Carried } from "./carry";
 import { Shop } from "./shop";
@@ -37,6 +37,7 @@ export const handlers: HandlerMap = {
   Kickoff,
   KickoffEvent,
   SolidDefence,
+  DwarfenWisdom,
   HighKick,
   QuickSnap,
   Charge,

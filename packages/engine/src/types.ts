@@ -241,7 +241,7 @@ export interface PositionStats {
   primary?: string[];
 }
 
-/** BB2025 inducements a team can buy before a game (star players and Infamous Coaching Staff aside). */
+/** BB2025 inducements a team can buy before a game (star players aside); Josef Bugman is the Infamous Coaching Staff. */
 export const INDUCEMENTS = [
   "bribes",
   "teamMascot",
@@ -255,6 +255,7 @@ export const INDUCEMENTS = [
   "weatherMage",
   "biasedReferee",
   "wizard",
+  "josefBugman",
   "prayers",
 ] as const;
 export type InducementId = (typeof INDUCEMENTS)[number];
@@ -493,6 +494,8 @@ export type Procedure =
       rolls?: Record<Side, number>;
     }
   | { type: "SolidDefence"; side: Side; stage: "roll" | "select" | "setup"; allowed?: number; selected?: string[] }
+  /** Dwarfen Wisdom (Josef Bugman): after both setups, the team may set up again D3 of its players on the pitch. */
+  | { type: "DwarfenWisdom"; side: Side; stage: "ask" | "roll" | "select" | "setup"; allowed?: number; selected?: string[] }
   | { type: "HighKick"; side: Side; square: Square }
   | { type: "QuickSnap"; side: Side; stage: "roll" | "move"; allowed?: number; moved: string[] }
   | { type: "Charge"; side: Side; stage: "roll" | "select"; allowed?: number }
@@ -1000,6 +1003,8 @@ export type Action =
   | { type: "THROW_A_ROCK"; use: boolean }
   /** Wizard: the spell to cast (null: keep the wizard for later). */
   | { type: "CAST_SPELL"; spell: Spell | null }
+  /** Josef Bugman: use Dwarfen Wisdom before this kick-off, or keep it. */
+  | { type: "DWARFEN_WISDOM"; use: boolean }
   /** Wizard: the centre square of a Fireball. */
   | { type: "FIREBALL"; square: Square }
   /** Wizard: the player Zap! targets. */
@@ -1067,6 +1072,7 @@ export type ActionTemplate =
   | { type: "THROW_A_ROCK"; side: Side }
   /** Wizard: the spells the coach may cast now (or keep the wizard, with null). */
   | { type: "CAST_SPELL"; side: Side; spells: Spell[] }
+  | { type: "DWARFEN_WISDOM"; side: Side }
   /** Fireball: the squares it may be centred on (a player on it or next to it). */
   | { type: "FIREBALL"; side: Side; squares: Square[] }
   /** Zap!: the players it may target. */

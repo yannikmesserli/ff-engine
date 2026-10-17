@@ -3959,6 +3959,41 @@ describe("engine", () => {
     });
   });
 
+  describe("Josef Bugman", () => {
+    const bugman = (name: string) => ({ ...team(name), inducements: { josefBugman: 1 } });
+
+    it("Bugman's XXXXXX: +1 to KO recovery, on top of Blitzer's Best Kegs", () => {
+      const both = { ...team("Home"), inducements: { josefBugman: 1, blitzersBestKegs: 1 } };
+      // As toFirstTurn, Dwarfen Wisdom kept.
+      const first = apply(toSetup(both), ...setupActions("away"), ...setupActions("home"), { type: "DWARFEN_WISDOM", use: false }, { type: "PLACE_BALL", square: { x: 5, y: 1 } }, roll(7, 1), QUIET_EVENT, roll(5));
+      let s = apply(first, startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
+      s = endTurnsUntilSetup(apply(s, roll(1), { type: "DECLINE_REROLL" }, roll(6, 6), roll(4, 5)));
+      expect(find(s, "ROLL")?.reason).toMatch(/KO recovery 2\+ \(Home 11\)/);
+    });
+
+    it("Dwarfen Wisdom: once per game, after both setups, D3 of the team's players on the pitch are set up again", () => {
+      let s = apply(toSetup(bugman("Home"), bugman("Away")), ...setupActions("away"), ...setupActions("home"));
+      // The kicking team is asked first.
+      expect(getAvailableActions(s)).toEqual([{ type: "DWARFEN_WISDOM", side: "away" }]);
+      s = apply(s, { type: "DWARFEN_WISDOM", use: false });
+      expect(getAvailableActions(s)).toEqual([{ type: "DWARFEN_WISDOM", side: "home" }]);
+      s = apply(s, { type: "DWARFEN_WISDOM", use: true });
+      expect(find(s, "ROLL")?.reason).toBe("Dwarfen Wisdom: D3 players to set up again");
+      s = apply(s, roll(2));
+      expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "home", max: 2, min: 1 });
+      expect(() => step(s, { type: "SELECT_PLAYERS", playerIds: [] })).toThrow(/1 to 2/);
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-1", "home-4"] });
+      expect([s.players["home-1"]!.at, s.players["home-4"]!.at]).toEqual(["reserves", "reserves"]);
+      expect(() => step(s, { type: "PLACE_PLAYER", playerId: "home-5", square: { x: 1, y: 1 } })).toThrow(/Only the selected players/);
+      // Home 1 came off the line of scrimmage: the setup is illegal until 3 players are back on it.
+      s = apply(s, { type: "PLACE_PLAYER", playerId: "home-4", square: { x: 5, y: 7 } });
+      expect(() => step(s, { type: "END_SETUP" })).toThrow(/line of scrimmage/);
+      s = apply(s, { type: "PLACE_PLAYER", playerId: "home-1", square: { x: 12, y: 5 } }, { type: "END_SETUP" });
+      expect(types(s)).toEqual(["PLACE_BALL"]);
+      expect([s.teams.home.inducementsUsed.josefBugman, s.teams.away.inducementsUsed.josefBugman]).toEqual([1, undefined]);
+    });
+  });
+
   describe("Weather Mage", () => {
     it("once per game, at the start of the team's turn: 2D6 on the weather table, with a modifier of -2 to +2 if desired", () => {
       let s = toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } });

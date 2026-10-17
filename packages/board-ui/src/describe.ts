@@ -108,6 +108,7 @@ export const INDUCEMENT_NAMES: Record<InducementId, string> = {
   weatherMage: "the Weather Mage",
   biasedReferee: "the Biased Referee",
   wizard: "the wizard",
+  josefBugman: "Josef Bugman's Dwarfen Wisdom",
   prayers: "a Prayer to Nuffle",
 };
 
@@ -125,6 +126,7 @@ export const SHOP_NAMES: Record<InducementId, string> = {
   weatherMage: "Weather Mage",
   biasedReferee: "Biased Referee",
   wizard: "Wizard",
+  josefBugman: "Josef Bugman (Infamous Coaching Staff)",
   prayers: "Prayers to Nuffle",
 };
 

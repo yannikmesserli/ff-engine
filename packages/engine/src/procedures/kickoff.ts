@@ -1,9 +1,9 @@
 import type { Ctx, Handler } from "../context";
-import type { Action, DiceSpec, GameState, KickoffResult, PlayerState, Procedure, Side, Square, TeamState, Weather } from "../types";
+import type { Action, ActionTemplate, DiceSpec, GameState, KickoffResult, PlayerState, Procedure, Side, Square, TeamState, Weather } from "../types";
 import { SCATTER } from "../dice";
 import { adjacent, allSquares, inHalf, inWideZone, isOnPitch, offset, onLineOfScrimmage, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill } from "../skills";
-import { createPlayer, getPlayer, landBall } from "./helpers";
+import { createPlayer, getPlayer, inducementsLeft, landBall, spendInducement } from "./helpers";
 import { setupErrors } from "./setup";
 import { freePrayers, openShop } from "./shop";
 
@@ -477,21 +477,7 @@ export const SolidDefence: Handler<P<"SolidDefence">> = {
       proc.stage = "setup";
       return "wait";
     }
-    const a = ctx.expect(action, "PLACE_PLAYER", "END_SETUP");
-    if (a.type === "END_SETUP") {
-      const errors = setupErrors(state, proc.side);
-      if (errors.length > 0) ctx.reject(errors.join(" "));
-      return "done";
-    }
-    if (!proc.selected!.includes(a.playerId)) ctx.reject("Only the selected players may be set up again.");
-    const player = getPlayer(ctx, a.playerId);
-    if (a.square === null) {
-      player.at = "reserves";
-      return "wait";
-    }
-    if (!inHalf(proc.side, a.square) || playerAt(state, a.square)) ctx.reject("Choose an empty square in your own half.");
-    player.at = { ...a.square };
-    return "wait";
+    return setUpAgain(ctx, proc.side, proc.selected!, action);
   },
   actions(state, proc) {
     if (proc.stage === "roll") return [{ type: "ROLL", side: proc.side, dice: D3, reason: "Solid Defence: D3+3 players" }];
@@ -499,10 +485,89 @@ export const SolidDefence: Handler<P<"SolidDefence">> = {
       const playerIds = openPlayers(state, proc.side).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: proc.side, playerIds, max: proc.allowed!, reason: `Solid Defence: choose up to ${proc.allowed} players to set up again` }];
     }
-    return [
-      { type: "PLACE_PLAYER", side: proc.side, playerIds: proc.selected!, squares: allSquares((s) => inHalf(proc.side, s) && !playerAt(state, s)) },
-      { type: "END_SETUP", side: proc.side, errors: setupErrors(state, proc.side) },
-    ];
+    return setUpAgainActions(state, proc.side, proc.selected!);
+  },
+};
+
+/** Set up again the players taken off the pitch (Solid Defence, Dwarfen Wisdom): only they may be placed, until the setup is legal. */
+function setUpAgain(ctx: Ctx, side: Side, selected: string[], action: Action): "wait" | "done" {
+  const { state } = ctx;
+  const a = ctx.expect(action, "PLACE_PLAYER", "END_SETUP");
+  if (a.type === "END_SETUP") {
+    const errors = setupErrors(state, side);
+    if (errors.length > 0) ctx.reject(errors.join(" "));
+    return "done";
+  }
+  if (!selected.includes(a.playerId)) ctx.reject("Only the selected players may be set up again.");
+  const player = getPlayer(ctx, a.playerId);
+  if (a.square === null) {
+    player.at = "reserves";
+    return "wait";
+  }
+  if (!inHalf(side, a.square) || playerAt(state, a.square)) ctx.reject("Choose an empty square in your own half.");
+  player.at = { ...a.square };
+  return "wait";
+}
+
+/** What `setUpAgain` offers: the selected players, the empty squares of the team's half, and confirming. */
+const setUpAgainActions = (state: GameState, side: Side, selected: string[]): ActionTemplate[] => [
+  { type: "PLACE_PLAYER", side, playerIds: selected, squares: allSquares((s) => inHalf(side, s) && !playerAt(state, s)) },
+  { type: "END_SETUP", side, errors: setupErrors(state, side) },
+];
+
+/** Dwarfen Wisdom (Josef Bugman), if the team has not used it: the kicking team is asked first, then the receiving team. */
+export const dwarfenWisdom = (state: GameState, kicking: Side): Procedure[] =>
+  [kicking, other(kicking)]
+    .filter((side) => inducementsLeft(state.teams[side], "josefBugman") > 0)
+    .map((side) => ({ type: "DwarfenWisdom", side, stage: "ask" }));
+
+/** The team's players on the pitch, who Dwarfen Wisdom may set up again. */
+const onPitch = (state: GameState, side: Side) => teamPlayers(state, side).filter(isOnPitch);
+
+/**
+ * Dwarfen Wisdom (Josef Bugman, once per game): after both teams have set up for a kick-off, the coach may roll a D3
+ * and set up again that many of the team's players on the pitch (at least one), as long as the setup stays legal.
+ */
+export const DwarfenWisdom: Handler<P<"DwarfenWisdom">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    if (proc.stage === "ask") {
+      if (onPitch(state, proc.side).length === 0) return "done";
+      if (action === null) return "wait";
+      if (!ctx.expect(action, "DWARFEN_WISDOM").use) return "done";
+      spendInducement(ctx, proc.side, "josefBugman");
+      proc.stage = "roll";
+      return "wait";
+    }
+    if (action === null) return "wait";
+    if (proc.stage === "roll") {
+      const [d3] = ctx.roll(action, D3, "Dwarfen Wisdom: D3 players");
+      proc.allowed = Math.min(d3!, onPitch(state, proc.side).length);
+      proc.stage = "select";
+      return "wait";
+    }
+    if (proc.stage === "select") {
+      const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+      const eligible = onPitch(state, proc.side).map((p) => p.id);
+      if (playerIds.length === 0 || playerIds.length > proc.allowed! || new Set(playerIds).size !== playerIds.length || playerIds.some((id) => !eligible.includes(id))) {
+        ctx.reject(`Choose 1 to ${proc.allowed} of your players on the pitch.`);
+      }
+      proc.selected = [...playerIds];
+      for (const id of playerIds) state.players[id]!.at = "reserves";
+      proc.stage = "setup";
+      return "wait";
+    }
+    return setUpAgain(ctx, proc.side, proc.selected!, action);
+  },
+  actions(state, proc) {
+    const { side } = proc;
+    if (proc.stage === "ask") return [{ type: "DWARFEN_WISDOM", side }];
+    if (proc.stage === "roll") return [{ type: "ROLL", side, dice: D3, reason: "Dwarfen Wisdom: D3 players to set up again" }];
+    if (proc.stage === "select") {
+      const playerIds = onPitch(state, side).map((p) => p.id);
+      return [{ type: "SELECT_PLAYERS", side, playerIds, max: proc.allowed!, min: 1, reason: `Dwarfen Wisdom: choose 1 to ${proc.allowed} players to set up again` }];
+    }
+    return setUpAgainActions(state, side, proc.selected!);
   },
 };
 

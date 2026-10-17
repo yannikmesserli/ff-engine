@@ -54,6 +54,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   BUY_INDUCEMENTS: "pre-game shop: buy inducements",
   THROW_A_ROCK: "Throw a Rock (once per game): a random standing opponent is knocked down on 4+",
   CAST_SPELL: "Wizard (once per game): cast a spell now, or keep the wizard for later",
+  DWARFEN_WISDOM: "Josef Bugman's Dwarfen Wisdom (once per game): roll a D3 and set up that many of your players again?",
   FIREBALL: "Fireball: click the centre of the 3x3 area to hit (each player in it is hit on 4+)",
   ZAP: "Zap!: click the player to turn into a frog (6, or a roll equal to or above their ST)",
   SWOOP: "Swoop: click a square next to the target to face the throw-in template that way, or scatter as usual",
@@ -320,6 +321,12 @@ export function ActionPanel(props: ActionPanelProps) {
           <>
             <button onClick={() => dispatch({ type: "THROW_A_ROCK", use: true })}>Throw a Rock</button>
             <button onClick={() => dispatch({ type: "THROW_A_ROCK", use: false })}>Keep it for later</button>
+          </>
+        )}
+        {has("DWARFEN_WISDOM") && (
+          <>
+            <button onClick={() => dispatch({ type: "DWARFEN_WISDOM", use: true })}>Dwarfen Wisdom</button>
+            <button onClick={() => dispatch({ type: "DWARFEN_WISDOM", use: false })}>Keep it for later</button>
           </>
         )}
         {findTemplate(templates, "CAST_SPELL") && (

@@ -5,6 +5,7 @@ import { endDrive, resetForKickoff } from "./helpers";
 import { secretWeapons } from "./foul";
 import { hiredTwice } from "./shop";
 import { restoreFrogs, wizardAsk } from "./wizard";
+import { dwarfenWisdom } from "./kickoff";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -146,6 +147,7 @@ export const Half: Handler<P<"Half">> = {
         ...(knockedOut.length > 0 ? [{ type: "KoRecovery" as const, playerIds: knockedOut }] : []),
         { type: "Setup", side: proc.kicking },
         { type: "Setup", side: receiving },
+        ...dwarfenWisdom(state, proc.kicking),
         // Halfling Master Chef: before the first kick-off of the first and second halves; then the Leader re-rolls.
         ...(proc.half < 3 && (proc.drives ?? 0) === 0 ? masterChef(state) : []),
         { type: "Kickoff", kicking: proc.kicking, stage: "place", ...(proc.half < 3 && (proc.drives ?? 0) === 0 ? { firstOfHalf: true } : {}) },
@@ -262,12 +264,17 @@ export const MasterChef: Handler<P<"MasterChef">> = {
   },
 };
 
-/** A KO'd player recovers on 4+ (easier with Blitzer's Best Kegs). */
+/** A KO'd player recovers on 4+ (easier with Blitzer's Best Kegs and Josef Bugman). */
 export const KO_RECOVERY_TARGET = 4;
 
-/** Blitzer's Best Kegs: +1 per keg the team bought to its KO recovery rolls (a natural 1 still fails). */
-const koRecoveryTarget = (state: GameState, player: PlayerState) =>
-  Math.max(2, KO_RECOVERY_TARGET - (state.teams[player.side].inducements.blitzersBestKegs ?? 0));
+/**
+ * +1 to the team's KO recovery rolls per keg of Blitzer's Best Kegs it bought, and +1 for Josef Bugman's Bugman's
+ * XXXXXX (a natural 1 still fails).
+ */
+const koRecoveryTarget = (state: GameState, player: PlayerState) => {
+  const { inducements } = state.teams[player.side];
+  return Math.max(2, KO_RECOVERY_TARGET - (inducements.blitzersBestKegs ?? 0) - (inducements.josefBugman ?? 0));
+};
 
 /** Before each kick-off, every KO'd player rolls a D6: on 4+ (or less with kegs) they return to the reserves. */
 export const KoRecovery: Handler<P<"KoRecovery">> = {
