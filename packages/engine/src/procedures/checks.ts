@@ -307,6 +307,21 @@ function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState):
 /** The opponent whose block knocked the player down, if any. */
 const blockerOf = (state: GameState, proc: P<"KnockDown">) => (proc.blockerId === undefined ? undefined : state.players[proc.blockerId]);
 
+/** An armour roll that broke without a knock-down first: the player is placed prone, and drops the ball (a turnover in their turn). */
+function placeProne(ctx: Ctx, proc: P<"KnockDown">, player: PlayerState) {
+  const { state } = ctx;
+  if (player.status !== "standing") return;
+  const square = squareOf(ctx, player);
+  proc.square = { ...square };
+  proc.hadBall = state.ball.carried && state.ball.square !== null && sameSquare(state.ball.square, square);
+  if (proc.hadBall) {
+    state.ball.carried = false;
+    if (player.side === state.activeSide) state.turnover = true;
+  }
+  player.status = "prone";
+  ctx.emit({ type: "PlayerPlacedProne", playerId: player.id });
+}
+
 /** Krump and Smash: once per game, the blocker may re-roll the armour roll of an opponent their block knocked down. */
 function armourReroller(state: GameState, proc: P<"KnockDown">, player: PlayerState) {
   const blocker = proc.blockerId === undefined ? undefined : state.players[proc.blockerId];
@@ -474,6 +489,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         // BB2025: armour is broken when the roll equals or beats AV.
         if (roll >= player.av) {
           ctx.emit({ type: "ArmourBroken", playerId: player.id, roll });
+          if (proc.armourOnly) placeProne(ctx, proc, player);
           proc.stage = !proc.grit && !proc.lateUsed && dwarfenGrit(player) ? "grit" : "injury";
         } else {
           ctx.emit({ type: "ArmourHeld", playerId: player.id, roll });

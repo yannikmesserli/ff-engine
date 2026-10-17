@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerState, Procedure, Square } from "../types";
-import { adjacent, ballCarrier, hasTackleZone, isOnPitch, playerAt } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt } from "../pitch";
 import { hasSkill } from "../skills";
 import { checkTouchdown, getPlayer, squareOf, useOncePerGame } from "./helpers";
 
@@ -15,6 +15,7 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Catch of the Day": "half",
   Treacherous: "game",
   "Beer Barrel Bash!": "drive",
+  "Blastin' Solves Everything": "half",
 };
 
 /** Baleful Hex works on 2+. */
@@ -26,6 +27,7 @@ const ROLLS: Record<string, { target: number; reason: string; always?: boolean }
   "Look Into My Eyes": { target: 2, reason: "Look Into My Eyes" },
   "Catch of the Day": { target: 3, reason: "Catch of the Day" },
   "Beer Barrel Bash!": { target: 3, reason: "Beer Barrel Bash!", always: true },
+  "Blastin' Solves Everything": { target: 3, reason: "Blastin' Solves Everything", always: true },
 };
 
 /** Rules without a player to pick, and when they can be used. */
@@ -36,6 +38,14 @@ const UNTARGETED: Record<string, (state: GameState, player: PlayerState) => bool
     return player.status === "standing" && isOnPitch(player) && !ball.carried && ball.square !== null && Math.max(Math.abs(ball.square.x - player.at.x), Math.abs(ball.square.y - player.at.y)) <= 3;
   },
 };
+
+/** "Blastin' Solves Everything" on a 2: the standing players within 3 squares of the target, but the player. */
+const redirectTargets = (state: GameState, player: PlayerState, target: PlayerState) =>
+  !isOnPitch(target)
+    ? []
+    : Object.values(state.players).filter(
+        (p) => p.id !== player.id && isOnPitch(p) && p.status === "standing" && Math.max(Math.abs(p.at.x - target.at.x), Math.abs(p.at.y - target.at.y)) <= 3,
+      );
 
 /** The rule ends the player's activation: their action goes no further. */
 function endActivation(state: GameState, player: PlayerState) {
@@ -90,6 +100,8 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
       return marked(state, player).filter((p) => ballCarrier(state)?.id === p.id);
     case "Beer Barrel Bash!":
       return player.status === "standing" ? opponentsWithin(state, player, 3).filter((p) => p.status === "standing") : [];
+    case "Blastin' Solves Everything":
+      return opponentsWithin(state, player, 3).filter((p) => p.status === "standing");
     case "Treacherous":
       return isOnPitch(player) ? adjacent(player.at).flatMap((s) => (ballCarrier(state)?.id === playerAt(state, s)?.id && playerAt(state, s)?.side === player.side ? [playerAt(state, s)!] : [])) : [];
     default:
@@ -115,6 +127,10 @@ export function activationSkills(state: GameState, player: PlayerState): string[
  * - Beer Barrel Bash! (once per drive): a standing player rolls a D6 against a standing opponent within 3 squares: on
  *   3+ the opponent is knocked down, on a 2 nothing happens, on a 1 the player falls over (a turnover). The activation
  *   ends.
+ * - "Blastin' Solves Everything" (once per half): a D6 against a standing opponent within 3 squares: on 3+ they are hit,
+ *   on a 2 the opposing coach picks a standing player (of either team, not the player) within 3 squares of them to be
+ *   hit instead, on a 1 the player is hit. The player hit rolls armour (and is placed prone if it breaks). The
+ *   activation ends.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
  *   pick it up, without a roll; the activation goes on.
  */
@@ -141,6 +157,15 @@ export const StartSkill: Handler<P<"StartSkill">> = {
       if (proc.stage === "roll") return "wait";
     }
     const target = proc.targetId === undefined ? player : getPlayer(ctx, proc.targetId);
+    if (proc.stage === "redirect") {
+      const victims = redirectTargets(state, player, target);
+      if (victims.length === 0) return "done";
+      if (action === null) return "wait";
+      const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+      const victim = victims.find((p) => p.id === playerIds[0]) ?? ctx.reject("Choose a player to hit.");
+      ctx.push({ type: "KnockDown", playerId: victim.id, turnover: false, stage: "armour", armourOnly: true });
+      return "done";
+    }
     if (proc.stage === "roll") {
       if (action === null) return "wait";
       const { target: needed, reason, always } = ROLLS[proc.skill]!;
@@ -161,6 +186,14 @@ export const StartSkill: Handler<P<"StartSkill">> = {
         target.distracted = true;
         target.hexed = true;
         ctx.emit({ type: "DistractedBy", playerId: target.id, byId: player.id, skill: proc.skill });
+        return "done";
+      case "Blastin' Solves Everything":
+        endActivation(state, player);
+        if (proc.roll === 2) {
+          proc.stage = "redirect";
+          return "continue";
+        }
+        ctx.push({ type: "KnockDown", playerId: proc.roll === 1 ? player.id : target.id, turnover: false, stage: "armour", armourOnly: true });
         return "done";
       case "Beer Barrel Bash!":
         endActivation(state, player);
@@ -189,6 +222,10 @@ export const StartSkill: Handler<P<"StartSkill">> = {
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
+    if (proc.stage === "redirect") {
+      const playerIds = redirectTargets(state, player, state.players[proc.targetId!]!).map((p) => p.id);
+      return [{ type: "SELECT_PLAYERS", side: other(player.side), playerIds, max: 1, min: 1, reason: `${proc.skill}: choose the player hit instead` }];
+    }
     if (proc.stage === "roll") {
       const { target, reason } = ROLLS[proc.skill]!;
       return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `${reason} ${target}+ (${state.players[proc.targetId ?? proc.playerId]!.name})` }];

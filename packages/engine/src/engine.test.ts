@@ -1447,6 +1447,26 @@ describe("engine", () => {
       expect(apply(s, roll(1, 1)).activeSide).toBe("away");
     });
 
+    it("Blastin' Solves Everything: once per half, 3+ hits the opponent, 2 lets the opposing coach redirect, 1 hits the player", () => {
+      const zzharg = withSkills(toFirstTurn(), { "home-4": ["Blastin' Solves Everything"] });
+      const blast = apply(zzharg, startMove("home-4"), { type: "ACTIVATION_SKILL", skill: "Blastin' Solves Everything" }, { type: "SELECT_PLAYERS", playerIds: ["away-1"] });
+      // Hit: an armour roll only; the player stays standing if it holds.
+      let s = apply(blast, roll(3));
+      expect(find(s, "ROLL")?.reason).toMatch(/^Armour 8\+ \(Away 1\)/);
+      expect(apply(s, roll(2, 2)).players["away-1"]!.status).toBe("standing");
+      s = apply(s, roll(5, 4));
+      expect(s.players["away-1"]!.status).toBe("prone");
+      expect(find(s, "ROLL")?.reason).toBe("Injury");
+      // A 2: the away coach picks who is hit, near the target.
+      s = apply(blast, roll(2));
+      expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", min: 1 });
+      expect(find(s, "SELECT_PLAYERS")!.playerIds).not.toContain("home-4");
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["home-1"] });
+      expect(find(s, "ROLL")?.reason).toMatch(/^Armour 8\+ \(Home 1\)/);
+      // A 1: Zzharg is hit.
+      expect(find(apply(blast, roll(1)), "ROLL")?.reason).toMatch(/^Armour 8\+ \(Home 4\)/);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

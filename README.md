@@ -470,6 +470,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Beer Barrel Bash! (Thorsson Stoutmead): once per drive, at the start of his activation, standing, a D6 against a
     standing opponent within 3 squares: on 3+ they are knocked down, on a 2 nothing happens, on a 1 he falls over (a
     turnover). His activation then ends.
+  - "Blastin' Solves Everything" (Zzharg Madeye): once per half, at the start of his activation, a D6 against a
+    standing opponent within 3 squares: on 3+ they are hit; on a 2 the opposing coach picks a standing player (either
+    team, not Zzharg) within 3 squares of them to be hit instead; on a 1 Zzharg is hit. The player hit rolls armour, and
+    is placed prone if it breaks (dropping the ball). His activation then ends.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

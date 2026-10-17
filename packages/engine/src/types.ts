@@ -472,7 +472,8 @@ export type Procedure =
   /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
   /** A special rule used at the start of an activation (Black Ink...): its target, rolls and effect. */
-  | { type: "StartSkill"; playerId: string; skill: string; stage: "target" | "roll" | "effect"; targetId?: string; roll?: number }
+  /** "redirect": the opposing coach picks who is hit instead ("Blastin' Solves Everything"). */
+  | { type: "StartSkill"; playerId: string; skill: string; stage: "target" | "roll" | "redirect" | "effect"; targetId?: string; roll?: number }
   /** A killed opponent joins the team (Plague Ridden, Masters of Undeath): its coach picks among several positions. */
   | { type: "RaiseDead"; side: Side; deadId: string; undead: boolean }
   /**
@@ -951,6 +952,8 @@ export type Procedure =
       armourRoll?: number;
       injuryRoll?: number;
       lateUsed?: boolean;
+      /** Only an armour roll (from "armour"): the player stays standing if it holds, and is placed prone if it breaks. */
+      armourOnly?: boolean;
       /** Dwarfen Grit: the player's broken armour was re-rolled ("grit": asked). */
       grit?: boolean;
       /** "sabotage": the player may use Saboteur; "sabotageRoll": its D6. */
