@@ -517,6 +517,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Quick Bite (Guffle Pusmaw): once per game, when an opponent he marks catches the ball, he may roll armour against
     them (no modifiers): if it breaks, he takes the ball and the catcher is placed prone and rolls for injury. Never a
     turnover.
+  - Halfling Luck (Puggy Baconbreath): once per game, he may re-roll a single die he rolled (a failed single-die roll, a
+    pass, a block die), not for an armour, injury or casualty roll; offered next to the team re-roll.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

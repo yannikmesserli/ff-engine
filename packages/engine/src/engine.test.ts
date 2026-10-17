@@ -1606,6 +1606,15 @@ describe("engine", () => {
       expect(find(declined, "SELECT_PLAYERS")?.playerIds).toEqual(["home-1", "home-3"]);
     });
 
+    it("Halfling Luck: once per game, the player may re-roll a single die they rolled, a block die too", () => {
+      const puggy = withSkills(toFirstTurn(), { "home-1": ["Halfling Luck"], "home-2": ["Halfling Luck"] });
+      let s = apply(puggy, startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1));
+      expect(getAvailableActions(s).find((t) => t.type === "USE_SKILL")).toMatchObject({ skill: "Halfling Luck" });
+      s = apply(s, { type: "USE_SKILL", use: true, skill: "Halfling Luck" }, roll(6));
+      expect([s.players["home-1"]!.at, s.teams.home.rerolls]).toEqual([{ x: 11, y: 5 }, 1]);
+      expect(find(apply(blockAway2(puggy), roll(1)), "USE_SKILL")?.skill).toBe("Halfling Luck");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

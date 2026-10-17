@@ -3,7 +3,7 @@ import type { CheckKind, GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, getPlayer, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, getPlayer, luckSkill, useLuck, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 import { injure, injuryOutcome, knockOut, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 
@@ -166,7 +166,7 @@ function settle(ctx: Ctx, proc: P<"Check">, player: PlayerState, success: boolea
     proc.stage = "roll";
     return "wait";
   }
-  if (wantsReroll(proc, success) && (canTeamReroll(state, player.side, proc.rerolled) || canUsePro(state, player, proc.rerolled))) {
+  if (wantsReroll(proc, success) && (canTeamReroll(state, player.side, proc.rerolled) || canUsePro(state, player, proc.rerolled) || (!proc.rerolled && luckSkill(player)))) {
     proc.stage = "reroll";
     return "wait";
   }
@@ -191,6 +191,13 @@ export const Check: Handler<P<"Check">> = {
     if (proc.stage === "reroll") {
       const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
       if (a.type === "DECLINE_REROLL" || (a.type === "USE_SKILL" && !a.use)) return finish(state, proc, kept(proc));
+      if (a.type === "USE_SKILL" && a.skill !== undefined && a.skill === luckSkill(player) && !proc.rerolled) {
+        // Halfling Luck: the die is re-rolled, without a team re-roll.
+        useLuck(ctx, player, a.skill);
+        proc.rerolled = true;
+        proc.stage = "roll";
+        return "wait";
+      }
       if (a.type === "USE_SKILL") {
         if ((a.skill ?? "Pro") !== "Pro" || proc.mascotFailed || !canUsePro(state, player, proc.rerolled)) ctx.reject("Pro cannot be used now.");
         proc.rerolled = true;
@@ -258,6 +265,7 @@ export const Check: Handler<P<"Check">> = {
       return [
         ...(canTeamReroll(state, player.side, proc.rerolled) ? [teamRerollTemplate(state, player.side)] : []),
         ...(proc.mascotFailed ? [] : proTemplate(state, player, proc.rerolled)),
+        ...(!proc.rerolled && luckSkill(player) ? [{ type: "USE_SKILL" as const, side: player.side, playerId: player.id, skill: luckSkill(player)! }] : []),
         { type: "DECLINE_REROLL", side: player.side },
       ];
     }

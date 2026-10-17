@@ -67,6 +67,20 @@ export const sneakyPair = (state: GameState, attacker: PlayerState, victim: Play
     return p !== undefined && p.side === attacker.side && hasTackleZone(p) && hasSkill(p, "A Sneaky Pair");
   }).length >= 2;
 
+/**
+ * Halfling Luck: once per game, the player may re-roll a single die they rolled (not for armour, injury or casualty
+ * rolls). Returns the rule the player may still use now, if any.
+ */
+export function luckSkill(player: PlayerState): string | null {
+  if (hasSkill(player, "Halfling Luck") && !player.usedThisGame?.includes("Halfling Luck")) return "Halfling Luck";
+  return null;
+}
+
+/** Use the player's luck rule (see `luckSkill`). */
+export function useLuck(ctx: Ctx, player: PlayerState, skill: string) {
+  useOncePerGame(ctx, player, skill);
+}
+
 /** Count one more of `kind` towards the player's Star Player Points. */
 export function earnSpp(state: GameState, playerId: string, kind: keyof SppRecord) {
   const player = state.players[playerId];

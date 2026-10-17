@@ -6,7 +6,7 @@ import { hatedKeywords, injure, injuryOutcome, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
 import { hasSkill, skillName, skillValue, tandemRole } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, sneakyPair, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, luckSkill, sneakyPair, useLuck, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -418,7 +418,7 @@ const savageBlow = (proc: P<"Block">, attacker: PlayerState, defender: PlayerSta
 /**
  * The skills that let the attacker re-roll any one block die they pick, as the block's re-roll: Unstoppable Momentum
  * (during a Blitz), Lord of Chaos (once per game, against an opponent), Woodland Fury (once per game, when the dice would
- * knock the attacker down), Working in Tandem (the attacker's partner marks the defender too).
+ * knock the attacker down), Working in Tandem (the attacker's partner marks the defender too), Halfling Luck.
  */
 function anyDieSkills(state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState): string[] {
   if (proc.rerolled) return [];
@@ -428,6 +428,7 @@ function anyDieSkills(state: GameState, proc: P<"Block">, attacker: PlayerState,
     ...(defender.side !== attacker.side && unused("Lord of Chaos") ? ["Lord of Chaos"] : []),
     ...(unused("Woodland Fury") && knocksAttackerDown(proc, attacker) ? ["Woodland Fury"] : []),
     ...(defender.side !== attacker.side && tandemRole(attacker, "block") && partnerMarks(state, attacker, defender) ? ["Working in Tandem"] : []),
+    ...(luckSkill(attacker) ? [luckSkill(attacker)!] : []),
   ];
 }
 
@@ -476,7 +477,8 @@ function useSkill(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: P
   }
   if (anyDieSkills(ctx.state, proc, attacker, defender).includes(chosen)) {
     // The coach picks the die, re-rolled without any roll first.
-    if (ONCE_PER_GAME_DIE_SKILLS.includes(chosen)) useOncePerGame(ctx, attacker, chosen);
+    if (chosen === luckSkill(attacker)) useLuck(ctx, attacker, chosen);
+    else if (ONCE_PER_GAME_DIE_SKILLS.includes(chosen)) useOncePerGame(ctx, attacker, chosen);
     else ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: chosen });
     proc.rerolled = true;
     proc.dieSkill = chosen;

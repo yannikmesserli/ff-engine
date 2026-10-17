@@ -4,7 +4,7 @@ import { SCATTER, passes, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName, tandemRole } from "../skills";
 import { explosion, rethrow } from "./bomb";
-import { ballista, canTeamReroll, canUsePro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
+import { ballista, canTeamReroll, canUsePro, checkTouchdown, disturbingPresences, getPlayer, landBall, luckSkill, useLuck, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -208,7 +208,8 @@ const aimTargets = (state: GameState, thrower: PlayerState, proc: P<"Pass">) =>
 
 /** After the pass roll: the re-roll decision, or the outcome. */
 function afterPassRoll(state: GameState, proc: P<"Pass">, thrower: PlayerState): "continue" {
-  const canReroll = passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled);
+  const canReroll =
+    passSkillReroll(thrower, proc) || canTeamReroll(state, thrower.side, proc.rerolled) || canUsePro(state, thrower, proc.rerolled) || (!proc.rerolled && !!luckSkill(thrower));
   const wantsReroll = proc.hailMary ? proc.result === "fumble" : proc.result !== "accurate";
   proc.stage = wantsReroll && canReroll ? "reroll" : "outcome";
   return "continue";
@@ -306,7 +307,12 @@ export const Pass: Handler<P<"Pass">> = {
       case "reroll": {
         if (action === null) return "wait";
         const a = ctx.expect(action, "USE_REROLL", "DECLINE_REROLL", "USE_SKILL");
-        if (a.type === "USE_SKILL" && a.use) {
+        if (a.type === "USE_SKILL" && a.use && a.skill !== undefined && a.skill === luckSkill(thrower) && !proc.rerolled) {
+          // Halfling Luck: the die is re-rolled, without a team re-roll.
+          useLuck(ctx, thrower, a.skill);
+          proc.rerolled = true;
+          proc.stage = "roll";
+        } else if (a.type === "USE_SKILL" && a.use) {
           if ((a.skill ?? "Pro") !== "Pro" || proc.mascotFailed || !canUsePro(state, thrower, proc.rerolled)) ctx.reject("Pro cannot be used now.");
           proc.rerolled = true;
           proc.stage = "pro";
@@ -487,6 +493,7 @@ export const Pass: Handler<P<"Pass">> = {
               ? [teamRerollTemplate(state, thrower.side)]
               : []),
           ...(proc.mascotFailed ? [] : proTemplate(state, thrower, proc.rerolled)),
+          ...(!proc.rerolled && luckSkill(thrower) ? [{ type: "USE_SKILL" as const, side: thrower.side, playerId: thrower.id, skill: luckSkill(thrower)! }] : []),
           { type: "DECLINE_REROLL", side: thrower.side },
         ];
       case "loner":
