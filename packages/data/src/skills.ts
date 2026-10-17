@@ -107,6 +107,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  "Fury of the Blood God": "Once per game, rolling a 1 for Unchannelled Fury after declaring a Block, may make two Block actions instead.",
   "Vicious Vines": "Once per half, a Block action may target an opponent 2 squares away, without a follow-up.",
   "Maximum Carnage": "Once per game, right after a Chainsaw attack, may make another one against a different opponent.",
   "Kick 'em While They're Down!": "Once per game, may make a Chainsaw attack against an adjacent prone or stunned opponent (not a foul: no sending-off).",

@@ -436,6 +436,9 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       } else if (failed(ctx) && state.lastCheck!.kind === "savagery" && proc.primal === undefined && primalTargets(state, player).length > 0 && hasSkill(player, "Primal Savagery") && !player.usedThisGame?.includes("Primal Savagery")) {
         proc.stage = "primal";
         return "continue";
+      } else if (failed(ctx) && state.lastCheck!.kind === "fury" && proc.action === "block" && proc.fury === undefined && state.lastCheck!.roll === 1 && hasSkill(player, "Fury of the Blood God") && !player.usedThisGame?.includes("Fury of the Blood God")) {
+        proc.stage = "fury";
+        return "continue";
       } else if (failed(ctx) && state.lastCheck!.kind === "savagery" && lashOutTargets(state, player, proc.action).length > 0) {
         proc.stage = "savagery";
         return "continue";
@@ -449,6 +452,19 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         }
         return loseAction(ctx, proc, player);
       }
+      proc.stage = "thirst";
+      return "continue";
+    }
+    if (proc.stage === "fury") {
+      if (action === null) return "wait";
+      // Fury of the Blood God: once per game, two Block actions instead of the usual effect.
+      proc.fury = ctx.expect(action, "USE_SKILL").use;
+      if (!proc.fury) {
+        proc.stage = "confusion";
+        return "continue";
+      }
+      useOncePerGame(ctx, player, "Fury of the Blood God");
+      proc.extraBlocks = 1;
       proc.stage = "thirst";
       return "continue";
     }
@@ -697,6 +713,8 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     }
     if (a.type === "BLOCK") {
       const target = blockTargets(state, proc).find((t) => t.id === a.targetId) ?? ctx.reject("Illegal block target.");
+      // Fury of the Blood God: the second Block action.
+      if (proc.blocked) proc.extraBlocks = (proc.extraBlocks ?? 1) - 1;
       proc.blocked = true;
       // Vicious Vines: a block two squares away, once per half.
       const vines = !adjacentTargets(state, player).some((t) => t.id === target.id);
@@ -733,6 +751,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (proc.stage === "thirst") return [{ type: "MOVE_INSTEAD", side: player.side, playerId: player.id }];
     if (proc.stage === "carry") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: CARRY_SKILL }];
     if (proc.stage === "special") return [{ type: "ACTIVATION_SKILL", side: player.side, playerId: player.id, skills: activationSkills(state, player, proc.action) }];
+    if (proc.stage === "fury") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Fury of the Blood God" }];
     if (proc.stage === "primal") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Primal Savagery" }];
     if (proc.stage === "savagery") {
       const playerIds = (proc.primal ? primalTargets(state, player) : lashOutTargets(state, player, proc.action)).map((p) => p.id);
@@ -960,6 +979,9 @@ function activationTargets(state: GameState, proc: P<"MoveAction">) {
 
 /** The players the player may block now: those next to them, and in a Block action, with Vicious Vines, those 2 squares away. */
 function blockTargets(state: GameState, proc: P<"MoveAction">) {
+  const player = state.players[proc.playerId]!;
+  // Fury of the Blood God: after the first block, a second one, once it is fully resolved.
+  if (proc.blocked && (proc.extraBlocks ?? 0) > 0) return player.status === "standing" ? adjacentTargets(state, player) : [];
   const targets = activationTargets(state, proc);
   return proc.action === "block" && !proc.blocked ? [...targets, ...vineTargets(state, state.players[proc.playerId]!)] : targets;
 }

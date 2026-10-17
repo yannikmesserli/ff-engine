@@ -588,8 +588,11 @@ export type Procedure =
       /** "carry": the player may pick up their partner (I'll Carry You). */
       /** "special": a special rule used at the start of the activation may be used (see `activationSkills`). */
       /** "primal": a failed Animal Savagery roll may lash out at an opponent instead (Primal Savagery, `primal`). */
-      stage: "start" | "confusion" | "primal" | "savagery" | "thirst" | "root" | "standup" | "carry" | "special" | "main";
+      stage: "start" | "confusion" | "fury" | "primal" | "savagery" | "thirst" | "root" | "standup" | "carry" | "special" | "main";
       primal?: boolean;
+      /** Fury of the Blood God: asked (`fury`); the Block actions still to make after the first (`extraBlocks`). */
+      fury?: boolean;
+      extraBlocks?: number;
       /** Maximum Carnage: the target of the first Chainsaw attack (another one may follow). */
       carnage?: string;
       /** The start-of-activation rules were offered; `ended`: one of them ended the activation. */

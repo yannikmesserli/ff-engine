@@ -531,6 +531,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
     another adjacent standing opponent.
   - Vicious Vines (Maple Highgrove): once per half, a Block action may target a standing opponent 2 squares away,
     following the usual rules, but without a follow-up.
+  - Fury of the Blood God (Scyla Anfingrimm): once per game, when he rolls a 1 for Unchannelled Fury after declaring a
+    Block (after any re-roll), he may make two Block actions instead, the first fully resolved (Frenzy included) before
+    the second.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

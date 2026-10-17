@@ -1673,6 +1673,20 @@ describe("engine", () => {
       expect(s.players["home-2"]!.usedThisHalf).toEqual(["Vicious Vines"]);
     });
 
+    it("Fury of the Blood God: once per game, a 1 for Unchannelled Fury after declaring a Block gives two Block actions", () => {
+      const scyla = withSkills(toFirstTurn(), { "home-2": ["Unchannelled Fury", "Fury of the Blood God"] });
+      let s = apply(scyla, declare("home-2", "block"), roll(1), { type: "DECLINE_REROLL" });
+      expect(find(s, "USE_SKILL")?.skill).toBe("Fury of the Blood God");
+      s = apply(s, { type: "USE_SKILL", use: true });
+      s = apply(s, { type: "BLOCK", targetId: "away-2" }, roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      expect(find(s, "BLOCK")?.targets.map((t) => t.playerId)).toEqual(["away-1", "away-3"]);
+      // The second block: two dice, with home-1's assist.
+      s = apply(s, { type: "BLOCK", targetId: "away-1" }, roll(3, 3), pick, { type: "PUSH", square: { x: 14, y: 5 } }, { type: "FOLLOW_UP", follow: false });
+      expect(types(s)).not.toContain("BLOCK");
+      // Declined: the action is lost as usual.
+      expect(apply(scyla, declare("home-2", "block"), roll(1), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: false }).activePlayerId).toBeNull();
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
