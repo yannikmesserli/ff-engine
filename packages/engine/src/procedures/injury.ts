@@ -181,9 +181,9 @@ export const Injury: Handler<P<"Injury">> = {
         return "continue";
       }
       case "apothecary": {
-        // Ball & Chain: no apothecary for a KO.
+        // Ball & Chain: no apothecary for a KO; a frog (Zap!) gets none at all.
         const plagueDoctor = inducementsLeft(team, "plagueDoctor") > 0;
-        if (proc.outcome === "stunned" || (team.apothecaries === 0 && !plagueDoctor) || (proc.outcome === "ko" && hasSkill(player, "Ball & Chain"))) {
+        if (proc.outcome === "stunned" || (team.apothecaries === 0 && !plagueDoctor) || (proc.outcome === "ko" && hasSkill(player, "Ball & Chain")) || player.frog) {
           proc.stage = "place";
           return "continue";
         }

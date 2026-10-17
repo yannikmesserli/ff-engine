@@ -72,10 +72,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   game, between two turns of a drive, one spell. Fireball: each player in a 3x3 area is knocked down on 4+, with +1 to
   the armour roll (or to the injury roll if the armour breaks without it). Zap!: on a 6, or on 2+ equal to or above
   the target's ST, a player on the pitch becomes a frog until the end of the drive (MA 5, ST 1, AG 2+, no PA, AV 5+,
-  Dodge, No Ball, Titchy, Stunty, Very Long Legs, Leap), dropping the ball. No turnover either way. Josef Bugman (the
-  Infamous Coaching Staff, 100k): +1 to the team's KO recovery rolls (Bugman's XXXXXX), and Dwarfen Wisdom: once per
-  game, after both teams set up (the kicking team is asked first), a D3, then that many of the team's players on the
-  pitch (at least one) are set up again. Wandering Apothecaries (100k, up to 2, for rosters that may have an
+  Dodge, No Ball, Titchy, Stunty, Very Long Legs, Leap), dropping the ball, and gets no apothecary. No turnover either
+  way. Josef Bugman (the Infamous Coaching Staff, 100k): +1 to the team's KO recovery rolls (Bugman's XXXXXX), and
+  Dwarfen Wisdom: once per game, after both teams set up (the kicking team is asked first), a D3, then that many of
+  the team's players on the pitch (at least one) are set up again. Wandering Apothecaries (100k, up to 2, for rosters that may have an
   apothecary): each is one more use of an apothecary for the game, after the team's own.
 - Prayers to Nuffle (bought as inducements, up to 3, plus the underdog's free ones after the shop): before the coin toss, a D16 each on the BB2025 table, re-rolled
   when the team already has the result; they last the whole game. Stiletto (a random player gains Stab), Iron Man

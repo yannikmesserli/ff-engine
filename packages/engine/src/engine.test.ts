@@ -4001,6 +4001,21 @@ describe("engine", () => {
       expect(types(apply(s, { type: "END_TURN" }))).not.toContain("CAST_SPELL");
     });
 
+    it("a frog gets no apothecary", () => {
+      const away2 = (isFrog: boolean) =>
+        edit(toFirstTurn(team("Home"), { ...team("Away"), apothecary: true }), (c) => {
+          if (!isFrog) return;
+          const p = c.players["away-2"]!;
+          p.frog = { ma: p.ma, st: p.st, ag: p.ag, pa: p.pa, av: p.av, skills: p.skills };
+        });
+      // home-2 knocks away-2 down: armour 12, injury 8 (KO'd).
+      const knockOut = (s: GameState) =>
+        apply(s, declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(6), { type: "CHOOSE_BLOCK_DIE", index: 0 }, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(4, 4));
+      expect(types(knockOut(away2(false)))).toContain("USE_APOTHECARY");
+      const s = knockOut(away2(true));
+      expect([s.players["away-2"]!.at, types(s)]).toEqual(["ko", expect.not.arrayContaining(["USE_APOTHECARY"])]);
+    });
+
     it("Zap! turns a player into a frog on a 6 or a roll of their ST or more, until the end of the drive", () => {
       const base = apply(wizard(), { type: "END_TURN" }, { type: "CAST_SPELL", spell: "zap" });
       expect(find(base, "ZAP")?.targetIds).toHaveLength(22);
