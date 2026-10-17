@@ -2209,4 +2209,44 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "quick-bite",
+    title: "Quick Bite: biting the catcher to steal the ball",
+    instructions: [
+      "Home's first turn. Grishnak (#1, away) has Quick Bite here (given in the team file in src/scenarios.ts): once per game, when a player he marks catches the ball, he may bite them.",
+      "Click \"Physical dice\". Click Wilhelm (#1, holding the ball), choose Pass and throw to Kurt (#2) at (12,4), marked by Grishnak. Enter 6 for the pass and 6 for the catch.",
+      "Grishnak's coach chooses him to bite: an armour roll against Kurt. If it breaks (enter 6 and 5), Grishnak takes the ball, Kurt is placed prone and rolls for injury. It is not a turnover: the pass was caught.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Wilhelm", position: "Human Thrower" },
+        { number: 2, name: "Kurt", position: "Human Catcher" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Hans", position: "Human Lineman" },
+        { number: 5, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman", skills: ["Quick Bite"] },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Gorbag", position: "Orc Lineman" },
+        { number: 4, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 113,
+    actions: toFirstTurn({
+      home: { 1: { x: 6, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 6 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 8 } },
+      away: { 1: { x: 13, y: 4 }, 2: { x: 13, y: 6 }, 3: { x: 13, y: 7 }, 4: { x: 13, y: 8 } },
+      ball: { x: 6, y: 7 },
+    }),
+  },
 ];

@@ -609,4 +609,13 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "REROLL_BLOCK_DIE", index: 0, indexes: [0, 1] }, { type: "ROLL", values: [6, 6] }]);
     expect(find(s, "CHOOSE_BLOCK_DIE")?.results).toEqual([6, 6]);
   });
+
+  it("quick-bite: Kurt catches, Grishnak bites and takes the ball, without a turnover", () => {
+    let s = applyActions(load("quick-bite"), [{ type: "START_ACTION", playerId: "home-1", action: "pass" }, { type: "THROW", square: { x: 12, y: 4 } }, { type: "ROLL", values: [6] }]);
+    if (find(s, "SELECT_PLAYERS")?.reason.startsWith("Interception")) s = step(s, { type: "SELECT_PLAYERS", playerIds: [] }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1"] });
+    s = applyActions(s, [{ type: "SELECT_PLAYERS", playerIds: ["away-1"] }, { type: "ROLL", values: [6, 5] }, { type: "ROLL", values: [1, 1] }]);
+    expect([s.ball, s.turnover, s.activeSide]).toEqual([{ square: { x: 13, y: 4 }, carried: true }, false, "home"]);
+  });
 });
