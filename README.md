@@ -427,6 +427,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     block die of their choice, instead of the block's one re-roll.
   - Slayer (Grim Ironjaw): once per game, +1 to the armour or the injury roll of an opposing Big Guy knocked down by
     his block (a Blitz's too), after the roll: offered when it breaks the armour or changes the injury result.
+  - Dwarven Scourge (Ivan 'the Animal' Deathshroud): once per game, +1 to the armour or the injury roll of an
+    opponent knocked down by his block (+2 against a Dwarf), after the roll, as for Slayer.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

@@ -1228,6 +1228,18 @@ describe("engine", () => {
       expect(types(apply(down(grim(["human"])), roll(3, 4)))).not.toContain("USE_SKILL");
     });
 
+    it("Dwarven Scourge: once per game, +1 to the armour or injury roll of an opponent knocked down by the block, +2 for a Dwarf", () => {
+      const ivan = (keywords: string[]) =>
+        edit(withSkills(toFirstTurn(), { "home-2": ["Dwarven Scourge"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
+      const down = (s: GameState) => apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      // Armour 6 against AV 8: +1 is not enough, +2 against a Dwarf is.
+      expect(types(apply(down(ivan(["human"])), roll(3, 3)))).not.toContain("USE_SKILL");
+      const dwarf = apply(down(ivan(["dwarf"])), roll(3, 3));
+      expect(find(dwarf, "USE_SKILL")?.skill).toBe("Dwarven Scourge");
+      expect(apply(dwarf, { type: "USE_SKILL", use: true }).log).toContainEqual({ type: "ArmourBroken", playerId: "away-2", roll: 8 });
+      expect(find(apply(down(ivan(["human"])), roll(3, 4)), "USE_SKILL")?.skill).toBe("Dwarven Scourge");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
