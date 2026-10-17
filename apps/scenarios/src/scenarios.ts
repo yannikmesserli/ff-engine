@@ -2288,4 +2288,42 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 4, y: 7 },
     }),
   },
+  {
+    id: "old-pro",
+    title: "Old Pro: Pro re-rolls an armour die",
+    instructions: [
+      "Home's first turn. Helmut (#1) has Pro and Old Pro here (given in the team file in src/scenarios.ts): once per game, his Pro (3+) may re-roll one die of an armour roll.",
+      "Click \"Physical dice\", click Helmut and declare a Block on Grishnak (#1): enter 6 (Pow), push him back and don't follow up.",
+      "Enter 6 and 1 for the armour (7, held against AV 10): click \"Use Old Pro\", roll Pro (3+), then the die that replaces the 1. A 4 or more breaks the armour.",
+      "Old Pro is spent, and so is Pro for the turn.",
+    ],
+    home: {
+      name: "Middenheim Veterans",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Helmut", position: "Human Blitzer", skills: ["Pro", "Old Pro"] },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Hans", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 131,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

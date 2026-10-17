@@ -629,4 +629,14 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "ROLL", values: [1] }, { type: "USE_SKILL", use: false }, { type: "ROLL", values: [5] }, { type: "USE_SKILL", use: false }]);
     expect(s.log).toContainEqual({ type: "BallScattered", to: { x: 9, y: 13 } });
   });
+
+  it("old-pro: Helmut's Pro re-rolls the 1 of a held armour roll", () => {
+    let s = load("old-pro");
+    s = applyActions(s, [{ type: "START_ACTION", playerId: "home-1", action: "block" }, { type: "BLOCK", targetId: "away-1" }, { type: "ROLL", values: [6] }]);
+    if (find(s, "CHOOSE_BLOCK_DIE")) s = step(s, { type: "CHOOSE_BLOCK_DIE", index: 0 }).state;
+    s = applyActions(s, [{ type: "PUSH", square: find(s, "PUSH")!.squares[0]! }, { type: "FOLLOW_UP", follow: false }, { type: "ROLL", values: [6, 1] }]);
+    expect(find(s, "USE_SKILL")).toMatchObject({ playerId: "home-1", skill: "Old Pro" });
+    s = applyActions(s, [{ type: "USE_SKILL", use: true }, { type: "ROLL", values: [3] }, { type: "ROLL", values: [4] }]);
+    expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: "away-1", roll: 10 });
+  });
 });
