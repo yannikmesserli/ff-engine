@@ -2974,6 +2974,18 @@ describe("engine", () => {
         expect(types(s)).toContain("START_ACTION");
       });
 
+      it("Animal Savagery: a failed roll may lash out at the team-mate to be thrown, even a prone one", () => {
+        const savage = edit(withSkills(ttmTeam(), { "home-4": ["Throw Team-mate", "Animal Savagery"] }), (c) => void (c.players["home-5"]!.status = "prone"));
+        let s = apply(savage, declare("home-4", "ttm"));
+        expect(find(s, "ROLL")?.reason).toMatch(/^Animal Savagery 4\+/);
+        s = apply(s, roll(1), { type: "DECLINE_REROLL" });
+        expect(s.log).toContainEqual({ type: "LashedOut", playerId: "home-4", victimId: "home-5" });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Armour 8\+ \(Home 5\)/);
+        // A Move action: a prone team-mate is not a target, so the action is just lost.
+        const moving = apply(savage, declare("home-4", "move"), roll(1), { type: "DECLINE_REROLL" });
+        expect(moving.log.some((e) => e.type === "LashedOut")).toBe(false);
+      });
+
       it("landing on a team-mate knocks them down (turnover), scatters on and fails the landing", () => {
         // East, north, south from (9,6) ends on home-6 at (10,6).
         let s = apply(declared(), throwTo({ x: 9, y: 6 }), roll(5), roll(3, 1, 5));

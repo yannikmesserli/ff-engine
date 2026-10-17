@@ -423,7 +423,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       if (failed(ctx) && state.lastCheck!.kind === "bloodlust") {
         proc.thirsty = true;
         ctx.emit({ type: "PlayerThirsty", playerId: player.id });
-      } else if (failed(ctx) && state.lastCheck!.kind === "savagery" && lashOutTargets(state, player).length > 0) {
+      } else if (failed(ctx) && state.lastCheck!.kind === "savagery" && lashOutTargets(state, player, proc.action).length > 0) {
         proc.stage = "savagery";
         return "continue";
       } else if (failed(ctx)) {
@@ -440,7 +440,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       return "continue";
     }
     if (proc.stage === "savagery") {
-      const victims = lashOutTargets(state, player);
+      const victims = lashOutTargets(state, player, proc.action);
       let victim = victims[0]!;
       if (victims.length > 1) {
         if (action === null) return "wait";
@@ -671,7 +671,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (proc.stage === "thirst") return [{ type: "MOVE_INSTEAD", side: player.side, playerId: player.id }];
     if (proc.stage === "carry") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: CARRY_SKILL }];
     if (proc.stage === "savagery") {
-      const playerIds = lashOutTargets(state, player).map((p) => p.id);
+      const playerIds = lashOutTargets(state, player, proc.action).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: player.side, playerIds, max: 1, min: 1, reason: `Animal Savagery: choose a team-mate for ${player.name} to lash out at` }];
     }
     const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
@@ -760,12 +760,17 @@ export const HitAndRun: Handler<P<"HitAndRun">> = {
   },
 };
 
-/** Animal Savagery: standing team-mates next to the player, one of whom gets lashed out at. */
-export function lashOutTargets(state: GameState, player: PlayerState): PlayerState[] {
+/**
+ * Animal Savagery: standing team-mates next to the player, one of whom gets lashed out at; for a Throw or Kick
+ * Team-mate, also the team-mates the player could throw (or kick), even prone or stunned.
+ */
+export function lashOutTargets(state: GameState, player: PlayerState, action?: PlayerActionType): PlayerState[] {
   if (!isOnPitch(player)) return [];
+  // Throw or Kick Team-mate: a team-mate who could be thrown is a target even when down.
+  const throwable = action === "ttm" || action === "ktm" ? throwableTeamMates(state, player, action === "ktm").map((p) => p.id) : [];
   return adjacent(player.at).flatMap((s) => {
     const p = playerAt(state, s);
-    return p && p.side === player.side && p.status === "standing" ? [p] : [];
+    return p && p.side === player.side && (p.status === "standing" || throwable.includes(p.id)) ? [p] : [];
   });
 }
 
