@@ -128,6 +128,18 @@ describe("scenarios", () => {
     expect(find(s, "ROLL")?.reason).toMatch(/^Injury/);
   });
 
+  it("trapdoor-throw: Snikkit, thrown onto the trapdoor with Bullseye, rolls for it before landing", () => {
+    let s = load("trapdoor-throw");
+    expect(s.teams.home.prayers).toEqual(["treacherous-trapdoor"]);
+    s = step(s, { type: "START_ACTION", playerId: "home-1", action: "ttm" }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    s = step(s, { type: "THROW_TEAM_MATE", targetId: "home-2", square: { x: 6, y: 1 } }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    s = step(s, { type: "USE_SKILL", use: true, skill: "Bullseye" }).state;
+    expect(find(s, "ROLL")?.reason).toBe("Trapdoor 2+ (Snikkit)");
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });

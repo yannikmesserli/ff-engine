@@ -2038,6 +2038,48 @@ export const SCENARIOS: Scenario[] = [
     actions: [roll(1, 1), roll(3, 4)],
   },
   {
+    id: "trapdoor-throw",
+    title: "Treacherous Trapdoor: a thrown team-mate comes down on it",
+    instructions: [
+      "Home's first turn. The Flying Gits prayed for Treacherous Trapdoor (drawn before the coin toss): trapdoors at (6,1) and (19,13). Grumbol (#1, Troll) has Bullseye here (given in the team file in src/scenarios.ts).",
+      "Click \"Physical dice\", declare Throw Team-mate with Grumbol (Really Stupid 2+, Always Hungry 2+), click Snikkit (#2), then the trapdoor square (6,1). Enter a 6 (superb) and use Bullseye: Snikkit comes down on the trapdoor.",
+      "The trapdoor roll comes before his landing: on a 1 (no re-roll) he falls through, an injury roll as for the crowd and a turnover; on 2+ he rolls to land as usual.",
+    ],
+    home: {
+      name: "Flying Gits",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      inducements: { prayers: 1 },
+      players: [
+        { number: 1, name: "Grumbol", position: "Troll", skills: ["Bullseye"] },
+        { number: 2, name: "Snikkit", position: "Goblin Lineman" },
+        { number: 3, name: "Grishnak", position: "Orc Lineman" },
+        { number: 4, name: "Ugluk", position: "Orc Lineman" },
+        { number: 5, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Targets",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    seed: 103,
+    actions: ((actions: Action[]) => [...actions.slice(0, 2), roll(1) /* the prayer: Treacherous Trapdoor */, ...actions.slice(2)])(
+      toFirstTurn({
+        home: { 1: { x: 8, y: 2 }, 2: { x: 8, y: 3 }, 3: { x: 12, y: 6 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 8 } },
+        away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 } },
+        ball: { x: 5, y: 7 },
+      }),
+    ),
+  },
+  {
     id: "end-of-game",
     title: "End of the game: Star Player Points, a concession, MVPs, winnings and fans",
     instructions: [
