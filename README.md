@@ -494,6 +494,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     the armour roll if it needs it, otherwise to the injury roll.
   - Watch Out! (Withergrasp Doubledrool): the first time each drive an opponent blocks him, he counts as having Dodge
     (against a Defender Stumbles; Tackle still cancels it).
+  - Pump Up The Crowd (Skrorg Snowpelt): once per game, when his block causes an opponent a casualty, his team gains a
+    team re-roll until the end of the drive.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

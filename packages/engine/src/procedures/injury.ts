@@ -2,7 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { Action, Casualty, Characteristic, DiceSpec, InjuryOutcome, PlayerState, PositionStats, Procedure, Side, TeamState } from "../types";
 import { hasSkill, skillName } from "../skills";
 import { other, teamPlayers } from "../pitch";
-import { createPlayer, earnSpp, getPlayer, inducementsLeft, spendInducement } from "./helpers";
+import { createPlayer, earnSpp, getPlayer, inducementsLeft, spendInducement, useOncePerGame } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -107,6 +107,7 @@ export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = f
   ctx.emit({ type: "PlayerInjured", playerId: player.id, result: outcome === "stunned" ? "stunned" : outcome === "ko" ? "ko" : "cas" });
   if (outcome === "casualty" || outcome === "badly-hurt") {
     for (const id of new Set(sppTo)) if (ctx.state.players[id]?.side !== player.side) earnSpp(ctx.state, id, "casualties");
+    pumpUpTheCrowd(ctx, player, attackerId);
   }
   ctx.push({
     type: "Injury",
@@ -118,6 +119,17 @@ export function injure(ctx: Ctx, player: PlayerState, total: number, { crowd = f
     stage: outcome === "casualty" ? "casualty" : outcome === "badly-hurt" ? afterCasualty(player) : "apothecary",
     ...(outcome === "badly-hurt" ? { casualty: { result: "badly-hurt" as const } } : {}),
   });
+}
+
+/**
+ * Pump Up the Crowd: once per game, when the player's block causes an opponent a casualty, their team gains a team
+ * re-roll until the end of the drive.
+ */
+function pumpUpTheCrowd(ctx: Ctx, victim: PlayerState, attackerId: string | undefined) {
+  const attacker = attackerId === undefined ? undefined : ctx.state.players[attackerId];
+  if (!attacker || attacker.side === victim.side || !hasSkill(attacker, "Pump Up The Crowd") || attacker.usedThisGame?.includes("Pump Up The Crowd")) return;
+  useOncePerGame(ctx, attacker, "Pump Up The Crowd");
+  ctx.state.teams[attacker.side].driveRerolls += 1;
 }
 
 /** Knocked Out without an injury roll (Saboteur): the apothecary may still treat the player. Returns the procedure to push. */

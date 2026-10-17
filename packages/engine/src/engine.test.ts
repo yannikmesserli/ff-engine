@@ -1563,6 +1563,13 @@ describe("engine", () => {
       expect([hasSkill(s.players["home-2"]!, "Gored by the Bull"), hasSkill(s.players["home-2"]!, "Blastin' Solves Everything")]).toEqual([true, true]);
     });
 
+    it("Pump Up The Crowd: once per game, a casualty caused by the player's block gives a team re-roll for the drive", () => {
+      const skrorg = withSkills(toFirstTurn(), { "home-2": ["Pump Up The Crowd"] });
+      const s = apply(blockAway2(skrorg), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(5, 5));
+      expect(s.teams.home.driveRerolls).toBe(1);
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Pump Up The Crowd"]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
