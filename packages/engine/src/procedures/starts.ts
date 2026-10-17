@@ -1,5 +1,5 @@
 import type { Ctx, Handler } from "../context";
-import type { GameState, PlayerState, Procedure, Square } from "../types";
+import type { GameState, PlayerActionType, PlayerState, Procedure, Square } from "../types";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt } from "../pitch";
 import { hasSkill } from "../skills";
 import { checkTouchdown, getPlayer, squareOf, useOncePerGame } from "./helpers";
@@ -16,7 +16,19 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   Treacherous: "game",
   "Beer Barrel Bash!": "drive",
   "Blastin' Solves Everything": "half",
+  "Shot to Nothing": "game",
 };
+
+/** Rules that give the player a skill until the end of their activation. */
+const GAINS: Record<string, string> = {
+  "Shot to Nothing": "Hail Mary Pass",
+};
+
+/** The end of the activation (or the start of the next team turn): the skills a rule gave are lost. */
+export function loseGainedSkills(player: PlayerState) {
+  for (const skill of player.gained ?? []) player.skills.splice(player.skills.lastIndexOf(skill), 1);
+  delete player.gained;
+}
 
 /** Baleful Hex works on 2+. */
 export const BALEFUL_HEX_TARGET = 2;
@@ -30,8 +42,9 @@ const ROLLS: Record<string, { target: number; reason: string; always?: boolean }
   "Blastin' Solves Everything": { target: 3, reason: "Blastin' Solves Everything", always: true },
 };
 
-/** Rules without a player to pick, and when they can be used. */
-const UNTARGETED: Record<string, (state: GameState, player: PlayerState) => boolean> = {
+/** Rules without a player to pick, and when they can be used (`action`: the action the player declared). */
+const UNTARGETED: Record<string, (state: GameState, player: PlayerState, action: PlayerActionType) => boolean> = {
+  "Shot to Nothing": (_state, player) => !hasSkill(player, "Hail Mary Pass"),
   // A standing player within 3 squares of the ball on the ground.
   "Catch of the Day": (state, player) => {
     const { ball } = state;
@@ -110,8 +123,8 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
 }
 
 /** The special rules the player may use now, at the start of their activation (see `StartSkill`). */
-export function activationSkills(state: GameState, player: PlayerState): string[] {
-  return Object.keys(PERIODS).filter((skill) => ruleLeft(player, skill) && (UNTARGETED[skill]?.(state, player) ?? targets(state, player, skill).length > 0));
+export function activationSkills(state: GameState, player: PlayerState, action: PlayerActionType): string[] {
+  return Object.keys(PERIODS).filter((skill) => ruleLeft(player, skill) && (UNTARGETED[skill]?.(state, player, action) ?? targets(state, player, skill).length > 0));
 }
 
 /**
@@ -131,6 +144,7 @@ export function activationSkills(state: GameState, player: PlayerState): string[
  *   on a 2 the opposing coach picks a standing player (of either team, not the player) within 3 squares of them to be
  *   hit instead, on a 1 the player is hit. The player hit rolls armour (and is placed prone if it breaks). The
  *   activation ends.
+ * - Shot to Nothing (once per game): the player gains Hail Mary Pass until the end of the activation.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
  *   pick it up, without a roll; the activation goes on.
  */
@@ -175,6 +189,12 @@ export const StartSkill: Handler<P<"StartSkill">> = {
       // `always`: the effect depends on the roll, a failure included.
       if (roll! < needed && !always) return "done";
       proc.stage = "effect";
+    }
+    const gain = GAINS[proc.skill];
+    if (gain) {
+      player.skills.push(gain);
+      player.gained = [...(player.gained ?? []), gain];
+      return "done";
     }
     switch (proc.skill) {
       case "Black Ink":

@@ -474,6 +474,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     standing opponent within 3 squares: on 3+ they are hit; on a 2 the opposing coach picks a standing player (either
     team, not Zzharg) within 3 squares of them to be hit instead; on a 1 Zzharg is hit. The player hit rolls armour, and
     is placed prone if it breaks (dropping the ball). His activation then ends.
+  - Shot to Nothing (Gloriel Summerbloom): once per game, when she is activated, she gains Hail Mary Pass until the end
+    of her activation.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

@@ -14,7 +14,7 @@ import { checkTouchdown, getPlayer, inducementsLeft, inScoringPosition, pickupMo
 import { isStalling } from "./stalling";
 import { TURNS_PER_HALF } from "./game";
 import { teamMateTargets, throwableTeamMates } from "./ttm";
-import { activationSkills } from "./starts";
+import { activationSkills, loseGainedSkills } from "./starts";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -188,6 +188,7 @@ export const Turn: Handler<P<"Turn">> = {
           p.status = "prone";
           p.activated = true;
         }
+        loseGainedSkills(p);
         // Baleful Hex: the player misses this turn.
         if (p.hexed) {
           p.activated = true;
@@ -522,7 +523,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     }
     if (proc.stage === "special") {
       if (proc.ended) return endActivation(ctx, proc, player);
-      if (proc.specialAsked || activationSkills(state, player).length === 0) {
+      if (proc.specialAsked || activationSkills(state, player, proc.action).length === 0) {
         proc.stage = "main";
         return "continue";
       }
@@ -530,7 +531,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const { skill } = ctx.expect(action, "ACTIVATION_SKILL");
       proc.specialAsked = true;
       if (skill === null) return "continue";
-      if (!activationSkills(state, player).includes(skill)) ctx.reject(`${skill} cannot be used now.`);
+      if (!activationSkills(state, player, proc.action).includes(skill)) ctx.reject(`${skill} cannot be used now.`);
       ctx.push({ type: "StartSkill", playerId: player.id, skill, stage: "target" });
       return "continue";
     }
@@ -691,7 +692,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "thirst") return [{ type: "MOVE_INSTEAD", side: player.side, playerId: player.id }];
     if (proc.stage === "carry") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: CARRY_SKILL }];
-    if (proc.stage === "special") return [{ type: "ACTIVATION_SKILL", side: player.side, playerId: player.id, skills: activationSkills(state, player) }];
+    if (proc.stage === "special") return [{ type: "ACTIVATION_SKILL", side: player.side, playerId: player.id, skills: activationSkills(state, player, proc.action) }];
     if (proc.stage === "savagery") {
       const playerIds = lashOutTargets(state, player, proc.action).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: player.side, playerIds, max: 1, min: 1, reason: `Animal Savagery: choose a team-mate for ${player.name} to lash out at` }];
@@ -832,6 +833,7 @@ function endActivation(ctx: Ctx, proc: P<"MoveAction">, player: PlayerState) {
   }
   // I'll Carry You: the partner is put down before anything else.
   if (proc.carry) ctx.push(putDown(ctx, player, proc.carry));
+  loseGainedSkills(player);
   state.activePlayerId = null;
   return "done" as const;
 }

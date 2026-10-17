@@ -105,6 +105,8 @@ export interface PlayerState {
   usedThisGame?: string[];
   /** Once-per-drive special rules used (cleared when the drive ends). */
   usedThisDrive?: string[];
+  /** Skills gained until the end of the activation by a special rule (Shot to Nothing...), lost then. */
+  gained?: string[];
   /** Baleful Hex: cannot be activated during the team's next turn. */
   hexed?: boolean;
   /**

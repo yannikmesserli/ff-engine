@@ -105,6 +105,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  "Shot to Nothing": "Once per game, when activated, gains Hail Mary Pass until the end of the activation.",
   "Blastin' Solves Everything": "Once per half, at the start of the activation, a D6 against a standing opponent within 3 squares: 3+ hits them, a 2 lets the opposing coach pick who is hit nearby, a 1 hits this player; an armour roll for the player hit; the activation ends.",
   "Beer Barrel Bash!": "Once per drive, at the start of the activation, a D6 against a standing opponent within 3 squares: 3+ knocks them down, a 2 does nothing, a 1 makes this player fall over; the activation ends.",
   Treacherous: "Once per game, at the start of the activation, may take the ball from an adjacent team-mate, who is knocked down (no turnover).",

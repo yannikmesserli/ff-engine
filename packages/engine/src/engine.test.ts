@@ -1467,6 +1467,16 @@ describe("engine", () => {
       expect(find(apply(blast, roll(1)), "ROLL")?.reason).toMatch(/^Armour 8\+ \(Home 4\)/);
     });
 
+    it("Shot to Nothing: once per game, the player gains Hail Mary Pass until the end of the activation", () => {
+      const gloriel = edit(withSkills(toFirstTurn(), { "home-4": ["Shot to Nothing"] }), (c) => void (c.ball = { square: { x: 10, y: 4 }, carried: true }));
+      let s = apply(gloriel, declare("home-4", "pass"));
+      expect(types(s)).not.toContain("HAIL_MARY_PASS");
+      s = apply(s, { type: "ACTIVATION_SKILL", skill: "Shot to Nothing" });
+      expect(types(s)).toContain("HAIL_MARY_PASS");
+      s = apply(s, { type: "END_PLAYER_ACTION" });
+      expect(s.players["home-4"]!.skills).toEqual(["Shot to Nothing"]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
