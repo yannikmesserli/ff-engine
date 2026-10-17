@@ -1487,6 +1487,14 @@ describe("engine", () => {
       expect(s.log.filter((e) => e.type === "BlockDeclared")).toHaveLength(2);
     });
 
+    it("Slashing Nails: once per half, declaring a Blitz, the player gains Claws until the end of the activation", () => {
+      const roxanna = withSkills(toFirstTurn(), { "home-2": ["Slashing Nails"] });
+      let s = apply(roxanna, declare("home-2", "blitz", "away-2"), { type: "ACTIVATION_SKILL", skill: "Slashing Nails" });
+      expect(s.players["home-2"]!.skills).toContain("Claws");
+      s = apply(s, { type: "END_PLAYER_ACTION" });
+      expect([s.players["home-2"]!.skills, s.players["home-2"]!.usedThisHalf]).toEqual([["Slashing Nails"], ["Slashing Nails"]]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

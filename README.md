@@ -478,6 +478,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
     of her activation.
   - Frenzied Rush (Glart Smashrip): once per half, declaring a Blitz, he gains Frenzy until the end of his activation
     (Grab, which only works outside a Blitz, cannot be used that turn anyway).
+  - Slashing Nails (Roxanna Darknail): once per half, declaring a Blitz, she gains Claws until the end of her activation.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
