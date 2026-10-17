@@ -19,6 +19,7 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Shot to Nothing": "game",
   "Frenzied Rush": "half",
   "Slashing Nails": "half",
+  Incorporeal: "game",
 };
 
 /** Rules that give the player a skill until the end of their activation. */
@@ -32,6 +33,7 @@ const GAINS: Record<string, string> = {
 export function loseGainedSkills(player: PlayerState) {
   for (const skill of player.gained ?? []) player.skills.splice(player.skills.lastIndexOf(skill), 1);
   delete player.gained;
+  delete player.incorporeal;
 }
 
 /** Baleful Hex works on 2+. */
@@ -51,6 +53,7 @@ const UNTARGETED: Record<string, (state: GameState, player: PlayerState, action:
   "Shot to Nothing": (_state, player) => !hasSkill(player, "Hail Mary Pass"),
   "Frenzied Rush": (_state, player, action) => action === "blitz" && !hasSkill(player, "Frenzy"),
   "Slashing Nails": (_state, player, action) => action === "blitz" && !hasSkill(player, "Claws"),
+  Incorporeal: () => true,
   // A standing player within 3 squares of the ball on the ground.
   "Catch of the Day": (state, player) => {
     const { ball } = state;
@@ -154,6 +157,8 @@ export function activationSkills(state: GameState, player: PlayerState, action: 
  * - Frenzied Rush (once per half): declaring a Blitz, the player gains Frenzy until the end of the activation; they may
  *   not use Grab that turn.
  * - Slashing Nails (once per half): declaring a Blitz, the player gains Claws until the end of the activation.
+ * - Incorporeal (once per game): until the end of the activation, the player makes no Dodge rolls for leaving opponents'
+ *   tackle zones.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
  *   pick it up, without a roll; the activation goes on.
  */
@@ -206,6 +211,9 @@ export const StartSkill: Handler<P<"StartSkill">> = {
       return "done";
     }
     switch (proc.skill) {
+      case "Incorporeal":
+        player.incorporeal = true;
+        return "done";
       case "Black Ink":
       case "Excuse me, are you a Zoat?":
         target.distracted = true;

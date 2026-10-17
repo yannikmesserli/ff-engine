@@ -479,6 +479,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Frenzied Rush (Glart Smashrip): once per half, declaring a Blitz, he gains Frenzy until the end of his activation
     (Grab, which only works outside a Blitz, cannot be used that turn anyway).
   - Slashing Nails (Roxanna Darknail): once per half, declaring a Blitz, she gains Claws until the end of her activation.
+  - Incorporeal (Gretchen Wächter): once per game, when she is activated, she makes no Dodge rolls for leaving
+    opponents' tackle zones until the end of her activation (Rushes, jumps and Shadowing still apply).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

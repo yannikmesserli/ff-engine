@@ -107,6 +107,8 @@ export interface PlayerState {
   usedThisDrive?: string[];
   /** Skills gained until the end of the activation by a special rule (Shot to Nothing...), lost then. */
   gained?: string[];
+  /** Incorporeal is in use: no Dodge rolls until the end of the activation. */
+  incorporeal?: boolean;
   /** Baleful Hex: cannot be activated during the team's next turn. */
   hexed?: boolean;
   /**

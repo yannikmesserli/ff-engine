@@ -1495,6 +1495,16 @@ describe("engine", () => {
       expect([s.players["home-2"]!.skills, s.players["home-2"]!.usedThisHalf]).toEqual([["Slashing Nails"], ["Slashing Nails"]]);
     });
 
+    it("Incorporeal: once per game, no Dodge rolls until the end of the activation", () => {
+      const gretchen = withSkills(toFirstTurn(), { "home-1": ["Incorporeal"] });
+      let s = apply(gretchen, startMove("home-1"), { type: "ACTIVATION_SKILL", skill: "Incorporeal" });
+      expect(find(s, "MOVE")?.squares.find((q) => q.x === 11 && q.y === 5)?.rolls).toEqual([]);
+      s = apply(s, ...move({ x: 11, y: 5 }));
+      expect(s.players["home-1"]!.at).toEqual({ x: 11, y: 5 });
+      s = apply(s, { type: "END_PLAYER_ACTION" });
+      expect(s.players["home-1"]!.incorporeal).toBeUndefined();
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

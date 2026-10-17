@@ -105,6 +105,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  Incorporeal: "Once per game, when activated, makes no Dodge rolls for leaving opponents' tackle zones until the end of the activation.",
   "Slashing Nails": "Once per half, declaring a Blitz, gains Claws until the end of the activation.",
   "Frenzied Rush": "Once per half, declaring a Blitz, gains Frenzy until the end of the activation (and may not use Grab that turn).",
   "Shot to Nothing": "Once per game, when activated, gains Hail Mary Pass until the end of the activation.",

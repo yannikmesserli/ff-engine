@@ -126,7 +126,7 @@ export function legalMoves(state: GameState, player: PlayerState): Array<Square 
   const pickup = (s: Square): CheckKind[] => (ball.square && !ball.carried && sameSquare(ball.square, s) ? ["pickup"] : []);
   const rushes = (squares: number): CheckKind[] =>
     Array.from({ length: Math.max(0, Math.min(squares, player.movesUsed + squares - player.ma)) }, () => "rush" as const);
-  const dodge: CheckKind[] = tackleZones(state, player.side, player.at) > 0 ? ["dodge"] : [];
+  const dodge: CheckKind[] = tackleZones(state, player.side, player.at) > 0 && !player.incorporeal ? ["dodge"] : [];
   const steps = adjacent(player.at)
     .filter((s) => !playerAt(state, s))
     .map((s) => ({ ...s, rolls: [...rushes(1), ...dodge, ...pickup(s)] }));
@@ -1064,7 +1064,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         const leaving = { from: { ...squareOf(ctx, player) }, to: { ...proc.to } };
         if (proc.jump) {
           check("jump", player.ag, jumpModifier(state, player, leaving.from, proc.to), leaving);
-        } else if (!proc.hitAndRun && tackleZones(state, player.side, leaving.from) > 0) {
+        } else if (!proc.hitAndRun && !player.incorporeal && tackleZones(state, player.side, leaving.from) > 0) {
           check("dodge", player.ag, dodgeModifier(state, player, leaving.from, proc.to), leaving);
         }
         return "continue";
