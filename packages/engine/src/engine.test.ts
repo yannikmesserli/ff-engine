@@ -1536,6 +1536,16 @@ describe("engine", () => {
       expect([s.players["home-1"]!.usedThisDrive, types(s).includes("MOVE")]).toEqual([["Raiding Party"], true]);
     });
 
+    it("Sneakiest of the Lot: the player's Foul does not use up the team's Foul action", () => {
+      const gobbo = edit(withSkills(toFirstTurn(), { "home-2": ["Sneakiest of the Lot"] }), (c) => void (c.players["away-2"]!.status = "prone"));
+      // The Gobbo fouls first: another player may still foul.
+      const first = apply(gobbo, declare("home-2", "foul"), { type: "END_PLAYER_ACTION" });
+      expect(actionsOf(first, "home-1")).toContain("foul");
+      // Another player fouls first: the Gobbo may still foul.
+      const second = apply(gobbo, declare("home-1", "foul"), { type: "END_PLAYER_ACTION" });
+      expect([actionsOf(second, "home-2"), actionsOf(second, "home-3")]).toEqual([expect.arrayContaining(["foul"]), expect.not.arrayContaining(["foul"])]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

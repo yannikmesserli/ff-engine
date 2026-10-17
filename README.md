@@ -488,6 +488,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     bounces).
   - I'll Be Back! (Kreek Rustgouger): the first time in a game he would be sent off for a Secret Weapon, he stays in the
     game (no Argue the Call for it).
+  - Sneakiest of the Lot (The Black Gobbo): his Foul action does not use up the team's one Foul action per turn, so
+    the team may foul twice, once with him.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

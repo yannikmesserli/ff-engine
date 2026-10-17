@@ -233,7 +233,8 @@ export const Turn: Handler<P<"Turn">> = {
     if (a.action === "blitz" && !blitzTargets(state, proc.side).some((p) => p.id === a.targetId)) {
       ctx.reject("A Blitz must name a standing opponent as its target.");
     }
-    if (ONCE_PER_TURN.includes(a.action)) proc.used.push(a.action);
+    // Sneakiest of the Lot: the player's Foul does not use up the team's Foul action.
+    if (ONCE_PER_TURN.includes(a.action) && !(a.action === "foul" && hasSkill(player, "Sneakiest of the Lot"))) proc.used.push(a.action);
     proc.acted = true;
     state.activePlayerId = player.id;
     ctx.emit({ type: "ActionDeclared", playerId: player.id, action: a.action, ...(a.targetId ? { targetId: a.targetId } : {}) });
@@ -357,7 +358,7 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   if (free("ktm") && player.status === "standing" && hasSkill(player, "Kick Team-mate") && throwable) actions.push("ktm");
   // A Foul can be declared as long as an opponent is prone or stunned somewhere on the pitch.
   const foulable = teamPlayers(state, other(player.side)).some((o) => isOnPitch(o) && o.status !== "standing");
-  if (free("foul") && foulable) actions.push("foul");
+  if ((free("foul") || hasSkill(player, "Sneakiest of the Lot")) && foulable) actions.push("foul");
   // Bombardier: a Throw Bomb special action, once per turn.
   if (free("bomb") && hasSkill(player, "Bombardier")) actions.push("bomb");
   // Hypnotic Gaze: a special action any number of players may declare each turn.
