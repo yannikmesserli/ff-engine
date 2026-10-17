@@ -1261,6 +1261,13 @@ describe("engine", () => {
       expect(types(apply(down, roll(3, 3)))).not.toContain("USE_SKILL");
     });
 
+    it("Crushing Blow: once per game, +1 to the armour roll of an opponent knocked down by the block, after the roll; not to the injury", () => {
+      const zug = withSkills(toFirstTurn(), { "home-2": ["Crushing Blow"] });
+      const down = apply(blockAway2(zug), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      expect(find(apply(down, roll(3, 4)), "USE_SKILL")?.skill).toBe("Crushing Blow");
+      expect(types(apply(down, roll(6, 6), roll(3, 4)))).not.toContain("USE_SKILL");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

@@ -433,6 +433,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     foul), his coach may have the armour roll rolled again; the new roll stands.
   - Ram (Rumbelow Sheepskin): once per game, +1 to the armour or the injury roll of an opponent knocked down by his
     block, after the roll, as for Slayer.
+  - Crushing Blow (The Mighty Zug): once per game, +1 to the armour roll of an opponent knocked down by his block,
+    after the roll, when it breaks the armour.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

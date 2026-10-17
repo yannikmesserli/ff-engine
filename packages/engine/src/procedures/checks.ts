@@ -290,7 +290,7 @@ function bonusUsed(ctx: Ctx, proc: P<"KnockDown">) {
 /**
  * The blocker's once-per-game bonus to the armour or the injury roll of an opponent their block knocked down, applied
  * after the roll if it changes the result: Slayer (+1 against a Big Guy), Dwarven Scourge (+1, or +2 against a Dwarf),
- * Ram (+1).
+ * Ram (+1), Crushing Blow (+1, to the armour roll only).
  */
 function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState): { skill: string; bonus: number; armourOnly?: boolean } | null {
   const blocker = proc.blockerId === undefined ? undefined : state.players[proc.blockerId];
@@ -299,6 +299,7 @@ function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState):
   if (unused("Slayer") && player.keywords.includes("big guy")) return { skill: "Slayer", bonus: 1 };
   if (unused("Dwarven Scourge")) return { skill: "Dwarven Scourge", bonus: player.keywords.includes("dwarf") ? 2 : 1 };
   if (unused("Ram")) return { skill: "Ram", bonus: 1 };
+  if (unused("Crushing Blow")) return { skill: "Crushing Blow", bonus: 1, armourOnly: true };
   return null;
 }
 
@@ -505,7 +506,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         if (bonus > 0) bonusUsed(ctx, proc);
         proc.injuryRoll = a! + b! + bonus;
         const late = proc.lateUsed ? null : lateBonus(state, proc, player);
-        if (late && injuryOutcome(player, proc.injuryRoll + late.bonus) !== injuryOutcome(player, proc.injuryRoll)) {
+        if (late && !late.armourOnly && injuryOutcome(player, proc.injuryRoll + late.bonus) !== injuryOutcome(player, proc.injuryRoll)) {
           proc.stage = "lateInjury";
           return "wait";
         }
