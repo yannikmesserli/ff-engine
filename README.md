@@ -476,6 +476,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     is placed prone if it breaks (dropping the ball). His activation then ends.
   - Shot to Nothing (Gloriel Summerbloom): once per game, when she is activated, she gains Hail Mary Pass until the end
     of her activation.
+  - Frenzied Rush (Glart Smashrip): once per half, declaring a Blitz, he gains Frenzy until the end of his activation
+    (Grab, which only works outside a Blitz, cannot be used that turn anyway).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

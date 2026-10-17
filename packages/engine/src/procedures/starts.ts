@@ -17,11 +17,13 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Beer Barrel Bash!": "drive",
   "Blastin' Solves Everything": "half",
   "Shot to Nothing": "game",
+  "Frenzied Rush": "half",
 };
 
 /** Rules that give the player a skill until the end of their activation. */
 const GAINS: Record<string, string> = {
   "Shot to Nothing": "Hail Mary Pass",
+  "Frenzied Rush": "Frenzy",
 };
 
 /** The end of the activation (or the start of the next team turn): the skills a rule gave are lost. */
@@ -45,6 +47,7 @@ const ROLLS: Record<string, { target: number; reason: string; always?: boolean }
 /** Rules without a player to pick, and when they can be used (`action`: the action the player declared). */
 const UNTARGETED: Record<string, (state: GameState, player: PlayerState, action: PlayerActionType) => boolean> = {
   "Shot to Nothing": (_state, player) => !hasSkill(player, "Hail Mary Pass"),
+  "Frenzied Rush": (_state, player, action) => action === "blitz" && !hasSkill(player, "Frenzy"),
   // A standing player within 3 squares of the ball on the ground.
   "Catch of the Day": (state, player) => {
     const { ball } = state;
@@ -145,6 +148,8 @@ export function activationSkills(state: GameState, player: PlayerState, action: 
  *   hit instead, on a 1 the player is hit. The player hit rolls armour (and is placed prone if it breaks). The
  *   activation ends.
  * - Shot to Nothing (once per game): the player gains Hail Mary Pass until the end of the activation.
+ * - Frenzied Rush (once per half): declaring a Blitz, the player gains Frenzy until the end of the activation; they may
+ *   not use Grab that turn.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
  *   pick it up, without a roll; the activation goes on.
  */

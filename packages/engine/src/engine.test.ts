@@ -1477,6 +1477,16 @@ describe("engine", () => {
       expect(s.players["home-4"]!.skills).toEqual(["Shot to Nothing"]);
     });
 
+    it("Frenzied Rush: once per half, declaring a Blitz, the player gains Frenzy until the end of the activation", () => {
+      const glart = withSkills(toFirstTurn(), { "home-2": ["Frenzied Rush"] });
+      expect(types(apply(glart, startMove("home-2")))).not.toContain("ACTIVATION_SKILL");
+      let s = apply(glart, declare("home-2", "blitz", "away-2"), { type: "ACTIVATION_SKILL", skill: "Frenzied Rush" });
+      expect(s.players["home-2"]!.skills).toContain("Frenzy");
+      // A Push, then Frenzy's second block.
+      s = apply(s, { type: "BLOCK", targetId: "away-2" }, roll(3), { type: "CHOOSE_BLOCK_DIE", index: 0 }, { type: "PUSH", square: { x: 14, y: 7 } });
+      expect(s.log.filter((e) => e.type === "BlockDeclared")).toHaveLength(2);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
