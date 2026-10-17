@@ -4,7 +4,7 @@ import { passes } from "../dice";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
 import { canTeamReroll, canUsePro, getPlayer, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
-import { injure, injuryOutcome, knockOut } from "./injury";
+import { injure, injuryOutcome, knockOut, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -303,6 +303,9 @@ function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState):
   return null;
 }
 
+/** The opponent whose block knocked the player down, if any. */
+const blockerOf = (state: GameState, proc: P<"KnockDown">) => (proc.blockerId === undefined ? undefined : state.players[proc.blockerId]);
+
 /** Krump and Smash: once per game, the blocker may re-roll the armour roll of an opponent their block knocked down. */
 function armourReroller(state: GameState, proc: P<"KnockDown">, player: PlayerState) {
   const blocker = proc.blockerId === undefined ? undefined : state.players[proc.blockerId];
@@ -529,8 +532,25 @@ export const KnockDown: Handler<P<"KnockDown">> = {
           proc.stage = "lateInjury";
           return "wait";
         }
+        if (!proc.lateUsed && savageMauling(blockerOf(state, proc), player, proc.injuryRoll)) {
+          proc.stage = "injuryReroll";
+          return "wait";
+        }
         // The casualty roll and the apothecary run before the ball bounces.
         injure(ctx, player, proc.injuryRoll, { attackerId: proc.blockerId, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
+        proc.stage = "bounce";
+        return "continue";
+      }
+      case "injuryReroll": {
+        if (action === null) return "wait";
+        if (ctx.expect(action, "USE_SKILL").use) {
+          // Savage Mauling: the injury is rolled again, and the new roll stands.
+          useOncePerGame(ctx, blockerOf(state, proc)!, "Savage Mauling");
+          proc.lateUsed = true;
+          proc.stage = "injury";
+          return "continue";
+        }
+        injure(ctx, player, proc.injuryRoll!, { attackerId: proc.blockerId, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
         proc.stage = "bounce";
         return "continue";
       }
@@ -555,6 +575,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "steady") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Steady Footing" }];
     if (proc.stage === "sabotage") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Saboteur" }];
+    if (proc.stage === "injuryReroll") return [{ type: "USE_SKILL", side: other(player.side), playerId: proc.blockerId!, skill: "Savage Mauling" }];
     if (proc.stage === "armourReroll") return [{ type: "USE_SKILL", side: other(player.side), playerId: proc.blockerId!, skill: "Krump and Smash" }];
     if (proc.stage === "grit") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Dwarfen Grit" }];
     if (proc.stage === "lateArmour" || proc.stage === "lateInjury") {

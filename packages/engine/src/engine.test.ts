@@ -1280,6 +1280,20 @@ describe("engine", () => {
       expect(types(apply(down, roll(1, 1), { type: "USE_SKILL", use: true }, roll(1, 1)))).toContain("START_ACTION");
     });
 
+    it("Savage Mauling: once per game, the player may re-roll an injury roll against an opponent; the new roll stands", () => {
+      const wilhelm = withSkills(toFirstTurn(), { "home-2": ["Savage Mauling"] });
+      const broken = apply(blockAway2(wilhelm), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6));
+      let s = apply(broken, roll(3, 4));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Savage Mauling" });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(find(s, "ROLL")?.reason).toBe("Injury");
+      s = apply(s, roll(6, 5));
+      expect(s.log).toContainEqual({ type: "PlayerInjured", playerId: "away-2", result: "cas" });
+      // Not offered on a casualty; declined, the first roll stands.
+      expect(types(apply(broken, roll(5, 5)))).not.toContain("USE_SKILL");
+      expect(apply(broken, roll(3, 4), { type: "USE_SKILL", use: false }).players["away-2"]!.status).toBe("stunned");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

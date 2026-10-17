@@ -2,11 +2,11 @@ import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, chompHolds, hasTackleZone, inBounds, isOnPitch, isPinned, isRooted, playerAt, sameSquare, tackleZoneAt, tackleZones } from "../pitch";
 import { BLOCK_FACES } from "../dice";
-import { hatedKeywords, injure } from "./injury";
+import { hatedKeywords, injure, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
 import { hasSkill, skillName, skillValue } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -1104,14 +1104,34 @@ export const Vomit: Handler<P<"Vomit">> = {
         const victim = getPlayer(ctx, proc.victimId!);
         const square = squareOf(ctx, victim);
         const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury");
+        proc.injuryRoll = a! + b!;
+        if (!proc.mauled && savageMauling(attacker, victim, proc.injuryRoll)) {
+          proc.stage = "injuryReroll";
+          return "wait";
+        }
         // The ball bounces once the injury is resolved.
         if (proc.dropped) ctx.push(dropBall(victim, square));
-        injure(ctx, victim, a! + b!, { byId: proc.attackerId, ...specialActionSpp(state, proc, victim) });
+        injure(ctx, victim, proc.injuryRoll, { byId: proc.attackerId, ...specialActionSpp(state, proc, victim) });
+        return "done";
+      }
+      case "injuryReroll": {
+        if (action === null) return "wait";
+        const victim = getPlayer(ctx, proc.victimId!);
+        proc.mauled = true;
+        if (ctx.expect(action, "USE_SKILL").use) {
+          // Savage Mauling: the injury is rolled again, and the new roll stands.
+          useOncePerGame(ctx, attacker, "Savage Mauling");
+          proc.stage = "injury";
+          return "continue";
+        }
+        if (proc.dropped) ctx.push(dropBall(victim, squareOf(ctx, victim)));
+        injure(ctx, victim, proc.injuryRoll!, { byId: proc.attackerId, ...specialActionSpp(state, proc, victim) });
         return "done";
       }
     }
   },
   actions(state, proc) {
+    if (proc.stage === "injuryReroll") return [{ type: "USE_SKILL", side: state.players[proc.attackerId]!.side, playerId: proc.attackerId, skill: "Savage Mauling" }];
     if (proc.stage !== "armour" && proc.stage !== "injury") return [];
     const victim = state.players[proc.victimId!]!;
     const reason = proc.stage === "armour" ? `Armour ${victim.av}+ (${victim.name}, ${attackName(proc)})` : `Injury (${victim.name})`;

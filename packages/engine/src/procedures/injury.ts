@@ -273,6 +273,14 @@ function place(ctx: Ctx, player: PlayerState, proc: P<"Injury">) {
   }
 }
 
+/**
+ * Savage Mauling: once per game, the attacker may re-roll their injury roll against an opponent (offered unless it is
+ * already a casualty; the new roll stands).
+ */
+export const savageMauling = (attacker: PlayerState | undefined, victim: PlayerState, total: number) =>
+  !!attacker && attacker.side !== victim.side && hasSkill(attacker, "Savage Mauling") && !attacker.usedThisGame?.includes("Savage Mauling") &&
+  injuryOutcome(victim, total) !== "casualty";
+
 /** Getting Even: the casualties that give the player a chance to gain Hatred. */
 const GETTING_EVEN_CASUALTIES = ["seriously-hurt", "serious-injury", "lasting-injury"];
 

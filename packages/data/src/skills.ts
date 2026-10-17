@@ -104,6 +104,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Consummate Professional": "Once per game, may apply a +1 modifier to an Agility Test, after the roll has been made.",
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
+  "Savage Mauling": "Once per game, may re-roll an injury roll this player makes against an opponent.",
   "Krump and Smash": "Once per game, may re-roll the armour roll of an opponent knocked down by this player's block.",
   "Crushing Blow": "Once per game, +1 to the armour roll of an opponent knocked down by this player's block, after the roll.",
   Ram: "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block, after the roll.",

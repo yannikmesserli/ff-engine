@@ -2,7 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerState, Procedure, Square, TeamState } from "../types";
 import { adjacent, ballCarrier, isOnPitch, playerAt, tackleZoneAt } from "../pitch";
 import { ARMOUR_DICE, dwarfenGrit } from "./checks";
-import { injure } from "./injury";
+import { injure, savageMauling } from "./injury";
 import { hasSkill } from "../skills";
 import { getPlayer, squareOf, useOncePerGame } from "./helpers";
 import { dropBall } from "./ball";
@@ -167,9 +167,34 @@ export const Foul: Handler<P<"Foul">> = {
       case "injury": {
         if (action === null) return "wait";
         proc.injury = ctx.roll(action, [...ARMOUR_DICE], "Injury");
+        if (savageMauling(fouler, victim, proc.injury[0]! + proc.injury[1]! + injuryModifier(fouler, proc))) {
+          proc.stage = "mauling";
+          return "wait";
+        }
+        proc.stage = "injured";
+        return "continue";
+      }
+      case "mauling": {
+        if (action === null) return "wait";
+        if (ctx.expect(action, "USE_SKILL").use) {
+          // Savage Mauling: the injury is rolled again, and the new roll stands (the referee looks at the new dice).
+          useOncePerGame(ctx, fouler, "Savage Mauling");
+          proc.stage = "injuryAgain";
+          return "wait";
+        }
+        proc.stage = "injured";
+        return "continue";
+      }
+      case "injuryAgain": {
+        if (action === null) return "wait";
+        proc.injury = ctx.roll(action, [...ARMOUR_DICE], "Injury");
+        proc.stage = "injured";
+        return "continue";
+      }
+      case "injured": {
         // Fouling Frenzy (a prayer): a casualty caused by a foul earns the fouler Star Player Points.
         const frenzy = state.teams[fouler.side].prayers.includes("fouling-frenzy");
-        injure(ctx, victim, proc.injury[0]! + proc.injury[1]! + injuryModifier(fouler, proc), { byId: fouler.id, ...(frenzy ? { sppTo: [fouler.id] } : {}) });
+        injure(ctx, victim, proc.injury![0]! + proc.injury![1]! + injuryModifier(fouler, proc), { byId: fouler.id, ...(frenzy ? { sppTo: [fouler.id] } : {}) });
         proc.stage = "referee";
         return "continue";
       }
@@ -272,7 +297,10 @@ export const Foul: Handler<P<"Foul">> = {
       case "grit":
         return [{ type: "USE_SKILL", side: victim.side, playerId: victim.id, skill: "Dwarfen Grit" }];
       case "injury":
+      case "injuryAgain":
         return [{ type: "ROLL", side, dice: [...ARMOUR_DICE], reason: injuryModifier(fouler, proc) ? "Injury (+1 Dirty Player)" : "Injury" }];
+      case "mauling":
+        return [{ type: "USE_SKILL", side, playerId: fouler.id, skill: "Savage Mauling" }];
       case "biasedReferee":
         return [{ type: "ROLL", side: victim.side, dice: [{ kind: "d6", count: 1 }], reason: `Biased Referee ${BIASED_REFEREE_TARGET}+ (foul by ${fouler.name})` }];
       case "argue":

@@ -437,6 +437,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     after the roll, when it breaks the armour.
   - Krump and Smash (Varag Ghoul-Chewer): once per game, the armour roll of an opponent knocked down by his block may
     be re-rolled when it holds; the new roll stands.
+  - Savage Mauling (Wilhelm Chaney): once per game, he may re-roll an injury roll he makes against an opponent (his
+    block's knock-down, a foul, a special action), unless it is already a casualty; the new roll stands.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

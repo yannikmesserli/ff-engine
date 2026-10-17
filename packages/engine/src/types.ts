@@ -668,8 +668,8 @@ export type Procedure =
       /** "chainsaw": the fouler may use their Chainsaw (a kick-back roll first, then +3 to the armour roll). */
       /** "biasedReferee": the victim's team's Biased Referee may spot a foul the referee missed. */
       /** "loneFouler": the fouler may re-roll the armour roll with Lone Fouler. */
-      /** "grit": the fouled player may use Dwarfen Grit on their broken armour (`grit` once asked). */
-      stage: "chainsaw" | "kickback" | "armour" | "loneFouler" | "grit" | "injury" | "referee" | "biasedReferee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
+      /** "grit": the fouled player may use Dwarfen Grit on their broken armour (`grit` once asked). "mauling": Savage Mauling. */
+      stage: "chainsaw" | "kickback" | "armour" | "loneFouler" | "grit" | "injury" | "mauling" | "injuryAgain" | "injured" | "referee" | "biasedReferee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
       grit?: boolean;
       /** The Chainsaw is used for this foul. */
       chainsaw?: boolean;
@@ -753,7 +753,10 @@ export type Procedure =
       attackerId: string;
       defenderId: string;
       blitz: boolean;
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "trickster" | "roll" | "result" | "armour" | "injury";
+      /** "injuryReroll": the attacker may re-roll the injury roll (`injuryRoll`) with Savage Mauling. */
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "trickster" | "roll" | "result" | "armour" | "injury" | "injuryReroll";
+      injuryRoll?: number;
+      mauled?: boolean;
       /** Who the vomit hits: the defender, or the attacker after a failed roll. */
       victimId?: string;
       /** The victim held the ball when placed prone. */
@@ -933,7 +936,7 @@ export type Procedure =
       /** Dwarfen Grit: the player's broken armour was re-rolled ("grit": asked). */
       grit?: boolean;
       /** "sabotage": the player may use Saboteur; "sabotageRoll": its D6. */
-      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "lateArmour" | "armourReroll" | "grit" | "injury" | "lateInjury" | "bounce";
+      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "lateArmour" | "armourReroll" | "grit" | "injury" | "lateInjury" | "injuryReroll" | "bounce";
       square?: Square;
       hadBall?: boolean;
     };
