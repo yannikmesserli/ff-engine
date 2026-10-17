@@ -1,8 +1,8 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerState, Procedure, Square } from "../types";
-import { adjacent, hasTackleZone, isOnPitch, playerAt } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, isOnPitch, playerAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { getPlayer, useOncePerGame } from "./helpers";
+import { checkTouchdown, getPlayer, squareOf, useOncePerGame } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -11,6 +11,7 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Black Ink": "game",
   "Excuse me, are you a Zoat?": "game",
   "Baleful Hex": "game",
+  "Look Into My Eyes": "game",
 };
 
 /** Baleful Hex works on 2+. */
@@ -19,7 +20,14 @@ export const BALEFUL_HEX_TARGET = 2;
 /** The D6 a start-of-activation rule rolls after its target is picked, if any. */
 const ROLLS: Record<string, { target: number; reason: string }> = {
   "Baleful Hex": { target: BALEFUL_HEX_TARGET, reason: "Baleful Hex" },
+  "Look Into My Eyes": { target: 2, reason: "Look Into My Eyes" },
 };
+
+/** The rule ends the player's activation: their action goes no further. */
+function endActivation(state: GameState, player: PlayerState) {
+  const move = state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === player.id);
+  if (move) move.ended = true;
+}
 
 /** The player may still use the rule this game, half or drive. */
 export function ruleLeft(player: PlayerState, skill: string): boolean {
@@ -64,6 +72,8 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
       return opponentsWithin(state, player, 3).filter((p) => hasTackleZone(p));
     case "Baleful Hex":
       return opponentsWithin(state, player, 5);
+    case "Look Into My Eyes":
+      return marked(state, player).filter((p) => ballCarrier(state)?.id === p.id);
     default:
       return [];
   }
@@ -80,6 +90,8 @@ export function activationSkills(state: GameState, player: PlayerState): string[
  * - "Excuse me, are you a Zoat?" (once per game): an opponent within 3 squares (with a tackle zone) becomes Distracted.
  * - Baleful Hex (once per game): a D6 against an opponent within 5 squares: on 2+ they become Distracted and cannot be
  *   activated during their team's next turn.
+ * - Look Into My Eyes (once per game): a D6 against the opponent with the ball the player marks: on 2+ the player takes
+ *   the ball, and their activation ends.
  */
 export const StartSkill: Handler<P<"StartSkill">> = {
   step(ctx, proc, action) {
@@ -117,6 +129,12 @@ export const StartSkill: Handler<P<"StartSkill">> = {
         target.distracted = true;
         target.hexed = true;
         ctx.emit({ type: "DistractedBy", playerId: target.id, byId: player.id, skill: proc.skill });
+        return "done";
+      case "Look Into My Eyes":
+        state.ball = { square: { ...squareOf(ctx, player) }, carried: true };
+        ctx.emit({ type: "BallStolen", playerId: player.id, fromId: target.id, skill: proc.skill });
+        checkTouchdown(ctx, player);
+        endActivation(state, player);
         return "done";
     }
     return "done";

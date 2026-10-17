@@ -398,6 +398,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} is no longer a frog.`;
     case "SkillUsed":
       return `${who(state, e.playerId)} uses ${e.skill}${SKILL_USES[e.skill] ? ` ${SKILL_USES[e.skill]}` : ""}.`;
+    case "BallStolen":
+      return `${who(state, e.playerId)} uses ${e.skill} and takes the ball from ${who(state, e.fromId)}!`;
     case "DistractedBy":
       return `${who(state, e.byId)}'s ${e.skill}: ${who(state, e.playerId)} is distracted until their next activation (no tackle zone).`;
     case "PlayerDistracted":

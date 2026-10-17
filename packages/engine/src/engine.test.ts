@@ -1397,6 +1397,18 @@ describe("engine", () => {
       expect(find(s, "START_ACTION")?.choices.map((c) => c.playerId)).toContain("away-4");
     });
 
+    it("Look Into My Eyes: once per game, on 2+ the player takes the ball from the opponent they mark, and the activation ends", () => {
+      const boa = edit(withSkills(toFirstTurn(), { "home-2": ["Look Into My Eyes"] }), (c) => void (c.ball = { square: { x: 13, y: 7 }, carried: true }));
+      const eyes = apply(boa, startMove("home-2"), { type: "ACTIVATION_SKILL", skill: "Look Into My Eyes" }, { type: "SELECT_PLAYERS", playerIds: ["away-2"] });
+      let s = apply(eyes, roll(2));
+      expect(s.ball).toEqual({ square: { x: 12, y: 7 }, carried: true });
+      expect(s.log).toContainEqual({ type: "BallStolen", playerId: "home-2", fromId: "away-2", skill: "Look Into My Eyes" });
+      expect([s.activePlayerId, s.players["home-2"]!.activated]).toEqual([null, true]);
+      // On a 1 nothing happens, and the activation goes on.
+      s = apply(eyes, roll(1));
+      expect([s.ball.square, types(s).includes("MOVE")]).toEqual([{ x: 13, y: 7 }, true]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

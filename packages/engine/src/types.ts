@@ -1308,6 +1308,8 @@ export type GameEvent =
   | { type: "SkillUsed"; playerId: string; skill: string }
   /** Failed a Bone Head or Really Stupid roll: the action is lost and the player is distracted. */
   | { type: "PlayerDistracted"; playerId: string; skill: string }
+  /** A special rule (Look Into My Eyes...) took the ball from `fromId` to `playerId`. */
+  | { type: "BallStolen"; playerId: string; fromId: string; skill: string }
   /** A special rule of `byId` made the player Distracted (Black Ink...). */
   | { type: "DistractedBy"; playerId: string; byId: string; skill: string }
   /** Failed a Bloodlust roll: the player must feed on a Thrall before the action ends. */

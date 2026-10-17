@@ -461,6 +461,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     squares (with a tackle zone) becomes Distracted.
   - Baleful Hex (Estelle la Veneaux): once per game, at the start of her activation, a D6 against an opponent within 5
     squares: on 2+ they become Distracted and cannot be activated during their team's next turn.
+  - Look Into My Eyes (Boa Kon'ssstriktr): once per game, starting his activation marking the opposing ball carrier, a
+    D6: on 2+ he takes the ball and his activation ends; on a 1 nothing happens.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
