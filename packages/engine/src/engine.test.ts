@@ -1294,6 +1294,17 @@ describe("engine", () => {
       expect(apply(broken, roll(3, 4), { type: "USE_SKILL", use: false }).players["away-2"]!.status).toBe("stunned");
     });
 
+    it("Lord of Chaos: once per game, the attacker may re-roll any one block die", () => {
+      const borak = withSkills(toFirstTurn(), { "home-2": ["Lord of Chaos"] });
+      let s = apply(blockAway2(borak), roll(1));
+      expect(find(s, "USE_SKILL")?.skill).toBe("Lord of Chaos");
+      s = apply(s, { type: "USE_SKILL", use: true, skill: "Lord of Chaos" }, { type: "REROLL_BLOCK_DIE", index: 0 });
+      expect(find(s, "ROLL")?.reason).toBe("Lord of Chaos (re-roll a block die)");
+      s = apply(s, roll(6));
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Lord of Chaos"]);
+      expect(s.log).toContainEqual({ type: "BlockResult", attackerId: "home-2", defenderId: "away-2", face: 6 });
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

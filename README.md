@@ -443,6 +443,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     new roll stands.
   - Toxin Connoisseur (Rashnak Backstabber): once per game, +1 to the injury roll of his Stab, after the roll, when it
     changes the result.
+  - Lord of Chaos (Lord Borak the Despoiler): once per game, when he blocks an opponent, he may re-roll any one block
+    die of his choice, as the block's one re-roll.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

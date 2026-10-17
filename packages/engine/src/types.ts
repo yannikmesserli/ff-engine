@@ -691,8 +691,8 @@ export type Procedure =
       taunted?: boolean;
       /** Pro (or Unstoppable Momentum): the index of the block die to re-roll. */
       proDie?: number;
-      /** Unstoppable Momentum re-rolls the die picked, without a Pro roll. */
-      momentum?: boolean;
+      /** The skill re-rolling the die picked without a Pro roll (Unstoppable Momentum, Lord of Chaos...). */
+      dieSkill?: string;
       /** A team re-roll was spent on a failed Pro roll. */
       proRetried?: boolean;
       /** The skill re-rolling a single die (Brawler: a Both Down, Hatred: a Skull). */
