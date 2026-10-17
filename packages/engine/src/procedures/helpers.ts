@@ -156,6 +156,12 @@ export function checkTouchdown(ctx: Ctx, player: PlayerState) {
   state.touchdown = player.side;
   player.spp.touchdowns += 1;
   ctx.emit({ type: "Touchdown", side: player.side, playerId: player.id });
+  // Star of the Show: once per game, scoring gives the team a team re-roll for the next drive.
+  if (hasSkill(player, "Star of the Show") && !player.usedThisGame?.includes("Star of the Show")) {
+    useOncePerGame(ctx, player, "Star of the Show");
+    const team = state.teams[player.side];
+    team.nextDriveRerolls = (team.nextDriveRerolls ?? 0) + 1;
+  }
 }
 
 /** End of a drive: drive-long effects expire (exhaustion from the previous drive, Dodgy Snack, kick-off bonuses). */
@@ -171,7 +177,9 @@ export function endDrive(ctx: Ctx) {
     }
   }
   for (const team of Object.values(state.teams)) {
-    team.driveRerolls = 0;
+    // Star of the Show: the re-roll earned in the drive is for the next one.
+    team.driveRerolls = team.nextDriveRerolls ?? 0;
+    delete team.nextDriveRerolls;
     team.extraAssist = false;
   }
 }

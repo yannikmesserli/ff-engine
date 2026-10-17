@@ -496,6 +496,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     (against a Defender Stumbles; Tackle still cancels it).
   - Pump Up The Crowd (Skrorg Snowpelt): once per game, when his block causes an opponent a casualty, his team gains a
     team re-roll until the end of the drive.
+  - Star of the Show (Count Luthor von Drakenborg): once per game, when he scores a touchdown, his team gains a team
+    re-roll until the end of the next drive.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

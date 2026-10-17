@@ -107,6 +107,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  "Star of the Show": "Once per game, when this player scores a touchdown, the team gains a team re-roll until the end of the next drive.",
   "Pump Up The Crowd": "Once per game, when this player's block causes an opponent a casualty, the team gains a team re-roll until the end of the drive.",
   "Watch Out!": "The first time each drive this player is blocked by an opponent, they count as having Dodge.",
   "A Sneaky Pair": "When this player fouls or stabs an opponent marked by both of the pair, +1 to the roll (the armour roll if it needs it, otherwise the injury roll).",

@@ -159,6 +159,8 @@ export interface TeamState {
   rerollsPerHalf: number;
   /** Extra re-rolls for the current drive only (Brilliant Coaching). Used before the normal ones. */
   driveRerolls: number;
+  /** Star of the Show: re-rolls for the next drive only. */
+  nextDriveRerolls?: number;
   /**
    * Leader: the players with the skill on the pitch at the half's first kick-off. While one of them is on the pitch,
    * the team has one more team re-roll for the half (`leaderUsed` once spent), kept into overtime.

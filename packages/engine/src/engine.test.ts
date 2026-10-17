@@ -990,6 +990,15 @@ describe("engine", () => {
         return apply(s, startMove("home-6"), ...move({ x: 25, y: 3 }));
       };
 
+      it("Star of the Show: once per game, scoring gives the team a team re-roll for the next drive", () => {
+        const s = score((c) => {
+          c.players["home-1"]!.skills = [];
+          c.players["home-2"]!.skills = [];
+          c.players["home-6"]!.skills = ["Star of the Show"];
+        });
+        expect([s.teams.home.driveRerolls, s.players["home-6"]!.usedThisGame]).toEqual([1, ["Star of the Show"]]);
+      });
+
       it("I'll Be Back!: the first time the player would be sent off, they stay", () => {
         const s = score((c) => c.players["home-1"]!.skills.push("I'll Be Back!"));
         expect(s.log.filter((e) => e.type === "SecretWeaponSpotted").map((e) => e.type === "SecretWeaponSpotted" && e.playerId)).toEqual(["home-2"]);
