@@ -104,6 +104,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Consummate Professional": "Once per game, may apply a +1 modifier to an Agility Test, after the roll has been made.",
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
+  "Black Ink": "Once per game, at the start of an activation, an opponent this player marks becomes Distracted until their next activation.",
   "Gored by the Bull": "Once per game, when blocking during a Blitz, may roll one more block die (up to 3), for a Frenzy second block too.",
   "Savage Blow": "Once per game, when blocking an opponent, may re-roll any number of the block dice.",
   "Working in Tandem": "Working in Tandem(block): may re-roll a single block die against an opponent also marked by the partner. Working in Tandem(pass): no range modifier on a pass to the partner's square.",

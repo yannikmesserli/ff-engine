@@ -55,6 +55,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   CHOOSE_KEYWORD: "Getting Even: choose the keyword the injured player rolls (4+) to gain Hatred against",
   BUY_INDUCEMENTS: "pre-game shop: buy inducements",
   THROW_A_ROCK: "Throw a Rock (once per game): a random standing opponent is knocked down on 4+",
+  ACTIVATION_SKILL: "use a special rule at the start of the activation, or go on with the action",
   CAST_SPELL: "Wizard (once per game): cast a spell now, or keep the wizard for later",
   DWARFEN_WISDOM: "Josef Bugman's Dwarfen Wisdom (once per game): roll a D3 and set up that many of your players again?",
   FIREBALL: "Fireball: click the centre of the 3x3 area to hit (each player in it is hit on 4+)",
@@ -357,6 +358,16 @@ export function ActionPanel(props: ActionPanelProps) {
           <>
             <button onClick={() => dispatch({ type: "THROW_A_ROCK", use: true })}>Throw a Rock</button>
             <button onClick={() => dispatch({ type: "THROW_A_ROCK", use: false })}>Keep it for later</button>
+          </>
+        )}
+        {findTemplate(templates, "ACTIVATION_SKILL") && (
+          <>
+            {findTemplate(templates, "ACTIVATION_SKILL")!.skills.map((skill) => (
+              <button key={skill} onClick={() => dispatch({ type: "ACTIVATION_SKILL", skill })}>
+                {skill}
+              </button>
+            ))}
+            <button onClick={() => dispatch({ type: "ACTIVATION_SKILL", skill: null })}>Go on with the action</button>
           </>
         )}
         {has("DWARFEN_WISDOM") && (

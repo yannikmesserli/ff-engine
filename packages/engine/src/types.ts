@@ -103,6 +103,8 @@ export interface PlayerState {
   /** Once-per-half and once-per-game skills used: "I'll Carry You" (cleared at each half), "The Ballista". */
   usedThisHalf?: string[];
   usedThisGame?: string[];
+  /** Once-per-drive special rules used (cleared when the drive ends). */
+  usedThisDrive?: string[];
   /**
    * Failed a Bone Head or Really Stupid roll: no tackle zone, cannot catch, intercept or assist, until the player's
    * next activation or the end of the drive.
@@ -466,6 +468,8 @@ export type Procedure =
   | { type: "Trapdoor"; playerId: string; stage: "roll" | "result" | "injury"; sppTo?: string[] }
   /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
+  /** A special rule used at the start of an activation (Black Ink...): its target, rolls and effect. */
+  | { type: "StartSkill"; playerId: string; skill: string; stage: "target" | "roll" | "effect"; targetId?: string }
   /** A killed opponent joins the team (Plague Ridden, Masters of Undeath): its coach picks among several positions. */
   | { type: "RaiseDead"; side: Side; deadId: string; undead: boolean }
   /**
@@ -567,7 +571,11 @@ export type Procedure =
        * action instead; "root": after the Take Root roll.
        */
       /** "carry": the player may pick up their partner (I'll Carry You). */
-      stage: "start" | "confusion" | "savagery" | "thirst" | "root" | "standup" | "carry" | "main";
+      /** "special": a special rule used at the start of the activation may be used (see `activationSkills`). */
+      stage: "start" | "confusion" | "savagery" | "thirst" | "root" | "standup" | "carry" | "special" | "main";
+      /** The start-of-activation rules were offered; `ended`: one of them ended the activation. */
+      specialAsked?: boolean;
+      ended?: boolean;
       /** I'll Carry You: the partner picked up, as they were, and the skills the carrier gained for the activation. */
       carry?: { playerId: string; status: PlayerStatus; hadBall: boolean; skills: string[] };
       /** "block" only allows a single block; "blitz" a move with one block of `targetId` on the way. */
@@ -1049,6 +1057,8 @@ export type Action =
   | { type: "THROW_A_ROCK"; use: boolean }
   /** Wizard: the spell to cast (null: keep the wizard for later). */
   | { type: "CAST_SPELL"; spell: Spell | null }
+  /** A special rule to use at the start of the activation, or null to go on with the action. */
+  | { type: "ACTIVATION_SKILL"; skill: string | null }
   /** Josef Bugman: use Dwarfen Wisdom before this kick-off, or keep it. */
   | { type: "DWARFEN_WISDOM"; use: boolean }
   /** Wizard: the centre square of a Fireball. */
@@ -1120,6 +1130,8 @@ export type ActionTemplate =
   /** Wizard: the spells the coach may cast now (or keep the wizard, with null). */
   | { type: "CAST_SPELL"; side: Side; spells: Spell[] }
   | { type: "DWARFEN_WISDOM"; side: Side }
+  /** The special rules the active player may use at the start of their activation. */
+  | { type: "ACTIVATION_SKILL"; side: Side; playerId: string; skills: string[] }
   /** Fireball: the squares it may be centred on (a player on it or next to it). */
   | { type: "FIREBALL"; side: Side; squares: Square[] }
   /** Zap!: the players it may target. */
@@ -1293,6 +1305,8 @@ export type GameEvent =
   | { type: "SkillUsed"; playerId: string; skill: string }
   /** Failed a Bone Head or Really Stupid roll: the action is lost and the player is distracted. */
   | { type: "PlayerDistracted"; playerId: string; skill: string }
+  /** A special rule of `byId` made the player Distracted (Black Ink...). */
+  | { type: "DistractedBy"; playerId: string; byId: string; skill: string }
   /** Failed a Bloodlust roll: the player must feed on a Thrall before the action ends. */
   | { type: "PlayerThirsty"; playerId: string }
   /** Bloodlust: `playerId` bites the Thrall `victimId`. */

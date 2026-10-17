@@ -454,6 +454,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
     as the block's one re-roll.
   - Gored by the Bull (Grashnak Blackhoof): once per game, when he blocks during a Blitz and picks the die, he may roll
     one more block die (up to 3); a Frenzy second block of that Blitz gets it too.
+  - Black Ink (Kiroth Krakeneye): once per game, at the start of one of his activations, an opponent he marks becomes
+    Distracted until their next activation. Rules like this one are offered when the activation starts, after any
+    stand-up, next to going on with the action.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

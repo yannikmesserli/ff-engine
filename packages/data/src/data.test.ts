@@ -358,6 +358,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "CHOOSE_KEYWORD", keyword: pick(t.keywords) };
     case "THROW_A_ROCK":
       return { type: "THROW_A_ROCK", use: random() < 0.3 };
+    case "ACTIVATION_SKILL":
+      return { type: "ACTIVATION_SKILL", skill: random() < 0.5 ? pick(t.skills) : null };
     case "DWARFEN_WISDOM":
       return { type: "DWARFEN_WISDOM", use: random() < 0.5 };
     case "CAST_SPELL":

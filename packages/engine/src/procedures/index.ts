@@ -17,6 +17,7 @@ import { Shop } from "./shop";
 import { EndGame } from "./endgame";
 import { ThrowTeamMate } from "./ttm";
 import { Wizard } from "./wizard";
+import { StartSkill } from "./starts";
 import { Gaze, HitAndRun, MoveAction, MoveStep, OnTheBall, PickMeUp, Shadow, Tentacles, Turn, WeatherMage } from "./turn";
 
 /** Every procedure type's handler; `HandlerMap` makes a missing one a type error. */
@@ -33,6 +34,7 @@ export const handlers: HandlerMap = {
   MasterChef,
   ThrowRock,
   Wizard,
+  StartSkill,
   Setup,
   Kickoff,
   KickoffEvent,

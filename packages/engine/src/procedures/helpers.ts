@@ -150,6 +150,7 @@ export function endDrive(ctx: Ctx) {
   const { state } = ctx;
   for (const p of Object.values(state.players)) {
     p.exhausted = false;
+    delete p.usedThisDrive;
     if (p.snack) {
       p.ma = p.snack.ma;
       p.av = p.snack.av;

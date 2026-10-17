@@ -397,6 +397,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return `${who(state, e.playerId)} is no longer a frog.`;
     case "SkillUsed":
       return `${who(state, e.playerId)} uses ${e.skill}${SKILL_USES[e.skill] ? ` ${SKILL_USES[e.skill]}` : ""}.`;
+    case "DistractedBy":
+      return `${who(state, e.byId)}'s ${e.skill}: ${who(state, e.playerId)} is distracted until their next activation (no tackle zone).`;
     case "PlayerDistracted":
       return `${who(state, e.playerId)} fails the ${e.skill} roll: the action is lost, and they are distracted (no tackle zone) until their next action.`;
     case "PlayerThirsty":

@@ -1358,6 +1358,21 @@ describe("engine", () => {
       expect(find(blockAway2(grashnak()), "ROLL")?.dice).toEqual([{ kind: "block", count: 1 }]);
     });
 
+    it("Black Ink: once per game, at the start of an activation, an opponent the player marks becomes Distracted", () => {
+      const kiroth = withSkills(toFirstTurn(), { "home-1": ["Black Ink"] });
+      let s = apply(kiroth, startMove("home-1"));
+      expect(getAvailableActions(s)).toEqual([{ type: "ACTIVATION_SKILL", side: "home", playerId: "home-1", skills: ["Black Ink"] }]);
+      s = apply(s, { type: "ACTIVATION_SKILL", skill: "Black Ink" });
+      expect(find(s, "SELECT_PLAYERS")?.playerIds).toEqual(["away-1", "away-2"]);
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-2"] });
+      expect(s.players["away-2"]!.distracted).toBe(true);
+      expect(s.log).toContainEqual({ type: "DistractedBy", playerId: "away-2", byId: "home-1", skill: "Black Ink" });
+      expect(types(s)).toContain("MOVE");
+      // Going on without it keeps it for later.
+      const kept = apply(kiroth, startMove("home-1"), { type: "ACTIVATION_SKILL", skill: null });
+      expect([types(kept).includes("MOVE"), kept.players["home-1"]!.usedThisGame]).toEqual([true, undefined]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
