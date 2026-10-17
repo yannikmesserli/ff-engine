@@ -92,13 +92,15 @@ export const SCENARIOS: Scenario[] = [
       "Home's first turn. Click Gunther (#1, Pro) and declare a Block on the orc in front of him: 2 dice, you choose (the lineman above him assists).",
       "Click \"Physical dice\" and enter 1 and 1: two Skulls.",
       "Click \"Re-roll with Pro (3+)\", pick the die to re-roll, then roll the Pro D6 (3+) and the new block die.",
-      "Enter 1 or 2 for the Pro D6 to fail it: a team re-roll is then offered to roll Pro again.",
+      "Enter 1 or 2 for the Pro D6 to fail it: a team re-roll, or the Team Mascot the team bought, is then offered to roll Pro again.",
+      "Pick the Team Mascot: on 4+ Pro is rolled again without spending a team re-roll; on a failure, the team re-roll is still offered.",
     ],
     home: {
       name: "Altdorf Pros",
       roster: "Human",
       rerolls: 2,
       journeymen: false,
+      inducements: { teamMascot: 1 },
       players: [
         { number: 1, name: "Gunther", position: "Human Lineman", skills: ["Pro"] },
         { number: 2, name: "Hans", position: "Human Lineman" },

@@ -124,6 +124,11 @@ describe("scenarios", () => {
     s = step(s, { type: "BLOCK", targetId: "away-1" }).state;
     s = step(s, { type: "ROLL", values: [1, 1] }).state;
     expect(getAvailableActions(s).some((t) => t.type === "USE_SKILL" && t.skill === "Pro")).toBe(true);
+    // A failed Pro roll: the Team Mascot may roll it again.
+    s = step(s, { type: "USE_SKILL", use: true, skill: "Pro" }).state;
+    s = step(s, { type: "REROLL_BLOCK_DIE", index: 0 }).state;
+    s = step(s, { type: "ROLL", values: [1] }).state;
+    expect(find(s, "USE_REROLL")?.mascot).toBe(true);
   });
 
   it("on-the-ball-pass: the thrower aims, then the away coach picks On the Ball players", () => {
