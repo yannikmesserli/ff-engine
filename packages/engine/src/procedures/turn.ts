@@ -564,6 +564,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       !isOnPitch(player) ||
       (activationMoves(state, proc).length === 0 &&
         activationTargets(state, proc).length === 0 &&
+        extraSpecialTargets(state, proc, "Projectile Vomit").length === 0 &&
         throwOptions(state, proc).length === 0 &&
         handOffOptions(state, proc).length === 0 &&
         foulOptions(state, proc).length === 0 &&
@@ -651,6 +652,11 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (a.type === "VOMIT" || a.type === "STAB" || a.type === "BREATHE_FIRE" || a.type === "CHAINSAW" || a.type === "CHOMP") {
       const skill = SPECIAL_ATTACKS[a.type];
       if (!specialTargets(state, proc, skill).some((t) => t.id === a.targetId)) ctx.reject(`Cannot use ${skill} on this player.`);
+      // Putrid Regurgitation: the vomit of a player without the skill, or after their block.
+      if (skill === "Projectile Vomit" && (!hasSkill(player, skill) || proc.blocked)) {
+        player.usedThisHalf = [...(player.usedThisHalf ?? []), "Putrid Regurgitation"];
+        ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Putrid Regurgitation" });
+      }
       proc.blocked = true;
       // The attack ends the action, even during a Blitz (but Hit and Run may follow a Stab); a blitzer may move on after
       // a chomp (which then ends if they leave).
@@ -954,10 +960,27 @@ const SPECIAL_ATTACKS = { VOMIT: "Projectile Vomit", STAB: "Stab", BREATHE_FIRE:
  */
 const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: P<"Vomit">["skill"]) => {
   const player = state.players[proc.playerId]!;
-  if (!hasSkill(player, skill)) return [];
+  const extra = extraSpecialTargets(state, proc, skill);
+  if (!hasSkill(player, skill)) return extra;
   const targets = activationTargets(state, proc);
-  return skill === "Monstrous Mouth" ? targets.filter((t) => !t.chompedBy.includes(player.id)) : targets;
+  const usual = skill === "Monstrous Mouth" ? targets.filter((t) => !t.chompedBy.includes(player.id)) : targets;
+  return [...usual, ...extra.filter((t) => !usual.some((u) => u.id === t.id))];
 };
+
+/**
+ * Special attacks a star player's rule gives: Putrid Regurgitation (once per half, a Projectile Vomit, even after the
+ * player blocked in a Block or Blitz action).
+ */
+function extraSpecialTargets(state: GameState, proc: P<"MoveAction">, skill: P<"Vomit">["skill"]): PlayerState[] {
+  const player = state.players[proc.playerId]!;
+  if (skill === "Projectile Vomit" && putrid(player) && isOnPitch(player) && player.status === "standing" && (proc.action === "block" || proc.action === "blitz")) {
+    return proc.blocked ? adjacentTargets(state, player) : activationTargets(state, proc);
+  }
+  return [];
+}
+
+/** Putrid Regurgitation is still unused this half. */
+const putrid = (player: PlayerState) => hasSkill(player, "Putrid Regurgitation") && !player.usedThisHalf?.includes("Putrid Regurgitation");
 
 /**
  * Diving Tackle: the tackler is placed prone in the square the player left, without an armour roll; a ball they held

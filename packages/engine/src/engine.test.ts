@@ -1622,6 +1622,17 @@ describe("engine", () => {
       expect(find(s, "ROLL")?.reason).toMatch(/^Dodge/);
     });
 
+    it("Putrid Regurgitation: once per half, the player may vomit, even after blocking", () => {
+      const bilerot = withSkills(toFirstTurn(), { "home-2": ["Putrid Regurgitation"] });
+      expect(find(apply(bilerot, declare("home-2", "block")), "VOMIT")?.targetIds).toEqual(["away-1", "away-2", "away-3"]);
+      // A block first (a Push, no follow-up), then the vomit.
+      let s = apply(blockAway2(bilerot), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      expect(find(s, "VOMIT")?.targetIds).toEqual(["away-1", "away-3"]);
+      s = apply(s, { type: "VOMIT", targetId: "away-1" });
+      expect(s.players["home-2"]!.usedThisHalf).toEqual(["Putrid Regurgitation"]);
+      expect(find(s, "ROLL")?.reason).toMatch(/Projectile Vomit/);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
