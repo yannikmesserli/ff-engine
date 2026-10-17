@@ -446,6 +446,46 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "reliable",
+    title: "Reliable: a fumbled team-mate lands safely",
+    instructions: [
+      "Home's first turn. Grumbol (#1, Troll) has Reliable here (a star player's special rule, given to him in the team file in src/scenarios.ts).",
+      "Click \"Physical dice\", declare Throw Team-mate with Grumbol (Really Stupid: enter 2+; Always Hungry: 2+), click Snikkit (#2), then a square to throw him to.",
+      "Enter a 1 for the throw (a fumble) and decline the re-roll: Snikkit scatters once from his square, then lands on his feet without a landing roll (the log says Reliable).",
+    ],
+    home: {
+      name: "Flying Gits",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grumbol", position: "Troll", skills: ["Reliable"] },
+        { number: 2, name: "Snikkit", position: "Goblin Lineman" },
+        { number: 3, name: "Grishnak", position: "Orc Lineman" },
+        { number: 4, name: "Ugluk", position: "Orc Lineman" },
+        { number: 5, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Targets",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+        { number: 4, name: "Kurt", position: "Human Lineman" },
+      ],
+    },
+    seed: 9,
+    actions: toFirstTurn({
+      home: { 1: { x: 11, y: 7 }, 2: { x: 10, y: 7 }, 3: { x: 12, y: 5 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 9 } },
+      away: { 1: { x: 13, y: 5 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 9 }, 4: { x: 16, y: 7 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
+  {
     id: "pick-me-up",
     title: "Pick-me-up: stand up after the opponent's turn",
     instructions: [

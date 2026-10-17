@@ -82,6 +82,18 @@ describe("scenarios", () => {
     expect([s.players["away-4"]!.status, s.teams.away.apothecaries]).toEqual(["stunned", 1]);
   });
 
+  it("reliable: Grumbol fumbles the throw, and Snikkit lands safely after one scatter", () => {
+    let s = load("reliable");
+    s = step(s, { type: "START_ACTION", playerId: "home-1", action: "ttm" }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    s = step(s, { type: "THROW_TEAM_MATE", targetId: "home-2", square: find(s, "THROW_TEAM_MATE")!.squares[0]! }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    s = step(s, { type: "ROLL", values: [1] }).state;
+    if (find(s, "DECLINE_REROLL")) s = step(s, { type: "DECLINE_REROLL" }).state;
+    s = step(s, { type: "ROLL", values: [8] }).state;
+    expect(s.players["home-2"]).toMatchObject({ at: { x: 9, y: 6 }, status: "standing" });
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });
