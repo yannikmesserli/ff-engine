@@ -10,6 +10,7 @@ import {
   casualtyFor,
   createGame,
   getAvailableActions,
+  hasSkill,
   injuryOutcome,
   isStalling,
   legalMoves,
@@ -1555,6 +1556,11 @@ describe("engine", () => {
       // Any first block uses it up, a Push too: a later Defender Stumbles in the drive knocks them down.
       const pushed = apply(blockAway2(withergrasp), roll(3), pick, { type: "PUSH", square: { x: 14, y: 7 } });
       expect(pushed.players["away-2"]!.usedThisDrive).toEqual(["Watch Out!"]);
+    });
+
+    it("skill names match whatever their case and surrounding quotes", () => {
+      const s = withSkills(toFirstTurn(), { "home-2": ["gored by THE bull", '"Blastin\' Solves Everything"'] });
+      expect([hasSkill(s.players["home-2"]!, "Gored by the Bull"), hasSkill(s.players["home-2"]!, "Blastin' Solves Everything")]).toEqual([true, true]);
     });
 
     describe("Hatred", () => {

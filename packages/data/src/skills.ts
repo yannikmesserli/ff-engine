@@ -1,3 +1,5 @@
+import { sameSkill } from "@bb/engine";
+
 /**
  * Short BB2025 descriptions of the skills and traits, in our own words, for tooltips. `{X}` stands for the skill's
  * value ("Loner(4)": 4); see `skillDescription`.
@@ -170,7 +172,9 @@ function parseSkill(skill: string): [string, string | null] {
 
 /** The description of a skill as written on a roster ("Loner(4)", "Mighty Blow(+1)"), with its value filled in. */
 export function skillDescription(skill: string): string | null {
-  const [name, value] = parseSkill(skill);
+  const [parsed, value] = parseSkill(skill);
+  // Star player rules may come with other capitals or quotes than the ones written here.
+  const name = Object.keys(SKILL_DESCRIPTIONS).find((k) => sameSkill(k, parsed)) ?? parsed;
   const text = SKILL_DESCRIPTIONS[name];
   if (!text) return null;
   // Plain Animosity dislikes every team-mate; "Animosity(goblin)" only those with that keyword.

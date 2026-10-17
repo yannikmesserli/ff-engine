@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   IMPLEMENTED_SKILLS,
+  sameSkill,
   IllegalActionError,
   applyActions,
   createGame,
@@ -348,7 +349,7 @@ function LastRoll(props: { state: GameState; assets: string; canUndo: boolean; o
 /** A skill name with its description as a tooltip, flagged when the engine does not apply it yet. */
 function Skill({ skill }: { skill: string }) {
   const description = skillDescription(skill) ?? "No description yet.";
-  const missing = !IMPLEMENTED_SKILLS.includes(skillName(skill));
+  const missing = !IMPLEMENTED_SKILLS.some((s) => sameSkill(s, skillName(skill)));
   return (
     <span className={`bb-skill${missing ? " bb-skill-missing" : ""}`} tabIndex={0}>
       {skill}
