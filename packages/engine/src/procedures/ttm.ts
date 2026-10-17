@@ -107,6 +107,8 @@ const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count:
  * scattering (or swooping).
  * Lethal Flight: an opponent the thrown player lands on gets +1 against them on the armour roll if that breaks it,
  * otherwise on the injury roll.
+ * Reliable: a team-mate whose throw the player fumbles lands safely without a roll (not after landing on someone, nor
+ * for a player who was down or distracted, nor for a fumbled kick, which injures the kicked player).
  */
 export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
   step(ctx, proc, action) {
@@ -331,6 +333,12 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         if (proc.autoFail) {
           fall(ctx, thrown);
           return "done";
+        }
+        if (proc.result === "fumble" && hasSkill(thrower, "Reliable")) {
+          ctx.emit({ type: "SkillUsed", playerId: thrower.id, skill: "Reliable" });
+          state.lastCheck = { kind: "landing", success: true };
+          proc.stage = "landed";
+          return "continue";
         }
         const modifier = -(proc.result === "accurate" ? 0 : 1) - tackleZones(state, thrown.side, proc.at!);
         state.lastCheck = null;

@@ -2965,6 +2965,15 @@ describe("engine", () => {
         expect(find(fumble, "ROLL")?.reason).toMatch(/^Landing 4\+/);
       });
 
+      it("Reliable: a team-mate whose throw is fumbled still scatters, then lands safely without a roll", () => {
+        const reliable = withSkills(ttmTeam(), { "home-4": ["Throw Team-mate", "Reliable"] });
+        const s = apply(declared(reliable), throwTo({ x: 7, y: 4 }), roll(1), { type: "DECLINE_REROLL" }, roll(3));
+        expect(s.players["home-5"]).toMatchObject({ at: { x: 11, y: 5 }, status: "standing" });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-4", skill: "Reliable" });
+        expect(s.log.some((e) => e.type === "CheckResult" && e.kind === "landing")).toBe(false);
+        expect(types(s)).toContain("START_ACTION");
+      });
+
       it("landing on a team-mate knocks them down (turnover), scatters on and fails the landing", () => {
         // East, north, south from (9,6) ends on home-6 at (10,6).
         let s = apply(declared(), throwTo({ x: 9, y: 6 }), roll(5), roll(3, 1, 5));

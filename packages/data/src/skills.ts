@@ -101,6 +101,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   // Star player special rules
   "Blind Rage": "May re-roll the D6 of a failed Dauntless roll.",
   "The Ballista": "Once per game, may re-roll a failed pass or team-mate throw.",
+  Reliable: "A team-mate whose throw this player fumbles still bounces, but always lands safely (not a fumbled kick).",
   "I'll Carry You": "Grak and Crumbleberry are hired together. Once per half, Grak may pick up Crumbleberry at the start of his activation (gaining Dodge and Break Tackle) and puts her down next to him at its end.",
   "Kick Team-mate": "Special action, once per turn: kicks an adjacent team-mate with Right Stuff like a Throw Team-mate; a fumble hurts them (Stunned counts as KO'd).",
   Loner: "Using a team re-roll needs a {X}+ on a D6 first; otherwise the re-roll is lost.",

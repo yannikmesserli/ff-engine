@@ -410,7 +410,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Grak has Dodge and Break Tackle; at the end of the activation the coach puts her down, as she was, in a free square
   next to Grak, or where he last stood if he left the pitch. With no free square: from a sideline or an end zone she
   goes into the crowd, a turnover; otherwise she is dropped on an adjacent player, who is knocked down, and bounces on
-  until she comes down, knocked down).
+  until she comes down, knocked down). Reliable (Deeproot Strongbranch, not listed by FUMBBL yet): a team-mate whose
+  throw he fumbles still scatters, but lands safely without a roll (not one who lands on another player or was down).
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
 
