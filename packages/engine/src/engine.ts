@@ -67,7 +67,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     coachBanned: false,
     extraAssist: false,
     apothecaries: teams[side].apothecary ? 1 : 0,
-    raisePosition: teams[side].raisePosition ?? null,
+    raisePositions: teams[side].raisePositions ?? [],
     raisedDead: 0,
     stalled: false,
   });

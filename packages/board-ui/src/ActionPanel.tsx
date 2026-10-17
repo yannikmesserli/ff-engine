@@ -51,6 +51,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   PUSH: "click a square to push the player to",
   CHOOSE_WEATHER: "Weather Mage: apply a modifier to the roll on the weather table",
   CHOOSE_SKILL: "Intensive Training: choose the skill the player gains",
+  CHOOSE_POSITION: "a killed player rises again: choose the position they join your team as",
   CHOOSE_KEYWORD: "Getting Even: choose the keyword the injured player rolls (4+) to gain Hatred against",
   BUY_INDUCEMENTS: "pre-game shop: buy inducements",
   THROW_A_ROCK: "Throw a Rock (once per game): a random standing opponent is knocked down on 4+",
@@ -316,6 +317,11 @@ export function ActionPanel(props: ActionPanelProps) {
         {findTemplate(templates, "CHOOSE_SKILL")?.skills.map((skill) => (
           <button key={skill} onClick={() => dispatch({ type: "CHOOSE_SKILL", skill })}>
             {skill}
+          </button>
+        ))}
+        {findTemplate(templates, "CHOOSE_POSITION")?.positions.map((position) => (
+          <button key={position} onClick={() => dispatch({ type: "CHOOSE_POSITION", position })}>
+            {position}
           </button>
         ))}
         {findTemplate(templates, "CHOOSE_KEYWORD")?.keywords.map((keyword) => (

@@ -757,7 +757,7 @@ describe("engine", () => {
       const kill = (s: GameState) =>
         apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(16, 1));
       const nurgle = (change: (c: GameState) => void = () => {}) =>
-        edit(withSkills(toFirstTurn({ ...team("Home"), raisePosition: ROTTER }), { "home-2": ["Plague Ridden"] }), change);
+        edit(withSkills(toFirstTurn({ ...team("Home"), raisePositions: [ROTTER] }), { "home-2": ["Plague Ridden"] }), change);
 
       it("an opponent killed by the player's block joins the team's reserves as a lineman, once per game", () => {
         const s = kill(nurgle());
@@ -772,6 +772,34 @@ describe("engine", () => {
       it("not for Big Guys or players with Stunty, Regeneration or Decay", () => {
         expect(kill(nurgle((c) => void (c.players["away-2"]!.keywords = ["big guy"]))).players["home-12"]).toBeUndefined();
         expect(kill(nurgle((c) => void (c.players["away-2"]!.skills = ["Stunty"]))).players["home-12"]).toBeUndefined();
+      });
+    });
+
+    describe("Masters of Undeath", () => {
+      const ZOMBIE = { position: "Zombie Lineman", ma: 4, st: 3, ag: 4, pa: null, av: 9, skills: ["Regeneration"], keywords: ["human", "lineman", "undead", "zombie"] };
+      const SKELETON = { position: "Skeleton Lineman", ma: 5, st: 3, ag: 4, pa: 6, av: 8, skills: ["Regeneration", "Thick Skull"], keywords: ["human", "lineman", "skeleton", "undead"] };
+      /** home-2 knocks away-2 down and kills them: armour 12, injury 12, casualty 16. */
+      const kill = (s: GameState) =>
+        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(16, 1));
+      const undead = (positions = [ZOMBIE, SKELETON], change: (c: GameState) => void = () => {}) =>
+        edit(toFirstTurn({ ...team("Home"), specialRules: ["Masters of Undeath"], raisePositions: positions }), change);
+
+      it("once per game, a killed opponent of ST 4 or less joins the team's reserves; the coach picks the lineman position", () => {
+        let s = kill(undead());
+        expect(getAvailableActions(s)).toEqual([{ type: "CHOOSE_POSITION", side: "home", deadId: "away-2", positions: ["Zombie Lineman", "Skeleton Lineman"] }]);
+        expect(() => step(s, { type: "CHOOSE_POSITION", position: "Ghoul Runner" })).toThrow(/lineman positions/);
+        s = apply(s, { type: "CHOOSE_POSITION", position: "Zombie Lineman" });
+        expect(s.log).toContainEqual({ type: "PlayerRaised", playerId: "home-12", fromId: "away-2", undead: true });
+        expect(s.players["home-12"]).toMatchObject({ name: "Away 2", position: "Zombie Lineman", at: "reserves", raised: true, skills: ["Regeneration"] });
+        // A single lineman position: no choice.
+        expect(kill(undead([ZOMBIE])).players["home-12"]).toMatchObject({ position: "Zombie Lineman" });
+        expect(types(kill(undead([ZOMBIE], (c) => void (c.teams.home.raisedDead = 1))))).not.toContain("CHOOSE_POSITION");
+      });
+
+      it("not an opponent with ST 5 or more, nor a Stunty one", () => {
+        expect(kill(undead([ZOMBIE], (c) => void (c.players["away-2"]!.st = c.players["home-2"]!.st = 5))).players["home-12"]).toBeUndefined();
+        expect(kill(undead([ZOMBIE], (c) => void (c.players["away-2"]!.skills = ["Stunty"]))).players["home-12"]).toBeUndefined();
+        expect(kill(edit(toFirstTurn({ ...team("Home"), raisePositions: [ZOMBIE] }), () => {})).players["home-12"]).toBeUndefined();
       });
     });
 

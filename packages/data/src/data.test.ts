@@ -137,10 +137,19 @@ describe("data", () => {
     expect(() => createGame(team, resolveTeam(exampleTeams["orc"]), { shop: true })).toThrow(/not listed in the team file/);
   });
 
-  it("gives teams with Plague Ridden their lineman position for raised players", () => {
+  it("gives teams with Plague Ridden or Masters of Undeath their lineman positions for raised players", () => {
     const nurgle = resolveTeam({ name: "N", roster: "Nurgle", rerolls: 0, players: [{ number: 1, name: "A", position: "Rotter Lineman" }] });
-    expect(nurgle.raisePosition).toMatchObject({ position: "Rotter Lineman", skills: ["Decay", "Plague Ridden"] });
-    expect(resolveTeam(exampleTeams["human"]).raisePosition).toBeUndefined();
+    expect(nurgle.raisePositions).toMatchObject([{ position: "Rotter Lineman", skills: ["Decay", "Plague Ridden"] }]);
+    expect(resolveTeam(exampleTeams["human"]).raisePositions).toBeUndefined();
+    const undead = { name: "U", roster: "Shambling Undead", rerolls: 0, specialRules: ["Masters of Undeath"], players: [{ number: 1, name: "A", position: "Ghoul Runner" }] };
+    expect(resolveTeam(undead).raisePositions!.map((p) => p.position)).toEqual(["Skeleton Lineman", "Zombie Lineman"]);
+    expect(resolveTeam({ ...undead, specialRules: [] }).raisePositions).toBeUndefined();
+    // After the game, the raised player stays as the position they were raised as.
+    const game = structuredClone(createGame(resolveTeam(undead), resolveTeam(exampleTeams["human"])));
+    game.players["home-2"] = { ...game.players["home-1"]!, id: "home-2", nr: 2, name: "B", position: "Zombie Lineman", raised: true };
+    game.finished = true;
+    game.result = { conceded: null, concededLegally: false, penalties: null, winner: null, winnings: { home: 0, away: 0 }, dedicatedFans: { home: 0, away: 0 }, mvps: [], leaving: [] };
+    expect(teamAfterGame(undead, game, "home").players[1]).toMatchObject({ number: 2, name: "B", position: "Zombie Lineman" });
   });
 
   it("reports invalid teams", () => {
@@ -338,6 +347,8 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "STAB", targetId: pick(t.targetIds) };
     case "CHOOSE_SKILL":
       return { type: "CHOOSE_SKILL", skill: pick(t.skills) };
+    case "CHOOSE_POSITION":
+      return { type: "CHOOSE_POSITION", position: pick(t.positions) };
     case "CHOOSE_KEYWORD":
       return { type: "CHOOSE_KEYWORD", keyword: pick(t.keywords) };
     case "THROW_A_ROCK":

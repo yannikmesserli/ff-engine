@@ -255,9 +255,10 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
   if (insignificant > team.players.length - insignificant) {
     throw new TeamError(`At most as many Insignificant players as other players (${insignificant} of ${team.players.length}).`);
   }
-  // Plague Ridden: a killed opponent may join the team as a lineman.
+  // Plague Ridden and Masters of Undeath: a killed opponent may join the team as a lineman.
   const plagueRidden = team.players.some((p) => [...positionOf(p).skills, ...p.skills].includes("Plague Ridden"));
-  const lineman = roster.positions.find((pos) => pos.keywords.includes("lineman"));
+  const raises = plagueRidden || (team.specialRules as string[]).includes("Masters of Undeath");
+  const linemen = roster.positions.filter((pos) => pos.keywords.includes("lineman"));
   const hired = journeymen(roster, team);
   const offer = hireOffer(team, roster, hired.map((p) => p.position));
   const players = [
@@ -305,7 +306,7 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
     teamValue: currentTeamValue(team, roster),
     treasury: team.treasury,
     hires: offer,
-    ...(plagueRidden && lineman ? { raisePosition: positionStats(lineman) } : {}),
+    ...(raises && linemen.length > 0 ? { raisePositions: linemen.map(positionStats) } : {}),
     players: [...players, ...stars],
   };
 }

@@ -153,7 +153,10 @@ const { state: next, events } = step(state, { type: "ROLL" });
   apothecary) by an opponent's block, foul or special action rolls a D6 (a team re-roll in their own turn): on 4+ they
   gain Hatred against one of that opponent's keywords (not a role such as Lineman or Big Guy, nor one they hate
   already; their coach picks among several). It is kept in the team file (`hatred`), not as an advancement. Not for
-  star players or mercenaries.
+  star players or mercenaries. Masters of Undeath (a team special rule, in the team file): once per game, an opponent
+  killed in any way (ST 4 or less, not Stunty) rises in the team's reserves as a new player of one of its lineman
+  positions, named as the dead player (the coach picks between Skeleton and Zombie for Shambling Undead); the player
+  stays in the team after the game.
 - Jumping over a prone or stunned player (either team) into the square beyond, two squares away: costs 2 squares (a
   Rush for each past MA), an AG Jump roll with -1 per tackle zone on the busier of the two squares instead of a Dodge;
   a failed Rush or a natural 1 falls in the starting square, any other failure in the target square.
@@ -295,7 +298,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   knocked down or placed prone, or the drive ends: the action goes on, but they cannot move or rush, cannot follow up
   and are never pushed (nobody in the chain moves), and cannot be thrown.
 - Plague Ridden: once per game, an opponent killed by the player's block (not a Big Guy, and without Stunty,
-  Regeneration or Decay) joins the team's reserves as a new player of its lineman position (Rotter for Nurgle).
+  Regeneration or Decay) joins the team's reserves as a new player of its lineman position (Rotter for Nurgle). It
+  counts as the team's one raised player of the game (see Masters of Undeath).
 - Bloodlust(X): rolled when the player is activated, X+ (1 easier for a Block or Blitz, at least 2+; team re-roll
   allowed). On a failure the action goes on (a Block or Secure the Ball may become a Move), but before it ends, and
   before passing, handing off or scoring, the player bites an adjacent Thrall team-mate: placed prone, injury roll

@@ -414,7 +414,7 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
     case "ActionLost":
       return `${who(state, e.playerId)} fails the ${e.skill} roll and roars in rage: the action is lost.`;
     case "PlayerRaised":
-      return `${who(state, e.fromId)} rises again, infected, and joins ${sideName(state, state.players[e.playerId]!.side)} as ${state.players[e.playerId]!.position}!`;
+      return `${who(state, e.fromId)} rises again, ${e.undead ? "raised from the dead" : "infected"}, and joins ${sideName(state, state.players[e.playerId]!.side)} as ${state.players[e.playerId]!.position}!`;
     case "HatredGained":
       return `${who(state, e.playerId)} gets even: they gain Hatred (${e.keyword}), for the next games too.`;
     case "PlayerEaten":

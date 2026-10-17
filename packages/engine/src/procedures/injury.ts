@@ -1,7 +1,7 @@
 import type { Ctx, Handler } from "../context";
-import type { Action, Casualty, Characteristic, DiceSpec, InjuryOutcome, PlayerState, Procedure, TeamState } from "../types";
+import type { Action, Casualty, Characteristic, DiceSpec, InjuryOutcome, PlayerState, PositionStats, Procedure, Side, TeamState } from "../types";
 import { hasSkill, skillName } from "../skills";
-import { teamPlayers } from "../pitch";
+import { other, teamPlayers } from "../pitch";
 import { createPlayer, earnSpp, getPlayer, inducementsLeft, spendInducement } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -264,7 +264,7 @@ function place(ctx: Ctx, player: PlayerState, proc: P<"Injury">) {
     player.at = "cas";
     player.status = "standing";
     player.casualty = proc.casualty!;
-    if (proc.casualty!.result === "dead" && proc.attackerId) raiseInfected(ctx, player, getPlayer(ctx, proc.attackerId));
+    if (proc.casualty!.result === "dead") raiseDead(ctx, player, proc.attackerId ? getPlayer(ctx, proc.attackerId) : undefined);
     if (proc.byId) gettingEven(ctx, player, getPlayer(ctx, proc.byId));
   }
   if (proc.treated) {
@@ -330,22 +330,52 @@ export const GettingEven: Handler<P<"GettingEven">> = {
   },
 };
 
-/** A killed player with one of these skills cannot be raised (Plague Ridden). */
+/** A killed player with one of these skills cannot be raised by Plague Ridden. */
 const UNRAISABLE_SKILLS = ["Stunty", "Regeneration", "Decay"];
 
+/** Masters of Undeath raise killed opponents of ST 4 or less. */
+export const UNDEATH_MAX_ST = 4;
+
 /**
- * Plague Ridden: once per game, an opponent killed by the block of a player with the skill (not a Big Guy, and
- * without Stunty, Regeneration or Decay) joins the blocker's team in the reserves, as a new player of its lineman
- * position.
+ * A killed player may join the other team, once per game in all, in its reserves as a new player of one of its lineman
+ * positions (its coach picks when there are several), named as the dead player:
+ * - Plague Ridden: killed by the block of a player with the skill; not a Big Guy, nor a player with Stunty,
+ *   Regeneration or Decay.
+ * - Masters of Undeath (a team special rule): killed in any way; ST 4 or less, and not a Stunty player.
  */
-function raiseInfected(ctx: Ctx, dead: PlayerState, attacker: PlayerState) {
+function raiseDead(ctx: Ctx, dead: PlayerState, attacker: PlayerState | undefined) {
   const { state } = ctx;
-  const team = state.teams[attacker.side];
-  if (!hasSkill(attacker, "Plague Ridden") || attacker.side === dead.side || !team.raisePosition || team.raisedDead > 0) return;
-  if (dead.keywords.includes("big guy") || UNRAISABLE_SKILLS.some((s) => hasSkill(dead, s))) return;
-  const nr = 1 + Math.max(...teamPlayers(state, attacker.side).map((p) => p.nr));
-  const raised = { ...createPlayer(attacker.side, { ...team.raisePosition, nr, name: dead.name }), raised: true };
-  state.players[raised.id] = raised;
-  team.raisedDead += 1;
-  ctx.emit({ type: "PlayerRaised", playerId: raised.id, fromId: dead.id });
+  const side = other(dead.side);
+  const team = state.teams[side];
+  if (team.raisedDead > 0 || team.raisePositions.length === 0) return;
+  const infected =
+    attacker?.side === side && hasSkill(attacker, "Plague Ridden") && !dead.keywords.includes("big guy") && !UNRAISABLE_SKILLS.some((s) => hasSkill(dead, s));
+  const undead = team.specialRules.includes("Masters of Undeath") && dead.st <= UNDEATH_MAX_ST && !hasSkill(dead, "Stunty");
+  if (!infected && !undead) return;
+  if (team.raisePositions.length > 1) ctx.push({ type: "RaiseDead", side, deadId: dead.id, undead: !infected });
+  else raise(ctx, side, dead, team.raisePositions[0]!, !infected);
 }
+
+/** The dead player joins `side` in the reserves as a new `position` player, with the dead player's name. */
+function raise(ctx: Ctx, side: Side, dead: PlayerState, position: PositionStats, undead: boolean) {
+  const { state } = ctx;
+  const nr = 1 + Math.max(...teamPlayers(state, side).map((p) => p.nr));
+  const raised = { ...createPlayer(side, { ...position, nr, name: dead.name }), raised: true };
+  state.players[raised.id] = raised;
+  state.teams[side].raisedDead += 1;
+  ctx.emit({ type: "PlayerRaised", playerId: raised.id, fromId: dead.id, ...(undead ? { undead } : {}) });
+}
+
+/** A killed player is raised: the raising team's coach picks the lineman position. */
+export const RaiseDead: Handler<P<"RaiseDead">> = {
+  step(ctx, proc, action) {
+    if (action === null) return "wait";
+    const { position } = ctx.expect(action, "CHOOSE_POSITION");
+    const stats = ctx.state.teams[proc.side].raisePositions.find((p) => p.position === position) ?? ctx.reject("Choose one of the team's lineman positions.");
+    raise(ctx, proc.side, getPlayer(ctx, proc.deadId), stats, proc.undead);
+    return "done";
+  },
+  actions(state, proc) {
+    return [{ type: "CHOOSE_POSITION", side: proc.side, deadId: proc.deadId, positions: state.teams[proc.side].raisePositions.map((p) => p.position) }];
+  },
+};

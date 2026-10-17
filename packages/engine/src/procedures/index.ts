@@ -6,7 +6,7 @@ import { DumpOff, HandOff, Pass, Punt } from "./pass";
 import { Foul, PileDriver, SecretWeapon } from "./foul";
 import { Feed } from "./bloodlust";
 import { Check, KnockDown } from "./checks";
-import { GettingEven, Injury } from "./injury";
+import { GettingEven, Injury, RaiseDead } from "./injury";
 import { Prayers, Trapdoor } from "./prayers";
 import { Stalling } from "./stalling";
 import { CoinToss, Game, Half, KoRecovery, MasterChef, ThrowRock } from "./game";
@@ -77,6 +77,7 @@ export const handlers: HandlerMap = {
   KnockDown,
   Injury,
   GettingEven,
+  RaiseDead,
   Stalling,
   Carried,
   EndGame,
