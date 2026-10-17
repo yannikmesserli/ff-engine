@@ -140,6 +140,7 @@ export const Shop: Handler<P<"Shop">> = {
     if (cost > budget.pettyCash + budget.treasury) ctx.reject(`${team.name} cannot spend ${cost} gold pieces (${budget.pettyCash + budget.treasury} available).`);
     team.inducements = bought;
     team.bribes += bought.bribes ?? 0;
+    team.apothecaries += bought.wanderingApothecaries ?? 0;
     team.inducementsCost = cost;
     team.treasurySpent = Math.max(0, cost - budget.pettyCash);
     for (const p of hired.players) {

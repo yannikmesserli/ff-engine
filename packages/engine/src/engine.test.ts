@@ -4028,6 +4028,22 @@ describe("engine", () => {
     });
   });
 
+  describe("Wandering Apothecaries", () => {
+    it("each one is another apothecary use for the game, on top of the team's own; also when bought in the shop", () => {
+      const s = toFirstTurn({ ...team("Home"), apothecary: true, inducements: { wanderingApothecaries: 2 } });
+      expect(s.teams.home.apothecaries).toBe(3);
+      expect(toFirstTurn({ ...team("Home"), inducements: { wanderingApothecaries: 1 } }).teams.home.apothecaries).toBe(1);
+      const prices = { wanderingApothecaries: { cost: 100_000, max: 2 } };
+      let shop = apply(
+        createGame({ ...team("Home"), teamValue: 900_000, treasury: 0, inducementPrices: prices }, { ...team("Away"), teamValue: 1_000_000, treasury: 0, inducementPrices: prices }, { seed: 1, shop: true }),
+        roll(1, 1),
+        roll(3, 4),
+      );
+      shop = apply(shop, { type: "BUY_INDUCEMENTS", inducements: { wanderingApothecaries: 1 } });
+      expect(shop.teams.home.apothecaries).toBe(1);
+    });
+  });
+
   describe("Josef Bugman", () => {
     const bugman = (name: string) => ({ ...team(name), inducements: { josefBugman: 1 } });
 

@@ -81,6 +81,11 @@ describe("data", () => {
     expect(prices.plagueDoctor).toBeUndefined();
     const halflings = { name: "H", roster: "Halfling", rerolls: 0, journeymen: false, players: [{ number: 1, name: "A", position: "Halfling Hopeful" }] };
     expect(resolveTeam(halflings).inducementPrices!.halflingMasterChef).toEqual({ cost: 100_000, max: 1 });
+    // Wandering Apothecaries: not for a roster without an apothecary.
+    expect(prices.wanderingApothecaries).toEqual({ cost: 100_000, max: 2 });
+    const undead = { name: "U", roster: "Shambling Undead", rerolls: 0, players: [{ number: 1, name: "A", position: "Ghoul Runner" }] };
+    expect(resolveTeam(undead).inducementPrices!.wanderingApothecaries).toBeUndefined();
+    expect(() => resolveTeam({ ...undead, inducements: { wanderingApothecaries: 1 } })).toThrow(/cannot buy wanderingApothecaries/);
   });
 
   it("works out the Current Team Value: players and their advancements, journeymen, re-rolls and staff", () => {
@@ -512,7 +517,7 @@ describe("random games", () => {
     // Every other game, the home team bought a few inducements and has a Team Captain; in the others, both teams buy
     // theirs in the pre-game shop, home with some gold in the treasury.
     const shop = seed % 2 === 0;
-    const homeTeam = { ...(rosterTeam(home) as object), ...(shop ? { treasury: 400_000 } : { inducements: RANDOM_GAME_INDUCEMENTS, specialRules: ["Low Cost Linemen"], captain: 1 }) };
+    const homeTeam = { ...(rosterTeam(home) as object), ...(shop ? { treasury: 400_000 } : { inducements: { ...RANDOM_GAME_INDUCEMENTS, ...(home.apothecary ? { wanderingApothecaries: 1 } : {}) }, specialRules: ["Low Cost Linemen"], captain: 1 }) };
     const start = createGame(resolveTeam(homeTeam), resolveTeam(rosterTeam(away)), { seed, overtime: seed % 4 === 0, shop });
     let s = start;
     const taken: Action[] = [];

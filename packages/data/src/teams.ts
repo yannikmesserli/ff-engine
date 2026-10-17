@@ -69,6 +69,7 @@ export const INDUCEMENT_RULES: Record<InducementId, { max: number; cost: number;
   biasedReferee: { max: 1, cost: 120_000, discount: { rule: "Bribery and Corruption", cost: 80_000 } },
   wizard: { max: 1, cost: 150_000 },
   josefBugman: { max: 1, cost: 100_000 },
+  wanderingApothecaries: { max: 2, cost: 100_000 },
   prayers: { max: 3, cost: 50_000 },
 };
 
@@ -82,6 +83,8 @@ function inducementPrices(team: TeamFile, roster: Roster): InducementPrices {
   const prices: InducementPrices = {};
   for (const [id, rule] of Object.entries(INDUCEMENT_RULES) as Array<[InducementId, (typeof INDUCEMENT_RULES)[InducementId]]>) {
     if (rule.requires && !has(rule.requires)) continue;
+    // Wandering Apothecaries: only for a roster that may have an apothecary.
+    if (id === "wanderingApothecaries" && !roster.apothecary) continue;
     const discount = rule.discount && has(rule.discount.rule) ? rule.discount : undefined;
     let max = discount?.max ?? rule.max;
     if (id === "partTimeCoaches") max = Math.min(max, MAX_COACHES - team.assistantCoaches);
@@ -96,7 +99,7 @@ function checkInducements(team: TeamFile, prices: InducementPrices) {
   for (const [id, bought] of Object.entries(team.inducements) as Array<[InducementId, number]>) {
     if (bought === 0) continue;
     const rule = INDUCEMENT_RULES[id];
-    if (!prices[id]) throw new TeamError(`Only teams with ${rule.requires} may buy ${id}.`);
+    if (!prices[id]) throw new TeamError(rule.requires ? `Only teams with ${rule.requires} may buy ${id}.` : `This team cannot buy ${id}.`);
     if (bought > prices[id].max) throw new TeamError(`At most ${prices[id].max} ${id} for this team (${bought} bought).`);
   }
 }

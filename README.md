@@ -75,7 +75,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Dodge, No Ball, Titchy, Stunty, Very Long Legs, Leap), dropping the ball. No turnover either way. Josef Bugman (the
   Infamous Coaching Staff, 100k): +1 to the team's KO recovery rolls (Bugman's XXXXXX), and Dwarfen Wisdom: once per
   game, after both teams set up (the kicking team is asked first), a D3, then that many of the team's players on the
-  pitch (at least one) are set up again.
+  pitch (at least one) are set up again. Wandering Apothecaries (100k, up to 2, for rosters that may have an
+  apothecary): each is one more use of an apothecary for the game, after the team's own.
 - Prayers to Nuffle (bought as inducements, up to 3, plus the underdog's free ones after the shop): before the coin toss, a D16 each on the BB2025 table, re-rolled
   when the team already has the result; they last the whole game. Stiletto (a random player gains Stab), Iron Man
   (+1 AV, up to 11+, to a player the coach picks), Knuckle Dusters (Mighty Blow, likewise), Bad Habits (D3 random

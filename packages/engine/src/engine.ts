@@ -66,7 +66,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
     captainRolling: false,
     coachBanned: false,
     extraAssist: false,
-    apothecaries: teams[side].apothecary ? 1 : 0,
+    apothecaries: (teams[side].apothecary ? 1 : 0) + (teams[side].inducements?.wanderingApothecaries ?? 0),
     raisePositions: teams[side].raisePositions ?? [],
     raisedDead: 0,
     stalled: false,

@@ -194,7 +194,7 @@ export interface TeamState {
   coachBanned: boolean;
   /** Cheering Fans: one extra offensive block assist this drive. */
   extraAssist: boolean;
-  /** Apothecaries left for this game (one use each). */
+  /** Apothecaries left for this game (one use each): the team's own and its Wandering Apothecaries. */
   apothecaries: number;
   /** The lineman positions a killed opponent may join the team as (Plague Ridden, Masters of Undeath). */
   raisePositions: PositionStats[];
@@ -258,6 +258,7 @@ export const INDUCEMENTS = [
   "biasedReferee",
   "wizard",
   "josefBugman",
+  "wanderingApothecaries",
   "prayers",
 ] as const;
 export type InducementId = (typeof INDUCEMENTS)[number];
