@@ -87,6 +87,10 @@ const SKILL_BUTTONS: Record<string, string> = {
   Hatred: "Re-roll a Skull (Hatred)",
   Pro: "Re-roll with Pro (3+)",
   Fumblerooski: "Drop the ball on the next step (Fumblerooski)",
+  "Unstoppable Momentum": "Re-roll a block die (Unstoppable Momentum)",
+  "Lord of Chaos": "Re-roll a block die (Lord of Chaos)",
+  "Woodland Fury": "Re-roll a block die (Woodland Fury)",
+  "Working in Tandem": "Re-roll a block die (Working in Tandem)",
 };
 
 /** Short pass range names for the legend, shortest first. */
@@ -268,9 +272,9 @@ export function ActionPanel(props: ActionPanelProps) {
           </>
         )}
         {templates.map((t) =>
-          t.type === "USE_SKILL" && t !== main && SKILL_BUTTONS[t.skill] ? (
+          t.type === "USE_SKILL" && t !== main ? (
             <button key={t.skill} onClick={() => dispatch({ type: "USE_SKILL", use: true, skill: t.skill })}>
-              {SKILL_BUTTONS[t.skill]}
+              {SKILL_BUTTONS[t.skill] ?? `Use ${t.skill}`}
             </button>
           ) : null,
         )}
