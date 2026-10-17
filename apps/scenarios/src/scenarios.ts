@@ -1537,6 +1537,47 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "masters-of-undeath",
+    title: "Masters of Undeath: raise a killed opponent",
+    instructions: [
+      "Home's first turn. The Grave Guard have the Masters of Undeath special rule (in the team file in src/scenarios.ts).",
+      "Click \"Physical dice\", then declare a Block by Mortis (#4) on Wilhelm (#4, at (13,5)): enter a 6 (Pow), push him back, then armour 6+6, injury 6+6, and a casualty roll of 15 or 16 on the D16 (Dead; any D6).",
+      "Wilhelm rises again: pick Skeleton Lineman or Zombie Lineman. He joins the home reserves under his own name, and stays in the team file after the game. Only once per game, and not for an opponent of ST 5 or more, or a Stunty one.",
+    ],
+    home: {
+      name: "Grave Guard",
+      roster: "Shambling Undead",
+      rerolls: 2,
+      journeymen: false,
+      specialRules: ["Masters of Undeath"],
+      players: [
+        { number: 1, name: "Rattle", position: "Skeleton Lineman" },
+        { number: 2, name: "Clatter", position: "Skeleton Lineman" },
+        { number: 3, name: "Bones", position: "Skeleton Lineman" },
+        { number: 4, name: "Mortis", position: "Wight Blitzer" },
+        { number: 5, name: "Shuffle", position: "Zombie Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Klaus", position: "Human Lineman" },
+        { number: 4, name: "Wilhelm", position: "Human Lineman" },
+      ],
+    },
+    seed: 89,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 6 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 8 }, 4: { x: 12, y: 5 }, 5: { x: 8, y: 7 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 }, 4: { x: 13, y: 5 } },
+      ball: { x: 8, y: 7 },
+    }),
+  },
+  {
     id: "wizard",
     title: "Wizard: Fireball and Zap!",
     instructions: [

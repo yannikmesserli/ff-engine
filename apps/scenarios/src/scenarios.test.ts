@@ -53,6 +53,20 @@ describe("scenarios", () => {
     expect(s.players["away-4"]!.gainedHatred).toEqual(["undead"]);
   });
 
+  it("masters-of-undeath: the human killed by the Wight Blitzer joins the undead as the lineman their coach picks", () => {
+    let s = load("masters-of-undeath");
+    s = step(s, { type: "START_ACTION", playerId: "home-4", action: "block" }).state;
+    s = step(s, { type: "BLOCK", targetId: "away-4" }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    if (find(s, "CHOOSE_BLOCK_DIE")) s = step(s, { type: "CHOOSE_BLOCK_DIE", index: 0 }).state;
+    s = step(s, { type: "PUSH", square: find(s, "PUSH")!.squares[0]! }).state;
+    s = step(s, { type: "FOLLOW_UP", follow: false }).state;
+    for (const values of [[6, 6], [6, 6], [16, 1]]) s = step(s, { type: "ROLL", values }).state;
+    expect(find(s, "CHOOSE_POSITION")?.positions).toEqual(["Skeleton Lineman", "Zombie Lineman"]);
+    s = step(s, { type: "CHOOSE_POSITION", position: "Zombie Lineman" }).state;
+    expect(s.players["home-6"]).toMatchObject({ name: "Wilhelm", position: "Zombie Lineman", at: "reserves" });
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });
