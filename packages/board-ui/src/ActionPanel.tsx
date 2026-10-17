@@ -93,6 +93,7 @@ const SKILL_BUTTONS: Record<string, string> = {
   "Woodland Fury": "Re-roll a block die (Woodland Fury)",
   "Working in Tandem": "Re-roll a block die (Working in Tandem)",
   "Halfling Luck": "Re-roll the die (Halfling Luck)",
+  "Thinking Man's Troll": "Re-roll the die (Thinking Man's Troll)",
 };
 
 /** Short pass range names for the legend, shortest first. */

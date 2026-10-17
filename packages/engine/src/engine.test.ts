@@ -1615,6 +1615,13 @@ describe("engine", () => {
       expect(find(apply(blockAway2(puggy), roll(1)), "USE_SKILL")?.skill).toBe("Halfling Luck");
     });
 
+    it("Thinking Man's Troll: once per half, the player may re-roll a single die they rolled", () => {
+      const ripper = withSkills(toFirstTurn(), { "home-1": ["Thinking Man's Troll"] });
+      const s = apply(ripper, startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1), { type: "USE_SKILL", use: true, skill: "Thinking Man's Troll" });
+      expect(s.players["home-1"]!.usedThisHalf).toEqual(["Thinking Man's Troll"]);
+      expect(find(s, "ROLL")?.reason).toMatch(/^Dodge/);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

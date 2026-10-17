@@ -519,6 +519,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
     turnover.
   - Halfling Luck (Puggy Baconbreath): once per game, he may re-roll a single die he rolled (a failed single-die roll, a
     pass, a block die), not for an armour, injury or casualty roll; offered next to the team re-roll.
+  - Thinking Man's Troll (Ripper Bolgrot): as Halfling Luck, once per half.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
