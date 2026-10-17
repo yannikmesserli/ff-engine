@@ -2408,6 +2408,19 @@ describe("engine", () => {
         expect(types(apply(throwBomb(bomber, { x: 6, y: 4 }), roll(5), roll(6), { type: "USE_SKILL", use: false }))).toContain("THROW");
       });
 
+      it("All You Can Eat: once per game, two bombs in one Throw Bomb action, then a D6 of 1-3 sends the player off", () => {
+        const cindy = withSkills(toFirstTurn(), { "home-4": ["Bombardier", "All You Can Eat"] });
+        // Each bomb: a natural 6 to (5,12), a bounce south to (5,13), and it goes off there next to nobody.
+        const bomb = [{ type: "THROW" as const, square: { x: 5, y: 12 } }, roll(6), roll(5)];
+        let s = apply(cindy, declare("home-4", "bomb"), { type: "ACTIVATION_SKILL", skill: "All You Can Eat" }, ...bomb);
+        expect(s.log.filter((e) => e.type === "BombExploded")).toHaveLength(1);
+        expect(types(s)).toContain("THROW");
+        s = apply(s, ...bomb);
+        expect(find(s, "ROLL")?.reason).toBe("All You Can Eat (Home 4 is sent off on 3 or less)");
+        expect(apply(s, roll(3)).players["home-4"]!.at).toBe("banned");
+        expect(apply(s, roll(4)).players["home-4"]!.at).toEqual({ x: 10, y: 4 });
+      });
+
       it("a fumble explodes on the thrower", () => {
         const s = apply(throwBomb(bomber(), { x: 6, y: 4 }), roll(1), { type: "DECLINE_REROLL" });
         expect(s.log).toContainEqual({ type: "BombHit", playerId: "home-4" });

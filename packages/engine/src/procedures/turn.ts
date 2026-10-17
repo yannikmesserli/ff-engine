@@ -599,8 +599,14 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (a.type === "END_PLAYER_ACTION") return endActivation(ctx, proc, player);
     if (a.type === "THROW" && proc.action === "bomb") {
       const square = throwOptions(state, proc).find((s) => sameSquare(s, a.square)) ?? ctx.reject("Cannot throw there.");
-      proc.finished = true;
-      ctx.push({ type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, bomb: true, stage: "animosity", rerolled: false });
+      // All You Can Eat: a second bomb after the first, then the roll to be sent off.
+      const second = proc.bombs === 1;
+      if (proc.bombs === 2) proc.bombs = 1;
+      else proc.finished = true;
+      ctx.push(
+        { type: "Pass", throwerId: player.id, target: { x: square.x, y: square.y }, range: square.range, bomb: true, stage: "animosity", rerolled: false },
+        ...(second ? [{ type: "AllYouCanEat" as const, playerId: player.id }] : []),
+      );
       return "continue";
     }
     if (a.type === "THROW") {

@@ -25,7 +25,11 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Raiding Party": "drive",
   "The Flashing Blade": "game",
   "Furious Outburst": "half",
+  "All You Can Eat": "game",
 };
+
+/** All You Can Eat: after the second bomb, a D6 of this or less sends the player off. */
+export const ALL_YOU_CAN_EAT_SENT_OFF = 3;
 
 /** Furious Outburst: how far the target may be, and how far the player goes afterwards. */
 export const FURIOUS_OUTBURST_RANGE = 3;
@@ -74,11 +78,38 @@ const UNTARGETED: Record<string, (state: GameState, player: PlayerState, action:
   "Frenzied Rush": (_state, player, action) => action === "blitz" && !hasSkill(player, "Frenzy"),
   "Slashing Nails": (_state, player, action) => action === "blitz" && !hasSkill(player, "Claws"),
   Incorporeal: () => true,
+  "All You Can Eat": (_state, player, action) => action === "bomb" && hasSkill(player, "Bombardier"),
   "Raiding Party": (state, player) => raiders(state, player).length > 0,
   // A standing player within 3 squares of the ball on the ground.
   "Catch of the Day": (state, player) => {
     const { ball } = state;
     return player.status === "standing" && isOnPitch(player) && !ball.carried && ball.square !== null && Math.max(Math.abs(ball.square.x - player.at.x), Math.abs(ball.square.y - player.at.y)) <= 3;
+  },
+};
+
+/** All You Can Eat: once the second bomb is resolved, a D6: 1-3 sends the player off. */
+export const AllYouCanEat: Handler<P<"AllYouCanEat">> = {
+  step(ctx, proc, action) {
+    const player = getPlayer(ctx, proc.playerId);
+    if (!isOnPitch(player)) return "done";
+    if (action === null) return "wait";
+    const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `All You Can Eat (sent off on ${ALL_YOU_CAN_EAT_SENT_OFF} or less)`);
+    if (roll! > ALL_YOU_CAN_EAT_SENT_OFF) return "done";
+    const square = squareOf(ctx, player);
+    const { ball } = ctx.state;
+    const sent: PlayerState = player;
+    sent.at = "banned";
+    sent.status = "standing";
+    ctx.emit({ type: "PlayerSentOff", playerId: player.id });
+    if (ball.carried && ball.square && ball.square.x === square.x && ball.square.y === square.y) {
+      ball.carried = false;
+      ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+    }
+    return "done";
+  },
+  actions(state, proc) {
+    const player = state.players[proc.playerId]!;
+    return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `All You Can Eat (${player.name} is sent off on ${ALL_YOU_CAN_EAT_SENT_OFF} or less)` }];
   },
 };
 
@@ -242,6 +273,8 @@ export function activationSkills(state: GameState, player: PlayerState, action: 
  * - Furious Outburst (once per half, as the team's Blitz): a standing player is put next to a standing opponent within 3
  *   squares and stabs them, then is put in a free square within 3 squares of there, without any roll; the activation
  *   ends.
+ * - All You Can Eat (once per game): declared for a Throw Bomb action, the player throws two bombs instead of one; after
+ *   the second, a D6 of 1-3 sends them off.
  * - Incorporeal (once per game): until the end of the activation, the player makes no Dodge rolls for leaving opponents'
  *   tackle zones.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
@@ -345,6 +378,11 @@ export const StartSkill: Handler<P<"StartSkill">> = {
       return "done";
     }
     switch (proc.skill) {
+      case "All You Can Eat": {
+        const move = state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === player.id);
+        if (move) move.bombs = 2;
+        return "done";
+      }
       case "Incorporeal":
         player.incorporeal = true;
         return "done";

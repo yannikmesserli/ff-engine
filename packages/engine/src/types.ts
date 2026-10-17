@@ -479,6 +479,8 @@ export type Procedure =
   | { type: "Trapdoor"; playerId: string; stage: "roll" | "result" | "injury"; sppTo?: string[] }
   /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
+  /** All You Can Eat: after the second bomb, the player is sent off on a D6 of 1-3. */
+  | { type: "AllYouCanEat"; playerId: string }
   /** Quick Bite: an opponent marking the player who caught the ball may roll armour against them for it. */
   | { type: "QuickBite"; catcherId: string; stage: "choose" | "armour" | "injury"; biterId?: string }
   /** A special rule used at the start of an activation (Black Ink...): its target, rolls and effect. */
@@ -594,6 +596,8 @@ export type Procedure =
       /** Fury of the Blood God: asked (`fury`); the Block actions still to make after the first (`extraBlocks`). */
       fury?: boolean;
       extraBlocks?: number;
+      /** All You Can Eat: the bombs the player may still throw in this Throw Bomb action (2, then 1). */
+      bombs?: number;
       /** Maximum Carnage: the target of the first Chainsaw attack (another one may follow). */
       carnage?: string;
       /** The start-of-activation rules were offered; `ended`: one of them ended the activation. */

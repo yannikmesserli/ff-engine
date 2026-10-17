@@ -539,6 +539,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Furious Outburst (Swiftvine Glimmershard): once per half, standing at the start of her activation and as the team's
     Blitz, she is put next to a standing opponent within 3 squares and stabs them, then is put in a free square within 3
     squares of there, without any roll; her activation then ends.
+  - All You Can Eat (Cindy Piewhistle): once per game, declared at the start of a Throw Bomb action, she throws two
+    bombs instead of one; after the second, a D6 of 1-3 sends her off.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
