@@ -687,8 +687,10 @@ export type Procedure =
       fended?: boolean;
       /** Taunt: the defender's coach chose whether to force the follow-up. */
       taunted?: boolean;
-      /** Pro: the index of the block die to re-roll. */
+      /** Pro (or Unstoppable Momentum): the index of the block die to re-roll. */
       proDie?: number;
+      /** Unstoppable Momentum re-rolls the die picked, without a Pro roll. */
+      momentum?: boolean;
       /** A team re-roll was spent on a failed Pro roll. */
       proRetried?: boolean;
       /** The skill re-rolling a single die (Brawler: a Both Down, Hatred: a Skull). */

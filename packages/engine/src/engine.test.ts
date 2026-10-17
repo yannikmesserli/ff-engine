@@ -1193,6 +1193,20 @@ describe("engine", () => {
       });
     });
 
+    it("Unstoppable Momentum: in a Blitz, the attacker may re-roll any one block die, not in a Block", () => {
+      const hthark = withSkills(toFirstTurn(), { "home-2": ["Unstoppable Momentum"] });
+      let s = apply(hthark, declare("home-2", "blitz", "away-2"), { type: "BLOCK", targetId: "away-2" }, roll(1));
+      expect(find(s, "USE_SKILL")?.skill).toBe("Unstoppable Momentum");
+      s = apply(s, { type: "USE_SKILL", use: true, skill: "Unstoppable Momentum" });
+      expect(find(s, "REROLL_BLOCK_DIE")).toEqual({ type: "REROLL_BLOCK_DIE", side: "home", results: [1], skill: "Unstoppable Momentum" });
+      s = apply(s, { type: "REROLL_BLOCK_DIE", index: 0 });
+      expect(find(s, "ROLL")?.reason).toBe("Unstoppable Momentum (re-roll a block die)");
+      s = apply(s, roll(6));
+      expect(s.log).toContainEqual({ type: "BlockResult", attackerId: "home-2", defenderId: "away-2", face: 6 });
+      expect(s.teams.home.rerolls).toBe(1);
+      expect(find(apply(blockAway2(hthark), roll(1)), "USE_SKILL")).toBeUndefined();
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

@@ -423,6 +423,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     natural 2+, whatever the modifiers; offered before any re-roll.
   - Consummate Professional (Griff Oberwald): once per game, +1 to an Agility Test (Dodge, Jump, pick-up, catch,
     landing) after the roll, when that saves it (a natural 1 still fails); offered before any re-roll.
+  - Unstoppable Momentum (H'thark the Unstoppable): in a Blitz (each of its blocks), the attacker may re-roll any one
+    block die of their choice, instead of the block's one re-roll.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

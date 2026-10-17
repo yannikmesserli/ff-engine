@@ -396,17 +396,35 @@ function singleDieSkills(proc: P<"Block">, attacker: PlayerState, defender: Play
 
 /** Any re-roll the attacker could use on the block dice now (team re-roll, Brawler, Hatred, Pro). */
 const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
-  canReroll(state, proc, attacker) || (!proc.mascotFailed && (singleDieSkills(proc, attacker, defender).length > 0 || canUsePro(state, attacker, proc.rerolled)));
+  canReroll(state, proc, attacker) ||
+  (!proc.mascotFailed && (singleDieSkills(proc, attacker, defender).length > 0 || momentum(proc, attacker) || canUsePro(state, attacker, proc.rerolled)));
+
+/** Unstoppable Momentum: during a Blitz, the attacker may re-roll any one block die. */
+const momentum = (proc: P<"Block">, attacker: PlayerState) => !proc.rerolled && !!proc.blitz && hasSkill(attacker, "Unstoppable Momentum");
 
 /** The re-roll skills offered on the block dice now, as USE_SKILL templates. */
 const skillTemplates = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
-  proc.mascotFailed ? [] : [...singleDieTemplate(proc, attacker, defender), ...proTemplate(state, attacker, proc.rerolled)];
+  proc.mascotFailed
+    ? []
+    : [
+        ...singleDieTemplate(proc, attacker, defender),
+        ...(momentum(proc, attacker) ? [{ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill: "Unstoppable Momentum" }] : []),
+        ...proTemplate(state, attacker, proc.rerolled),
+      ];
 
-/** Use the re-roll skill named by the action (the only one offered when it names none): Brawler, Hatred or Pro. */
+/** Use the re-roll skill named by the action (the only one offered when it names none): Brawler, Hatred, Unstoppable Momentum or Pro. */
 function useSkill(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: PlayerState, skill: string | undefined) {
   const offered = skillTemplates(ctx.state, proc, attacker, defender).map((t) => t.skill);
   const chosen = skill ?? offered[0];
   if (chosen === undefined || !offered.includes(chosen)) ctx.reject("This skill cannot be used now.");
+  if (chosen === "Unstoppable Momentum") {
+    // The coach picks the die, re-rolled without any roll first.
+    ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: chosen });
+    proc.rerolled = true;
+    proc.momentum = true;
+    proc.stage = "proDie";
+    return;
+  }
   if (chosen !== "Pro") return useSingleDie(ctx, proc, attacker, chosen as SingleDieSkill);
   // Pro: the coach picks the die, then rolls for it.
   proc.rerolled = true;
@@ -639,7 +657,7 @@ export const Block: Handler<P<"Block">> = {
         const { index } = ctx.expect(action, "REROLL_BLOCK_DIE");
         if (proc.results![index] === undefined) ctx.reject("Invalid die.");
         proc.proDie = index;
-        proc.stage = "pro";
+        proc.stage = proc.momentum ? "proReroll" : "pro";
         return "continue";
       }
       case "pro":
@@ -653,7 +671,7 @@ export const Block: Handler<P<"Block">> = {
       }
       case "proReroll": {
         if (action === null) return "wait";
-        const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], "Pro (re-roll a block die)");
+        const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], `${proc.momentum ? "Unstoppable Momentum" : "Pro"} (re-roll a block die)`);
         proc.results![proc.proDie!] = die!;
         proc.stage = "choose";
         return "continue";
@@ -878,13 +896,13 @@ export const Block: Handler<P<"Block">> = {
           { type: "DECLINE_REROLL", side: attacker.side },
         ];
       case "proDie":
-        return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: "Pro" }];
+        return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: proc.momentum ? "Unstoppable Momentum" : "Pro" }];
       case "pro":
       case "proTeam":
       case "proLoner":
         return proTemplates(state, proc.stage, attacker);
       case "proReroll":
-        return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: "Pro (re-roll a block die)" }];
+        return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: 1 }], reason: `${proc.momentum ? "Unstoppable Momentum" : "Pro"} (re-roll a block die)` }];
       case "loner":
         return [lonerRollTemplate(state, attacker)];
       case "singleDie":

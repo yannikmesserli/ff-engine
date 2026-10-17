@@ -102,6 +102,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Blind Rage": "May re-roll the D6 of a failed Dauntless roll.",
   "The Ballista": "Once per game, may re-roll a failed pass or team-mate throw.",
   "Consummate Professional": "Once per game, may apply a +1 modifier to an Agility Test, after the roll has been made.",
+  "Unstoppable Momentum": "When performing a Block as part of a Blitz, may re-roll a single block die.",
   "Swift as the Breeze": "Once per game, may choose to pass a single Dodge, Leap or Rush roll on a 2+, regardless of any modifiers.",
   Reliable: "A team-mate whose throw this player fumbles still bounces, but always lands safely (not a fumbled kick).",
   "I'll Carry You": "Grak and Crumbleberry are hired together. Once per half, Grak may pick up Crumbleberry at the start of his activation (gaining Dodge and Break Tackle) and puts her down next to him at its end.",
