@@ -1,10 +1,10 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerState, Procedure, Square, TeamState } from "../types";
 import { adjacent, ballCarrier, isOnPitch, playerAt, tackleZoneAt } from "../pitch";
-import { ARMOUR_DICE } from "./checks";
+import { ARMOUR_DICE, dwarfenGrit } from "./checks";
 import { injure } from "./injury";
 import { hasSkill } from "../skills";
-import { getPlayer, squareOf } from "./helpers";
+import { getPlayer, squareOf, useOncePerGame } from "./helpers";
 import { dropBall } from "./ball";
 import { CHAINSAW_TARGET, chainsawArmour } from "./block";
 
@@ -138,8 +138,20 @@ export const Foul: Handler<P<"Foul">> = {
         const roll = unmodified + (proc.dirtyPlayerOnArmour ? 1 : 0);
         const broken = roll >= victim.av;
         ctx.emit(broken ? { type: "ArmourBroken", playerId: victim.id, roll } : { type: "ArmourHeld", playerId: victim.id, roll });
-        proc.stage = broken ? "injury" : loneFouler(state, fouler, victim) ? "loneFouler" : "referee";
+        proc.stage = broken ? (!proc.grit && dwarfenGrit(victim) ? "grit" : "injury") : loneFouler(state, fouler, victim) ? "loneFouler" : "referee";
         return "continue";
+      }
+      case "grit": {
+        if (action === null) return "wait";
+        proc.grit = true;
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "injury";
+          return "continue";
+        }
+        // Dwarfen Grit: the armour is rolled again, and the new roll stands.
+        useOncePerGame(ctx, victim, "Dwarfen Grit");
+        proc.stage = "armour";
+        return "wait";
       }
       case "loneFouler": {
         if (action === null) return "wait";
@@ -257,6 +269,8 @@ export const Foul: Handler<P<"Foul">> = {
         const chainsaw = proc.chainsaw && chainsawArmour(victim) > 0 ? ", +3 Chainsaw" : "";
         return [{ type: "ROLL", side, dice: [...ARMOUR_DICE], reason: `Armour ${victim.av}+ (foul on ${victim.name}${mod}${chainsaw}${dirty})` }];
       }
+      case "grit":
+        return [{ type: "USE_SKILL", side: victim.side, playerId: victim.id, skill: "Dwarfen Grit" }];
       case "injury":
         return [{ type: "ROLL", side, dice: [...ARMOUR_DICE], reason: injuryModifier(fouler, proc) ? "Injury (+1 Dirty Player)" : "Injury" }];
       case "biasedReferee":

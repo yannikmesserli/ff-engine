@@ -1240,6 +1240,20 @@ describe("engine", () => {
       expect(find(apply(down(ivan(["human"])), roll(3, 4)), "USE_SKILL")?.skill).toBe("Dwarven Scourge");
     });
 
+    it("Dwarfen Grit: once per game, the player's broken armour may be rolled again; the new roll stands", () => {
+      const josef = withSkills(toFirstTurn(), { "away-2": ["Dwarfen Grit"] });
+      let s = apply(blockAway2(josef), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "away", playerId: "away-2", skill: "Dwarfen Grit" });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(find(s, "ROLL")?.reason).toMatch(/^Armour 8\+ \(Away 2\)/);
+      s = apply(s, roll(1, 2));
+      expect(s.log.at(-1)).toEqual({ type: "ArmourHeld", playerId: "away-2", roll: 3 });
+      expect(s.players["away-2"]!.usedThisGame).toEqual(["Dwarfen Grit"]);
+      // Declined: the injury roll follows.
+      const declined = apply(blockAway2(josef), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), { type: "USE_SKILL", use: false });
+      expect(find(declined, "ROLL")?.reason).toBe("Injury");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

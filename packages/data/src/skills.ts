@@ -102,6 +102,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Blind Rage": "May re-roll the D6 of a failed Dauntless roll.",
   "The Ballista": "Once per game, may re-roll a failed pass or team-mate throw.",
   "Consummate Professional": "Once per game, may apply a +1 modifier to an Agility Test, after the roll has been made.",
+  "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   Slayer: "Once per game, +1 to the armour or injury roll of an opposition Big Guy knocked down by this player's block, after the roll.",
   "Unstoppable Momentum": "When performing a Block as part of a Blitz, may re-roll a single block die.",

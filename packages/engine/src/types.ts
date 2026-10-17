@@ -668,7 +668,9 @@ export type Procedure =
       /** "chainsaw": the fouler may use their Chainsaw (a kick-back roll first, then +3 to the armour roll). */
       /** "biasedReferee": the victim's team's Biased Referee may spot a foul the referee missed. */
       /** "loneFouler": the fouler may re-roll the armour roll with Lone Fouler. */
-      stage: "chainsaw" | "kickback" | "armour" | "loneFouler" | "injury" | "referee" | "biasedReferee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
+      /** "grit": the fouled player may use Dwarfen Grit on their broken armour (`grit` once asked). */
+      stage: "chainsaw" | "kickback" | "armour" | "loneFouler" | "grit" | "injury" | "referee" | "biasedReferee" | "argue" | "argueRoll" | "bribe" | "bribeRoll" | "sendOff" | "end";
+      grit?: boolean;
       /** The Chainsaw is used for this foul. */
       chainsaw?: boolean;
       armour?: number[];
@@ -928,8 +930,10 @@ export type Procedure =
       armourRoll?: number;
       injuryRoll?: number;
       lateUsed?: boolean;
+      /** Dwarfen Grit: the player's broken armour was re-rolled ("grit": asked). */
+      grit?: boolean;
       /** "sabotage": the player may use Saboteur; "sabotageRoll": its D6. */
-      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "lateArmour" | "injury" | "lateInjury" | "bounce";
+      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "lateArmour" | "grit" | "injury" | "lateInjury" | "bounce";
       square?: Square;
       hadBall?: boolean;
     };

@@ -300,6 +300,9 @@ function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState):
   return null;
 }
 
+/** Dwarfen Grit: once per game, the player may have their broken armour rolled again (the new roll stands). */
+export const dwarfenGrit = (player: PlayerState) => hasSkill(player, "Dwarfen Grit") && !player.usedThisGame?.includes("Dwarfen Grit");
+
 /** Claws: an armour roll of 8+ breaks the armour of a player with a higher AV. */
 export const CLAWS_ARMOUR = 8;
 
@@ -458,13 +461,26 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         // BB2025: armour is broken when the roll equals or beats AV.
         if (roll >= player.av) {
           ctx.emit({ type: "ArmourBroken", playerId: player.id, roll });
-          proc.stage = "injury";
+          proc.stage = !proc.grit && !proc.lateUsed && dwarfenGrit(player) ? "grit" : "injury";
         } else {
           ctx.emit({ type: "ArmourHeld", playerId: player.id, roll });
           const late = lateBonus(state, proc, player);
           proc.armourRoll = roll;
           proc.stage = late && !hasSkill(player, "Iron Hard Skin") && roll + late.bonus >= player.av ? "lateArmour" : "bounce";
         }
+        return "continue";
+      }
+      case "grit": {
+        if (action === null) return "wait";
+        proc.grit = true;
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "injury";
+          return "continue";
+        }
+        // The armour is rolled again, and the new roll stands.
+        useOncePerGame(ctx, player, "Dwarfen Grit");
+        proc.mightyBlowOnArmour = false;
+        proc.stage = "armour";
         return "continue";
       }
       case "lateArmour": {
@@ -517,6 +533,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "steady") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Steady Footing" }];
     if (proc.stage === "sabotage") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Saboteur" }];
+    if (proc.stage === "grit") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Dwarfen Grit" }];
     if (proc.stage === "lateArmour" || proc.stage === "lateInjury") {
       const blocker = state.players[proc.blockerId!]!;
       return [{ type: "USE_SKILL", side: blocker.side, playerId: blocker.id, skill: lateBonus(state, proc, player)!.skill }];
