@@ -524,6 +524,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
     modifiers; a failed roll is then re-rolled.
   - Putrid Regurgitation (Bilerot Vomitflesh): once per half, he may use the Projectile Vomit special action (in a Block
     or Blitz action), even after he blocked in it.
+  - Kick 'em While They're Down! (Nobbla Blackwart): once per game, in a Block action, he may make a Chainsaw attack on
+    an adjacent prone or stunned opponent (who stays down as they are); it is not a foul, so he cannot be sent off for
+    it.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

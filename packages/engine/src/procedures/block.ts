@@ -1211,8 +1211,11 @@ export const Vomit: Handler<P<"Vomit">> = {
         }
         ctx.emit(chained ? { type: "ArmourBroken", playerId: victim.id } : { type: "ArmourBroken", playerId: victim.id, roll });
         const carrying = ballCarrier(state)?.id === victim.id;
-        victim.status = "prone";
-        ctx.emit({ type: "PlayerPlacedProne", playerId: victim.id });
+        // A prone or stunned victim (Kick 'em While They're Down!) stays as they are.
+        if (victim.status === "standing") {
+          victim.status = "prone";
+          ctx.emit({ type: "PlayerPlacedProne", playerId: victim.id });
+        }
         if (carrying) {
           state.ball.carried = false;
           proc.dropped = true;

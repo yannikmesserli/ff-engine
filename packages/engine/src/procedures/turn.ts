@@ -344,7 +344,7 @@ export function declarableActions(state: GameState, proc: P<"Turn">, player: Pla
   const free = (a: PlayerActionType) => !proc.used.includes(a);
   // Jump Up: a prone player may declare a Block, standing up with an AG roll.
   const canBlock = player.status === "standing" || hasSkill(player, "Jump Up");
-  if (!proc.charge && canBlock && adjacentTargets(state, player).length > 0) actions.push("block");
+  if (!proc.charge && canBlock && (adjacentTargets(state, player).length > 0 || downedTargets(state, player).length > 0)) actions.push("block");
   if (free("blitz") && blitzTargets(state, player.side).length > 0) actions.push("blitz");
   if (proc.charge) return actions;
   if (free("pass") && ballAvailable(state, player) && !keepsBall(player)) actions.push("pass");
@@ -565,6 +565,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       (activationMoves(state, proc).length === 0 &&
         activationTargets(state, proc).length === 0 &&
         extraSpecialTargets(state, proc, "Projectile Vomit").length === 0 &&
+        extraSpecialTargets(state, proc, "Chainsaw").length === 0 &&
         throwOptions(state, proc).length === 0 &&
         handOffOptions(state, proc).length === 0 &&
         foulOptions(state, proc).length === 0 &&
@@ -653,6 +654,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const skill = SPECIAL_ATTACKS[a.type];
       if (!specialTargets(state, proc, skill).some((t) => t.id === a.targetId)) ctx.reject(`Cannot use ${skill} on this player.`);
       // Putrid Regurgitation: the vomit of a player without the skill, or after their block.
+      if (skill === "Chainsaw" && state.players[a.targetId]!.status !== "standing") useOncePerGame(ctx, player, "Kick 'em While They're Down!");
       if (skill === "Projectile Vomit" && (!hasSkill(player, skill) || proc.blocked)) {
         player.usedThisHalf = [...(player.usedThisHalf ?? []), "Putrid Regurgitation"];
         ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Putrid Regurgitation" });
@@ -969,14 +971,26 @@ const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: P<"Vomit
 
 /**
  * Special attacks a star player's rule gives: Putrid Regurgitation (once per half, a Projectile Vomit, even after the
- * player blocked in a Block or Blitz action).
+ * player blocked in a Block or Blitz action), Kick 'em While They're Down! (once per game, in a Block action, a Chainsaw
+ * attack on an adjacent prone or stunned opponent; not a foul).
  */
 function extraSpecialTargets(state: GameState, proc: P<"MoveAction">, skill: P<"Vomit">["skill"]): PlayerState[] {
   const player = state.players[proc.playerId]!;
   if (skill === "Projectile Vomit" && putrid(player) && isOnPitch(player) && player.status === "standing" && (proc.action === "block" || proc.action === "blitz")) {
     return proc.blocked ? adjacentTargets(state, player) : activationTargets(state, proc);
   }
+  if (skill === "Chainsaw" && proc.action === "block" && !proc.blocked) return downedTargets(state, player);
   return [];
+}
+
+/** Kick 'em While They're Down!: the prone or stunned opponents next to the player. */
+function downedTargets(state: GameState, player: PlayerState): PlayerState[] {
+  if (!hasSkill(player, "Chainsaw") || !hasSkill(player, "Kick 'em While They're Down!") || player.usedThisGame?.includes("Kick 'em While They're Down!")) return [];
+  if (!isOnPitch(player) || player.status !== "standing") return [];
+  return adjacent(player.at).flatMap((s) => {
+    const p = playerAt(state, s);
+    return p && p.side !== player.side && p.status !== "standing" ? [p] : [];
+  });
 }
 
 /** Putrid Regurgitation is still unused this half. */

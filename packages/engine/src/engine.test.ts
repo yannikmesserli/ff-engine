@@ -1633,6 +1633,21 @@ describe("engine", () => {
       expect(find(s, "ROLL")?.reason).toMatch(/Projectile Vomit/);
     });
 
+    it("Kick 'em While They're Down!: once per game, a Chainsaw attack on a prone or stunned opponent", () => {
+      const nobbla = edit(withSkills(toFirstTurn(), { "home-2": ["Chainsaw", "Kick 'em While They're Down!"] }), (c) => void (c.players["away-2"]!.status = "stunned"));
+      let s = apply(nobbla, declare("home-2", "block"));
+      expect(find(s, "CHAINSAW")?.targetIds).toContain("away-2");
+      s = apply(s, { type: "CHAINSAW", targetId: "away-2" });
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Kick 'em While They're Down!"]);
+      // The chainsaw roll, then armour with +3 that holds: the player stays stunned.
+      while (find(s, "ROLL")?.reason.startsWith("Chainsaw")) s = apply(s, roll(6));
+      s = apply(s, roll(1, 1));
+      expect(s.players["away-2"]!.status).toBe("stunned");
+      // Without the rule, a Block action cannot be declared against a downed player only.
+      const plain = edit(withSkills(toFirstTurn(), { "home-2": ["Chainsaw"] }), (c) => void (c.players["away-2"]!.status = "stunned"));
+      expect(find(apply(plain, declare("home-2", "block")), "CHAINSAW")?.targetIds).not.toContain("away-2");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
