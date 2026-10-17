@@ -459,6 +459,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     stand-up, next to going on with the action.
   - "Excuse me, are you a Zoat?" (Zolcath the Zoat): once per game, when he is activated, an opponent within 3
     squares (with a tackle zone) becomes Distracted.
+  - Baleful Hex (Estelle la Veneaux): once per game, at the start of her activation, a D6 against an opponent within 5
+    squares: on 2+ they become Distracted and cannot be activated during their team's next turn.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

@@ -188,6 +188,11 @@ export const Turn: Handler<P<"Turn">> = {
           p.status = "prone";
           p.activated = true;
         }
+        // Baleful Hex: the player misses this turn.
+        if (p.hexed) {
+          p.activated = true;
+          delete p.hexed;
+        }
       }
       state.activeSide = proc.side;
       ctx.emit({ type: "TurnStarted", side: proc.side, turn: team.turn });

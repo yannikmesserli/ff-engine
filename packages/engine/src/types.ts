@@ -105,6 +105,8 @@ export interface PlayerState {
   usedThisGame?: string[];
   /** Once-per-drive special rules used (cleared when the drive ends). */
   usedThisDrive?: string[];
+  /** Baleful Hex: cannot be activated during the team's next turn. */
+  hexed?: boolean;
   /**
    * Failed a Bone Head or Really Stupid roll: no tackle zone, cannot catch, intercept or assist, until the player's
    * next activation or the end of the drive.
@@ -428,7 +430,8 @@ export type CheckKind =
   | "chomp"
   | "saboteur"
   | "captain"
-  | "gettingEven";
+  | "gettingEven"
+  | "rule";
 
 /**
  * Procedures are plain, serializable objects kept on a stack in the game state.

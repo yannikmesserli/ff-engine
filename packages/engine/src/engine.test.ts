@@ -1383,6 +1383,20 @@ describe("engine", () => {
       expect(s.players["away-1"]!.distracted).toBe(true);
     });
 
+    it("Baleful Hex: once per game, on 2+ an opponent within 5 squares is Distracted and misses their next turn", () => {
+      const estelle = withSkills(toFirstTurn(), { "home-4": ["Baleful Hex"] });
+      const hex = apply(estelle, startMove("home-4"), { type: "ACTIVATION_SKILL", skill: "Baleful Hex" }, { type: "SELECT_PLAYERS", playerIds: ["away-4"] });
+      expect(find(hex, "ROLL")?.reason).toBe("Baleful Hex 2+ (Away 4)");
+      expect(apply(hex, roll(1)).players["away-4"]!.distracted).toBe(false);
+      let s = apply(hex, roll(2));
+      expect(s.players["away-4"]!.distracted).toBe(true);
+      s = apply(s, { type: "END_PLAYER_ACTION" }, { type: "END_TURN" });
+      expect(find(s, "START_ACTION")?.choices.map((c) => c.playerId)).not.toContain("away-4");
+      // The turn after, they may act again.
+      s = apply(s, { type: "END_TURN" }, { type: "END_TURN" });
+      expect(find(s, "START_ACTION")?.choices.map((c) => c.playerId)).toContain("away-4");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

@@ -38,6 +38,7 @@ const CHECK_NAMES = {
   saboteur: "Saboteur roll (4+ knocks the blocker down, and the saboteur out)",
   captain: "Team Captain roll (6 saves the re-roll)",
   gettingEven: "Getting Even roll",
+  rule: "special rule roll",
 } as const;
 
 /** What a skill did, for the log line of a SkillUsed event. */

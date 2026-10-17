@@ -10,6 +10,15 @@ type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Black Ink": "game",
   "Excuse me, are you a Zoat?": "game",
+  "Baleful Hex": "game",
+};
+
+/** Baleful Hex works on 2+. */
+export const BALEFUL_HEX_TARGET = 2;
+
+/** The D6 a start-of-activation rule rolls after its target is picked, if any. */
+const ROLLS: Record<string, { target: number; reason: string }> = {
+  "Baleful Hex": { target: BALEFUL_HEX_TARGET, reason: "Baleful Hex" },
 };
 
 /** The player may still use the rule this game, half or drive. */
@@ -53,6 +62,8 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
       return marked(state, player).filter((p) => !p.distracted);
     case "Excuse me, are you a Zoat?":
       return opponentsWithin(state, player, 3).filter((p) => hasTackleZone(p));
+    case "Baleful Hex":
+      return opponentsWithin(state, player, 5);
     default:
       return [];
   }
@@ -67,6 +78,8 @@ export function activationSkills(state: GameState, player: PlayerState): string[
  * Special rules used at the start of an activation:
  * - Black Ink (once per game): an opponent the player marks becomes Distracted until their next activation.
  * - "Excuse me, are you a Zoat?" (once per game): an opponent within 3 squares (with a tackle zone) becomes Distracted.
+ * - Baleful Hex (once per game): a D6 against an opponent within 5 squares: on 2+ they become Distracted and cannot be
+ *   activated during their team's next turn.
  */
 export const StartSkill: Handler<P<"StartSkill">> = {
   step(ctx, proc, action) {
@@ -82,13 +95,27 @@ export const StartSkill: Handler<P<"StartSkill">> = {
       if (playerIds.length > 1) ctx.reject("Choose one player.");
       useRule(ctx, player, proc.skill);
       proc.targetId = target.id;
-      proc.stage = "effect";
+      proc.stage = ROLLS[proc.skill] ? "roll" : "effect";
+      if (proc.stage === "roll") return "wait";
     }
     const target = getPlayer(ctx, proc.targetId!);
+    if (proc.stage === "roll") {
+      if (action === null) return "wait";
+      const { target: needed, reason } = ROLLS[proc.skill]!;
+      const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `${reason} ${needed}+`);
+      ctx.emit({ type: "CheckResult", kind: "rule", playerId: player.id, success: roll! >= needed, roll: roll!, target: needed });
+      if (roll! < needed) return "done";
+      proc.stage = "effect";
+    }
     switch (proc.skill) {
       case "Black Ink":
       case "Excuse me, are you a Zoat?":
         target.distracted = true;
+        ctx.emit({ type: "DistractedBy", playerId: target.id, byId: player.id, skill: proc.skill });
+        return "done";
+      case "Baleful Hex":
+        target.distracted = true;
+        target.hexed = true;
         ctx.emit({ type: "DistractedBy", playerId: target.id, byId: player.id, skill: proc.skill });
         return "done";
     }
@@ -96,6 +123,10 @@ export const StartSkill: Handler<P<"StartSkill">> = {
   },
   actions(state, proc) {
     const player = state.players[proc.playerId]!;
+    if (proc.stage === "roll") {
+      const { target, reason } = ROLLS[proc.skill]!;
+      return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `${reason} ${target}+ (${state.players[proc.targetId!]!.name})` }];
+    }
     const playerIds = targets(state, player, proc.skill).map((p) => p.id);
     return [{ type: "SELECT_PLAYERS", side: player.side, playerIds, max: 1, reason: `${proc.skill}: choose a player` }];
   },
