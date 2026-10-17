@@ -3,7 +3,7 @@ import type { CheckKind, GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { canTeamReroll, canUsePro, getPlayer, luckSkill, useLuck, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
+import { PRO_TARGET, canTeamReroll, canUsePro, getPlayer, luckSkill, useLuck, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 import { injure, injuryOutcome, knockOut, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 
@@ -339,6 +339,38 @@ function armourReroller(state: GameState, proc: P<"KnockDown">, player: PlayerSt
   return !!blocker && blocker.side !== player.side && !proc.lateUsed && hasSkill(blocker, "Krump and Smash") && !blocker.usedThisGame?.includes("Krump and Smash");
 }
 
+/** The armour roll is final: broken (injury, or Dwarfen Grit), or held (the blocker's late bonus or re-roll, if any). */
+function afterArmour(ctx: Ctx, proc: P<"KnockDown">, player: PlayerState, roll: number): StepResult {
+  const { state } = ctx;
+  proc.armourRoll = roll;
+  // BB2025: armour is broken when the roll equals or beats AV.
+  if (roll >= player.av) {
+    ctx.emit({ type: "ArmourBroken", playerId: player.id, roll });
+    if (proc.armourOnly) placeProne(ctx, proc, player);
+    proc.stage = !proc.grit && !proc.lateUsed && dwarfenGrit(player) ? "grit" : "injury";
+  } else {
+    ctx.emit({ type: "ArmourHeld", playerId: player.id, roll });
+    const late = lateBonus(state, proc, player);
+    proc.stage = late && !hasSkill(player, "Iron Hard Skin") && roll + late.bonus >= player.av ? "lateArmour" : armourReroller(state, proc, player) ? "armourReroll" : "bounce";
+  }
+  return "continue";
+}
+
+/**
+ * Old Pro: once per game, a player with Pro who has not used it this turn may roll Pro (3+) to re-roll one die of an
+ * armour roll: their own that broke (the higher die), or one of their block that held (the lower die), when the re-roll
+ * could change the result. Returns that player.
+ */
+function oldProUser(state: GameState, proc: P<"KnockDown">, player: PlayerState, roll: number): PlayerState | undefined {
+  if (proc.oldPro || proc.lateUsed || !proc.armourDice) return undefined;
+  const [a = 0, b = 0] = proc.armourDice;
+  const can = (p: PlayerState | undefined): p is PlayerState =>
+    !!p && hasSkill(p, "Old Pro") && hasSkill(p, "Pro") && !p.usedThisGame?.includes("Old Pro") && !p.usedSkills.includes("Pro");
+  if (roll >= player.av) return can(player) && roll - Math.max(a, b) + 1 < player.av ? player : undefined;
+  const blocker = blockerOf(state, proc);
+  return blocker && blocker.side !== player.side && can(blocker) && roll - Math.min(a, b) + 6 >= player.av ? blocker : undefined;
+}
+
 /** Dwarfen Grit: once per game, the player may have their broken armour rolled again (the new roll stands). */
 export const dwarfenGrit = (player: PlayerState) => hasSkill(player, "Dwarfen Grit") && !player.usedThisGame?.includes("Dwarfen Grit");
 
@@ -497,18 +529,40 @@ export const KnockDown: Handler<P<"KnockDown">> = {
           roll += bonus;
           bonusUsed(ctx, proc);
         }
-        // BB2025: armour is broken when the roll equals or beats AV.
-        if (roll >= player.av) {
-          ctx.emit({ type: "ArmourBroken", playerId: player.id, roll });
-          if (proc.armourOnly) placeProne(ctx, proc, player);
-          proc.stage = !proc.grit && !proc.lateUsed && dwarfenGrit(player) ? "grit" : "injury";
-        } else {
-          ctx.emit({ type: "ArmourHeld", playerId: player.id, roll });
-          const late = lateBonus(state, proc, player);
-          proc.armourRoll = roll;
-          proc.stage = late && !hasSkill(player, "Iron Hard Skin") && roll + late.bonus >= player.av ? "lateArmour" : armourReroller(state, proc, player) ? "armourReroll" : "bounce";
+        proc.armourRoll = roll;
+        proc.armourDice = [a!, b!];
+        // Old Pro: the player whose armour broke, or the blocker whose roll did not break it, may re-roll a die.
+        if (oldProUser(state, proc, player, roll)) {
+          proc.stage = "oldPro";
+          return "continue";
         }
-        return "continue";
+        return afterArmour(ctx, proc, player, roll);
+      }
+      case "oldPro": {
+        if (action === null) return "wait";
+        const pro = oldProUser(state, proc, player, proc.armourRoll!)!;
+        proc.oldPro = true;
+        if (!ctx.expect(action, "USE_SKILL").use) return afterArmour(ctx, proc, player, proc.armourRoll!);
+        useOncePerGame(ctx, pro, "Old Pro");
+        pro.usedSkills.push("Pro");
+        proc.stage = "oldProRoll";
+        return "wait";
+      }
+      case "oldProRoll": {
+        if (action === null) return "wait";
+        const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Pro ${PRO_TARGET}+ (Old Pro)`);
+        if (roll! < PRO_TARGET) return afterArmour(ctx, proc, player, proc.armourRoll!);
+        proc.stage = "oldProDie";
+        return "wait";
+      }
+      case "oldProDie": {
+        if (action === null) return "wait";
+        // Breaking the armour: the lower die is rolled again; saving it: the higher one.
+        const saving = proc.armourRoll! >= player.av;
+        const [a = 0, b = 0] = proc.armourDice!;
+        const old = saving ? Math.max(a, b) : Math.min(a, b);
+        const [die] = ctx.roll(action, [{ kind: "d6", count: 1 }], "Old Pro (re-roll an armour die)");
+        return afterArmour(ctx, proc, player, proc.armourRoll! - old + die!);
       }
       case "armourReroll": {
         if (action === null) return "wait";
@@ -605,6 +659,13 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     if (proc.stage === "sabotage") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Saboteur" }];
     if (proc.stage === "injuryReroll") return [{ type: "USE_SKILL", side: other(player.side), playerId: proc.blockerId!, skill: "Savage Mauling" }];
     if (proc.stage === "armourReroll") return [{ type: "USE_SKILL", side: other(player.side), playerId: proc.blockerId!, skill: "Krump and Smash" }];
+    if (proc.stage === "oldPro") {
+      const pro = oldProUser(state, proc, player, proc.armourRoll!)!;
+      return [{ type: "USE_SKILL", side: pro.side, playerId: pro.id, skill: "Old Pro" }];
+    }
+    if (proc.stage === "oldProRoll" || proc.stage === "oldProDie") {
+      return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 1 }], reason: proc.stage === "oldProRoll" ? `Pro ${PRO_TARGET}+ (Old Pro)` : "Old Pro (re-roll an armour die)" }];
+    }
     if (proc.stage === "grit") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Dwarfen Grit" }];
     if (proc.stage === "lateArmour" || proc.stage === "lateInjury") {
       const blocker = state.players[proc.blockerId!]!;

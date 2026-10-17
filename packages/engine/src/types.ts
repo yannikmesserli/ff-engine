@@ -994,10 +994,13 @@ export type Procedure =
       lateUsed?: boolean;
       /** Only an armour roll (from "armour"): the player stays standing if it holds, and is placed prone if it breaks. */
       armourOnly?: boolean;
+      /** The two armour dice; Old Pro was asked (`oldPro`). */
+      armourDice?: number[];
+      oldPro?: boolean;
       /** Dwarfen Grit: the player's broken armour was re-rolled ("grit": asked). */
       grit?: boolean;
       /** "sabotage": the player may use Saboteur; "sabotageRoll": its D6. */
-      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "lateArmour" | "armourReroll" | "grit" | "injury" | "lateInjury" | "injuryReroll" | "bounce";
+      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "oldPro" | "oldProRoll" | "oldProDie" | "lateArmour" | "armourReroll" | "grit" | "injury" | "lateInjury" | "injuryReroll" | "bounce";
       square?: Square;
       hadBall?: boolean;
     };

@@ -541,6 +541,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     squares of there, without any roll; her activation then ends.
   - All You Can Eat (Cindy Piewhistle): once per game, declared at the start of a Throw Bomb action, she throws two
     bombs instead of one; after the second, a D6 of 1-3 sends her off.
+  - Old Pro (Helmut Wulf): once per game, his Pro (3+) re-rolls one die of an armour roll: the lower die when his
+    block failed to break armour, the higher die when his own armour broke.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

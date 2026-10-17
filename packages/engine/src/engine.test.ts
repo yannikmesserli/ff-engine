@@ -1291,6 +1291,32 @@ describe("engine", () => {
       expect(types(apply(down, roll(3, 3)))).not.toContain("USE_SKILL");
     });
 
+    it("Old Pro: once per game, Pro (3+) re-rolls one armour die: the lower of the blocker's roll, the higher of the player's own", () => {
+      const down = (s: GameState) => apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      // The blocker: 6 + 1 against AV 8; the 1 is rolled again (a 4: 10, broken).
+      const helmut = withSkills(toFirstTurn(), { "home-2": ["Old Pro", "Pro"] });
+      let s = apply(down(helmut), roll(6, 1));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Old Pro" });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(find(s, "ROLL")?.reason).toBe("Pro 3+ (Old Pro)");
+      s = apply(s, roll(3), roll(4));
+      expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: "away-2", roll: 10 });
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Old Pro"]);
+      expect(s.players["home-2"]!.usedSkills).toContain("Pro");
+      // Pro failed: the roll stands.
+      expect(apply(down(helmut), roll(6, 1), { type: "USE_SKILL", use: true }, roll(2)).log).toContainEqual({ type: "ArmourHeld", playerId: "away-2", roll: 7 });
+      // A roll that even a 6 could not break: nothing offered.
+      expect(types(apply(down(helmut), roll(1, 1)))).not.toContain("USE_SKILL");
+      // His own armour: 6 + 3 against AV 8; the 6 is rolled again (a 2: 5, held).
+      const own = withSkills(toFirstTurn(), { "away-2": ["Old Pro", "Pro"] });
+      s = apply(down(own), roll(6, 3));
+      expect(find(s, "USE_SKILL")?.playerId).toBe("away-2");
+      s = apply(s, { type: "USE_SKILL", use: true }, roll(5), roll(2));
+      expect(s.log).toContainEqual({ type: "ArmourHeld", playerId: "away-2", roll: 5 });
+      // Without Pro: nothing.
+      expect(types(apply(down(withSkills(toFirstTurn(), { "home-2": ["Old Pro"] })), roll(6, 1)))).not.toContain("USE_SKILL");
+    });
+
     it("Crushing Blow: once per game, +1 to the armour roll of an opponent knocked down by the block, after the roll; not to the injury", () => {
       const zug = withSkills(toFirstTurn(), { "home-2": ["Crushing Blow"] });
       const down = apply(blockAway2(zug), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
