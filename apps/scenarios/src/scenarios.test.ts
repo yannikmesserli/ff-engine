@@ -94,6 +94,15 @@ describe("scenarios", () => {
     expect(s.players["home-2"]).toMatchObject({ at: { x: 9, y: 6 }, status: "standing" });
   });
 
+  it("savage-thrower: the Troll's failed Animal Savagery hits the prone Goblin he could throw", () => {
+    let s = load("savage-thrower");
+    expect(s.players["home-2"]!.status).toBe("prone");
+    s = step(s, { type: "START_ACTION", playerId: "home-1", action: "ttm" }).state;
+    s = step(s, { type: "ROLL", values: [1] }).state;
+    s = step(s, { type: "DECLINE_REROLL" }).state;
+    expect(s.log).toContainEqual({ type: "LashedOut", playerId: "home-1", victimId: "home-2" });
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });

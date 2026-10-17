@@ -486,6 +486,57 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "savage-thrower",
+    title: "Animal Savagery: lash out at the team-mate to be thrown",
+    instructions: [
+      "Home's second turn. Snikkit (#2, Goblin) went down in a Both Down block last turn and lies prone next to Grumbol (#1, Troll), who has Animal Savagery here (given in the team file in src/scenarios.ts).",
+      "Click \"Physical dice\", declare Throw Team-mate with Grumbol and enter a 1 for Animal Savagery (4+), then decline the re-roll: he lashes out at Snikkit, prone as he is, since he is the team-mate he could throw (armour roll; the action ends).",
+      "Declare a Move with Grumbol instead and fail the roll: with no standing team-mate next to him, the action is just lost.",
+    ],
+    home: {
+      name: "Flying Gits",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grumbol", position: "Troll", skills: ["Animal Savagery"] },
+        { number: 2, name: "Snikkit", position: "Goblin Lineman" },
+        { number: 3, name: "Grishnak", position: "Orc Lineman" },
+        { number: 4, name: "Ugluk", position: "Orc Lineman" },
+        { number: 5, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Targets",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Fritz", position: "Human Lineman" },
+        { number: 4, name: "Kurt", position: "Human Lineman" },
+      ],
+    },
+    seed: 9,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 11, y: 7 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 5 }, 4: { x: 12, y: 9 }, 5: { x: 8, y: 7 } },
+        away: { 1: { x: 13, y: 5 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 9 }, 4: { x: 16, y: 7 } },
+        ball: { x: 8, y: 7 },
+      }),
+      // Snikkit blocks Otto: Both Down (the humans pick), both armour rolls hold, a turnover; then the humans end their turn.
+      { type: "START_ACTION", playerId: "home-2", action: "block" },
+      { type: "BLOCK", targetId: "away-2" },
+      roll(2, 2),
+      { type: "DECLINE_REROLL" },
+      { type: "CHOOSE_BLOCK_DIE", index: 0 },
+      roll(1, 1),
+      roll(1, 1),
+      { type: "END_TURN" },
+    ],
+  },
+  {
     id: "pick-me-up",
     title: "Pick-me-up: stand up after the opponent's turn",
     instructions: [
