@@ -1207,6 +1207,27 @@ describe("engine", () => {
       expect(find(apply(blockAway2(hthark), roll(1)), "USE_SKILL")).toBeUndefined();
     });
 
+    it("Slayer: once per game, +1 to the armour or injury roll of a Big Guy the player's block knocked down, after the roll", () => {
+      const grim = (keywords: string[]) =>
+        edit(withSkills(toFirstTurn(), { "home-2": ["Slayer"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
+      const down = (s: GameState) => apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      // Armour 7 against AV 8: the +1 breaks it.
+      let s = apply(down(grim(["big guy", "troll"])), roll(3, 4));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Slayer" });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: "away-2", roll: 8 });
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Slayer"]);
+      // Used on the armour: nothing more on the injury roll.
+      expect(types(apply(s, roll(3, 4)))).not.toContain("USE_SKILL");
+      // On the injury roll: 7 (Stunned) becomes 8 (KO'd); a 6 would stay Stunned, so nothing is offered.
+      const injury = apply(down(grim(["big guy"])), roll(6, 6), roll(3, 4));
+      expect(find(injury, "USE_SKILL")?.skill).toBe("Slayer");
+      expect(apply(injury, { type: "USE_SKILL", use: true }).players["away-2"]!.at).toBe("ko");
+      expect(types(apply(down(grim(["big guy"])), roll(6, 6), roll(3, 3)))).not.toContain("USE_SKILL");
+      // Not against other players.
+      expect(types(apply(down(grim(["human"])), roll(3, 4)))).not.toContain("USE_SKILL");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

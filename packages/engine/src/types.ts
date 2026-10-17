@@ -921,8 +921,15 @@ export type Procedure =
       saboteurTargetId?: string;
       /** The player fell over (a failed dodge, jump, Rush or landing), as opposed to being knocked down: no Safe Pair of Hands. */
       fallsOver?: boolean;
+      /**
+       * After the armour roll that held (`armourRoll`), or the injury roll (`injuryRoll`): the blocker's once-per-game
+       * bonus (`lateBonus`: Slayer...) may still be applied ("lateArmour", "lateInjury"); `lateUsed` once it was.
+       */
+      armourRoll?: number;
+      injuryRoll?: number;
+      lateUsed?: boolean;
       /** "sabotage": the player may use Saboteur; "sabotageRoll": its D6. */
-      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "injury" | "bounce";
+      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "lateArmour" | "injury" | "lateInjury" | "bounce";
       square?: Square;
       hadBall?: boolean;
     };

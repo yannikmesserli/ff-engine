@@ -4,7 +4,7 @@ import { passes } from "../dice";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
 import { canTeamReroll, canUsePro, getPlayer, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
-import { injure, knockOut } from "./injury";
+import { injure, injuryOutcome, knockOut } from "./injury";
 import { dropBall } from "./ball";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -287,6 +287,18 @@ function bonusUsed(ctx: Ctx, proc: P<"KnockDown">) {
   if (playerId !== undefined) ctx.emit({ type: "SkillUsed", playerId, skill: bonusSkill(proc) });
 }
 
+/**
+ * The blocker's once-per-game bonus to the armour or the injury roll of an opponent their block knocked down, applied
+ * after the roll if it changes the result: Slayer (+1 against a Big Guy).
+ */
+function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState): { skill: string; bonus: number } | null {
+  const blocker = proc.blockerId === undefined ? undefined : state.players[proc.blockerId];
+  if (!blocker || blocker.side === player.side || proc.lateUsed) return null;
+  const unused = (skill: string) => hasSkill(blocker, skill) && !blocker.usedThisGame?.includes(skill);
+  if (unused("Slayer") && player.keywords.includes("big guy")) return { skill: "Slayer", bonus: 1 };
+  return null;
+}
+
 /** Claws: an armour roll of 8+ breaks the armour of a player with a higher AV. */
 export const CLAWS_ARMOUR = 8;
 
@@ -448,8 +460,23 @@ export const KnockDown: Handler<P<"KnockDown">> = {
           proc.stage = "injury";
         } else {
           ctx.emit({ type: "ArmourHeld", playerId: player.id, roll });
-          proc.stage = "bounce";
+          const late = lateBonus(state, proc, player);
+          proc.armourRoll = roll;
+          proc.stage = late && !hasSkill(player, "Iron Hard Skin") && roll + late.bonus >= player.av ? "lateArmour" : "bounce";
         }
+        return "continue";
+      }
+      case "lateArmour": {
+        if (action === null) return "wait";
+        const late = lateBonus(state, proc, player)!;
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "bounce";
+          return "continue";
+        }
+        useOncePerGame(ctx, state.players[proc.blockerId!]!, late.skill);
+        proc.lateUsed = true;
+        ctx.emit({ type: "ArmourBroken", playerId: player.id, roll: proc.armourRoll! + late.bonus });
+        proc.stage = "injury";
         return "continue";
       }
       case "injury": {
@@ -457,8 +484,26 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         const bonus = injuryBonus(proc);
         const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Injury${mightyBlowNote(bonus, proc)}`);
         if (bonus > 0) bonusUsed(ctx, proc);
+        proc.injuryRoll = a! + b! + bonus;
+        const late = proc.lateUsed ? null : lateBonus(state, proc, player);
+        if (late && injuryOutcome(player, proc.injuryRoll + late.bonus) !== injuryOutcome(player, proc.injuryRoll)) {
+          proc.stage = "lateInjury";
+          return "wait";
+        }
         // The casualty roll and the apothecary run before the ball bounces.
-        injure(ctx, player, a! + b! + bonus, { attackerId: proc.blockerId, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
+        injure(ctx, player, proc.injuryRoll, { attackerId: proc.blockerId, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
+        proc.stage = "bounce";
+        return "continue";
+      }
+      case "lateInjury": {
+        if (action === null) return "wait";
+        const late = lateBonus(state, proc, player)!;
+        let total = proc.injuryRoll!;
+        if (ctx.expect(action, "USE_SKILL").use) {
+          useOncePerGame(ctx, state.players[proc.blockerId!]!, late.skill);
+          total += late.bonus;
+        }
+        injure(ctx, player, total, { attackerId: proc.blockerId, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
         proc.stage = "bounce";
         return "continue";
       }
@@ -471,6 +516,10 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "steady") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Steady Footing" }];
     if (proc.stage === "sabotage") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Saboteur" }];
+    if (proc.stage === "lateArmour" || proc.stage === "lateInjury") {
+      const blocker = state.players[proc.blockerId!]!;
+      return [{ type: "USE_SKILL", side: blocker.side, playerId: blocker.id, skill: lateBonus(state, proc, player)!.skill }];
+    }
     if (proc.stage === "sabotageRoll") return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `Saboteur ${SABOTEUR_TARGET}+ (${player.name})` }];
     const reason =
       proc.stage === "injury"

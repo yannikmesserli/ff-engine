@@ -425,6 +425,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     landing) after the roll, when that saves it (a natural 1 still fails); offered before any re-roll.
   - Unstoppable Momentum (H'thark the Unstoppable): in a Blitz (each of its blocks), the attacker may re-roll any one
     block die of their choice, instead of the block's one re-roll.
+  - Slayer (Grim Ironjaw): once per game, +1 to the armour or the injury roll of an opposing Big Guy knocked down by
+    his block (a Blitz's too), after the roll: offered when it breaks the armour or changes the injury result.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
