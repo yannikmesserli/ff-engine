@@ -769,7 +769,8 @@ export type Procedure =
    * A thrown bomb comes down on `square`: a standing player there may catch it (and must throw it again), otherwise it
    * explodes; on an empty square it first bounces once.
    */
-  | { type: "BombLanding"; square: Square; scattered: boolean; bounced: boolean; stage: "land" | "catch"; catcherId?: string }
+  /** A bomb comes down on `square`; `dive`: the teams still to ask about Diving Catch, the moving team first. */
+  | { type: "BombLanding"; square: Square; scattered: boolean; bounced: boolean; stage: "land" | "catch"; catcherId?: string; dive?: Side[] }
   /** A bomb explodes: the player on `square` is hit, each player next to it on a 4+; `targets` are still to resolve. */
   | { type: "Explosion"; square: Square; targets: string[]; stage: "explode" | "next" | "roll" }
   /**

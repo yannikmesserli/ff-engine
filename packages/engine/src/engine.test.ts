@@ -1806,6 +1806,21 @@ describe("engine", () => {
         expect(s.ball).toEqual({ square: { x: 4, y: 2 }, carried: false });
       });
 
+      it("Diving Catch: a player next to where the bomb comes down may catch it from their square, +1 for an accurate bomb", () => {
+        const diver = withSkills(place(bomber(), { "away-5": { x: 6, y: 5 } }), { "away-5": ["Diving Catch"] });
+        let s = apply(throwBomb(diver, { x: 6, y: 4 }), roll(5));
+        // The moving team has no diver there: the away coach is asked.
+        expect(getAvailableActions(s)).toEqual([{ type: "SELECT_PLAYERS", side: "away", playerIds: ["away-5"], max: 1, reason: "Diving Catch: choose a player to catch the bomb" }]);
+        // Nobody: it bounces from the target square as usual.
+        expect(find(apply(s, { type: "SELECT_PLAYERS", playerIds: [] }), "ROLL")?.reason).toBe("Bomb bounce");
+        s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-5"] });
+        expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "away-5", skill: "Diving Catch" });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Catch \(bomb\) 2\+ \(Away 5\)/);
+        expect(apply(s, roll(2)).log).toContainEqual({ type: "BombCaught", playerId: "away-5" });
+        // A failed catch sets it off in the diver's square.
+        expect(apply(s, roll(1)).log).toContainEqual({ type: "BombExploded", square: { x: 6, y: 5 } });
+      });
+
       it("a fumble explodes on the thrower", () => {
         const s = apply(throwBomb(bomber(), { x: 6, y: 4 }), roll(1), { type: "DECLINE_REROLL" });
         expect(s.log).toContainEqual({ type: "BombHit", playerId: "home-4" });

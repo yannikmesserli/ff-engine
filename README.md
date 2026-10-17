@@ -398,7 +398,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Diving Catch: +1 to catch an accurate pass to the player's square. When a kick-off, pass or throw-in (not a bounce)
   comes down next to standing players with the skill, the moving team (the kicking team at the kick-off) may pick one
   of its divers, or its own player in the square, to catch it, then the other team; the catch is rolled from the
-  catcher's square, and a failure bounces from there. Not for bombs.
+  catcher's square, and a failure bounces from there. Bombs too, also after their bounce: a failed catch sets the bomb
+  off in the catcher's square, and the +1 is for an accurate bomb.
 - Insignificant: a team-building rule, checked by `resolveTeam`: a team may not have more players with the trait than
   players without it. It has no effect during the game.
 - Fumblerooski: during an action that lets them move, a standing ball carrier may choose to drop the ball: it stays,
