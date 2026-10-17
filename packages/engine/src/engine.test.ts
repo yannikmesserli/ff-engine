@@ -3621,6 +3621,18 @@ describe("engine", () => {
       expect(find(apply(s, roll(2)), "ROLL")?.reason).toBe("Block (1 die)");
     });
 
+    it("Indomitable: once per game, a successful Dauntless roll may make the attacker's ST double the defender's", () => {
+      const karla = withSkills(toFirstTurn(team("Home"), team("Away", { st: 4 })), { "home-2": ["Dauntless", "Indomitable"] });
+      let s = apply(blockAway2(karla), roll(2));
+      expect(find(s, "USE_SKILL")?.skill).toBe("Indomitable");
+      const declined = apply(s, { type: "USE_SKILL", use: false });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      // ST 8 against 4 (the assists cancel out): two dice, instead of one with Dauntless alone.
+      expect(top(s)).toMatchObject({ type: "Block", dice: 2 });
+      expect(top(declined)).toMatchObject({ type: "Block", dice: 1 });
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Indomitable"]);
+    });
+
     it("The Ballista: once per game, re-roll a failed pass instead of a team re-roll", () => {
       const passing = (s: GameState) =>
         apply(

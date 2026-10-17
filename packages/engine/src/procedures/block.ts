@@ -60,6 +60,8 @@ export interface BlockContext {
   extraAssist?: boolean;
   /** Multiple Block: the other target, who does not assist this defender. */
   multiple?: string;
+  /** Indomitable: Dauntless raises the attacker's ST to double the defender's. */
+  doubled?: boolean;
 }
 
 /** Multiple Block: -2 to the attacker's ST for each block (at least 1). */
@@ -67,11 +69,11 @@ export const MULTIPLE_BLOCK_PENALTY = 2;
 
 /**
  * The attacker's strength before assists: -2 in a Multiple Block (at least 1), Dauntless raises it to the defender's
- * ST, then Horns +1 during a Blitz.
+ * ST (to double it with Indomitable), then Horns +1 during a Blitz.
  */
-function attackerStrength(attacker: PlayerState, defender: PlayerState, { blitz = false, dauntless = false, multiple }: BlockContext) {
+function attackerStrength(attacker: PlayerState, defender: PlayerState, { blitz = false, dauntless = false, multiple, doubled = false }: BlockContext) {
   const st = multiple === undefined ? attacker.st : Math.max(1, attacker.st - MULTIPLE_BLOCK_PENALTY);
-  const base = dauntless ? Math.max(st, defender.st) : st;
+  const base = dauntless ? Math.max(st, doubled ? 2 * defender.st : defender.st) : st;
   return base + (blitz && hasSkill(attacker, "Horns") ? 1 : 0);
 }
 
@@ -669,6 +671,19 @@ export const Block: Handler<P<"Block">> = {
           proc.dauntless = true;
           proc.dice = blockDice(state, attacker, defender, { blitz: proc.blitz, dauntless: true, extraAssist: proc.extraAssist, multiple: proc.multiple?.otherId });
           ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: "Dauntless" });
+          // Indomitable: once per game, the attacker may make their ST double the defender's instead.
+          if (hasSkill(attacker, "Indomitable") && !attacker.usedThisGame?.includes("Indomitable")) {
+            proc.stage = "indomitable";
+            return "wait";
+          }
+        }
+        proc.stage = "trickster";
+        return "continue";
+      case "indomitable":
+        if (action === null) return "wait";
+        if (ctx.expect(action, "USE_SKILL").use) {
+          useOncePerGame(ctx, attacker, "Indomitable");
+          proc.dice = blockDice(state, attacker, defender, { blitz: proc.blitz, dauntless: true, doubled: true, extraAssist: proc.extraAssist, multiple: proc.multiple?.otherId });
         }
         proc.stage = "trickster";
         return "continue";
@@ -988,6 +1003,8 @@ export const Block: Handler<P<"Block">> = {
         return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: proc.dieSkill ?? "Pro" }];
       case "gored":
         return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Gored by the Bull" }];
+      case "indomitable":
+        return [{ type: "USE_SKILL", side: attacker.side, playerId: attacker.id, skill: "Indomitable" }];
       case "savageDice":
         return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: "Savage Blow", multiple: true }];
       case "savageReroll":

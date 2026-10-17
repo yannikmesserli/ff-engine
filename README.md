@@ -507,6 +507,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     the modifiers, he intercepts the pass (or the bomb).
   - Strong Passing Game (Skrull Halfheight): once per game, in a Pass action, he may add his ST to the passing roll (at
     most 6), after the roll, when it improves the result (a natural 1 still fumbles).
+  - Indomitable (Karla von Kill): once per game, when her Dauntless roll succeeds, her ST for the block may become double
+    the target's (assists and Horns are added after).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
