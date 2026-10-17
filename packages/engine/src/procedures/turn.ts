@@ -911,7 +911,7 @@ const specialTargets = (state: GameState, proc: P<"MoveAction">, skill: P<"Vomit
 
 /**
  * Diving Tackle: the tackler is placed prone in the square the player left, without an armour roll; a ball they held
- * bounces (no turnover, it is not their turn). Returns the bounce to push.
+ * bounces (no turnover, it is not their turn); then a trapdoor there. Returns the procedures to push.
  */
 function diveIn(ctx: Ctx, tackler: PlayerState, square: Square): Procedure[] {
   const carrying = ctx.state.ball.carried && ballCarrier(ctx.state)?.id === tackler.id;
@@ -920,9 +920,10 @@ function diveIn(ctx: Ctx, tackler: PlayerState, square: Square): Procedure[] {
   tackler.status = "prone";
   ctx.emit({ type: "PlayerMoved", playerId: tackler.id, from: { ...from }, to: { ...square } });
   ctx.emit({ type: "PlayerPlacedProne", playerId: tackler.id });
-  if (!carrying) return [];
+  const fall = trapdoor(ctx.state, tackler, square);
+  if (!carrying) return fall;
   ctx.state.ball = { square: { ...square }, carried: false };
-  return [dropBall(tackler, square)];
+  return [dropBall(tackler, square), ...fall];
 }
 
 /**
@@ -1231,6 +1232,7 @@ export const Shadow: Handler<P<"Shadow">> = {
       shadower.at = { ...proc.from };
       ctx.emit({ type: "PlayerMoved", playerId: shadower.id, from: { ...from }, to: { ...proc.from } });
       checkTouchdown(ctx, shadower);
+      ctx.push(...trapdoor(state, shadower, proc.from));
       return "done";
     }
     const candidates = shadowers(state, mover, proc.from);

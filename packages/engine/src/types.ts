@@ -640,6 +640,8 @@ export type Procedure =
         | { facing: Square; rolling: "direction" | "distance"; rerolled: boolean; mascotFailed?: boolean; direction?: Square; distance?: number };
       /** Kick Team-mate: the same as a throw, but a fumble injures the kicked player. */
       kicked?: boolean;
+      /** Treacherous Trapdoor: the square the thrown player came down on was rolled for. */
+      trapdoor?: boolean;
       /** Bullseye was offered after a superb throw: used or not. */
       bullseye?: boolean;
       rerolled: boolean;

@@ -3930,6 +3930,21 @@ describe("engine", () => {
       expect([fell.players["home-5"]!.at, fell.activeSide]).toEqual(["reserves", "away"]);
     });
 
+    it("Treacherous Trapdoor: a thrown team-mate coming down on one rolls before the landing", () => {
+      // home-4 at (8,2) throws home-5 from (8,3) onto (6,1); a superb throw with Bullseye lands on the target square.
+      const thrower = edit(place(withPrayer(toFirstTurn(), "home", "treacherous-trapdoor"), { "home-4": { x: 8, y: 2 }, "home-5": { x: 8, y: 3 } }), (c) => {
+        c.players["home-4"]!.skills = ["Throw Team-mate", "Bullseye"];
+        c.players["home-5"]!.skills = ["Right Stuff"];
+      });
+      const s = apply(thrower, declare("home-4", "ttm"), { type: "THROW_TEAM_MATE", targetId: "home-5", square: { x: 6, y: 1 } }, roll(6), { type: "USE_SKILL", use: true, skill: "Bullseye" });
+      expect(find(s, "ROLL")?.reason).toBe("Trapdoor 2+ (Home 5)");
+      expect(find(apply(s, roll(2)), "ROLL")?.reason).toMatch(/^Landing/);
+      const fell = apply(s, roll(1), { type: "DECLINE_REROLL" }, roll(3, 3));
+      expect(fell.log).toContainEqual({ type: "FellThroughTrapdoor", playerId: "home-5" });
+      expect(fell.log.some((e) => e.type === "CheckResult" && e.kind === "landing")).toBe(false);
+      expect([fell.players["home-5"]!.at, fell.activeSide]).toEqual(["reserves", "away"]);
+    });
+
     it("Moles under the Pitch: -1 to the opponents' Rush rolls", () => {
       const s = apply(withPrayer(toFirstTurn(), "away", "moles-under-the-pitch"), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH);
       expect(find(s, "ROLL")?.reason).toMatch(/^Rush 3\+/);

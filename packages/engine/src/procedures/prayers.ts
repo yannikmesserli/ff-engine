@@ -184,8 +184,8 @@ export function trapdoor(state: GameState, player: PlayerState, square: Square, 
 }
 
 /**
- * Treacherous Trapdoor (a prayer; it affects both teams): a player who moves, is pushed or follows up into a trapdoor
- * rolls a D6 (team re-roll in their turn) and falls through on a 1: off the pitch, an injury roll without armour (as for
+ * Treacherous Trapdoor (a prayer; it affects both teams): a player who moves, is pushed, follows up, shadows, dives in
+ * with Diving Tackle, moves in a Quick Snap or comes down from a team-mate throw into a trapdoor rolls a D6 (team re-roll in their turn) and falls through on a 1: off the pitch, an injury roll without armour (as for
  * the crowd), the ball they held bounces from the trapdoor, and it is a turnover if they are of the moving team.
  */
 export const Trapdoor: Handler<P<"Trapdoor">> = {

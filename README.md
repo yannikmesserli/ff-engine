@@ -84,8 +84,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   Friends with the Ref (+1 to the team's arguments), Under Scrutiny (the opponents' fouls that break armour are always
   spotted), Moles under the Pitch (-1 to the opponents' Rush rolls), Throw a Rock (once per game, between two turns of
   a drive: a random standing opponent is knocked down on 4+), Intensive Training (a random player gains a primary
-  skill the coach picks), Treacherous Trapdoor (for both teams: a player moving, pushed or following up into (6,1) or
-  (19,13) falls through on a 1, an injury roll as for the crowd, the ball bouncing from there, a turnover for the
+  skill the coach picks), Treacherous Trapdoor (for both teams: a player moving, pushed, following up, shadowing,
+  diving in with Diving Tackle, moving in a Quick Snap or coming down from a team-mate throw into (6,1) or (19,13)
+  falls through on a 1, an injury roll as for the crowd, the ball bouncing from there, a turnover for the
   moving team).
   The four Star Player Point prayers: Perfect Passing (completions earn 2), Dazzling Catching (any pass a player of the
   team catches earns 1), Fan Interaction (a casualty from a crowd push, or a trapdoor the player was pushed into, earns

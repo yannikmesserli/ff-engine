@@ -6,6 +6,7 @@ import { hasSkill } from "../skills";
 import { ballista, canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
 import { evaluatePass, passModifiers, passRange, shownNeeded } from "./pass";
 import { injure } from "./injury";
+import { trapdoor } from "./prayers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -300,6 +301,8 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         return "done";
       }
       case "land": {
+        // Fell through a trapdoor: no landing.
+        if (proc.trapdoor && !isOnPitch(thrown)) return "done";
         if (proc.crowdFrom) {
           const carrying = ballCarrier(state)?.id === thrown.id;
           thrown.at = "reserves";
@@ -330,6 +333,15 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
           return "continue";
         }
         setDown(ctx, thrown, proc.at!);
+        // Treacherous Trapdoor: rolled for before the landing; a player who falls through does not land.
+        if (!proc.trapdoor) {
+          const fall = trapdoor(state, thrown, proc.at!);
+          if (fall.length > 0) {
+            proc.trapdoor = true;
+            ctx.push(...fall);
+            return "continue";
+          }
+        }
         if (proc.autoFail) {
           fall(ctx, thrown);
           return "done";

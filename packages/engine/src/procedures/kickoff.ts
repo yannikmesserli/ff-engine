@@ -6,6 +6,7 @@ import { hasSkill } from "../skills";
 import { createPlayer, getPlayer, inducementsLeft, landBall, spendInducement } from "./helpers";
 import { setupErrors } from "./setup";
 import { freePrayers, openShop } from "./shop";
+import { trapdoor } from "./prayers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -616,6 +617,7 @@ export const QuickSnap: Handler<P<"QuickSnap">> = {
     if (!move?.squares.some((s) => sameSquare(s, a.square))) ctx.reject("Illegal Quick Snap move.");
     state.players[a.playerId]!.at = { ...a.square };
     proc.moved.push(a.playerId);
+    ctx.push(...trapdoor(state, state.players[a.playerId]!, a.square));
     return "continue";
   },
   actions(state, proc) {
