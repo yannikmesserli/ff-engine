@@ -2132,4 +2132,44 @@ export const SCENARIOS: Scenario[] = [
       roll(1, 1),
     ],
   },
+  {
+    id: "raiding-party",
+    title: "Raiding Party: a team-mate moves next to an opponent",
+    instructions: [
+      "Home's first turn. Ivar (#1) has Raiding Party here (given in the team file in src/scenarios.ts): once per drive, at the start of his activation, an open team-mate within 5 squares moves 1 square to end next to an opponent.",
+      "Click Ivar and choose Move: click \"Raiding Party\" (or skip it to move as usual).",
+      "Click a highlighted square: Hans (#2) can step to (12,2) or (12,3), next to Snaga (#4). Ivar then moves as usual; the next Move in the drive offers no Raiding Party.",
+    ],
+    home: {
+      name: "Norsca Raiders",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Ivar", position: "Human Blitzer", skills: ["Raiding Party"] },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Klaus", position: "Human Lineman" },
+        { number: 5, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Gorbag", position: "Orc Lineman" },
+        { number: 4, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 107,
+    actions: toFirstTurn({
+      home: { 1: { x: 8, y: 7 }, 2: { x: 11, y: 3 }, 3: { x: 12, y: 6 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 8 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 }, 4: { x: 13, y: 2 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];

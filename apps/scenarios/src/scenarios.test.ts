@@ -591,4 +591,13 @@ describe("scenarios", () => {
     s = step(s, { type: "ROLL", values: [5] }).state;
     expect([s.finished, s.result?.winner, s.teams.away.score, s.result?.dedicatedFans]).toEqual([true, "away", 2, { home: -2, away: 1 }]);
   });
+
+  it("raiding-party: at the start of Ivar's Move, Hans steps next to Snaga", () => {
+    let s = applyActions(load("raiding-party"), [{ type: "START_ACTION", playerId: "home-1", action: "move" }]);
+    expect(find(s, "ACTIVATION_SKILL")?.skills).toEqual(["Raiding Party"]);
+    s = step(s, { type: "ACTIVATION_SKILL", skill: "Raiding Party" }).state;
+    expect(find(s, "SNAP")?.moves.find((m) => m.playerId === "home-2")?.squares).toEqual(expect.arrayContaining([{ x: 12, y: 2 }, { x: 12, y: 3 }]));
+    s = step(s, { type: "SNAP", playerId: "home-2", square: { x: 12, y: 3 } }).state;
+    expect([s.players["home-2"]!.at, find(s, "MOVE") !== undefined]).toEqual([{ x: 12, y: 3 }, true]);
+  });
 });
