@@ -1794,6 +1794,48 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "pitch-invasion-fanatic",
+    title: "Pitch Invasion and a Ball & Chain player",
+    instructions: [
+      "The kick-off: the ball has deviated, the kick-off event is next. The Goblins have only three players, their Fanatic Spinna (#1, Ball & Chain) among them.",
+      "Click \"Physical dice\" and enter 6 and 6 for the kick-off event: Pitch Invasion. Then 1 for the Goblins, 6 for the Humans and 3 for the D3: all three goblins are hit.",
+      "The two Goblin Linemen are stunned; Spinna is placed prone instead, and his armour breaks without a roll: enter his injury roll (a Stunned result is a KO for him).",
+    ],
+    home: {
+      name: "Spinning Stunties",
+      roster: "Goblin",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Spinna", position: "Fanatic" },
+        { number: 2, name: "Snik", position: "Goblin Lineman" },
+        { number: 3, name: "Grot", position: "Goblin Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Klaus", position: "Human Lineman" },
+      ],
+    },
+    seed: 101,
+    actions: [
+      ...toKickoff(
+        {
+          home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 6 }, 3: { x: 12, y: 8 } },
+          away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 6 }, 3: { x: 13, y: 8 } },
+        },
+        { x: 5, y: 7 },
+      ),
+      roll(5, 1), // deviation: one square south
+    ],
+  },
+  {
     id: "wizard",
     title: "Wizard: Fireball and Zap!",
     instructions: [

@@ -120,6 +120,14 @@ describe("scenarios", () => {
     expect(find(s, "ROLL")?.reason).toMatch(/^Hail Mary Pass/);
   });
 
+  it("pitch-invasion-fanatic: the Fanatic is placed prone and rolls for injury, the others are stunned", () => {
+    let s = load("pitch-invasion-fanatic");
+    s = step(s, { type: "ROLL", values: [6, 6] }).state;
+    s = step(s, { type: "ROLL", values: [1, 6, 3] }).state;
+    expect(["home-1", "home-2", "home-3"].map((id) => s.players[id]!.status)).toEqual(["prone", "stunned", "stunned"]);
+    expect(find(s, "ROLL")?.reason).toMatch(/^Injury/);
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });
