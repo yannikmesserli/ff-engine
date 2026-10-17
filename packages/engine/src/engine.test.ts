@@ -1723,6 +1723,24 @@ describe("engine", () => {
         expect(find(apply(lonely, roll(4), roll(3), roll(5)), "CHOOSE_BLOCK_DIE")?.results).toEqual([1, 5]);
       });
 
+      it("after a failed Pro roll, the Team Mascot may try to roll Pro again; if it fails, a team re-roll still may", () => {
+        const mascot = (rerolls: number) => withSkills(toFirstTurn({ ...team("Home", { rerolls }), inducements: { teamMascot: 1 } }), { "home-1": ["Pro"] });
+        const failed = (rerolls: number) => apply(mascot(rerolls), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(1), { type: "USE_SKILL", use: true }, roll(2));
+        expect(find(failed(1), "USE_REROLL")).toEqual({ type: "USE_REROLL", side: "home", available: 1, mascot: true });
+        let s = apply(failed(1), { type: "USE_REROLL", mascot: true });
+        expect(find(s, "ROLL")?.reason).toBe("Team Mascot 4+ (Home 1)");
+        // The Mascot works: Pro again, no team re-roll spent.
+        const worked = apply(s, roll(4), roll(3), roll(6));
+        expect([worked.players["home-1"]!.status, worked.teams.home.rerolls]).toEqual(["standing", 1]);
+        // It fails: only a team re-roll is offered now.
+        s = apply(s, roll(3));
+        expect(find(s, "USE_REROLL")).toEqual({ type: "USE_REROLL", side: "home", available: 1 });
+        s = apply(s, { type: "USE_REROLL" }, roll(3), roll(6));
+        expect([s.players["home-1"]!.status, s.teams.home.rerolls]).toEqual(["standing", 0]);
+        // Without team re-rolls, a failed Mascot leaves the first result.
+        expect(apply(failed(0), { type: "USE_REROLL", mascot: true }, roll(3)).players["home-1"]!.status).toBe("prone");
+      });
+
       it("a failed Pro roll keeps the first result, unless a team re-roll is spent to roll Pro again; passes too", () => {
         const failed = apply(dodge(1), { type: "USE_SKILL", use: true }, roll(2));
         expect(types(failed)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
