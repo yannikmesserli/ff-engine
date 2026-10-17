@@ -1496,6 +1496,47 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "getting-even",
+    title: "Getting Even: Hatred after a bad injury",
+    instructions: [
+      "Home's first turn. Mortis (#4) is a Wight Blitzer: keywords human, skeleton, undead (and blitzer, a role that does not count).",
+      "Click \"Physical dice\", then declare a Block by Mortis on Ugluk (#4, at (13,5)): enter a 6 (Pow), push him back, then armour 6+6, injury 6+6, and a casualty roll of 9 to 14 on the D16 (Seriously Hurt, Serious Injury or Lasting Injury; any D6).",
+      "Ugluk gets even: the orcs' coach picks human, skeleton or undead, then a D6: on 4+ Ugluk gains Hatred against it (no team re-roll: it is not the orcs' turn). The log says so; teamAfterGame writes it into the team file's `hatred`.",
+      "A casualty roll of 1-8 (Badly Hurt) or 15-16 (Dead) gives no Getting Even roll.",
+    ],
+    home: {
+      name: "Grave Guard",
+      roster: "Shambling Undead",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Rattle", position: "Skeleton Lineman" },
+        { number: 2, name: "Clatter", position: "Skeleton Lineman" },
+        { number: 3, name: "Bones", position: "Skeleton Lineman" },
+        { number: 4, name: "Mortis", position: "Wight Blitzer" },
+        { number: 5, name: "Shuffle", position: "Zombie Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Snaga", position: "Orc Lineman" },
+        { number: 3, name: "Gorbag", position: "Orc Lineman" },
+        { number: 4, name: "Ugluk", position: "Orc Lineman" },
+      ],
+    },
+    seed: 83,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 6 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 8 }, 4: { x: 12, y: 5 }, 5: { x: 8, y: 7 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 }, 4: { x: 13, y: 5 } },
+      ball: { x: 8, y: 7 },
+    }),
+  },
+  {
     id: "wizard",
     title: "Wizard: Fireball and Zap!",
     instructions: [

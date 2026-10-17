@@ -39,6 +39,20 @@ describe("scenarios", () => {
     expect(find(s, "CALL_COIN")).toBeDefined();
   });
 
+  it("getting-even: the orc Seriously Hurt by the Wight Blitzer may gain Hatred against one of its keywords", () => {
+    let s = load("getting-even");
+    s = step(s, { type: "START_ACTION", playerId: "home-4", action: "block" }).state;
+    s = step(s, { type: "BLOCK", targetId: "away-4" }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    if (find(s, "CHOOSE_BLOCK_DIE")) s = step(s, { type: "CHOOSE_BLOCK_DIE", index: 0 }).state;
+    s = step(s, { type: "PUSH", square: find(s, "PUSH")!.squares[0]! }).state;
+    s = step(s, { type: "FOLLOW_UP", follow: false }).state;
+    for (const values of [[6, 6], [6, 6], [10, 1]]) s = step(s, { type: "ROLL", values }).state;
+    expect(find(s, "CHOOSE_KEYWORD")).toMatchObject({ side: "away", playerId: "away-4", keywords: ["human", "skeleton", "undead"] });
+    s = step(step(s, { type: "CHOOSE_KEYWORD", keyword: "undead" }).state, { type: "ROLL", values: [4] }).state;
+    expect(s.players["away-4"]!.gainedHatred).toEqual(["undead"]);
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });
