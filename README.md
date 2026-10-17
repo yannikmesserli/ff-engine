@@ -486,6 +486,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Raiding Party (Ivar Eriksson): once per drive, at the start of his activation, an open team-mate within 5 squares
     (standing, not marked) moves one square, to a free square next to an opponent, without any roll (a loose ball there
     bounces).
+  - I'll Be Back! (Kreek Rustgouger): the first time in a game he would be sent off for a Secret Weapon, he stays in the
+    game (no Argue the Call for it).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

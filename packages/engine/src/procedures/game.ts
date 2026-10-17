@@ -1,7 +1,8 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, HalfNumber, PlayerState, Procedure, Side } from "../types";
 import { isOnPitch, other, teamPlayers } from "../pitch";
-import { endDrive, resetForKickoff } from "./helpers";
+import { endDrive, resetForKickoff, useOncePerGame } from "./helpers";
+import { hasSkill } from "../skills";
 import { secretWeapons } from "./foul";
 import { hiredTwice } from "./shop";
 import { restoreFrogs, wizardAsk } from "./wizard";
@@ -125,7 +126,12 @@ export const Half: Handler<P<"Half">> = {
       if (state.drive > 0) {
         endDrive(ctx);
         restoreFrogs(ctx);
-        const weapons = secretWeapons(state);
+        // I'll Be Back!: the first time the player would be sent off, they stay (and nobody argues the call).
+        const weapons = secretWeapons(state).filter((p) => {
+          if (!hasSkill(p, "I'll Be Back!") || p.usedThisGame?.includes("I'll Be Back!")) return true;
+          useOncePerGame(ctx, p, "I'll Be Back!");
+          return false;
+        });
         for (const p of weapons) ctx.emit({ type: "SecretWeaponSpotted", playerId: p.id });
         ctx.push(
           ...(weapons.length > 0 ? [{ type: "SecretWeapon" as const, playerIds: weapons.map((p) => p.id), stage: "argue" as const }] : []),

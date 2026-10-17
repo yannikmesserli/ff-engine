@@ -989,6 +989,13 @@ describe("engine", () => {
         return apply(s, startMove("home-6"), ...move({ x: 25, y: 3 }));
       };
 
+      it("I'll Be Back!: the first time the player would be sent off, they stay", () => {
+        const s = score((c) => c.players["home-1"]!.skills.push("I'll Be Back!"));
+        expect(s.log.filter((e) => e.type === "SecretWeaponSpotted").map((e) => e.type === "SecretWeaponSpotted" && e.playerId)).toEqual(["home-2"]);
+        expect(s.players["home-1"]!.usedThisGame).toEqual(["I'll Be Back!"]);
+        expect(find(s, "ARGUE_THE_CALL")?.playerId).toBe("home-2");
+      });
+
       it("sends off the players who played in the drive when it ends; the coach may argue the call", () => {
         let s = score();
         expect(s.log.filter((e) => e.type === "SecretWeaponSpotted").map((e) => e.type === "SecretWeaponSpotted" && e.playerId)).toEqual(["home-1", "home-2"]);
