@@ -618,4 +618,15 @@ describe("scenarios", () => {
     s = applyActions(s, [{ type: "SELECT_PLAYERS", playerIds: ["away-1"] }, { type: "ROLL", values: [6, 5] }, { type: "ROLL", values: [1, 1] }]);
     expect([s.ball, s.turnover, s.activeSide]).toEqual([{ square: { x: 13, y: 4 }, carried: true }, false, "home"]);
   });
+
+  it("blast-it: the Hail Mary Pass scatters one die at a time, each may be re-rolled", () => {
+    let s = applyActions(load("blast-it"), [{ type: "START_ACTION", playerId: "home-1", action: "pass" }, { type: "HAIL_MARY_PASS", square: { x: 9, y: 12 } }, { type: "ROLL", values: [6] }]);
+    expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass scatter 1 of 3");
+    s = step(s, { type: "ROLL", values: [1] }).state;
+    expect(find(s, "USE_SKILL")).toMatchObject({ playerId: "home-1", skill: "Blast It!" });
+    // North, re-rolled to south; then north and south: one square below Kurt.
+    s = applyActions(s, [{ type: "USE_SKILL", use: true }, { type: "ROLL", values: [5] }]);
+    s = applyActions(s, [{ type: "ROLL", values: [1] }, { type: "USE_SKILL", use: false }, { type: "ROLL", values: [5] }, { type: "USE_SKILL", use: false }]);
+    expect(s.log).toContainEqual({ type: "BallScattered", to: { x: 9, y: 13 } });
+  });
 });

@@ -2249,4 +2249,43 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 6, y: 7 },
     }),
   },
+  {
+    id: "blast-it",
+    title: "Blast It!: re-roll the scatter of a Hail Mary Pass",
+    instructions: [
+      "Home's first turn. Barik (#1, holding the ball) has Hail Mary Pass and Blast It! here (given in the team file in src/scenarios.ts).",
+      "Click \"Physical dice\". Click Barik, choose Pass, then the Hail Mary Pass and the square (9,12), where Kurt (#2) waits. Enter 5 or 6: a Hail Mary Pass is never accurate.",
+      "The three scatter dice come one at a time; after each, click \"Use Blast It!\" to roll it again, or decline. If the ball comes down on Kurt, he gets +1 to catch it.",
+    ],
+    home: {
+      name: "Karak Blasters",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Barik", position: "Human Thrower", skills: ["Hail Mary Pass", "Blast It!"] },
+        { number: 2, name: "Kurt", position: "Human Catcher" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Hans", position: "Human Lineman" },
+        { number: 5, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 127,
+    actions: toFirstTurn({
+      home: { 1: { x: 4, y: 7 }, 2: { x: 9, y: 12 }, 3: { x: 12, y: 6 }, 4: { x: 12, y: 7 }, 5: { x: 12, y: 8 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 } },
+      ball: { x: 4, y: 7 },
+    }),
+  },
 ];
