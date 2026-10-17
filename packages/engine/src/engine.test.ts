@@ -4580,6 +4580,18 @@ describe("engine", () => {
       expect(types(apply(skitter, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(1, 1), { type: "USE_SKILL", use: false }))).toContain("START_ACTION");
     });
 
+    it("Toxin Connoisseur: once per game, +1 to the injury roll of a Stab, after the roll", () => {
+      const rashnak = edit(toFirstTurn(), (c) => void (c.players["home-2"]!.skills = ["Stab", "Toxin Connoisseur"]));
+      const broken = apply(rashnak, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(5, 4));
+      // 7, Stunned: 8 is a KO.
+      let s = apply(broken, roll(3, 4));
+      expect(find(s, "USE_SKILL")?.skill).toBe("Toxin Connoisseur");
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(s.log).toContainEqual({ type: "PlayerInjured", playerId: "away-2", result: "ko" });
+      // 6 stays Stunned with +1: not offered.
+      expect(types(apply(broken, roll(3, 3)))).not.toContain("USE_SKILL");
+    });
+
     it("Violent Innovator: a casualty from a Stab earns Star Player Points", () => {
       const stabbing = (skills: string[]) => edit(toFirstTurn(), (c) => void (c.players["home-2"]!.skills = skills));
       const stab = (s: GameState) => apply(s, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(5, 4), roll(6, 5), roll(1, 1));

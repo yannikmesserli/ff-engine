@@ -441,6 +441,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     block's knock-down, a foul, a special action), unless it is already a casualty; the new roll stands.
   - Master Assassin (Skitter Stab-Stab): once per game, the armour roll of his Stab may be re-rolled when it holds; the
     new roll stands.
+  - Toxin Connoisseur (Rashnak Backstabber): once per game, +1 to the injury roll of his Stab, after the roll, when it
+    changes the result.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

@@ -2,7 +2,7 @@ import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { adjacent, ballCarrier, chompHolds, hasTackleZone, inBounds, isOnPitch, isPinned, isRooted, playerAt, sameSquare, tackleZoneAt, tackleZones } from "../pitch";
 import { BLOCK_FACES } from "../dice";
-import { hatedKeywords, injure, savageMauling } from "./injury";
+import { hatedKeywords, injure, injuryOutcome, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
 import { hasSkill, skillName, skillValue } from "../skills";
@@ -1109,6 +1109,10 @@ export const Vomit: Handler<P<"Vomit">> = {
         const square = squareOf(ctx, victim);
         const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], "Injury");
         proc.injuryRoll = a! + b!;
+        if (toxin(proc, attacker, victim) && injuryOutcome(victim, proc.injuryRoll + 1) !== injuryOutcome(victim, proc.injuryRoll)) {
+          proc.stage = "injuryBonus";
+          return "wait";
+        }
         if (!proc.mauled && savageMauling(attacker, victim, proc.injuryRoll)) {
           proc.stage = "injuryReroll";
           return "wait";
@@ -1116,6 +1120,17 @@ export const Vomit: Handler<P<"Vomit">> = {
         // The ball bounces once the injury is resolved.
         if (proc.dropped) ctx.push(dropBall(victim, square));
         injure(ctx, victim, proc.injuryRoll, { byId: proc.attackerId, ...specialActionSpp(state, proc, victim) });
+        return "done";
+      }
+      case "injuryBonus": {
+        if (action === null) return "wait";
+        const victim = getPlayer(ctx, proc.victimId!);
+        if (ctx.expect(action, "USE_SKILL").use) {
+          useOncePerGame(ctx, attacker, "Toxin Connoisseur");
+          proc.injuryRoll! += 1;
+        }
+        if (proc.dropped) ctx.push(dropBall(victim, squareOf(ctx, victim)));
+        injure(ctx, victim, proc.injuryRoll!, { byId: proc.attackerId, ...specialActionSpp(state, proc, victim) });
         return "done";
       }
       case "armourReroll": {
@@ -1145,6 +1160,7 @@ export const Vomit: Handler<P<"Vomit">> = {
   },
   actions(state, proc) {
     if (proc.stage === "injuryReroll") return [{ type: "USE_SKILL", side: state.players[proc.attackerId]!.side, playerId: proc.attackerId, skill: "Savage Mauling" }];
+    if (proc.stage === "injuryBonus") return [{ type: "USE_SKILL", side: state.players[proc.attackerId]!.side, playerId: proc.attackerId, skill: "Toxin Connoisseur" }];
     if (proc.stage === "armourReroll") return [{ type: "USE_SKILL", side: state.players[proc.attackerId]!.side, playerId: proc.attackerId, skill: "Master Assassin" }];
     if (proc.stage !== "armour" && proc.stage !== "injury") return [];
     const victim = state.players[proc.victimId!]!;
@@ -1162,6 +1178,10 @@ function specialActionSpp(state: GameState, proc: P<"Vomit">, victim: PlayerStat
   const special = proc.skill === "Stab" || proc.skill === "Chainsaw" || proc.skill === "Breathe Fire";
   return special && victim.side !== attacker.side && hasSkill(attacker, "Violent Innovator") ? { sppTo: [attacker.id] } : {};
 }
+
+/** Toxin Connoisseur: once per game, +1 to the injury roll of a Stab against an opponent, after the roll. */
+const toxin = (proc: P<"Vomit">, attacker: PlayerState, victim: PlayerState) =>
+  proc.skill === "Stab" && victim.side !== attacker.side && hasSkill(attacker, "Toxin Connoisseur") && !attacker.usedThisGame?.includes("Toxin Connoisseur");
 
 /** Master Assassin: once per game, the attacker may re-roll the armour roll of a Stab against an opponent that held. */
 const masterAssassin = (proc: P<"Vomit">, attacker: PlayerState, victim: PlayerState) =>
