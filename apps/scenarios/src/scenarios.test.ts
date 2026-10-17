@@ -49,6 +49,17 @@ describe("scenarios", () => {
     expect(find(fireball, "ROLL")?.reason).toMatch(/^Fireball 4\+/);
   });
 
+  it("josef-bugman: after both setups, the dwarfs may set up D3 players again", () => {
+    let s = load("josef-bugman");
+    expect(getAvailableActions(s)).toEqual([{ type: "DWARFEN_WISDOM", side: "home" }]);
+    s = step(step(s, { type: "DWARFEN_WISDOM", use: true }).state, { type: "ROLL", values: [2] }).state;
+    s = step(s, { type: "SELECT_PLAYERS", playerIds: ["home-4", "home-5"] }).state;
+    s = step(s, { type: "PLACE_PLAYER", playerId: "home-4", square: { x: 11, y: 3 } }).state;
+    s = step(s, { type: "PLACE_PLAYER", playerId: "home-5", square: { x: 11, y: 11 } }).state;
+    s = step(s, { type: "END_SETUP" }).state;
+    expect(find(s, "PLACE_BALL")?.side).toBe("away");
+  });
+
   it("star-players: Grak picks up Crumbleberry after his Bone Head roll, then puts her down", () => {
     let s = load("star-players");
     expect(s.players["home-5"]).toMatchObject({ name: "Grak", hired: "star" });

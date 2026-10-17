@@ -1539,6 +1539,49 @@ export const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: "josef-bugman",
+    title: "Josef Bugman: Dwarfen Wisdom",
+    instructions: [
+      "Both teams have set up; the Grudgebearers hired Josef Bugman (the team file's inducements in src/scenarios.ts). The kicking orcs have no Bugman, so the dwarfs are asked about Dwarfen Wisdom, once per game.",
+      "Click \"Dwarfen Wisdom\": a D3, then click 1 to that many dwarfs on the pitch and confirm. They go back to the dugout: drag them onto free squares of your half (only they may move), keep 3 on the line of scrimmage, and confirm the setup.",
+      "\"Keep it for later\" asks again at the next kick-off. Bugman's XXXXXX also gives +1 to the dwarfs' KO recovery rolls (4+ becomes 3+).",
+    ],
+    home: {
+      name: "Grudgebearers",
+      roster: "Dwarf",
+      rerolls: 2,
+      journeymen: false,
+      inducements: { josefBugman: 1 },
+      players: [
+        { number: 1, name: "Grimbold", position: "Dwarf Blocker Lineman" },
+        { number: 2, name: "Thorin", position: "Dwarf Blocker Lineman" },
+        { number: 3, name: "Durin", position: "Dwarf Blocker Lineman" },
+        { number: 4, name: "Gimbli", position: "Dwarf Runner" },
+        { number: 5, name: "Bruni", position: "Dwarf Blitzer" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 79,
+    // Up to the kick-off, without placing the ball: Dwarfen Wisdom comes first.
+    actions: toKickoff(
+      {
+        home: { 1: { x: 12, y: 6 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 8 }, 4: { x: 8, y: 7 }, 5: { x: 10, y: 4 } },
+        away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 } },
+      },
+      { x: 6, y: 7 },
+    ).slice(0, -1),
+  },
+  {
     id: "pre-game-shop",
     title: "Pre-game shop: petty cash, treasury and free prayers",
     instructions: [
