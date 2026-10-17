@@ -536,6 +536,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
     the second.
   - The Flashing Blade (Jeremiah Kool): once per game, at the start of his activation, he stabs an opponent he marks,
     then may go on with a Move action.
+  - Furious Outburst (Swiftvine Glimmershard): once per half, standing at the start of her activation and as the team's
+    Blitz, she is put next to a standing opponent within 3 squares and stabs them, then is put in a free square within 3
+    squares of there, without any roll; her activation then ends.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

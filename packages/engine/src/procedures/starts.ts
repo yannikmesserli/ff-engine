@@ -1,6 +1,6 @@
 import type { Ctx, Handler } from "../context";
 import type { GameState, PlayerActionType, PlayerState, Procedure, Square } from "../types";
-import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, tackleZones } from "../pitch";
+import { adjacent, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, tackleZones } from "../pitch";
 import { trapdoor } from "./prayers";
 import { hasSkill } from "../skills";
 import { checkTouchdown, getPlayer, squareOf, useOncePerGame } from "./helpers";
@@ -24,7 +24,11 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Wisdom of the White Dwarf": "game",
   "Raiding Party": "drive",
   "The Flashing Blade": "game",
+  "Furious Outburst": "half",
 };
+
+/** Furious Outburst: how far the target may be, and how far the player goes afterwards. */
+export const FURIOUS_OUTBURST_RANGE = 3;
 
 /** Raiding Party: how far the team-mate may be. */
 export const RAIDING_PARTY_RANGE = 5;
@@ -77,6 +81,37 @@ const UNTARGETED: Record<string, (state: GameState, player: PlayerState, action:
     return player.status === "standing" && isOnPitch(player) && !ball.carried && ball.square !== null && Math.max(Math.abs(ball.square.x - player.at.x), Math.abs(ball.square.y - player.at.y)) <= 3;
   },
 };
+
+/** Free squares next to `square`. */
+const freeAround = (state: GameState, square: Square) => adjacent(square).filter((s) => !playerAt(state, s));
+
+/** Furious Outburst: the free squares next to the target, then (`place2`) those within 3 squares of the player. */
+function outburstSquares(state: GameState, player: PlayerState, target: PlayerState, stage: "place" | "place2"): Square[] {
+  if (stage === "place") return isOnPitch(target) ? freeAround(state, target.at) : [];
+  if (!isOnPitch(player)) return [];
+  const squares: Square[] = [];
+  for (let dx = -FURIOUS_OUTBURST_RANGE; dx <= FURIOUS_OUTBURST_RANGE; dx++) {
+    for (let dy = -FURIOUS_OUTBURST_RANGE; dy <= FURIOUS_OUTBURST_RANGE; dy++) {
+      const s = { x: player.at.x + dx, y: player.at.y + dy };
+      if ((dx !== 0 || dy !== 0) && inBounds(s) && !playerAt(state, s)) squares.push(s);
+    }
+  }
+  return squares;
+}
+
+/** Put the player on `square` without moving through the squares between (the ball they hold goes with them). */
+function teleport(ctx: Ctx, player: PlayerState, square: Square) {
+  const { state } = ctx;
+  const from = squareOf(ctx, player);
+  const { ball } = state;
+  if (ball.carried && ball.square && ball.square.x === from.x && ball.square.y === from.y) ball.square = { ...square };
+  player.at = { ...square };
+  ctx.emit({ type: "PlayerMoved", playerId: player.id, from: { ...from }, to: { ...square } });
+  // A loose ball where the player lands bounces.
+  if (!ball.carried && ball.square && ball.square.x === square.x && ball.square.y === square.y) {
+    ctx.push({ type: "Bounce", from: { ...square }, kickoff: false, receiving: null });
+  }
+}
 
 /** Raiding Party: the open team-mates within 5 squares, and the free squares next to them that are next to an opponent. */
 function raiders(state: GameState, player: PlayerState) {
@@ -144,6 +179,12 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
       return marked(state, player).filter((p) => !p.distracted);
     case "The Flashing Blade":
       return player.status === "standing" ? marked(state, player) : [];
+    case "Furious Outburst": {
+      // It counts as the team's Blitz.
+      const turn = state.stack.findLast((p): p is P<"Turn"> => p.type === "Turn");
+      if (player.status !== "standing" || !turn || turn.used.includes("blitz")) return [];
+      return opponentsWithin(state, player, FURIOUS_OUTBURST_RANGE).filter((p) => p.status === "standing" && freeAround(state, p.at).length > 0);
+    }
     case "Excuse me, are you a Zoat?":
       return opponentsWithin(state, player, 3).filter((p) => hasTackleZone(p));
     case "Baleful Hex":
@@ -198,6 +239,9 @@ export function activationSkills(state: GameState, player: PlayerState, action: 
  * - Raiding Party (once per drive): an open team-mate within 5 squares (standing, not marked) moves one square, to a
  *   free square next to an opponent, without any roll.
  * - The Flashing Blade (once per game): the player stabs an opponent they mark, then may go on with a Move action.
+ * - Furious Outburst (once per half, as the team's Blitz): a standing player is put next to a standing opponent within 3
+ *   squares and stabs them, then is put in a free square within 3 squares of there, without any roll; the activation
+ *   ends.
  * - Incorporeal (once per game): until the end of the activation, the player makes no Dodge rolls for leaving opponents'
  *   tackle zones.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
@@ -243,10 +287,29 @@ export const StartSkill: Handler<P<"StartSkill">> = {
       if (playerIds.length > 1) ctx.reject("Choose one player.");
       useRule(ctx, player, proc.skill);
       proc.targetId = target.id;
-      proc.stage = ROLLS[proc.skill] ? "roll" : proc.skill === "Wisdom of the White Dwarf" ? "choose" : "effect";
+      proc.stage = ROLLS[proc.skill] ? "roll" : proc.skill === "Wisdom of the White Dwarf" ? "choose" : proc.skill === "Furious Outburst" ? "place" : "effect";
       if (proc.stage !== "effect") return "wait";
     }
     const target = proc.targetId === undefined ? player : getPlayer(ctx, proc.targetId);
+    if (proc.stage === "place" || proc.stage === "place2") {
+      if (proc.stage === "place2" && (!isOnPitch(player) || state.turnover)) return "done";
+      const squares = outburstSquares(state, player, target, proc.stage);
+      if (squares.length === 0) return "done";
+      if (action === null) return "wait";
+      const { square } = ctx.expect(action, "SNAP");
+      if (!squares.some((s) => s.x === square.x && s.y === square.y)) ctx.reject("Choose a highlighted square.");
+      teleport(ctx, player, square);
+      if (proc.stage === "place2") {
+        checkTouchdown(ctx, player);
+        return "done";
+      }
+      const turn = state.stack.findLast((p): p is P<"Turn"> => p.type === "Turn");
+      turn?.used.push("blitz");
+      endActivation(state, player);
+      proc.stage = "place2";
+      ctx.push({ type: "Vomit", skill: "Stab", attackerId: player.id, defenderId: target.id, blitz: false, stage: "appearance" });
+      return "continue";
+    }
     if (proc.stage === "choose") {
       if (action === null) return "wait";
       const { skill } = ctx.expect(action, "CHOOSE_SKILL");
@@ -344,6 +407,10 @@ export const StartSkill: Handler<P<"StartSkill">> = {
         { type: "SNAP", side: player.side, moves: raiders(state, player), remaining: 1 },
         { type: "DONE", side: player.side },
       ];
+    }
+    if (proc.stage === "place" || proc.stage === "place2") {
+      const squares = outburstSquares(state, player, state.players[proc.targetId!]!, proc.stage);
+      return [{ type: "SNAP", side: player.side, moves: [{ playerId: player.id, squares }], remaining: 1 }];
     }
     if (proc.stage === "choose") {
       const target = state.players[proc.targetId!]!;

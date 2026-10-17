@@ -1696,6 +1696,22 @@ describe("engine", () => {
       expect(types(s)).not.toContain("BLOCK");
     });
 
+    it("Furious Outburst: once per half, as the team's Blitz: next to an opponent within 3 squares, a Stab, then away", () => {
+      const swiftvine = withSkills(toFirstTurn(), { "home-4": ["Furious Outburst"] });
+      let s = apply(swiftvine, startMove("home-4"), { type: "ACTIVATION_SKILL", skill: "Furious Outburst" });
+      expect(find(s, "SELECT_PLAYERS")?.playerIds).toContain("away-1");
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-1"] });
+      expect(find(s, "SNAP")?.moves[0]!.squares).toContainEqual({ x: 14, y: 5 });
+      s = apply(s, { type: "SNAP", playerId: "home-4", square: { x: 14, y: 5 } });
+      expect(s.players["home-4"]!.at).toEqual({ x: 14, y: 5 });
+      expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 1, stab)");
+      s = apply(s, roll(1, 1));
+      const away = find(s, "SNAP")!.moves[0]!.squares[0]!;
+      s = apply(s, { type: "SNAP", playerId: "home-4", square: away });
+      expect(s.players["home-4"]!.at).toEqual(away);
+      expect([s.activePlayerId, actionsOf(s, "home-1")?.includes("blitz")]).toEqual([null, false]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

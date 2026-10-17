@@ -131,7 +131,9 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   }
   if (roll) return `roll for ${roll.reason}`;
   if (select) return `${select.reason} (click players)`;
-  if (snap && state.stack.at(-1)?.type === "StartSkill") return "Raiding Party: click an open team-mate, then a square next to an opponent (or Done)";
+  const start = state.stack.at(-1);
+  if (snap && start?.type === "StartSkill" && start.skill === "Furious Outburst") return "Furious Outburst: click the player, then the square to put them in";
+  if (snap && start?.type === "StartSkill") return "Raiding Party: click an open team-mate, then a square next to an opponent (or Done)";
   if (snap) return `${PROMPTS.SNAP} (${snap.remaining} left)`;
   if (main.type === "USE_REROLL" && main.skill) return `use ${main.skill} to re-roll?`;
   if (main.type === "BUY_INDUCEMENTS") {

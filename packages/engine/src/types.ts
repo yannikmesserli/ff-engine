@@ -484,7 +484,8 @@ export type Procedure =
   /** A special rule used at the start of an activation (Black Ink...): its target, rolls and effect. */
   /** "redirect": the opposing coach picks who is hit instead ("Blastin' Solves Everything"). */
   /** "choose": the skill the target gains (Wisdom of the White Dwarf). */
-  | { type: "StartSkill"; playerId: string; skill: string; stage: "target" | "roll" | "redirect" | "choose" | "move" | "effect"; targetId?: string; roll?: number }
+  /** "place", "place2": the player is put next to the target, then away again (Furious Outburst). */
+  | { type: "StartSkill"; playerId: string; skill: string; stage: "target" | "roll" | "redirect" | "choose" | "move" | "place" | "place2" | "effect"; targetId?: string; roll?: number }
   /** A killed opponent joins the team (Plague Ridden, Masters of Undeath): its coach picks among several positions. */
   | { type: "RaiseDead"; side: Side; deadId: string; undead: boolean }
   /**

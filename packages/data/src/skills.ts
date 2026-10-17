@@ -107,6 +107,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  "Furious Outburst": "Once per half, as the team's Blitz: placed next to a standing opponent within 3 squares, stabs them, then placed in a free square within 3 squares; the activation ends.",
   "The Flashing Blade": "Once per game, at the start of the activation, may Stab an opponent this player marks, then take a Move action.",
   "Fury of the Blood God": "Once per game, rolling a 1 for Unchannelled Fury after declaring a Block, may make two Block actions instead.",
   "Vicious Vines": "Once per half, a Block action may target an opponent 2 squares away, without a follow-up.",
