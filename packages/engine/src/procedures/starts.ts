@@ -14,16 +14,18 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Look Into My Eyes": "game",
   "Catch of the Day": "half",
   Treacherous: "game",
+  "Beer Barrel Bash!": "drive",
 };
 
 /** Baleful Hex works on 2+. */
 export const BALEFUL_HEX_TARGET = 2;
 
 /** The D6 a start-of-activation rule rolls after its target is picked, if any. */
-const ROLLS: Record<string, { target: number; reason: string }> = {
+const ROLLS: Record<string, { target: number; reason: string; always?: boolean }> = {
   "Baleful Hex": { target: BALEFUL_HEX_TARGET, reason: "Baleful Hex" },
   "Look Into My Eyes": { target: 2, reason: "Look Into My Eyes" },
   "Catch of the Day": { target: 3, reason: "Catch of the Day" },
+  "Beer Barrel Bash!": { target: 3, reason: "Beer Barrel Bash!", always: true },
 };
 
 /** Rules without a player to pick, and when they can be used. */
@@ -86,6 +88,8 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
       return opponentsWithin(state, player, 5);
     case "Look Into My Eyes":
       return marked(state, player).filter((p) => ballCarrier(state)?.id === p.id);
+    case "Beer Barrel Bash!":
+      return player.status === "standing" ? opponentsWithin(state, player, 3).filter((p) => p.status === "standing") : [];
     case "Treacherous":
       return isOnPitch(player) ? adjacent(player.at).flatMap((s) => (ballCarrier(state)?.id === playerAt(state, s)?.id && playerAt(state, s)?.side === player.side ? [playerAt(state, s)!] : [])) : [];
     default:
@@ -108,6 +112,9 @@ export function activationSkills(state: GameState, player: PlayerState): string[
  *   the ball, and their activation ends.
  * - Treacherous (once per game): the player takes the ball from the team-mate next to them who holds it; the team-mate is
  *   knocked down, without a turnover (even if they are hurt).
+ * - Beer Barrel Bash! (once per drive): a standing player rolls a D6 against a standing opponent within 3 squares: on
+ *   3+ the opponent is knocked down, on a 2 nothing happens, on a 1 the player falls over (a turnover). The activation
+ *   ends.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
  *   pick it up, without a roll; the activation goes on.
  */
@@ -136,10 +143,12 @@ export const StartSkill: Handler<P<"StartSkill">> = {
     const target = proc.targetId === undefined ? player : getPlayer(ctx, proc.targetId);
     if (proc.stage === "roll") {
       if (action === null) return "wait";
-      const { target: needed, reason } = ROLLS[proc.skill]!;
+      const { target: needed, reason, always } = ROLLS[proc.skill]!;
       const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `${reason} ${needed}+`);
       ctx.emit({ type: "CheckResult", kind: "rule", playerId: player.id, success: roll! >= needed, roll: roll!, target: needed });
-      if (roll! < needed) return "done";
+      proc.roll = roll!;
+      // `always`: the effect depends on the roll, a failure included.
+      if (roll! < needed && !always) return "done";
       proc.stage = "effect";
     }
     switch (proc.skill) {
@@ -152,6 +161,11 @@ export const StartSkill: Handler<P<"StartSkill">> = {
         target.distracted = true;
         target.hexed = true;
         ctx.emit({ type: "DistractedBy", playerId: target.id, byId: player.id, skill: proc.skill });
+        return "done";
+      case "Beer Barrel Bash!":
+        endActivation(state, player);
+        if (proc.roll! >= 3) ctx.push({ type: "KnockDown", playerId: target.id, turnover: false, stage: "fall" });
+        else if (proc.roll === 1) ctx.push({ type: "KnockDown", playerId: player.id, turnover: true, stage: "fall", fallsOver: true });
         return "done";
       case "Treacherous":
         state.ball = { square: { ...squareOf(ctx, player) }, carried: true };

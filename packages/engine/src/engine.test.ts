@@ -1431,6 +1431,22 @@ describe("engine", () => {
       expect([s.turnover, types(s).includes("MOVE")]).toEqual([false, true]);
     });
 
+    it("Beer Barrel Bash!: once per drive, 3+ knocks down an opponent within 3 squares, a 1 makes the player fall over", () => {
+      const thorsson = withSkills(toFirstTurn(), { "home-4": ["Beer Barrel Bash!"] });
+      const bash = apply(thorsson, startMove("home-4"), { type: "ACTIVATION_SKILL", skill: "Beer Barrel Bash!" }, { type: "SELECT_PLAYERS", playerIds: ["away-1"] });
+      expect(find(bash, "ROLL")?.reason).toBe("Beer Barrel Bash! 3+ (Away 1)");
+      let s = apply(bash, roll(3));
+      expect(s.players["away-1"]!.status).toBe("prone");
+      s = apply(s, roll(1, 1));
+      expect([s.activePlayerId, s.turnover]).toEqual([null, false]);
+      // A 2: nothing, the activation ends. A 1: a turnover.
+      expect(apply(bash, roll(2)).players["away-1"]!.status).toBe("standing");
+      expect(apply(bash, roll(2)).activePlayerId).toBeNull();
+      s = apply(bash, roll(1));
+      expect(s.players["home-4"]!.status).toBe("prone");
+      expect(apply(s, roll(1, 1)).activeSide).toBe("away");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

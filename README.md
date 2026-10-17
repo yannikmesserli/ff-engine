@@ -467,6 +467,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
     on the ground, a D6: on 3+ he gets the ball (no roll to pick it up); the activation goes on.
   - Treacherous (Hakflem Skuttlespike): once per game, at the start of his activation, he takes the ball from the
     team-mate next to him who holds it; the team-mate is knocked down, without a turnover even if hurt.
+  - Beer Barrel Bash! (Thorsson Stoutmead): once per drive, at the start of his activation, standing, a D6 against a
+    standing opponent within 3 squares: on 3+ they are knocked down, on a 2 nothing happens, on a 1 he falls over (a
+    turnover). His activation then ends.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
