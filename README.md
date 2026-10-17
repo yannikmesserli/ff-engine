@@ -503,6 +503,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     may be re-rolled (for the same side).
   - Kaboom! (Bomber Dribblesnot): once per game, when an opponent catches a bomb he threw, his coach may have it explode
     in the catcher's square instead of being thrown again.
+  - Yoink! (Scrappa Sorehead): once per game, when he tries to intercept, he may roll a D6 instead: on 2+, whatever
+    the modifiers, he intercepts the pass (or the bomb).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

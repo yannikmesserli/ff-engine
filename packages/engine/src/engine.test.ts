@@ -3896,6 +3896,16 @@ describe("engine", () => {
       expect(s.activeSide).toBe("away");
     });
 
+    it("Yoink!: once per game, the interceptor may roll a D6 instead: on 2+ the pass is intercepted", () => {
+      let s = edit(place(toFirstTurn(), { "away-4": { x: 9, y: 3 } }), (c) => void (c.players["away-4"]!.skills = ["Yoink!"]));
+      s = apply(pickUp(s), { type: "THROW", square: { x: 12, y: 4 } }, roll(6), { type: "SELECT_PLAYERS", playerIds: ["away-4"] });
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "away", playerId: "away-4", skill: "Yoink!" });
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(find(s, "ROLL")?.reason).toBe("Interception 2+ (Away 4)");
+      s = apply(s, roll(2));
+      expect(s.ball).toEqual({ square: { x: 9, y: 3 }, carried: true });
+    });
+
     it("makes interceptions 1 harder in Pouring Rain", () => {
       // Unmarked at (9,2): AG3 +2 for an inaccurate pass.
       const s = place(toFirstTurn(), { "away-4": { x: 9, y: 2 } });

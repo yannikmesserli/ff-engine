@@ -624,7 +624,9 @@ export type Procedure =
       /** "animosity": the thrower may first have to roll for Animosity towards the receiver. */
       /** "safePass": a natural 1 may be saved by Safe Pass. */
       /** "aim": a player who caught a bomb picks where to throw it again, or a Dump-off thrower picks the target. */
-      stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "intercept" | "interceptRoll" | "land" | "end";
+      /** "yoink": the interceptor may use Yoink! (`yoink` if they did). */
+      stage: "aim" | "animosity" | "animosityResult" | "roll" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "intercept" | "yoink" | "interceptRoll" | "land" | "end";
+      yoink?: boolean;
       rerolled: boolean;
       /** The Team Mascot failed: only a team re-roll may be offered now. */
       mascotFailed?: boolean;

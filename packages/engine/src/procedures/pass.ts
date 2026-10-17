@@ -203,6 +203,9 @@ function giveAndGo(ctx: Ctx, thrower: PlayerState) {
 const aimTargets = (state: GameState, thrower: PlayerState, proc: P<"Pass">) =>
   throwTargets(state, thrower).filter((s) => !proc.dumpOff || s.range === "quick");
 
+/** Yoink!: the interception succeeds on 2+, whatever the modifiers. */
+export const YOINK_TARGET = 2;
+
 /**
  * Hail Mary Pass: the target may be any square of the pitch, the roll counts as a Long Bomb, a result better than a
  * fumble is always inaccurate (three scatters from the target), only a fumble may be re-rolled, and nobody may intercept.
@@ -369,15 +372,26 @@ export const Pass: Handler<P<"Pass">> = {
         if (id === undefined) proc.stage = "land";
         else {
           proc.interceptorId = id;
-          proc.stage = "interceptRoll";
+          const interceptor = getPlayer(ctx, id);
+          proc.stage = hasSkill(interceptor, "Yoink!") && !interceptor.usedThisGame?.includes("Yoink!") ? "yoink" : "interceptRoll";
         }
+        return "continue";
+      }
+      case "yoink": {
+        if (action === null) return "wait";
+        // Yoink!: once per game, a D6 of 2+, whatever the modifiers, intercepts.
+        if (ctx.expect(action, "USE_SKILL").use) {
+          useOncePerGame(ctx, getPlayer(ctx, proc.interceptorId!), "Yoink!");
+          proc.yoink = true;
+        }
+        proc.stage = "interceptRoll";
         return "continue";
       }
       case "interceptRoll": {
         if (action === null) return "wait";
         const interceptor = getPlayer(ctx, proc.interceptorId!);
         const square = squareOf(ctx, interceptor);
-        const target = interceptionTarget(state, { ...interceptor, at: square }, proc.result!);
+        const target = proc.yoink ? YOINK_TARGET : interceptionTarget(state, { ...interceptor, at: square }, proc.result!);
         const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], `Interception ${Math.min(6, target)}+`);
         if (passes(roll!, 0, target) && proc.bomb) {
           // An intercepted bomb must be thrown again by the interceptor.
@@ -458,9 +472,11 @@ export const Pass: Handler<P<"Pass">> = {
             reason: "Interception: choose a player to try to intercept",
           },
         ];
+      case "yoink":
+        return [{ type: "USE_SKILL", side: other(thrower.side), playerId: proc.interceptorId!, skill: "Yoink!" }];
       case "interceptRoll": {
         const interceptor = state.players[proc.interceptorId!]! as PlayerState & { at: Square };
-        const target = interceptionTarget(state, interceptor, proc.result!);
+        const target = proc.yoink ? YOINK_TARGET : interceptionTarget(state, interceptor, proc.result!);
         return [{ type: "ROLL", side: interceptor.side, dice: [{ kind: "d6", count: 1 }], reason: `Interception ${Math.min(6, target)}+ (${interceptor.name})` }];
       }
       default:
