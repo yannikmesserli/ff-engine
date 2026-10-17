@@ -479,6 +479,8 @@ export type Procedure =
   | { type: "Trapdoor"; playerId: string; stage: "roll" | "result" | "injury"; sppTo?: string[] }
   /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
+  /** Quick Bite: an opponent marking the player who caught the ball may roll armour against them for it. */
+  | { type: "QuickBite"; catcherId: string; stage: "choose" | "armour" | "injury"; biterId?: string }
   /** A special rule used at the start of an activation (Black Ink...): its target, rolls and effect. */
   /** "redirect": the opposing coach picks who is hit instead ("Blastin' Solves Everything"). */
   /** "choose": the skill the target gains (Wisdom of the White Dwarf). */

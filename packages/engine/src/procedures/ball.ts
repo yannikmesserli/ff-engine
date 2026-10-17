@@ -1,9 +1,10 @@
 import type { Handler } from "../context";
 import type { DiceSpec, GameState, PlayerState, Procedure, Side, Square } from "../types";
 import { SCATTER, isCorner, throwInDirection } from "../dice";
-import { adjacent, inBounds, isOnPitch, offset, other, playerAt, sameSquare, teamPlayers } from "../pitch";
+import { adjacent, hasTackleZone, inBounds, isOnPitch, offset, other, playerAt, sameSquare, teamPlayers } from "../pitch";
 import { hasSkill } from "../skills";
-import { checkTouchdown, disturbingPresences, divingCatchers, getPlayer, landBall, passCatch, squareOf, weatherModifier } from "./helpers";
+import { checkTouchdown, disturbingPresences, divingCatchers, getPlayer, landBall, passCatch, squareOf, useOncePerGame, weatherModifier } from "./helpers";
+import { injure } from "./injury";
 import { markingZones } from "./pass";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -121,13 +122,79 @@ export const Catch: Handler<P<"Catch">> = {
       const passer = proc.passerId ? state.players[proc.passerId] : undefined;
       if (passer && proc.completion && passer.side === player.side) passer.spp.completions += 1;
       if (passer && state.teams[player.side].prayers.includes("dazzling-catching")) player.spp.catches += 1;
-      checkTouchdown(ctx, player);
+      if (quickBiters(state, player).length > 0) ctx.push({ type: "QuickBite", catcherId: player.id, stage: "choose" });
+      else checkTouchdown(ctx, player);
     } else {
       ctx.push({ type: "Bounce", from: { ...square }, kickoff: proc.kickoff, receiving: proc.kickoff ? player.side : null });
     }
     return "done";
   },
   actions: () => [],
+};
+
+/** Quick Bite: opponents marking the catcher (standing next to them, with a tackle zone) who have not used it. */
+const quickBiters = (state: GameState, catcher: PlayerState) =>
+  !isOnPitch(catcher)
+    ? []
+    : adjacent(catcher.at).flatMap((s) => {
+        const p = playerAt(state, s);
+        return p && p.side !== catcher.side && hasTackleZone(p) && hasSkill(p, "Quick Bite") && !p.usedThisGame?.includes("Quick Bite") ? [p] : [];
+      });
+
+/**
+ * Quick Bite (once per game): when an opponent the player marks catches the ball, the player may roll armour against
+ * them (no modifiers). If it breaks, the player takes the ball and the catcher is placed prone and rolls for injury.
+ * Never a turnover.
+ */
+export const QuickBite: Handler<P<"QuickBite">> = {
+  step(ctx, proc, action) {
+    const { state } = ctx;
+    const catcher = getPlayer(ctx, proc.catcherId);
+    if (proc.stage === "choose") {
+      const biters = quickBiters(state, catcher);
+      if (action === null) return "wait";
+      const { playerIds } = ctx.expect(action, "SELECT_PLAYERS");
+      const biter = biters.find((p) => p.id === playerIds[0]);
+      if (!biter) {
+        if (playerIds.length > 0) ctx.reject("Invalid player.");
+        checkTouchdown(ctx, catcher);
+        return "done";
+      }
+      useOncePerGame(ctx, biter, "Quick Bite");
+      proc.biterId = biter.id;
+      proc.stage = "armour";
+      return "wait";
+    }
+    if (action === null) return "wait";
+    const biter = getPlayer(ctx, proc.biterId!);
+    const [a, b] = ctx.roll(action, [{ kind: "d6", count: 2 }], proc.stage === "armour" ? `Armour ${catcher.av}+ (Quick Bite)` : "Injury");
+    if (proc.stage === "armour") {
+      const roll = a! + b!;
+      if (roll < catcher.av) {
+        ctx.emit({ type: "ArmourHeld", playerId: catcher.id, roll });
+        checkTouchdown(ctx, catcher);
+        return "done";
+      }
+      ctx.emit({ type: "ArmourBroken", playerId: catcher.id, roll });
+      state.ball = { square: { ...squareOf(ctx, biter) }, carried: true };
+      ctx.emit({ type: "BallStolen", playerId: biter.id, fromId: catcher.id, skill: "Quick Bite" });
+      catcher.status = "prone";
+      ctx.emit({ type: "PlayerPlacedProne", playerId: catcher.id });
+      checkTouchdown(ctx, biter);
+      proc.stage = "injury";
+      return "wait";
+    }
+    injure(ctx, catcher, a! + b!, { byId: biter.id });
+    return "done";
+  },
+  actions(state, proc) {
+    const catcher = state.players[proc.catcherId]!;
+    if (proc.stage === "choose") {
+      const biters = quickBiters(state, catcher);
+      return [{ type: "SELECT_PLAYERS", side: biters[0]!.side, playerIds: biters.map((p) => p.id), max: 1, reason: `Quick Bite: choose a player to bite ${catcher.name} (or none)` }];
+    }
+    return [{ type: "ROLL", side: null, dice: [{ kind: "d6", count: 2 }], reason: proc.stage === "armour" ? `Armour ${catcher.av}+ (${catcher.name}, Quick Bite)` : `Injury (${catcher.name})` }];
+  },
 };
 
 /** Safe Pair of Hands: free squares next to where the ball was dropped. */

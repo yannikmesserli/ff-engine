@@ -3935,6 +3935,22 @@ describe("engine", () => {
       expect(s.activeSide).toBe("away");
     });
 
+    it("Quick Bite: once per game, a catcher the player marks may be bitten: if the armour breaks, the player takes the ball", () => {
+      const guffle = edit(toFirstTurn(), (c) => void (c.players["away-1"]!.skills = ["Quick Bite"]));
+      // home-1 at (12,6), marked by away-1 at (13,6), catches an accurate pass (a natural 6, then 6 to catch).
+      let s = apply(pickUp(guffle), { type: "THROW", square: { x: 12, y: 6 } }, roll(6));
+      if (find(s, "SELECT_PLAYERS")?.reason.startsWith("Interception")) s = apply(s, { type: "SELECT_PLAYERS", playerIds: [] });
+      s = apply(s, roll(6));
+      expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-1"] });
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-1"] }, roll(5, 4));
+      expect(s.ball).toEqual({ square: { x: 13, y: 6 }, carried: true });
+      expect(s.players["home-1"]!.status).toBe("prone");
+      expect(find(s, "ROLL")?.reason).toBe("Injury (Home 1)");
+      s = apply(s, roll(1, 1));
+      // The pass was caught: no turnover, the home team's turn goes on.
+      expect([s.turnover, s.activeSide, types(s).includes("START_ACTION")]).toEqual([false, "home", true]);
+    });
+
     it("Strong Passing Game: once per game, the thrower may add their ST to the passing roll, at most 6", () => {
       const skrull = edit(toFirstTurn(), (c) => void (c.players["home-5"]!.skills = ["Strong Passing Game"]));
       // A short pass from (4,2): a 2 is a fumble (2 - 1); 2 + ST 3 = 5 is accurate.

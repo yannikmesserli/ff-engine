@@ -514,6 +514,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Tasty Morsel (Captain Karina von Riesz): once per game, after a failed Bloodlust roll, she may bite an adjacent
     opponent of ST 3 or less (not a star player) as if they were a Thrall; biting an opponent with the ball is no
     turnover.
+  - Quick Bite (Guffle Pusmaw): once per game, when an opponent he marks catches the ball, he may roll armour against
+    them (no modifiers): if it breaks, he takes the ball and the catcher is placed prone and rolls for injury. Never a
+    turnover.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

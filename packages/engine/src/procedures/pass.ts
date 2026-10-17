@@ -182,6 +182,9 @@ const animosityFailed = (state: GameState) => state.lastCheck?.kind === "animosi
 function endBallAction(ctx: Ctx, thrower: PlayerState, dumpOff = false) {
   const carrier = ballCarrier(ctx.state);
   if (carrier) checkTouchdown(ctx, carrier);
+  // Quick Bite took the ball from the player who caught it: no turnover.
+  const last = ctx.state.log.findLast((e) => e.type === "PassThrown" || e.type === "HandedOff" || (e.type === "BallStolen" && e.skill === "Quick Bite"));
+  if (last?.type === "BallStolen") return;
   if (!dumpOff && (!carrier || carrier.side !== thrower.side)) ctx.state.turnover = true;
 }
 
