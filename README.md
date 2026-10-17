@@ -543,6 +543,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     bombs instead of one; after the second, a D6 of 1-3 sends her off.
   - Old Pro (Helmut Wulf): once per game, his Pro (3+) re-rolls one die of an armour roll: the lower die when his
     block failed to break armour, the higher die when his own armour broke.
+  - Blast It! (Barik Farblast): on his Hail Mary Pass (not a bomb), the three scatter dice are rolled one at a time and
+    each may be re-rolled once; a team-mate catching the ball gets +1.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

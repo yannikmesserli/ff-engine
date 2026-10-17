@@ -109,7 +109,7 @@ export const Catch: Handler<P<"Catch">> = {
         kind: "catch",
         playerId: player.id,
         target: player.ag,
-        modifier: catchModifier(state, { ...player, at: square }, proc.scattered) + (proc.accurate && hasSkill(player, "Diving Catch") ? 1 : 0),
+        modifier: catchModifier(state, { ...player, at: square }, proc.scattered) + (proc.accurate && hasSkill(player, "Diving Catch") ? 1 : 0) + (blastItBonus(state, proc, player) ? 1 : 0),
         stage: "roll",
         rerolled: false,
       });
@@ -131,6 +131,10 @@ export const Catch: Handler<P<"Catch">> = {
   },
   actions: () => [],
 };
+
+/** Blast It!: +1 for a team-mate of the thrower to catch their Hail Mary Pass. */
+const blastItBonus = (state: GameState, proc: P<"Catch">, player: PlayerState) =>
+  !!proc.blastIt && !!proc.passerId && state.players[proc.passerId]?.side === player.side;
 
 /** Quick Bite: opponents marking the catcher (standing next to them, with a tackle zone) who have not used it. */
 const quickBiters = (state: GameState, catcher: PlayerState) =>

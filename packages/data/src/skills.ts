@@ -108,6 +108,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
   "Old Pro": "Once per game, may use Pro (3+) to re-roll one die of an armour roll: the lower die of a block's roll that held, or the higher die of this player's own broken armour.",
+  "Blast It!": "On a Hail Mary Pass (not a bomb), each of the three scatter dice may be re-rolled; a team-mate catching the ball gets +1.",
   "All You Can Eat": "Once per game, declared for a Throw Bomb action, may throw two bombs instead of one; after the second, a D6 of 1-3 sends this player off.",
   "Furious Outburst": "Once per half, as the team's Blitz: placed next to a standing opponent within 3 squares, stabs them, then placed in a free square within 3 squares; the activation ends.",
   "The Flashing Blade": "Once per game, at the start of the activation, may Stab an opponent this player marks, then take a Move action.",

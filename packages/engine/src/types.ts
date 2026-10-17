@@ -563,6 +563,8 @@ export type Procedure =
       passerId?: string;
       /** An accurate pass caught in the target square: a completion for the passer if it is a team-mate. */
       completion?: boolean;
+      /** Blast It!: a Hail Mary Pass of the thrower's, +1 for a team-mate to catch. */
+      blastIt?: boolean;
       stage: "check" | "resolve";
     }
   | { type: "KoRecovery"; playerIds: string[] }
@@ -640,7 +642,9 @@ export type Procedure =
       /** "aim": a player who caught a bomb picks where to throw it again, or a Dump-off thrower picks the target. */
       /** "yoink": the interceptor may use Yoink! (`yoink` if they did). */
       /** "strongPass": the thrower may use Strong Passing Game (`strong` once used). */
-      stage: "aim" | "animosity" | "animosityResult" | "roll" | "strongPass" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "intercept" | "yoink" | "interceptRoll" | "land" | "end";
+      stage: "aim" | "animosity" | "animosityResult" | "roll" | "strongPass" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "blastIt" | "blastItRoll" | "intercept" | "yoink" | "interceptRoll" | "land" | "end";
+      /** Blast It!: the scatter dice rolled so far, one at a time ("blastIt": the last may be re-rolled). */
+      scatters?: number[];
       strong?: boolean;
       yoink?: boolean;
       rerolled: boolean;

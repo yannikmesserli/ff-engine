@@ -3132,6 +3132,21 @@ describe("engine", () => {
         expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
       });
 
+      it("Blast It!: each scatter die may be re-rolled, and a team-mate gets +1 to catch it", () => {
+        const barik = edit(thrower(place(toFirstTurn(), { "home-2": { x: 20, y: 9 } })), (c) => void c.players["home-5"]!.skills.push("Blast It!"));
+        let s = apply(barik, { type: "HAIL_MARY_PASS", square: { x: 20, y: 10 } }, roll(6));
+        expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass scatter 1 of 3");
+        s = apply(s, roll(1));
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-5", skill: "Blast It!" });
+        s = apply(s, { type: "USE_SKILL", use: false }, roll(5), { type: "USE_SKILL", use: true });
+        expect(find(s, "ROLL")?.reason).toBe("Blast It! (re-roll scatter 2 of 3)");
+        // North, north (re-rolled from south), then south: (20, 9).
+        s = apply(s, roll(1), roll(5), { type: "USE_SKILL", use: false });
+        expect(s.log).toContainEqual({ type: "BallScattered", to: { x: 20, y: 9 } });
+        // The scatter's -1 and Blast It!'s +1.
+        expect(top(s)).toMatchObject({ type: "Check", kind: "catch", playerId: "home-2", modifier: 0 });
+      });
+
       it("not in a blizzard", () => {
         const s = thrower(edit(toFirstTurn(), (c) => {
           c.weather = "blizzard";

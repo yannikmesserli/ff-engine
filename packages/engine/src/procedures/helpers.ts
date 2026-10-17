@@ -110,6 +110,8 @@ export interface Landing {
   accurate?: boolean;
   /** A pass thrown by this player: a catch may earn Star Player Points. */
   passerId?: string;
+  /** Blast It!: the thrower's Hail Mary Pass, +1 for a team-mate to catch. */
+  blastIt?: boolean;
 }
 
 /** Diving Catch: standing, undistracted players with the skill next to the square where the ball comes down. */
@@ -124,7 +126,7 @@ export function divingCatchers(state: GameState, square: Square): PlayerState[] 
  * The ball arrives on a square after a kick, bounce or throw-in: touchback, throw-in from `from` when it left the
  * pitch, Diving Catch from a next square, a catch by a standing player, or a bounce.
  */
-export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, receiving, bounceIfEmpty, scattered, divingCatch = false, accurate = false, passerId }: Landing) {
+export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, receiving, bounceIfEmpty, scattered, divingCatch = false, accurate = false, passerId, blastIt }: Landing) {
   const { state } = ctx;
   if (kickoff && receiving && !inHalf(receiving, square)) {
     state.ball = { square: null, carried: false };
@@ -143,7 +145,7 @@ export function landBall(ctx: Ctx, square: Square, from: Square, { kickoff, rece
   }
   const player = playerAt(state, square);
   if (player?.status === "standing") {
-    ctx.push({ type: "Catch", playerId: player.id, kickoff, scattered, stage: "check", ...(accurate ? { accurate } : {}), ...passCatch(passerId, accurate) });
+    ctx.push({ type: "Catch", playerId: player.id, kickoff, scattered, stage: "check", ...(accurate ? { accurate } : {}), ...passCatch(passerId, accurate), ...(blastIt ? { blastIt } : {}) });
   } else if (player || bounceIfEmpty) {
     ctx.push({ type: "Bounce", from: square, kickoff, receiving });
   }
