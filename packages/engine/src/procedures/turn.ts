@@ -10,7 +10,7 @@ import { canHailMary, hailMaryNeeded, handOffTargets, puntTargets, throwTargets 
 import { foulTargets } from "./foul";
 import { hasSkill, skillValue } from "../skills";
 import { CARRY_SKILL, carryPartner, pickUp, putDown } from "./carry";
-import { checkTouchdown, getPlayer, inducementsLeft, inScoringPosition, pickupModifier, rushModifier, spendInducement, squareOf } from "./helpers";
+import { checkTouchdown, getPlayer, useOncePerGame, inducementsLeft, inScoringPosition, pickupModifier, rushModifier, spendInducement, squareOf } from "./helpers";
 import { isStalling } from "./stalling";
 import { TURNS_PER_HALF } from "./game";
 import { teamMateTargets, throwableTeamMates } from "./ttm";
@@ -433,6 +433,9 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       if (failed(ctx) && state.lastCheck!.kind === "bloodlust") {
         proc.thirsty = true;
         ctx.emit({ type: "PlayerThirsty", playerId: player.id });
+      } else if (failed(ctx) && state.lastCheck!.kind === "savagery" && proc.primal === undefined && primalTargets(state, player).length > 0 && hasSkill(player, "Primal Savagery") && !player.usedThisGame?.includes("Primal Savagery")) {
+        proc.stage = "primal";
+        return "continue";
       } else if (failed(ctx) && state.lastCheck!.kind === "savagery" && lashOutTargets(state, player, proc.action).length > 0) {
         proc.stage = "savagery";
         return "continue";
@@ -449,8 +452,21 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       proc.stage = "thirst";
       return "continue";
     }
+    if (proc.stage === "primal") {
+      if (action === null) return "wait";
+      // Primal Savagery: once per game, the player lashes out at an opponent instead.
+      if (ctx.expect(action, "USE_SKILL").use) {
+        useOncePerGame(ctx, player, "Primal Savagery");
+        proc.primal = true;
+        proc.stage = "savagery";
+      } else {
+        proc.primal = false;
+        proc.stage = "confusion";
+      }
+      return "continue";
+    }
     if (proc.stage === "savagery") {
-      const victims = lashOutTargets(state, player, proc.action);
+      const victims = proc.primal ? primalTargets(state, player) : lashOutTargets(state, player, proc.action);
       let victim = victims[0]!;
       if (victims.length > 1) {
         if (action === null) return "wait";
@@ -465,7 +481,7 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ctx.push({
         type: "KnockDown",
         playerId: victim.id,
-        turnover: holdsBall(state, victim),
+        turnover: victim.side === player.side && holdsBall(state, victim),
         stage: "fall",
         blockerId: player.id,
         ...(bonus ? { mightyBlow: { playerId: player.id, bonus, armourOnly: true } } : {}),
@@ -696,8 +712,9 @@ export const MoveAction: Handler<P<"MoveAction">> = {
     if (proc.stage === "thirst") return [{ type: "MOVE_INSTEAD", side: player.side, playerId: player.id }];
     if (proc.stage === "carry") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: CARRY_SKILL }];
     if (proc.stage === "special") return [{ type: "ACTIVATION_SKILL", side: player.side, playerId: player.id, skills: activationSkills(state, player, proc.action) }];
+    if (proc.stage === "primal") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Primal Savagery" }];
     if (proc.stage === "savagery") {
-      const playerIds = lashOutTargets(state, player, proc.action).map((p) => p.id);
+      const playerIds = (proc.primal ? primalTargets(state, player) : lashOutTargets(state, player, proc.action)).map((p) => p.id);
       return [{ type: "SELECT_PLAYERS", side: player.side, playerIds, max: 1, min: 1, reason: `Animal Savagery: choose a team-mate for ${player.name} to lash out at` }];
     }
     const targets = activationTargets(state, proc).map((t) => ({ playerId: t.id, dice: blockDice(state, player, t, { blitz: proc.action === "blitz" }) }));
@@ -790,6 +807,13 @@ export const HitAndRun: Handler<P<"HitAndRun">> = {
  * Animal Savagery: standing team-mates next to the player, one of whom gets lashed out at; for a Throw or Kick
  * Team-mate, also the team-mates the player could throw (or kick), even prone or stunned.
  */
+/** Primal Savagery: the standing opponents next to the player, one of whom may be lashed out at instead. */
+const primalTargets = (state: GameState, player: PlayerState) =>
+  !isOnPitch(player) ? [] : adjacent(player.at).flatMap((s) => {
+    const p = playerAt(state, s);
+    return p && p.side !== player.side && p.status === "standing" ? [p] : [];
+  });
+
 export function lashOutTargets(state: GameState, player: PlayerState, action?: PlayerActionType): PlayerState[] {
   if (!isOnPitch(player)) return [];
   // Throw or Kick Team-mate: a team-mate who could be thrown is a target even when down.

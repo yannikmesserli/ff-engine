@@ -585,7 +585,9 @@ export type Procedure =
        */
       /** "carry": the player may pick up their partner (I'll Carry You). */
       /** "special": a special rule used at the start of the activation may be used (see `activationSkills`). */
-      stage: "start" | "confusion" | "savagery" | "thirst" | "root" | "standup" | "carry" | "special" | "main";
+      /** "primal": a failed Animal Savagery roll may lash out at an opponent instead (Primal Savagery, `primal`). */
+      stage: "start" | "confusion" | "primal" | "savagery" | "thirst" | "root" | "standup" | "carry" | "special" | "main";
+      primal?: boolean;
       /** The start-of-activation rules were offered; `ended`: one of them ended the activation. */
       specialAsked?: boolean;
       ended?: boolean;

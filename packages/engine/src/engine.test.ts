@@ -1579,6 +1579,20 @@ describe("engine", () => {
       expect(s.players["home-2"]!.usedThisGame).toEqual(["Pump Up The Crowd"]);
     });
 
+    it("Primal Savagery: once per game, a failed Animal Savagery roll may lash out at an opponent instead", () => {
+      const glotl = withSkills(toFirstTurn(), { "home-2": ["Animal Savagery", "Primal Savagery"] });
+      let s = apply(glotl, startMove("home-2"), roll(1), { type: "DECLINE_REROLL" });
+      expect(find(s, "USE_SKILL")?.skill).toBe("Primal Savagery");
+      s = apply(s, { type: "USE_SKILL", use: true });
+      expect(find(s, "SELECT_PLAYERS")?.playerIds).toEqual(["away-1", "away-2", "away-3"]);
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-2"] });
+      expect(s.log).toContainEqual({ type: "LashedOut", playerId: "home-2", victimId: "away-2" });
+      expect(s.players["away-2"]!.status).toBe("prone");
+      // Declined: a team-mate as usual.
+      const declined = apply(glotl, startMove("home-2"), roll(1), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: false });
+      expect(find(declined, "SELECT_PLAYERS")?.playerIds).toEqual(["home-1", "home-3"]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

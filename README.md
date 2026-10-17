@@ -509,6 +509,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     most 6), after the roll, when it improves the result (a natural 1 still fumbles).
   - Indomitable (Karla von Kill): once per game, when her Dauntless roll succeeds, her ST for the block may become double
     the target's (assists and Horns are added after).
+  - Primal Savagery (Glotl Stop): once per game, after failing an Animal Savagery roll, he may lash out at an adjacent
+    standing opponent instead of a team-mate (knocked down; no turnover for it).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
