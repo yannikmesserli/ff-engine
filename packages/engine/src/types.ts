@@ -754,7 +754,9 @@ export type Procedure =
       defenderId: string;
       blitz: boolean;
       /** "injuryReroll": the attacker may re-roll the injury roll (`injuryRoll`) with Savage Mauling. */
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "trickster" | "roll" | "result" | "armour" | "injury" | "injuryReroll";
+      /** "armourReroll": Master Assassin may re-roll the Stab's armour roll (`assassin` once asked). */
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "trickster" | "roll" | "result" | "armour" | "armourReroll" | "injury" | "injuryReroll";
+      assassin?: boolean;
       injuryRoll?: number;
       mauled?: boolean;
       /** Who the vomit hits: the defender, or the attacker after a failed roll. */

@@ -439,6 +439,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     be re-rolled when it holds; the new roll stands.
   - Savage Mauling (Wilhelm Chaney): once per game, he may re-roll an injury roll he makes against an opponent (his
     block's knock-down, a foul, a special action), unless it is already a casualty; the new roll stands.
+  - Master Assassin (Skitter Stab-Stab): once per game, the armour roll of his Stab may be re-rolled when it holds; the
+    new roll stands.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

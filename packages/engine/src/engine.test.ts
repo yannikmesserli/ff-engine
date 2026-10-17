@@ -4569,6 +4569,17 @@ describe("engine", () => {
       expect(spp(foul(fouling(["fouling-frenzy"])), "home-4")).toBe(2);
     });
 
+    it("Master Assassin: once per game, the armour roll of a Stab may be re-rolled when it holds", () => {
+      const skitter = edit(toFirstTurn(), (c) => void (c.players["home-2"]!.skills = ["Stab", "Master Assassin"]));
+      let s = apply(skitter, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(1, 1));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Master Assassin" });
+      s = apply(s, { type: "USE_SKILL", use: true }, roll(5, 5));
+      expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: "away-2", roll: 10 });
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Master Assassin"]);
+      // Declined, or a second failure: the Stab is over.
+      expect(types(apply(skitter, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(1, 1), { type: "USE_SKILL", use: false }))).toContain("START_ACTION");
+    });
+
     it("Violent Innovator: a casualty from a Stab earns Star Player Points", () => {
       const stabbing = (skills: string[]) => edit(toFirstTurn(), (c) => void (c.players["home-2"]!.skills = skills));
       const stab = (s: GameState) => apply(s, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(5, 4), roll(6, 5), roll(1, 1));

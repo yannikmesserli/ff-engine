@@ -1085,6 +1085,10 @@ export const Vomit: Handler<P<"Vomit">> = {
         const roll = a! + b! + (proc.skill === "Chainsaw" ? chainsawArmour(victim) : 0);
         if (!chained && roll < victim.av) {
           ctx.emit({ type: "ArmourHeld", playerId: victim.id, roll });
+          if (masterAssassin(proc, attacker, victim)) {
+            proc.stage = "armourReroll";
+            return "wait";
+          }
           return "done";
         }
         ctx.emit(chained ? { type: "ArmourBroken", playerId: victim.id } : { type: "ArmourBroken", playerId: victim.id, roll });
@@ -1114,6 +1118,15 @@ export const Vomit: Handler<P<"Vomit">> = {
         injure(ctx, victim, proc.injuryRoll, { byId: proc.attackerId, ...specialActionSpp(state, proc, victim) });
         return "done";
       }
+      case "armourReroll": {
+        if (action === null) return "wait";
+        proc.assassin = true;
+        if (!ctx.expect(action, "USE_SKILL").use) return "done";
+        // Master Assassin: the armour is rolled again, and the new roll stands.
+        useOncePerGame(ctx, attacker, "Master Assassin");
+        proc.stage = "armour";
+        return "continue";
+      }
       case "injuryReroll": {
         if (action === null) return "wait";
         const victim = getPlayer(ctx, proc.victimId!);
@@ -1132,6 +1145,7 @@ export const Vomit: Handler<P<"Vomit">> = {
   },
   actions(state, proc) {
     if (proc.stage === "injuryReroll") return [{ type: "USE_SKILL", side: state.players[proc.attackerId]!.side, playerId: proc.attackerId, skill: "Savage Mauling" }];
+    if (proc.stage === "armourReroll") return [{ type: "USE_SKILL", side: state.players[proc.attackerId]!.side, playerId: proc.attackerId, skill: "Master Assassin" }];
     if (proc.stage !== "armour" && proc.stage !== "injury") return [];
     const victim = state.players[proc.victimId!]!;
     const reason = proc.stage === "armour" ? `Armour ${victim.av}+ (${victim.name}, ${attackName(proc)})` : `Injury (${victim.name})`;
@@ -1148,6 +1162,10 @@ function specialActionSpp(state: GameState, proc: P<"Vomit">, victim: PlayerStat
   const special = proc.skill === "Stab" || proc.skill === "Chainsaw" || proc.skill === "Breathe Fire";
   return special && victim.side !== attacker.side && hasSkill(attacker, "Violent Innovator") ? { sppTo: [attacker.id] } : {};
 }
+
+/** Master Assassin: once per game, the attacker may re-roll the armour roll of a Stab against an opponent that held. */
+const masterAssassin = (proc: P<"Vomit">, attacker: PlayerState, victim: PlayerState) =>
+  proc.skill === "Stab" && !proc.assassin && victim.side !== attacker.side && hasSkill(attacker, "Master Assassin") && !attacker.usedThisGame?.includes("Master Assassin");
 
 /** The Breathe Fire result, from the roll kept by the check. */
 function breatheFire(ctx: Ctx, proc: P<"Vomit">, attacker: PlayerState): StepResult {
