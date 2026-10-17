@@ -447,6 +447,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
     die of his choice, as the block's one re-roll.
   - Woodland Fury (Willow Rosebark): once per game, when her block dice would knock her down (all of them when she
     picks, any one when the defender does: a Skull, or a Both Down without Block), she may re-roll any one block die.
+  - Working in Tandem (the Swift Twins; `Working in Tandem(block)` for Lucien, `Working in Tandem(pass)` for Valen):
+    Lucien may re-roll any one block die against an opponent Valen also marks; Valen's pass to Lucien's square has no
+    range modifier.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

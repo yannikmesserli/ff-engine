@@ -2,7 +2,7 @@ import type { Ctx, Handler } from "../context";
 import type { GameState, PassRange, PassResult, PlayerState, Procedure, Square } from "../types";
 import { SCATTER, passes, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
-import { hasSkill, skillName } from "../skills";
+import { hasSkill, skillName, tandemRole } from "../skills";
 import { explosion, rethrow } from "./bomb";
 import { ballista, canTeamReroll, canUsePro, checkTouchdown, disturbingPresences, getPlayer, landBall, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
 
@@ -51,12 +51,20 @@ const rangeSkill = (thrower: PlayerState, range: PassRange) =>
 
 /**
  * Everything added to the thrower's PA: range, tackle zones on the thrower (not with Nerves of Steel, unless throwing a
- * team-mate), Very Sunny, Disturbing Presence, Accurate, Cannoneer.
+ * team-mate), Very Sunny, Disturbing Presence, Accurate, Cannoneer. Working in Tandem: no range modifier for a pass (to
+ * `target`) to the square of the thrower's partner.
  */
-export function passModifiers(state: GameState, thrower: PlayerState & { at: Square }, range: PassRange, teamMate = false) {
+export function passModifiers(state: GameState, thrower: PlayerState & { at: Square }, range: PassRange, teamMate = false, target?: Square) {
   const zones = teamMate ? tackleZones(state, thrower.side, thrower.at) : markingZones(state, thrower);
   const skill = teamMate ? 0 : rangeSkill(thrower, range);
-  return RANGE_MODIFIER[range] + zones + (state.weather === "very-sunny" ? 1 : 0) + disturbingPresences(state, thrower) - skill;
+  const partner = target !== undefined && passesToPartner(state, thrower, target);
+  return (partner ? 0 : RANGE_MODIFIER[range]) + zones + (state.weather === "very-sunny" ? 1 : 0) + disturbingPresences(state, thrower) - skill;
+}
+
+/** Working in Tandem: the thrower (the twin who passes) aims at the square of their partner (the twin who blocks). */
+function passesToPartner(state: GameState, thrower: PlayerState, target: Square) {
+  const receiver = playerAt(state, target);
+  return !!receiver && receiver.side === thrower.side && tandemRole(thrower, "pass") && tandemRole(receiver, "block");
 }
 
 /** The D6 roll needed for an accurate pass, or null without PA. */
@@ -74,12 +82,12 @@ export function evaluatePass(thrower: PlayerState, roll: number, modifiers: numb
   return result <= 1 ? "fumble" : "inaccurate";
 }
 
-/** Every square the player could throw to, with its range and the roll needed. */
-export function throwTargets(state: GameState, thrower: PlayerState) {
+/** Every square the player could throw the ball (or, `bomb`, a bomb) to, with its range and the roll needed. */
+export function throwTargets(state: GameState, thrower: PlayerState, bomb = false) {
   if (!isOnPitch(thrower)) return [];
   return allSquares((s) => !sameSquare(s, thrower.at)).flatMap((s) => {
     const range = passRange(state, thrower.at, s);
-    return range ? [{ ...s, range, needed: shownNeeded(thrower, passModifiers(state, thrower, range)) }] : [];
+    return range ? [{ ...s, range, needed: shownNeeded(thrower, passModifiers(state, thrower, range, false, bomb ? undefined : s)) }] : [];
   });
 }
 
@@ -243,7 +251,7 @@ export const Pass: Handler<P<"Pass">> = {
         }
         if (action === null) return "wait";
         const at = throwerSquare();
-        const modifiers = passModifiers(state, { ...thrower, at }, proc.range);
+        const modifiers = passModifiers(state, { ...thrower, at }, proc.range, false, proc.bomb || proc.hailMary ? undefined : proc.target);
         const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], proc.hailMary ? `Hail Mary Pass ${hailMaryNeeded(state, { ...thrower, at })}+` : `Pass ${shownNeeded(thrower, modifiers)}+`);
         proc.roll = roll!;
         proc.result = evaluatePass(thrower, roll!, modifiers);
@@ -417,7 +425,7 @@ export const Pass: Handler<P<"Pass">> = {
       case "aim":
         return [{ type: "THROW", side: thrower.side, playerId: thrower.id, squares: aimTargets(state, thrower, proc) }];
       case "roll": {
-        const needed = shownNeeded(thrower, passModifiers(state, thrower, proc.range));
+        const needed = shownNeeded(thrower, passModifiers(state, thrower, proc.range, false, proc.bomb || proc.hailMary ? undefined : proc.target));
         return [{ type: "ROLL", side: thrower.side, dice: [{ kind: "d6", count: 1 }], reason: proc.hailMary ? `Hail Mary Pass ${hailMaryNeeded(state, thrower)}+` : `Pass ${needed}+ (${proc.range})` }];
       }
       case "reroll":

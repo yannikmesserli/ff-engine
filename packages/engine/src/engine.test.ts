@@ -1314,6 +1314,23 @@ describe("engine", () => {
       expect(find(apply(blockAway2(withSkills(toFirstTurn(), { "home-2": ["Woodland Fury", "Block"] })), roll(2)), "USE_SKILL")).toBeUndefined();
     });
 
+    it("Working in Tandem: a block die re-roll when the partner marks the defender; no range modifier on a pass to the partner", () => {
+      const twins = (partner: string[]) => withSkills(toFirstTurn(), { "home-2": ["Working in Tandem(block)"], "home-3": partner });
+      // home-3 at (12,8) marks away-2 at (13,7).
+      expect(find(apply(blockAway2(twins(["Working in Tandem(pass)"])), roll(1)), "USE_SKILL")?.skill).toBe("Working in Tandem");
+      expect(find(apply(blockAway2(twins([])), roll(1)), "USE_SKILL")).toBeUndefined();
+      // home-4 at (10,4) passes to home-5 six squares away at (4,4): a short pass, 5+ needed, 4+ to the partner.
+      const passer = (skills: string[]) =>
+        edit(place(toFirstTurn(), { "home-5": { x: 4, y: 4 } }), (c) => {
+          c.ball = { square: { x: 10, y: 4 }, carried: true };
+          c.players["home-4"]!.skills = skills;
+          c.players["home-5"]!.skills = ["Working in Tandem(block)"];
+        });
+      const needed = (s: GameState) => find(apply(s, declare("home-4", "pass")), "THROW")!.squares.find((q) => q.x === 4 && q.y === 4);
+      expect(needed(passer([]))).toMatchObject({ range: "short", needed: 5 });
+      expect(needed(passer(["Working in Tandem(pass)"]))).toMatchObject({ range: "short", needed: 4 });
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

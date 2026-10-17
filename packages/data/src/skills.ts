@@ -104,6 +104,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Consummate Professional": "Once per game, may apply a +1 modifier to an Agility Test, after the roll has been made.",
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
+  "Working in Tandem": "Working in Tandem(block): may re-roll a single block die against an opponent also marked by the partner. Working in Tandem(pass): no range modifier on a pass to the partner's square.",
   "Woodland Fury": "Once per game, when a block would knock this player down, may re-roll a single block die.",
   "Lord of Chaos": "Once per game, when blocking, may re-roll a single block die.",
   "Toxin Connoisseur": "Once per game, +1 to the injury roll of a Stab that broke an opponent's armour, after the roll.",

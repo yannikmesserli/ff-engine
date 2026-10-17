@@ -850,7 +850,7 @@ function releasingBall(state: GameState, proc: P<"MoveAction">, action: "pass" |
 /** Squares the player may throw the ball (Pass) or a bomb (Throw Bomb, standing, without moving first) to. */
 const throwOptions = (state: GameState, proc: P<"MoveAction">) => {
   const bomber = state.players[proc.playerId]!;
-  if (proc.action === "bomb") return !proc.finished && bomber.status === "standing" ? throwTargets(state, bomber) : [];
+  if (proc.action === "bomb") return !proc.finished && bomber.status === "standing" ? throwTargets(state, bomber, true) : [];
   const player = releasingBall(state, proc, "pass");
   return player ? throwTargets(state, player) : [];
 };

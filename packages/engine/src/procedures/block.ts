@@ -5,7 +5,7 @@ import { BLOCK_FACES } from "../dice";
 import { hatedKeywords, injure, injuryOutcome, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
-import { hasSkill, skillName, skillValue } from "../skills";
+import { hasSkill, skillName, skillValue, tandemRole } from "../skills";
 import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
@@ -397,22 +397,31 @@ function singleDieSkills(proc: P<"Block">, attacker: PlayerState, defender: Play
 /** Any re-roll the attacker could use on the block dice now (team re-roll, Brawler, Hatred, Pro). */
 const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
   canReroll(state, proc, attacker) ||
-  (!proc.mascotFailed && (singleDieSkills(proc, attacker, defender).length > 0 || anyDieSkills(proc, attacker, defender).length > 0 || canUsePro(state, attacker, proc.rerolled)));
+  (!proc.mascotFailed && (singleDieSkills(proc, attacker, defender).length > 0 || anyDieSkills(state, proc, attacker, defender).length > 0 || canUsePro(state, attacker, proc.rerolled)));
 
 /**
  * The skills that let the attacker re-roll any one block die they pick, as the block's re-roll: Unstoppable Momentum
  * (during a Blitz), Lord of Chaos (once per game, against an opponent), Woodland Fury (once per game, when the dice would
- * knock the attacker down).
+ * knock the attacker down), Working in Tandem (the attacker's partner marks the defender too).
  */
-function anyDieSkills(proc: P<"Block">, attacker: PlayerState, defender: PlayerState): string[] {
+function anyDieSkills(state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState): string[] {
   if (proc.rerolled) return [];
   const unused = (skill: string) => hasSkill(attacker, skill) && !attacker.usedThisGame?.includes(skill);
   return [
     ...(proc.blitz && hasSkill(attacker, "Unstoppable Momentum") ? ["Unstoppable Momentum"] : []),
     ...(defender.side !== attacker.side && unused("Lord of Chaos") ? ["Lord of Chaos"] : []),
     ...(unused("Woodland Fury") && knocksAttackerDown(proc, attacker) ? ["Woodland Fury"] : []),
+    ...(defender.side !== attacker.side && tandemRole(attacker, "block") && partnerMarks(state, attacker, defender) ? ["Working in Tandem"] : []),
   ];
 }
+
+/** Working in Tandem: the attacker's partner (the twin who passes) marks the defender too, standing with a tackle zone. */
+const partnerMarks = (state: GameState, attacker: PlayerState, defender: PlayerState & { at?: unknown }) =>
+  isOnPitch(defender) &&
+  adjacent(defender.at).some((s) => {
+    const p = playerAt(state, s);
+    return p !== undefined && p.id !== attacker.id && p.side === attacker.side && hasTackleZone(p) && tandemRole(p, "pass");
+  });
 
 /**
  * The block dice would knock the attacker down: a Skull, or a Both Down without Block (or Juggernaut in a Blitz); all the
@@ -433,7 +442,7 @@ const skillTemplates = (state: GameState, proc: P<"Block">, attacker: PlayerStat
     ? []
     : [
         ...singleDieTemplate(proc, attacker, defender),
-        ...anyDieSkills(proc, attacker, defender).map((skill) => ({ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill })),
+        ...anyDieSkills(state, proc, attacker, defender).map((skill) => ({ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill })),
         ...proTemplate(state, attacker, proc.rerolled),
       ];
 
@@ -442,7 +451,7 @@ function useSkill(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: P
   const offered = skillTemplates(ctx.state, proc, attacker, defender).map((t) => t.skill);
   const chosen = skill ?? offered[0];
   if (chosen === undefined || !offered.includes(chosen)) ctx.reject("This skill cannot be used now.");
-  if (anyDieSkills(proc, attacker, defender).includes(chosen)) {
+  if (anyDieSkills(ctx.state, proc, attacker, defender).includes(chosen)) {
     // The coach picks the die, re-rolled without any roll first.
     if (ONCE_PER_GAME_DIE_SKILLS.includes(chosen)) useOncePerGame(ctx, attacker, chosen);
     else ctx.emit({ type: "SkillUsed", playerId: attacker.id, skill: chosen });
