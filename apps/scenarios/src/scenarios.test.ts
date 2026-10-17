@@ -39,6 +39,16 @@ describe("scenarios", () => {
     expect(find(s, "CALL_COIN")).toBeDefined();
   });
 
+  it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
+    const s = load("wizard");
+    expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });
+    const zapped = step(step(step(s, { type: "CAST_SPELL", spell: "zap" }).state, { type: "ZAP", targetId: "home-4" }).state, { type: "ROLL", values: [3] }).state;
+    expect(zapped.players["home-4"]).toMatchObject({ st: 1, frog: expect.anything() });
+    expect(zapped.ball.carried).toBe(false);
+    const fireball = step(step(s, { type: "CAST_SPELL", spell: "fireball" }).state, { type: "FIREBALL", square: { x: 12, y: 7 } }).state;
+    expect(find(fireball, "ROLL")?.reason).toMatch(/^Fireball 4\+/);
+  });
+
   it("star-players: Grak picks up Crumbleberry after his Bone Head roll, then puts her down", () => {
     let s = load("star-players");
     expect(s.players["home-5"]).toMatchObject({ name: "Grak", hired: "star" });

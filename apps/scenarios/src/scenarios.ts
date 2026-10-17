@@ -1496,6 +1496,49 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "wizard",
+    title: "Wizard: Fireball and Zap!",
+    instructions: [
+      "Home's first turn has just ended: Gouged Eye bought a wizard (the team file's inducements in src/scenarios.ts), and may cast one spell per game between two turns of a drive.",
+      "Click \"Zap!\", then Klaus (#4), who holds the ball: on a 6, or on 3+ (his ST), he becomes a frog (MA 5, ST 1, AG 2+, AV 5+, Dodge, No Ball...) until the end of the drive and drops the ball.",
+      "Or click \"Fireball\", then a highlighted square, e.g. the middle of the lines of scrimmage (12,7): each player in the 3x3 area, orcs included, is knocked down on 4+, with +1 to the armour roll (or to the injury roll if the armour breaks anyway).",
+      "\"Keep the wizard for later\" asks again after the next turn. Once cast, the wizard is gone for the game.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Wilhelm", position: "Human Lineman" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Klaus", position: "Human Blitzer" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      inducements: { wizard: 1 },
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 73,
+    actions: [
+      ...toFirstTurn({
+        home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 6 }, 3: { x: 12, y: 8 }, 4: { x: 9, y: 7 } },
+        away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 6 }, 3: { x: 13, y: 8 } },
+        ball: { x: 9, y: 7 },
+      }),
+      { type: "END_TURN" },
+    ],
+  },
+  {
     id: "pre-game-shop",
     title: "Pre-game shop: petty cash, treasury and free prayers",
     instructions: [
