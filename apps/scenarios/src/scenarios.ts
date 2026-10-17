@@ -1578,6 +1578,47 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "wandering-apothecaries",
+    title: "Wandering Apothecaries",
+    instructions: [
+      "Home's first turn. The Altdorf Pros have no apothecary of their own but bought two Wandering Apothecaries (the team file's inducements in src/scenarios.ts): two apothecary uses for the game.",
+      "Click \"Physical dice\", then declare a Block by Ugluk (#4) on Wilhelm (#4, at (13,5)): enter a 6 (Pow), push him back, then armour 6+6 and an injury of 8 or 9 (KO'd) or 10+ (a casualty).",
+      "The humans are offered the apothecary: a KO'd player becomes Stunned, a casualty is re-rolled. Do it again with another human: the second Wandering Apothecary is still there; a third injury gets none.",
+    ],
+    home: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Snaga", position: "Orc Lineman" },
+        { number: 3, name: "Gorbag", position: "Orc Lineman" },
+        { number: 4, name: "Ugluk", position: "Orc Blitzer" },
+        { number: 5, name: "Lugdush", position: "Orc Lineman" },
+      ],
+    },
+    away: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      inducements: { wanderingApothecaries: 2 },
+      players: [
+        { number: 1, name: "Hans", position: "Human Lineman" },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Klaus", position: "Human Lineman" },
+        { number: 4, name: "Wilhelm", position: "Human Lineman" },
+      ],
+    },
+    seed: 97,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 6 }, 2: { x: 12, y: 7 }, 3: { x: 12, y: 8 }, 4: { x: 12, y: 5 }, 5: { x: 8, y: 7 } },
+      away: { 1: { x: 13, y: 6 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 8 }, 4: { x: 13, y: 5 } },
+      ball: { x: 8, y: 7 },
+    }),
+  },
+  {
     id: "wizard",
     title: "Wizard: Fireball and Zap!",
     instructions: [

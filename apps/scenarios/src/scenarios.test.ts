@@ -67,6 +67,21 @@ describe("scenarios", () => {
     expect(s.players["home-6"]).toMatchObject({ name: "Wilhelm", position: "Zombie Lineman", at: "reserves" });
   });
 
+  it("wandering-apothecaries: the humans, without an apothecary of their own, have two uses", () => {
+    let s = load("wandering-apothecaries");
+    expect(s.teams.away.apothecaries).toBe(2);
+    s = step(s, { type: "START_ACTION", playerId: "home-4", action: "block" }).state;
+    s = step(s, { type: "BLOCK", targetId: "away-4" }).state;
+    s = step(s, { type: "ROLL", values: [6] }).state;
+    if (find(s, "CHOOSE_BLOCK_DIE")) s = step(s, { type: "CHOOSE_BLOCK_DIE", index: 0 }).state;
+    s = step(s, { type: "PUSH", square: find(s, "PUSH")!.squares[0]! }).state;
+    s = step(s, { type: "FOLLOW_UP", follow: false }).state;
+    for (const values of [[6, 6], [4, 4]]) s = step(s, { type: "ROLL", values }).state;
+    expect(find(s, "USE_APOTHECARY")?.side).toBe("away");
+    s = step(s, { type: "USE_APOTHECARY", use: true }).state;
+    expect([s.players["away-4"]!.status, s.teams.away.apothecaries]).toEqual(["stunned", 1]);
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });
