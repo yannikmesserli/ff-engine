@@ -992,7 +992,9 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     const { state } = ctx;
     const player = getPlayer(ctx, proc.playerId);
     if (proc.stage === "rush" && hasSkill(player, "Ball & Chain")) proc.stage = "chain";
-    if (proc.stage === "chain" || proc.stage === "chainBlock" || proc.stage === "chainArrive") return chainStep(ctx, proc, action, player);
+    if (proc.stage === "chain" || proc.stage === "chainReroll" || proc.stage === "chainGo" || proc.stage === "chainBlock" || proc.stage === "chainArrive") {
+      return chainStep(ctx, proc, action, player);
+    }
     const squares = proc.jump ? 2 : 1;
     const check = (kind: CheckKind, target: number, modifier: number, leaving?: { from: Square; to: Square }) =>
       ctx.push({ type: "Check", kind, playerId: player.id, target, modifier, stage: "roll", rerolled: false, ...(leaving ? { leaving } : {}) });
@@ -1100,8 +1102,9 @@ export const MoveStep: Handler<P<"MoveStep">> = {
     }
   },
   actions(state, proc) {
-    if (proc.stage !== "chain") return [];
     const player = state.players[proc.playerId]!;
+    if (proc.stage === "chainReroll") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Whirling Dervish" }];
+    if (proc.stage !== "chain") return [];
     return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `Ball & Chain direction (${player.name})` }];
   },
 };
@@ -1122,10 +1125,30 @@ function chainStep(ctx: Ctx, proc: P<"MoveStep">, action: Action | null, player:
   const from = squareOf(ctx, player);
   if (proc.stage === "chain") {
     if (action === null) return "wait";
+    // The side the coach picked, kept for a re-roll of the direction.
+    proc.chainSide ??= { ...proc.to };
     const [roll] = ctx.roll(action, [{ kind: "d6", count: 1 }], "Ball & Chain direction");
-    const dir = templateDirection({ x: Math.sign(proc.to.x - from.x), y: Math.sign(proc.to.y - from.y) }, roll!);
-    const to = { x: from.x + dir.x, y: from.y + dir.y };
-    proc.to = { ...to };
+    const dir = templateDirection({ x: Math.sign(proc.chainSide.x - from.x), y: Math.sign(proc.chainSide.y - from.y) }, roll!);
+    proc.to = { x: from.x + dir.x, y: from.y + dir.y };
+    // Whirling Dervish: once per activation, the direction may be rolled again.
+    if (hasSkill(player, "Whirling Dervish") && !player.usedSkills.includes("Whirling Dervish")) {
+      proc.stage = "chainReroll";
+      return "wait";
+    }
+    proc.stage = "chainGo";
+  }
+  if (proc.stage === "chainReroll") {
+    if (action === null) return "wait";
+    if (ctx.expect(action, "USE_SKILL").use) {
+      player.usedSkills.push("Whirling Dervish");
+      ctx.emit({ type: "SkillUsed", playerId: player.id, skill: "Whirling Dervish" });
+      proc.stage = "chain";
+      return "wait";
+    }
+    proc.stage = "chainGo";
+  }
+  if (proc.stage === "chainGo") {
+    const to = { ...proc.to };
     const rush = player.movesUsed >= player.ma;
     if (!inBounds(to)) {
       // Into the crowd: an injury roll, a turnover.

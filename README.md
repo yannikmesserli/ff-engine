@@ -499,6 +499,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Star of the Show (Count Luthor von Drakenborg): once per game, when he scores a touchdown, his team gains a team
     re-roll until the end of the next drive.
   - Mesmerising Dance (Eldril Sidewinder): once per half, a failed Hypnotic Gaze roll is re-rolled.
+  - Whirling Dervish (Fungus the Loon): once per activation, the D6 for the direction of one of his Ball & Chain steps
+    may be re-rolled (for the same side).
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

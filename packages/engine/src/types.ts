@@ -900,7 +900,9 @@ export type Procedure =
       /** "fell": after the knock-down of a failed roll, which Steady Footing may have avoided. */
       /** "arrive": after the step (and any Shadowing), pick up the ball or score. */
       /** "chain*": a Ball & Chain step (direction on the throw-in template, a block or a move, then any Rush). */
-      stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup" | "chain" | "chainBlock" | "chainArrive";
+      /** "chainReroll": Whirling Dervish may re-roll the direction rolled for the side picked (`chainSide`). */
+      stage: "rush" | "rush2" | "dodge" | "move" | "arrive" | "fell" | "pickup" | "chain" | "chainReroll" | "chainGo" | "chainBlock" | "chainArrive";
+      chainSide?: Square;
       /** The failed roll left the player in the starting square. */
       fellInPlace?: boolean;
       /** Tentacles: the opponents were asked; `held`: a Tentacles player kept the mover in the starting square. */

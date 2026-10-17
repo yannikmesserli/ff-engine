@@ -3191,6 +3191,19 @@ describe("engine", () => {
         });
       const step = (s: GameState, square: Square, ...rolls: Action[]) => apply(s, { type: "MOVE", square }, ...rolls);
 
+      it("Whirling Dervish: once per activation, the direction may be re-rolled", () => {
+        const fungus = edit(fanatic(), (c) => void c.players["home-5"]!.skills.push("Whirling Dervish"));
+        let s = step(apply(fungus, declare("home-5", "move")), { x: 7, y: 5 }, roll(5));
+        expect(find(s, "USE_SKILL")?.skill).toBe("Whirling Dervish");
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(find(s, "ROLL")?.reason).toBe("Ball & Chain direction (Home 5)");
+        // Facing west again: 3-4 goes straight on.
+        s = apply(s, roll(3));
+        expect(s.players["home-5"]!.at).toEqual({ x: 7, y: 5 });
+        // Used for this activation: the next step is not offered a re-roll.
+        expect(types(step(s, { x: 6, y: 5 }, roll(3)))).not.toContain("USE_SKILL");
+      });
+
       it("only moves: a side, then a D6 on the throw-in template picks the square, tackle zones ignored", () => {
         expect(actionsOf(fanatic(), "home-5")).toEqual(["move"]);
         let s = apply(fanatic({ "away-4": { x: 9, y: 4 } }), declare("home-5", "move"));

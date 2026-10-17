@@ -107,6 +107,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  "Whirling Dervish": "Once per activation, may re-roll the D6 for the direction of a Ball & Chain move.",
   "Mesmerising Dance": "Once per half, may re-roll a failed Hypnotic Gaze roll.",
   "Star of the Show": "Once per game, when this player scores a touchdown, the team gains a team re-roll until the end of the next drive.",
   "Pump Up The Crowd": "Once per game, when this player's block causes an opponent a casualty, the team gains a team re-roll until the end of the drive.",
