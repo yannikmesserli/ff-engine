@@ -1821,6 +1821,25 @@ describe("engine", () => {
         expect(apply(s, roll(1)).log).toContainEqual({ type: "BombExploded", square: { x: 6, y: 5 } });
       });
 
+      it("Hail Mary Pass: a bomb to any square, never accurate, scattering three times, without interception", () => {
+        const hmp = withSkills(bomber(), { "home-4": ["Bombardier", "Hail Mary Pass"] });
+        let s = apply(hmp, declare("home-4", "bomb"));
+        expect(types(s)).toEqual(["THROW", "HAIL_MARY_PASS", "END_PLAYER_ACTION"]);
+        s = apply(s, { type: "HAIL_MARY_PASS", square: { x: 20, y: 10 } });
+        expect(s.log).toContainEqual({ type: "PassThrown", playerId: "home-4", target: { x: 20, y: 10 }, range: "bomb", bomb: true, hailMary: true });
+        expect(find(s, "ROLL")?.reason).toMatch(/^Hail Mary Pass/);
+        s = apply(s, roll(6));
+        expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
+        // East three times: (23,10), empty, so it bounces once (south) and explodes.
+        s = apply(s, roll(3, 3, 3), roll(5));
+        expect(s.log).toContainEqual({ type: "BombExploded", square: { x: 23, y: 11 } });
+        // Out of the pitch: the bomb is lost.
+        const lost = apply(hmp, declare("home-4", "bomb"), { type: "HAIL_MARY_PASS", square: { x: 24, y: 14 } }, roll(6), roll(5, 5, 5));
+        expect(lost.log).toContainEqual({ type: "BombLost" });
+        // A fumble explodes on the thrower.
+        expect(apply(hmp, declare("home-4", "bomb"), { type: "HAIL_MARY_PASS", square: { x: 20, y: 10 } }, roll(1), { type: "DECLINE_REROLL" }).log).toContainEqual({ type: "BombHit", playerId: "home-4" });
+      });
+
       it("a fumble explodes on the thrower", () => {
         const s = apply(throwBomb(bomber(), { x: 6, y: 4 }), roll(1), { type: "DECLINE_REROLL" });
         expect(s.log).toContainEqual({ type: "BombHit", playerId: "home-4" });

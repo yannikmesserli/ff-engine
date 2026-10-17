@@ -555,7 +555,8 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       const thrower = hailMaryThrower(state, proc) ?? ctx.reject("Cannot make a Hail Mary Pass now.");
       if (!inBounds(a.square) || sameSquare(a.square, thrower.at)) ctx.reject("Throw to another square of the pitch.");
       proc.finished = true;
-      ctx.push(...feedFirst(proc), { type: "Pass", throwerId: player.id, target: { x: a.square.x, y: a.square.y }, range: "bomb", hailMary: true, stage: "animosity", rerolled: false });
+      const bomb = proc.action === "bomb";
+      ctx.push(...(bomb ? [] : feedFirst(proc)), { type: "Pass", throwerId: player.id, target: { x: a.square.x, y: a.square.y }, range: "bomb", hailMary: true, ...(bomb ? { bomb } : {}), stage: "animosity", rerolled: false });
       return "continue";
     }
     if (a.type === "THROW_TEAM_MATE") {
@@ -854,9 +855,10 @@ const throwOptions = (state: GameState, proc: P<"MoveAction">) => {
   return player ? throwTargets(state, player) : [];
 };
 
-/** Hail Mary Pass: the player may make one instead of a normal pass now. */
+/** Hail Mary Pass: the player may make one instead of a normal pass (or, with Bombardier, a normal bomb throw) now. */
 function hailMaryThrower(state: GameState, proc: P<"MoveAction">) {
-  const player = releasingBall(state, proc, "pass");
+  const bomber = state.players[proc.playerId]!;
+  const player = proc.action === "bomb" ? (!proc.finished && bomber.status === "standing" ? bomber : null) : releasingBall(state, proc, "pass");
   return player && isOnPitch(player) && canHailMary(state, player) ? player : null;
 }
 

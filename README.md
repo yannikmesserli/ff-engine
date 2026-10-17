@@ -210,7 +210,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   ball, a pick-up roll or a bounce, as their coach chooses. The block dice are worked out again.
 - Hail Mary Pass: in a Pass action (not in a blizzard), the ball may go to any square of the pitch. The roll counts
   as a Long Bomb; anything but a fumble is inaccurate (three scatters from the target), only a fumble may be
-  re-rolled, and nobody may intercept (On the Ball still applies).
+  re-rolled, and nobody may intercept (On the Ball still applies). With Bombardier, a Throw Bomb may be one too: the
+  bomb is lost off the pitch, explodes on the thrower on a fumble, and otherwise lands as a scattered bomb.
 - Punt: a once-per-turn action of a standing player with the skill, who may move first: the coach picks a square
   next to the punter (not diagonally); a D6 on the throw-in template facing it gives the direction, then the ball
   travels D6 squares (a team re-roll or Pro on each roll). Off the pitch, a throw-in from the last square and a
