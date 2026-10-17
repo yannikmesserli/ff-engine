@@ -1,5 +1,5 @@
 import type { Ctx, Handler, StepResult } from "../context";
-import type { GameState, PlayerState, Procedure } from "../types";
+import type { CheckKind, GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
@@ -130,13 +130,19 @@ const kept = (proc: P<"Check">) => proc.rerollBelow !== undefined && passes(proc
 const wantsReroll = (proc: P<"Check">, success: boolean) => !success || (proc.rerollBelow !== undefined && proc.roll! < proc.rerollBelow);
 
 /**
+/** Agility Tests, for Consummate Professional. */
+const AGILITY_TESTS: CheckKind[] = ["dodge", "jump", "pickup", "catch", "landing", "bombcatch"];
+
+/**
  * A once-per-game skill that may turn this failed roll into a success, offered before any re-roll: Swift as the Breeze
- * (a Dodge, Jump or Rush passes on a natural 2+, whatever the modifiers).
+ * (a Dodge, Jump or Rush passes on a natural 2+, whatever the modifiers), Consummate Professional (+1 to an Agility Test,
+ * after the roll; a natural 1 still fails).
  */
 function rescueSkill(proc: P<"Check">, player: PlayerState): string | null {
   if (proc.rescued || proc.roll === undefined) return null;
   const unused = (skill: string) => hasSkill(player, skill) && !player.usedThisGame?.includes(skill);
   if (unused("Swift as the Breeze") && ["dodge", "jump", "rush"].includes(proc.kind) && proc.roll >= 2) return "Swift as the Breeze";
+  if (unused("Consummate Professional") && AGILITY_TESTS.includes(proc.kind) && passes(proc.roll, proc.modifier + 1, proc.target)) return "Consummate Professional";
   return null;
 }
 

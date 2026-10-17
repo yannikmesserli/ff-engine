@@ -421,6 +421,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     (not one who lands on another player or was down).
   - Swift as the Breeze (Jordell Freshbreeze): once per game, a failed Dodge, Jump (Leap) or Rush roll passes on a
     natural 2+, whatever the modifiers; offered before any re-roll.
+  - Consummate Professional (Griff Oberwald): once per game, +1 to an Agility Test (Dodge, Jump, pick-up, catch,
+    landing) after the roll, when that saves it (a natural 1 still fails); offered before any re-roll.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
