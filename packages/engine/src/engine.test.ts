@@ -1305,6 +1305,15 @@ describe("engine", () => {
       expect(s.log).toContainEqual({ type: "BlockResult", attackerId: "home-2", defenderId: "away-2", face: 6 });
     });
 
+    it("Woodland Fury: once per game, a single block die may be re-rolled when the block would knock the attacker down", () => {
+      const willow = withSkills(toFirstTurn(), { "home-2": ["Woodland Fury"] });
+      expect(find(apply(blockAway2(willow), roll(1)), "USE_SKILL")?.skill).toBe("Woodland Fury");
+      // A Both Down knocks her down too (no Block); a Push does not.
+      expect(find(apply(blockAway2(willow), roll(2)), "USE_SKILL")?.skill).toBe("Woodland Fury");
+      expect(find(apply(blockAway2(willow), roll(3)), "USE_SKILL")).toBeUndefined();
+      expect(find(apply(blockAway2(withSkills(toFirstTurn(), { "home-2": ["Woodland Fury", "Block"] })), roll(2)), "USE_SKILL")).toBeUndefined();
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

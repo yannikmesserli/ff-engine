@@ -445,6 +445,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     changes the result.
   - Lord of Chaos (Lord Borak the Despoiler): once per game, when he blocks an opponent, he may re-roll any one block
     die of his choice, as the block's one re-roll.
+  - Woodland Fury (Willow Rosebark): once per game, when her block dice would knock her down (all of them when she
+    picks, any one when the defender does: a Skull, or a Both Down without Block), she may re-roll any one block die.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

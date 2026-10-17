@@ -401,7 +401,8 @@ const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, de
 
 /**
  * The skills that let the attacker re-roll any one block die they pick, as the block's re-roll: Unstoppable Momentum
- * (during a Blitz), Lord of Chaos (once per game, against an opponent).
+ * (during a Blitz), Lord of Chaos (once per game, against an opponent), Woodland Fury (once per game, when the dice would
+ * knock the attacker down).
  */
 function anyDieSkills(proc: P<"Block">, attacker: PlayerState, defender: PlayerState): string[] {
   if (proc.rerolled) return [];
@@ -409,11 +410,22 @@ function anyDieSkills(proc: P<"Block">, attacker: PlayerState, defender: PlayerS
   return [
     ...(proc.blitz && hasSkill(attacker, "Unstoppable Momentum") ? ["Unstoppable Momentum"] : []),
     ...(defender.side !== attacker.side && unused("Lord of Chaos") ? ["Lord of Chaos"] : []),
+    ...(unused("Woodland Fury") && knocksAttackerDown(proc, attacker) ? ["Woodland Fury"] : []),
   ];
 }
 
+/**
+ * The block dice would knock the attacker down: a Skull, or a Both Down without Block (or Juggernaut in a Blitz); all the
+ * dice when the attacker picks, any one when the defender does.
+ */
+function knocksAttackerDown(proc: P<"Block">, attacker: PlayerState) {
+  const falls = (face: number) =>
+    BLOCK_FACES[face - 1] === "attacker_down" || (BLOCK_FACES[face - 1] === "both_down" && !hasSkill(attacker, "Block") && !(proc.blitz && hasSkill(attacker, "Juggernaut")));
+  return proc.dice > 0 ? proc.results!.every(falls) : proc.results!.some(falls);
+}
+
 /** Once-per-game re-roll skills, used up when used. */
-const ONCE_PER_GAME_DIE_SKILLS = ["Lord of Chaos"];
+const ONCE_PER_GAME_DIE_SKILLS = ["Lord of Chaos", "Woodland Fury"];
 
 /** The re-roll skills offered on the block dice now, as USE_SKILL templates. */
 const skillTemplates = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
