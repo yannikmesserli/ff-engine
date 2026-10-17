@@ -3805,6 +3805,15 @@ describe("engine", () => {
       expect(stunned).toHaveLength(2);
       expect(stunned.every((p) => p.side === "home")).toBe(true);
     });
+
+    it("Pitch Invasion: a Ball & Chain player picked is placed prone and rolls for injury instead", () => {
+      // Every home player has Ball & Chain: the D3 of 1 picks one, whose armour breaks without a roll.
+      const s = apply(kickWith(6, 6, team("Home", { skills: ["Ball & Chain"] })), roll(1, 6, 1));
+      const down = Object.values(s.players).filter((p) => p.status !== "standing");
+      expect(down.map((p) => [p.side, p.status])).toEqual([["home", "prone"]]);
+      expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: down[0]!.id });
+      expect(find(s, "ROLL")?.reason).toMatch(/^Injury/);
+    });
   });
 
   describe("flight markers", () => {

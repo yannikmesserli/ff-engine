@@ -357,7 +357,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   stunned player is pushed back and rolls armour without dice; knocking down a standing team-mate is a turnover. Into
   an empty square, the move, then any Rush; a loose ball there bounces (never picked up, no turnover). Off the pitch,
   the crowd and a turnover. When the player is knocked down or placed prone, the armour breaks without a roll, a
-  Stunned result is a KO, and a KO gets no apothecary.
+  Stunned result is a KO, and a KO gets no apothecary. A Pitch Invasion that would stun the player places them prone
+  instead, with that armour break.
 - Bombardier: a once-per-turn Throw Bomb special action, without moving first. The bomb is thrown like a pass (range,
   PA roll, Pass and team re-rolls, Safe Pass, interception; no Animosity or On the Ball). A fumble explodes on the
   thrower; a bomb leaving the pitch is lost; on an empty square it bounces once. A standing player where it comes down

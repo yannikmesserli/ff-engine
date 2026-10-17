@@ -436,6 +436,13 @@ export const KickoffEvent: Handler<P<"KickoffEvent">> = {
         for (const side of losers(totals)) {
           const standing = teamPlayers(state, side).filter((p) => isOnPitch(p) && p.status === "standing");
           for (const p of pickRandom(ctx, standing, d3!)) {
+            // Ball & Chain: placed prone instead, and the armour breaks without a roll (an injury roll).
+            if (hasSkill(p, "Ball & Chain")) {
+              p.status = "prone";
+              ctx.emit({ type: "PlayerPlacedProne", playerId: p.id });
+              ctx.push({ type: "KnockDown", playerId: p.id, turnover: false, stage: "armour" });
+              continue;
+            }
             p.status = "stunned";
             ctx.emit({ type: "PlayerInjured", playerId: p.id, result: "stunned" });
           }
