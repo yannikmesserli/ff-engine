@@ -600,4 +600,13 @@ describe("scenarios", () => {
     s = step(s, { type: "SNAP", playerId: "home-2", square: { x: 12, y: 3 } }).state;
     expect([s.players["home-2"]!.at, find(s, "MOVE") !== undefined]).toEqual([{ x: 12, y: 3 }, true]);
   });
+
+  it("savage-blow: a Skull and a Both Down, both re-rolled", () => {
+    let s = applyActions(load("savage-blow"), [{ type: "START_ACTION", playerId: "home-1", action: "block" }, { type: "BLOCK", targetId: "away-1" }, { type: "ROLL", values: [1, 2] }]);
+    expect(find(s, "USE_SKILL")?.skill).toBe("Savage Blow");
+    s = step(s, { type: "USE_SKILL", use: true, skill: "Savage Blow" }).state;
+    expect(find(s, "REROLL_BLOCK_DIE")).toMatchObject({ results: [1, 2], multiple: true });
+    s = applyActions(s, [{ type: "REROLL_BLOCK_DIE", index: 0, indexes: [0, 1] }, { type: "ROLL", values: [6, 6] }]);
+    expect(find(s, "CHOOSE_BLOCK_DIE")?.results).toEqual([6, 6]);
+  });
 });

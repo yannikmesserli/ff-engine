@@ -2172,4 +2172,41 @@ export const SCENARIOS: Scenario[] = [
       ball: { x: 5, y: 7 },
     }),
   },
+  {
+    id: "savage-blow",
+    title: "Savage Blow: re-roll any number of the block dice",
+    instructions: [
+      "Home's first turn. Klaus (#1) has Savage Blow here (given in the team file in src/scenarios.ts): once per game, he may re-roll any number of the block dice.",
+      "Click \"Physical dice\", click Klaus and declare a Block on Grishnak (#1) in front of him: Otto and Hans assist, 2 dice, you choose.",
+      "Enter 1 and 2 (Skull, Both Down). Click \"Use Savage Blow\", tick the dice to re-roll (one or both) and confirm, then enter the new dice.",
+    ],
+    home: {
+      name: "Altdorf Pros",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Klaus", position: "Human Blitzer", skills: ["Savage Blow"] },
+        { number: 2, name: "Otto", position: "Human Lineman" },
+        { number: 3, name: "Hans", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 109,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 7 }, 2: { x: 12, y: 6 }, 3: { x: 12, y: 8 } },
+      away: { 1: { x: 13, y: 7 }, 2: { x: 13, y: 4 }, 3: { x: 13, y: 10 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
 ];
