@@ -1254,6 +1254,13 @@ describe("engine", () => {
       expect(find(declined, "ROLL")?.reason).toBe("Injury");
     });
 
+    it("Ram: once per game, +1 to the armour or injury roll of an opponent knocked down by the block, after the roll", () => {
+      const ram = withSkills(toFirstTurn(), { "home-2": ["Ram"] });
+      const down = apply(blockAway2(ram), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      expect(find(apply(down, roll(3, 4)), "USE_SKILL")?.skill).toBe("Ram");
+      expect(types(apply(down, roll(3, 3)))).not.toContain("USE_SKILL");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

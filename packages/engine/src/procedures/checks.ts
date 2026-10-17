@@ -289,14 +289,16 @@ function bonusUsed(ctx: Ctx, proc: P<"KnockDown">) {
 
 /**
  * The blocker's once-per-game bonus to the armour or the injury roll of an opponent their block knocked down, applied
- * after the roll if it changes the result: Slayer (+1 against a Big Guy), Dwarven Scourge (+1, or +2 against a Dwarf).
+ * after the roll if it changes the result: Slayer (+1 against a Big Guy), Dwarven Scourge (+1, or +2 against a Dwarf),
+ * Ram (+1).
  */
-function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState): { skill: string; bonus: number } | null {
+function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState): { skill: string; bonus: number; armourOnly?: boolean } | null {
   const blocker = proc.blockerId === undefined ? undefined : state.players[proc.blockerId];
   if (!blocker || blocker.side === player.side || proc.lateUsed) return null;
   const unused = (skill: string) => hasSkill(blocker, skill) && !blocker.usedThisGame?.includes(skill);
   if (unused("Slayer") && player.keywords.includes("big guy")) return { skill: "Slayer", bonus: 1 };
   if (unused("Dwarven Scourge")) return { skill: "Dwarven Scourge", bonus: player.keywords.includes("dwarf") ? 2 : 1 };
+  if (unused("Ram")) return { skill: "Ram", bonus: 1 };
   return null;
 }
 

@@ -431,6 +431,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     opponent knocked down by his block (+2 against a Dwarf), after the roll, as for Slayer.
   - Dwarfen Grit (Josef Bugman, the star player): once per game, when his armour is broken (a knock-down, a fall or a
     foul), his coach may have the armour roll rolled again; the new roll stands.
+  - Ram (Rumbelow Sheepskin): once per game, +1 to the armour or the injury roll of an opponent knocked down by his
+    block, after the roll, as for Slayer.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
