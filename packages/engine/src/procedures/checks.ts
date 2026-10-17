@@ -303,6 +303,12 @@ function lateBonus(state: GameState, proc: P<"KnockDown">, player: PlayerState):
   return null;
 }
 
+/** Krump and Smash: once per game, the blocker may re-roll the armour roll of an opponent their block knocked down. */
+function armourReroller(state: GameState, proc: P<"KnockDown">, player: PlayerState) {
+  const blocker = proc.blockerId === undefined ? undefined : state.players[proc.blockerId];
+  return !!blocker && blocker.side !== player.side && !proc.lateUsed && hasSkill(blocker, "Krump and Smash") && !blocker.usedThisGame?.includes("Krump and Smash");
+}
+
 /** Dwarfen Grit: once per game, the player may have their broken armour rolled again (the new roll stands). */
 export const dwarfenGrit = (player: PlayerState) => hasSkill(player, "Dwarfen Grit") && !player.usedThisGame?.includes("Dwarfen Grit");
 
@@ -469,8 +475,21 @@ export const KnockDown: Handler<P<"KnockDown">> = {
           ctx.emit({ type: "ArmourHeld", playerId: player.id, roll });
           const late = lateBonus(state, proc, player);
           proc.armourRoll = roll;
-          proc.stage = late && !hasSkill(player, "Iron Hard Skin") && roll + late.bonus >= player.av ? "lateArmour" : "bounce";
+          proc.stage = late && !hasSkill(player, "Iron Hard Skin") && roll + late.bonus >= player.av ? "lateArmour" : armourReroller(state, proc, player) ? "armourReroll" : "bounce";
         }
+        return "continue";
+      }
+      case "armourReroll": {
+        if (action === null) return "wait";
+        if (!ctx.expect(action, "USE_SKILL").use) {
+          proc.stage = "bounce";
+          return "continue";
+        }
+        // Krump and Smash: the armour is rolled again, and the new roll stands.
+        useOncePerGame(ctx, state.players[proc.blockerId!]!, "Krump and Smash");
+        proc.lateUsed = true;
+        proc.mightyBlowOnArmour = false;
+        proc.stage = "armour";
         return "continue";
       }
       case "grit": {
@@ -536,6 +555,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "steady") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Steady Footing" }];
     if (proc.stage === "sabotage") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Saboteur" }];
+    if (proc.stage === "armourReroll") return [{ type: "USE_SKILL", side: other(player.side), playerId: proc.blockerId!, skill: "Krump and Smash" }];
     if (proc.stage === "grit") return [{ type: "USE_SKILL", side: player.side, playerId: player.id, skill: "Dwarfen Grit" }];
     if (proc.stage === "lateArmour" || proc.stage === "lateInjury") {
       const blocker = state.players[proc.blockerId!]!;

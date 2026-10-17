@@ -435,6 +435,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     block, after the roll, as for Slayer.
   - Crushing Blow (The Mighty Zug): once per game, +1 to the armour roll of an opponent knocked down by his block,
     after the roll, when it breaks the armour.
+  - Krump and Smash (Varag Ghoul-Chewer): once per game, the armour roll of an opponent knocked down by his block may
+    be re-rolled when it holds; the new roll stands.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

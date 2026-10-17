@@ -933,7 +933,7 @@ export type Procedure =
       /** Dwarfen Grit: the player's broken armour was re-rolled ("grit": asked). */
       grit?: boolean;
       /** "sabotage": the player may use Saboteur; "sabotageRoll": its D6. */
-      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "lateArmour" | "grit" | "injury" | "lateInjury" | "bounce";
+      stage: "fall" | "sabotage" | "sabotageRoll" | "steady" | "steadyResult" | "armour" | "lateArmour" | "armourReroll" | "grit" | "injury" | "lateInjury" | "bounce";
       square?: Square;
       hadBall?: boolean;
     };

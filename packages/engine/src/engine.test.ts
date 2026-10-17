@@ -1268,6 +1268,18 @@ describe("engine", () => {
       expect(types(apply(down, roll(6, 6), roll(3, 4)))).not.toContain("USE_SKILL");
     });
 
+    it("Krump and Smash: once per game, the armour roll of an opponent knocked down by the block may be re-rolled", () => {
+      const varag = withSkills(toFirstTurn(), { "home-2": ["Krump and Smash"] });
+      const down = apply(blockAway2(varag), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false });
+      let s = apply(down, roll(1, 1));
+      expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-2", skill: "Krump and Smash" });
+      s = apply(s, { type: "USE_SKILL", use: true }, roll(5, 5));
+      expect(s.log).toContainEqual({ type: "ArmourBroken", playerId: "away-2", roll: 10 });
+      expect(find(s, "ROLL")?.reason).toBe("Injury");
+      // A second failure stands.
+      expect(types(apply(down, roll(1, 1), { type: "USE_SKILL", use: true }, roll(1, 1)))).toContain("START_ACTION");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));
