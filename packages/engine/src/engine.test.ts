@@ -1373,6 +1373,16 @@ describe("engine", () => {
       expect([types(kept).includes("MOVE"), kept.players["home-1"]!.usedThisGame]).toEqual([true, undefined]);
     });
 
+    it("Excuse me, are you a Zoat?: once per game, when activated, an opponent within 3 squares becomes Distracted", () => {
+      // home-4 at (10,4): away-1 at (13,6) is 3 squares away, away-4 at (15,4) is 5.
+      let s = apply(withSkills(toFirstTurn(), { "home-4": ["Excuse me, are you a Zoat?"] }), startMove("home-4"), { type: "ACTIVATION_SKILL", skill: "Excuse me, are you a Zoat?" });
+      const choices = find(s, "SELECT_PLAYERS")!.playerIds;
+      expect(choices).toContain("away-1");
+      expect(choices).not.toContain("away-4");
+      s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-1"] });
+      expect(s.players["away-1"]!.distracted).toBe(true);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

@@ -457,6 +457,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Black Ink (Kiroth Krakeneye): once per game, at the start of one of his activations, an opponent he marks becomes
     Distracted until their next activation. Rules like this one are offered when the activation starts, after any
     stand-up, next to going on with the action.
+  - "Excuse me, are you a Zoat?" (Zolcath the Zoat): once per game, when he is activated, an opponent within 3
+    squares (with a tackle zone) becomes Distracted.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
