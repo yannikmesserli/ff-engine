@@ -397,7 +397,7 @@ export const Pass: Handler<P<"Pass">> = {
       }
       case "land":
         if (proc.bomb && proc.throwInFrom) ctx.emit({ type: "BombLost" });
-        else if (proc.bomb) ctx.push({ type: "BombLanding", square: proc.landing!, scattered: proc.result === "inaccurate", bounced: false, stage: "land" });
+        else if (proc.bomb) ctx.push({ type: "BombLanding", square: proc.landing!, scattered: proc.result === "inaccurate", bounced: false, stage: "land", throwerId: thrower.id });
         else if (proc.throwInFrom) ctx.push({ type: "ThrowIn", from: proc.throwInFrom });
         else {
           landBall(ctx, proc.landing!, proc.landing!, {

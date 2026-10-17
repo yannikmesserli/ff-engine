@@ -813,7 +813,8 @@ export type Procedure =
    * explodes; on an empty square it first bounces once.
    */
   /** A bomb comes down on `square`; `dive`: the teams still to ask about Diving Catch, the moving team first. */
-  | { type: "BombLanding"; square: Square; scattered: boolean; bounced: boolean; stage: "land" | "catch"; catcherId?: string; dive?: Side[] }
+  /** "kaboom": the thrower may use Kaboom! on the opponent who caught it. */
+  | { type: "BombLanding"; square: Square; scattered: boolean; bounced: boolean; stage: "land" | "catch" | "kaboom"; catcherId?: string; dive?: Side[]; throwerId?: string }
   /** A bomb explodes: the player on `square` is hit, each player next to it on a 4+; `targets` are still to resolve. */
   | { type: "Explosion"; square: Square; targets: string[]; stage: "explode" | "next" | "roll" }
   /**

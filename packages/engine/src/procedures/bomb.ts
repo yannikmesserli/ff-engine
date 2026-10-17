@@ -4,7 +4,7 @@ import { SCATTER } from "../dice";
 import { adjacent, inBounds, isOnPitch, offset, other, playerAt, sameSquare } from "../pitch";
 import { hasSkill } from "../skills";
 import { catchModifier } from "./ball";
-import { divingCatchers, getPlayer, squareOf } from "./helpers";
+import { divingCatchers, getPlayer, squareOf, useOncePerGame } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -30,6 +30,13 @@ export const rethrow = (playerId: string): P<"Pass"> => ({
   stage: "aim",
   rerolled: false,
 });
+
+/** Kaboom!: once per game, the thrower may have the bomb an opponent caught explode instead of being thrown again. */
+function kaboom(state: GameState, proc: P<"BombLanding">) {
+  const thrower = proc.throwerId === undefined ? undefined : state.players[proc.throwerId];
+  const catcher = state.players[proc.catcherId!]!;
+  return !!thrower && thrower.side !== catcher.side && hasSkill(thrower, "Kaboom!") && !thrower.usedThisGame?.includes("Kaboom!");
+}
 
 /** Diving Catch for a bomb: the team's divers next to the square, and its standing player in it. */
 function bombDivers(state: GameState, square: Square, side: Side): PlayerState[] {
@@ -83,8 +90,21 @@ export const BombLanding: Handler<P<"BombLanding">> = {
     if (proc.stage === "catch") {
       if (state.lastCheck?.kind === "bombcatch" && state.lastCheck.success) {
         ctx.emit({ type: "BombCaught", playerId: proc.catcherId! });
+        if (kaboom(state, proc)) {
+          proc.stage = "kaboom";
+          return "wait";
+        }
         ctx.push(rethrow(proc.catcherId!));
       } else ctx.push(explosion(state, proc.square));
+      return "done";
+    }
+    if (proc.stage === "kaboom") {
+      if (action === null) return "wait";
+      if (ctx.expect(action, "USE_SKILL").use) {
+        // Kaboom!: the bomb goes off in the catcher's hands.
+        useOncePerGame(ctx, state.players[proc.throwerId!]!, "Kaboom!");
+        ctx.push(explosion(state, squareOf(ctx, getPlayer(ctx, proc.catcherId!))));
+      } else ctx.push(rethrow(proc.catcherId!));
       return "done";
     }
     const player = playerAt(state, proc.square);
@@ -114,6 +134,10 @@ export const BombLanding: Handler<P<"BombLanding">> = {
     return "continue";
   },
   actions(state, proc) {
+    if (proc.stage === "kaboom") {
+      const thrower = state.players[proc.throwerId!]!;
+      return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Kaboom!" }];
+    }
     const side = proc.dive?.[0];
     if (side !== undefined) {
       const playerIds = bombDivers(state, proc.square, side).map((p) => p.id);

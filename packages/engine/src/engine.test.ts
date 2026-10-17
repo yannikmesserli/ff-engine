@@ -2251,6 +2251,17 @@ describe("engine", () => {
         expect(apply(hmp, declare("home-4", "bomb"), { type: "HAIL_MARY_PASS", square: { x: 20, y: 10 } }, roll(1), { type: "DECLINE_REROLL" }).log).toContainEqual({ type: "BombHit", playerId: "home-4" });
       });
 
+      it("Kaboom!: once per game, a bomb an opponent caught may explode instead of being thrown back", () => {
+        const bomber = place(withSkills(toFirstTurn(), { "home-4": ["Bombardier", "Kaboom!"] }), { "away-5": { x: 6, y: 4 } });
+        let s = apply(throwBomb(bomber, { x: 6, y: 4 }), roll(5), roll(6));
+        expect(s.log).toContainEqual({ type: "BombCaught", playerId: "away-5" });
+        expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-4", skill: "Kaboom!" });
+        s = apply(s, { type: "USE_SKILL", use: true });
+        expect(s.log).toContainEqual({ type: "BombExploded", square: { x: 6, y: 4 } });
+        // Declined: the catcher throws it back.
+        expect(types(apply(throwBomb(bomber, { x: 6, y: 4 }), roll(5), roll(6), { type: "USE_SKILL", use: false }))).toContain("THROW");
+      });
+
       it("a fumble explodes on the thrower", () => {
         const s = apply(throwBomb(bomber(), { x: 6, y: 4 }), roll(1), { type: "DECLINE_REROLL" });
         expect(s.log).toContainEqual({ type: "BombHit", playerId: "home-4" });

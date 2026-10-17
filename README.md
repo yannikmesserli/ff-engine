@@ -501,6 +501,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Mesmerising Dance (Eldril Sidewinder): once per half, a failed Hypnotic Gaze roll is re-rolled.
   - Whirling Dervish (Fungus the Loon): once per activation, the D6 for the direction of one of his Ball & Chain steps
     may be re-rolled (for the same side).
+  - Kaboom! (Bomber Dribblesnot): once per game, when an opponent catches a bomb he threw, his coach may have it explode
+    in the catcher's square instead of being thrown again.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
