@@ -693,6 +693,8 @@ export type Procedure =
       proDie?: number;
       /** The skill re-rolling the die picked without a Pro roll (Unstoppable Momentum, Lord of Chaos...). */
       dieSkill?: string;
+      /** Savage Blow: the block dice picked to re-roll. */
+      savage?: number[];
       /** A team re-roll was spent on a failed Pro roll. */
       proRetried?: boolean;
       /** The skill re-rolling a single die (Brawler: a Both Down, Hatred: a Skull). */
@@ -714,7 +716,7 @@ export type Procedure =
        */
       multiple?: { stage: "prepare" | "resolve"; otherId: string; squares: Square[] };
       /** "appearance": the defender's Foul Appearance, rolled first. */
-      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "trickster" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "pro" | "proTeam" | "proLoner" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
+      stage: "appearance" | "appearanceResult" | "rush" | "rushResult" | "dauntless" | "dauntlessResult" | "trickster" | "roll" | "reroll" | "loner" | "singleDie" | "proDie" | "savageDice" | "savageReroll" | "pro" | "proTeam" | "proLoner" | "proReroll" | "choose" | "resolve" | "juggernaut" | "wrestle" | "standFirm" | "rooted" | "push" | "fend" | "taunt" | "followup" | "end";
       /** Number of block dice; negative when the defender chooses. */
       dice: number;
       results?: number[];
@@ -1071,7 +1073,8 @@ export type Action =
   /** Use an optional skill offered by a USE_SKILL template (Stand Firm)? `skill` picks one when several are offered. */
   | { type: "USE_SKILL"; use: boolean; skill?: string }
   /** Pro: the block die to re-roll (index into the results). */
-  | { type: "REROLL_BLOCK_DIE"; index: number }
+  /** The block die to re-roll; `indexes` when several may be picked (Savage Blow). */
+  | { type: "REROLL_BLOCK_DIE"; index: number; indexes?: number[] }
   | { type: "END_PLAYER_ACTION" }
   | { type: "END_TURN" }
   /** Choose players for a kick-off event (Solid Defence, High Kick, Charge). May be empty. */
@@ -1147,7 +1150,8 @@ export type ActionTemplate =
   /** `crowd`: the punter stands on a sideline or in an end zone and may punt into the crowd. */
   | { type: "PUNT"; side: Side; playerId: string; squares: Square[]; crowd: boolean }
   | { type: "CHOOSE_BLOCK_DIE"; side: Side; results: number[] }
-  | { type: "REROLL_BLOCK_DIE"; side: Side; results: number[]; skill: string }
+  /** `multiple`: any number of the dice may be picked (Savage Blow). */
+  | { type: "REROLL_BLOCK_DIE"; side: Side; results: number[]; skill: string; multiple?: boolean }
   | { type: "PUSH"; side: Side; playerId: string; squares: Square[] }
   | { type: "FOLLOW_UP"; side: Side; playerId: string; square: Square }
   /** Squares in range, with the range band and the D6 roll needed for an accurate pass. */

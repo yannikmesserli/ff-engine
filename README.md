@@ -450,6 +450,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Working in Tandem (the Swift Twins; `Working in Tandem(block)` for Lucien, `Working in Tandem(pass)` for Valen):
     Lucien may re-roll any one block die against an opponent Valen also marks; Valen's pass to Lucien's square has no
     range modifier.
+  - Savage Blow (Anqi Panqi): once per game, when he blocks an opponent, he may re-roll any number of the block dice,
+    as the block's one re-roll.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

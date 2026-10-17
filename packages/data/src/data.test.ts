@@ -408,8 +408,10 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return t.mascot && (t.available === 0 || random() < 0.5) ? { type: "USE_REROLL", mascot: true } : { type: "USE_REROLL" };
     case "USE_SKILL":
       return { type: "USE_SKILL", use: random() < 0.7, skill: t.skill };
-    case "REROLL_BLOCK_DIE":
-      return { type: "REROLL_BLOCK_DIE", index: Math.floor(random() * t.results.length) };
+    case "REROLL_BLOCK_DIE": {
+      const index = Math.floor(random() * t.results.length);
+      return t.multiple ? { type: "REROLL_BLOCK_DIE", index, indexes: t.results.map((_, i) => i).filter((i) => i === index || random() < 0.5) } : { type: "REROLL_BLOCK_DIE", index };
+    }
     case "MOVE_INSTEAD":
       return { type: "MOVE_INSTEAD", move: random() < 0.5 };
     case "MOVE":

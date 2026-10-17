@@ -1331,6 +1331,20 @@ describe("engine", () => {
       expect(needed(passer(["Working in Tandem(pass)"]))).toMatchObject({ range: "short", needed: 4 });
     });
 
+    it("Savage Blow: once per game, the attacker may re-roll any number of the block dice", () => {
+      // ST 4 against ST 3: two dice.
+      const anqi = withSkills(toFirstTurn(team("Home", { st: 4 })), { "home-2": ["Savage Blow"] });
+      let s = apply(blockAway2(anqi), roll(1, 2));
+      expect(find(s, "USE_SKILL")?.skill).toBe("Savage Blow");
+      s = apply(s, { type: "USE_SKILL", use: true, skill: "Savage Blow" });
+      expect(find(s, "REROLL_BLOCK_DIE")).toEqual({ type: "REROLL_BLOCK_DIE", side: "home", results: [1, 2], skill: "Savage Blow", multiple: true });
+      s = apply(s, { type: "REROLL_BLOCK_DIE", index: 0, indexes: [0, 1] });
+      expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "block", count: 2 }], reason: "Savage Blow (re-roll block dice)" });
+      s = apply(s, roll(6, 3));
+      expect(find(s, "CHOOSE_BLOCK_DIE")?.results).toEqual([6, 3]);
+      expect(s.players["home-2"]!.usedThisGame).toEqual(["Savage Blow"]);
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

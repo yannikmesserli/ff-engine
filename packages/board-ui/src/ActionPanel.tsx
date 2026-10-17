@@ -147,6 +147,25 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
   return PROMPTS[main.type];
 }
 
+/** Pick any number of block dice to re-roll (Savage Blow), then confirm. */
+function BlockDicePicker(props: { template: TemplateOf<"REROLL_BLOCK_DIE">; assets: string; dispatch(action: Action): void }) {
+  const { template, assets, dispatch } = props;
+  const [chosen, setChosen] = useState<number[]>([]);
+  const toggle = (i: number) => setChosen(chosen.includes(i) ? chosen.filter((c) => c !== i) : [...chosen, i]);
+  return (
+    <span className="bb-block-dice">
+      {template.results.map((v, i) => (
+        <button key={i} className={chosen.includes(i) ? "bb-picked" : undefined} title={`Re-roll this ${blockFaceName(v)}`} onClick={() => toggle(i)}>
+          <DieFace kind="block" value={v} assets={assets} />
+        </button>
+      ))}
+      <button disabled={chosen.length === 0} onClick={() => dispatch({ type: "REROLL_BLOCK_DIE", index: chosen[0]!, indexes: chosen })}>
+        Re-roll {chosen.length} ({template.skill})
+      </button>
+    </span>
+  );
+}
+
 /** The decision panel: a prompt and one button per available non-board action. */
 export function ActionPanel(props: ActionPanelProps) {
   const { state, assets, templates, dispatch, autoRoll, setAutoRoll, picked, setPicked } = props;
@@ -278,7 +297,8 @@ export function ActionPanel(props: ActionPanelProps) {
             </button>
           ) : null,
         )}
-        {main.type === "REROLL_BLOCK_DIE" && (
+        {main.type === "REROLL_BLOCK_DIE" && main.multiple && <BlockDicePicker template={main} assets={assets} dispatch={dispatch} />}
+        {main.type === "REROLL_BLOCK_DIE" && !main.multiple && (
           <span className="bb-block-dice">
             {main.results.map((v, i) => (
               <button key={i} title={`Re-roll this ${blockFaceName(v)} (${main.skill})`} onClick={() => dispatch({ type: "REROLL_BLOCK_DIE", index: i })}>

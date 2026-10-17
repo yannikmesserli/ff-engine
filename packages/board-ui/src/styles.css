@@ -199,3 +199,4 @@
 .bb-summary-team.bb-side-away { border-left-color: var(--bb-away); }
 .bb-log { width: 320px; height: 220px; overflow-y: auto; font-size: 12px; line-height: 1.5; }
 .bb-summary-team .bb-link { margin-left: 8px; }
+.bb-block-dice button.bb-picked { outline: 2px solid #c9a227; }

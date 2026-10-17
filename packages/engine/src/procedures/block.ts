@@ -397,7 +397,12 @@ function singleDieSkills(proc: P<"Block">, attacker: PlayerState, defender: Play
 /** Any re-roll the attacker could use on the block dice now (team re-roll, Brawler, Hatred, Pro). */
 const anyReroll = (state: GameState, proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
   canReroll(state, proc, attacker) ||
-  (!proc.mascotFailed && (singleDieSkills(proc, attacker, defender).length > 0 || anyDieSkills(state, proc, attacker, defender).length > 0 || canUsePro(state, attacker, proc.rerolled)));
+  (!proc.mascotFailed &&
+    (singleDieSkills(proc, attacker, defender).length > 0 || anyDieSkills(state, proc, attacker, defender).length > 0 || savageBlow(proc, attacker, defender) || canUsePro(state, attacker, proc.rerolled)));
+
+/** Savage Blow: once per game, when blocking an opponent, the attacker may re-roll any number of the block dice. */
+const savageBlow = (proc: P<"Block">, attacker: PlayerState, defender: PlayerState) =>
+  !proc.rerolled && defender.side !== attacker.side && hasSkill(attacker, "Savage Blow") && !attacker.usedThisGame?.includes("Savage Blow");
 
 /**
  * The skills that let the attacker re-roll any one block die they pick, as the block's re-roll: Unstoppable Momentum
@@ -443,6 +448,7 @@ const skillTemplates = (state: GameState, proc: P<"Block">, attacker: PlayerStat
     : [
         ...singleDieTemplate(proc, attacker, defender),
         ...anyDieSkills(state, proc, attacker, defender).map((skill) => ({ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill })),
+        ...(savageBlow(proc, attacker, defender) ? [{ type: "USE_SKILL" as const, side: attacker.side, playerId: attacker.id, skill: "Savage Blow" }] : []),
         ...proTemplate(state, attacker, proc.rerolled),
       ];
 
@@ -451,6 +457,12 @@ function useSkill(ctx: Ctx, proc: P<"Block">, attacker: PlayerState, defender: P
   const offered = skillTemplates(ctx.state, proc, attacker, defender).map((t) => t.skill);
   const chosen = skill ?? offered[0];
   if (chosen === undefined || !offered.includes(chosen)) ctx.reject("This skill cannot be used now.");
+  if (chosen === "Savage Blow") {
+    useOncePerGame(ctx, attacker, chosen);
+    proc.rerolled = true;
+    proc.stage = "savageDice";
+    return;
+  }
   if (anyDieSkills(ctx.state, proc, attacker, defender).includes(chosen)) {
     // The coach picks the die, re-rolled without any roll first.
     if (ONCE_PER_GAME_DIE_SKILLS.includes(chosen)) useOncePerGame(ctx, attacker, chosen);
@@ -684,6 +696,21 @@ export const Block: Handler<P<"Block">> = {
         if (action === null) return "wait";
         const [die] = ctx.roll(action, [{ kind: "block", count: 1 }], singleDieReason(proc.singleDie!));
         proc.results![proc.results!.indexOf(SINGLE_DIE_SKILLS[proc.singleDie!])] = die!;
+        proc.stage = "choose";
+        return "continue";
+      }
+      case "savageDice": {
+        if (action === null) return "wait";
+        const { index, indexes = [index] } = ctx.expect(action, "REROLL_BLOCK_DIE");
+        if (indexes.length === 0 || new Set(indexes).size !== indexes.length || indexes.some((i) => proc.results![i] === undefined)) ctx.reject("Invalid dice.");
+        proc.savage = [...indexes].sort((a, b) => a - b);
+        proc.stage = "savageReroll";
+        return "continue";
+      }
+      case "savageReroll": {
+        if (action === null) return "wait";
+        const dice = ctx.roll(action, [{ kind: "block", count: proc.savage!.length }], "Savage Blow (re-roll block dice)");
+        proc.savage!.forEach((i, n) => (proc.results![i] = dice[n]!));
         proc.stage = "choose";
         return "continue";
       }
@@ -932,6 +959,10 @@ export const Block: Handler<P<"Block">> = {
         ];
       case "proDie":
         return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: proc.dieSkill ?? "Pro" }];
+      case "savageDice":
+        return [{ type: "REROLL_BLOCK_DIE", side: attacker.side, results: proc.results!, skill: "Savage Blow", multiple: true }];
+      case "savageReroll":
+        return [{ type: "ROLL", side: attacker.side, dice: [{ kind: "block", count: proc.savage!.length }], reason: "Savage Blow (re-roll block dice)" }];
       case "pro":
       case "proTeam":
       case "proLoner":
