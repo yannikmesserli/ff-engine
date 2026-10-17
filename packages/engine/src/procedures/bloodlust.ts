@@ -4,16 +4,24 @@ import { adjacent, ballCarrier, hasTackleZone, isOnPitch, playerAt } from "../pi
 import { ARMOUR_DICE } from "./checks";
 import { injure } from "./injury";
 import { dropBall } from "./ball";
-import { getPlayer, squareOf } from "./helpers";
+import { getPlayer, squareOf, useOncePerGame } from "./helpers";
+import { hasSkill } from "../skills";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
-/** Thrall team-mates next to the player, standing, prone or stunned: the ones a thirsty player may bite. */
+/**
+ * Thrall team-mates next to the player, standing, prone or stunned: the ones a thirsty player may bite. Tasty Morsel
+ * (once per game): also adjacent opponents of ST 3 or less, not star players.
+ */
 export function thralls(state: GameState, player: PlayerState): PlayerState[] {
   if (!isOnPitch(player)) return [];
+  const morsel = hasSkill(player, "Tasty Morsel") && !player.usedThisGame?.includes("Tasty Morsel");
   return adjacent(player.at)
     .map((s) => playerAt(state, s))
-    .filter((p): p is PlayerState => p !== undefined && p.side === player.side && p.keywords.includes("thrall"));
+    .filter(
+      (p): p is PlayerState =>
+        p !== undefined && ((p.side === player.side && p.keywords.includes("thrall")) || (morsel && p.side !== player.side && p.st <= 3 && p.hired !== "star")),
+    );
 }
 
 /** No Thrall bitten: a turnover, the player loses their tackle zone and drops the ball. */
@@ -49,10 +57,12 @@ export const Feed: Handler<P<"Feed">> = {
       if (playerIds.length > 1 || (id !== undefined && !victims.some((v) => v.id === id))) ctx.reject("Invalid Thrall.");
       if (id === undefined) return starve(ctx, player);
       const victim = getPlayer(ctx, id);
+      if (victim.side !== player.side) useOncePerGame(ctx, player, "Tasty Morsel");
       ctx.emit({ type: "PlayerBitten", playerId: player.id, victimId: victim.id });
       if (ballCarrier(state)?.id === victim.id) {
         state.ball.carried = false;
-        state.turnover = true;
+        // Biting an opponent with the ball (Tasty Morsel) is no turnover.
+        if (victim.side === player.side) state.turnover = true;
         proc.dropped = true;
       }
       if (victim.status === "standing") {

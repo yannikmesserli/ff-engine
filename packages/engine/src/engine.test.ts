@@ -1130,6 +1130,19 @@ describe("engine", () => {
         expect([s.activeSide, s.activePlayerId, top(s).type]).toEqual(["home", null, "Turn"]);
       });
 
+      it("Tasty Morsel: once per game, the player may bite an adjacent opponent of ST 3 or less instead", () => {
+        const karina = edit(vampire(), (c) => {
+          c.players["home-2"]!.skills.push("Tasty Morsel");
+          c.players["away-1"]!.st = 4;
+        });
+        let s = apply(thirsty(karina), { type: "END_PLAYER_ACTION" });
+        // away-2 and away-3 (ST 3) may be bitten, not away-1 (ST 4).
+        expect(find(s, "SELECT_PLAYERS")?.playerIds).toEqual(["home-1", "away-2", "away-3"]);
+        s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-2"] });
+        expect(s.players["home-2"]!.usedThisGame).toEqual(["Tasty Morsel"]);
+        expect(find(s, "ROLL")?.reason).toBe("Injury (Away 2, bitten)");
+      });
+
       it("a bitten Thrall's casualty is only Badly Hurt", () => {
         const s = apply(thirsty(vampire()), { type: "END_PLAYER_ACTION" }, { type: "SELECT_PLAYERS", playerIds: ["home-1"] }, roll(6, 6));
         expect(s.players["home-1"]).toMatchObject({ at: "cas", casualty: { result: "badly-hurt" } });

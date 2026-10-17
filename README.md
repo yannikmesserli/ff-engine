@@ -511,6 +511,9 @@ const { state: next, events } = step(state, { type: "ROLL" });
     the target's (assists and Horns are added after).
   - Primal Savagery (Glotl Stop): once per game, after failing an Animal Savagery roll, he may lash out at an adjacent
     standing opponent instead of a team-mate (knocked down; no turnover for it).
+  - Tasty Morsel (Captain Karina von Riesz): once per game, after a failed Bloodlust roll, she may bite an adjacent
+    opponent of ST 3 or less (not a star player) as if they were a Thrall; biting an opponent with the ball is no
+    turnover.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

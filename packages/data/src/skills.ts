@@ -107,6 +107,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  "Tasty Morsel": "Once per game, after failing a Bloodlust roll, may bite an adjacent opponent of ST 3 or less (not a star player) as if they were a Thrall.",
   "Primal Savagery": "Once per game, after failing an Animal Savagery roll, may lash out at an adjacent opponent instead of a team-mate.",
   Indomitable: "Once per game, when a Dauntless roll succeeds, this player's ST may become double the target's.",
   "Strong Passing Game": "Once per game, in a Pass action, may add this player's ST to the passing roll (at most 6), after the roll.",
