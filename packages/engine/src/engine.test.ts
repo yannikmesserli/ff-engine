@@ -1409,6 +1409,18 @@ describe("engine", () => {
       expect([s.ball.square, types(s).includes("MOVE")]).toEqual([{ x: 13, y: 7 }, true]);
     });
 
+    it("Catch of the Day: once per half, standing within 3 squares of the ball on the ground, on 3+ the player gets it", () => {
+      // The ball lies at (4,2); home-5 at (6,4) is 2 squares away.
+      const rodney = withSkills(place(toFirstTurn(), { "home-5": { x: 6, y: 4 } }), { "home-5": ["Catch of the Day"] });
+      const s = apply(rodney, startMove("home-5"), { type: "ACTIVATION_SKILL", skill: "Catch of the Day" });
+      expect(find(s, "ROLL")?.reason).toBe("Catch of the Day 3+ (Home 5)");
+      expect(apply(s, roll(3)).ball).toEqual({ square: { x: 6, y: 4 }, carried: true });
+      expect(apply(s, roll(2)).ball).toEqual({ square: { x: 4, y: 2 }, carried: false });
+      expect(types(apply(s, roll(3)))).toContain("MOVE");
+      // Too far away: not offered.
+      expect(types(apply(withSkills(toFirstTurn(), { "home-5": ["Catch of the Day"] }), startMove("home-5")))).not.toContain("ACTIVATION_SKILL");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

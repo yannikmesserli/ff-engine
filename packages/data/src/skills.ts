@@ -105,6 +105,7 @@ export const SKILL_DESCRIPTIONS: Record<string, string> = {
   "Dwarfen Grit": "Once per game, when this player's armour is broken, may have the armour roll re-rolled.",
   "Dwarven Scourge": "Once per game, +1 to the armour or injury roll of an opponent knocked down by this player's block (+2 against a Dwarf), after the roll.",
   "Excuse me, are you a Zoat?": "Once per game, when activated, an opponent within 3 squares becomes Distracted.",
+  "Catch of the Day": "Once per half, starting the activation standing within 3 squares of the ball on the ground, a D6: on 3+ this player gains possession of it.",
   "Look Into My Eyes": "Once per game, starting the activation marking the opposing ball carrier, a D6: on 2+ this player takes the ball and the activation ends.",
   "Baleful Hex": "Once per game, at the start of the activation, a D6 against an opponent within 5 squares: on 2+ they are Distracted and miss their team's next turn.",
   "Black Ink": "Once per game, at the start of an activation, an opponent this player marks becomes Distracted until their next activation.",

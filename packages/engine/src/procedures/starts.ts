@@ -12,6 +12,7 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   "Excuse me, are you a Zoat?": "game",
   "Baleful Hex": "game",
   "Look Into My Eyes": "game",
+  "Catch of the Day": "half",
 };
 
 /** Baleful Hex works on 2+. */
@@ -21,6 +22,16 @@ export const BALEFUL_HEX_TARGET = 2;
 const ROLLS: Record<string, { target: number; reason: string }> = {
   "Baleful Hex": { target: BALEFUL_HEX_TARGET, reason: "Baleful Hex" },
   "Look Into My Eyes": { target: 2, reason: "Look Into My Eyes" },
+  "Catch of the Day": { target: 3, reason: "Catch of the Day" },
+};
+
+/** Rules without a player to pick, and when they can be used. */
+const UNTARGETED: Record<string, (state: GameState, player: PlayerState) => boolean> = {
+  // A standing player within 3 squares of the ball on the ground.
+  "Catch of the Day": (state, player) => {
+    const { ball } = state;
+    return player.status === "standing" && isOnPitch(player) && !ball.carried && ball.square !== null && Math.max(Math.abs(ball.square.x - player.at.x), Math.abs(ball.square.y - player.at.y)) <= 3;
+  },
 };
 
 /** The rule ends the player's activation: their action goes no further. */
@@ -81,7 +92,7 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
 
 /** The special rules the player may use now, at the start of their activation (see `StartSkill`). */
 export function activationSkills(state: GameState, player: PlayerState): string[] {
-  return Object.keys(PERIODS).filter((skill) => ruleLeft(player, skill) && targets(state, player, skill).length > 0);
+  return Object.keys(PERIODS).filter((skill) => ruleLeft(player, skill) && (UNTARGETED[skill]?.(state, player) ?? targets(state, player, skill).length > 0));
 }
 
 /**
@@ -92,12 +103,19 @@ export function activationSkills(state: GameState, player: PlayerState): string[
  *   activated during their team's next turn.
  * - Look Into My Eyes (once per game): a D6 against the opponent with the ball the player marks: on 2+ the player takes
  *   the ball, and their activation ends.
+ * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
+ *   pick it up, without a roll; the activation goes on.
  */
 export const StartSkill: Handler<P<"StartSkill">> = {
   step(ctx, proc, action) {
     const { state } = ctx;
     const player = getPlayer(ctx, proc.playerId);
     const choices = targets(state, player, proc.skill);
+    if (proc.stage === "target" && UNTARGETED[proc.skill]) {
+      useRule(ctx, player, proc.skill);
+      proc.stage = ROLLS[proc.skill] ? "roll" : "effect";
+      if (proc.stage === "roll") return "wait";
+    }
     if (proc.stage === "target") {
       if (choices.length === 0) return "done";
       if (action === null) return "wait";
@@ -110,7 +128,7 @@ export const StartSkill: Handler<P<"StartSkill">> = {
       proc.stage = ROLLS[proc.skill] ? "roll" : "effect";
       if (proc.stage === "roll") return "wait";
     }
-    const target = getPlayer(ctx, proc.targetId!);
+    const target = proc.targetId === undefined ? player : getPlayer(ctx, proc.targetId);
     if (proc.stage === "roll") {
       if (action === null) return "wait";
       const { target: needed, reason } = ROLLS[proc.skill]!;
@@ -130,6 +148,11 @@ export const StartSkill: Handler<P<"StartSkill">> = {
         target.hexed = true;
         ctx.emit({ type: "DistractedBy", playerId: target.id, byId: player.id, skill: proc.skill });
         return "done";
+      case "Catch of the Day":
+        state.ball = { square: { ...squareOf(ctx, player) }, carried: true };
+        ctx.emit({ type: "BallCaught", playerId: player.id });
+        checkTouchdown(ctx, player);
+        return "done";
       case "Look Into My Eyes":
         state.ball = { square: { ...squareOf(ctx, player) }, carried: true };
         ctx.emit({ type: "BallStolen", playerId: player.id, fromId: target.id, skill: proc.skill });
@@ -143,7 +166,7 @@ export const StartSkill: Handler<P<"StartSkill">> = {
     const player = state.players[proc.playerId]!;
     if (proc.stage === "roll") {
       const { target, reason } = ROLLS[proc.skill]!;
-      return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `${reason} ${target}+ (${state.players[proc.targetId!]!.name})` }];
+      return [{ type: "ROLL", side: player.side, dice: [{ kind: "d6", count: 1 }], reason: `${reason} ${target}+ (${state.players[proc.targetId ?? proc.playerId]!.name})` }];
     }
     const playerIds = targets(state, player, proc.skill).map((p) => p.id);
     return [{ type: "SELECT_PLAYERS", side: player.side, playerIds, max: 1, reason: `${proc.skill}: choose a player` }];

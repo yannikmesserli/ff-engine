@@ -463,6 +463,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     squares: on 2+ they become Distracted and cannot be activated during their team's next turn.
   - Look Into My Eyes (Boa Kon'ssstriktr): once per game, starting his activation marking the opposing ball carrier, a
     D6: on 2+ he takes the ball and his activation ends; on a 1 nothing happens.
+  - Catch of the Day (Rodney Roachbait): once per half, starting his activation standing within 3 squares of the ball
+    on the ground, a D6: on 3+ he gets the ball (no roll to pick it up); the activation goes on.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
