@@ -23,6 +23,7 @@ const PERIODS: Record<string, "game" | "half" | "drive"> = {
   Incorporeal: "game",
   "Wisdom of the White Dwarf": "game",
   "Raiding Party": "drive",
+  "The Flashing Blade": "game",
 };
 
 /** Raiding Party: how far the team-mate may be. */
@@ -141,6 +142,8 @@ function targets(state: GameState, player: PlayerState, skill: string): PlayerSt
   switch (skill) {
     case "Black Ink":
       return marked(state, player).filter((p) => !p.distracted);
+    case "The Flashing Blade":
+      return player.status === "standing" ? marked(state, player) : [];
     case "Excuse me, are you a Zoat?":
       return opponentsWithin(state, player, 3).filter((p) => hasTackleZone(p));
     case "Baleful Hex":
@@ -194,6 +197,7 @@ export function activationSkills(state: GameState, player: PlayerState, action: 
  *   Sure Feet (one they lack, the coach picks) until the end of the turn.
  * - Raiding Party (once per drive): an open team-mate within 5 squares (standing, not marked) moves one square, to a
  *   free square next to an opponent, without any roll.
+ * - The Flashing Blade (once per game): the player stabs an opponent they mark, then may go on with a Move action.
  * - Incorporeal (once per game): until the end of the activation, the player makes no Dodge rolls for leaving opponents'
  *   tackle zones.
  * - Catch of the Day (once per half): a standing player within 3 squares of the ball on the ground rolls a D6: on 3+ they
@@ -315,6 +319,15 @@ export const StartSkill: Handler<P<"StartSkill">> = {
         ctx.emit({ type: "BallCaught", playerId: player.id });
         checkTouchdown(ctx, player);
         return "done";
+      case "The Flashing Blade": {
+        const move = state.stack.findLast((p): p is P<"MoveAction"> => p.type === "MoveAction" && p.playerId === player.id);
+        if (move) {
+          move.action = "move";
+          move.blocked = true;
+        }
+        ctx.push({ type: "Vomit", skill: "Stab", attackerId: player.id, defenderId: target.id, blitz: false, stage: "appearance" });
+        return "done";
+      }
       case "Look Into My Eyes":
         state.ball = { square: { ...squareOf(ctx, player) }, carried: true };
         ctx.emit({ type: "BallStolen", playerId: player.id, fromId: target.id, skill: proc.skill });

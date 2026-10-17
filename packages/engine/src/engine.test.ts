@@ -1687,6 +1687,15 @@ describe("engine", () => {
       expect(apply(scyla, declare("home-2", "block"), roll(1), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: false }).activePlayerId).toBeNull();
     });
 
+    it("The Flashing Blade: once per game, at the start of the activation, a Stab on a marked opponent, then a Move action", () => {
+      const jeremiah = withSkills(toFirstTurn(), { "home-2": ["The Flashing Blade"] });
+      let s = apply(jeremiah, declare("home-2", "block"), { type: "ACTIVATION_SKILL", skill: "The Flashing Blade" }, { type: "SELECT_PLAYERS", playerIds: ["away-2"] });
+      expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 2, stab)");
+      s = apply(s, roll(1, 1));
+      expect(types(s)).toContain("MOVE");
+      expect(types(s)).not.toContain("BLOCK");
+    });
+
     describe("Hatred", () => {
       const hater = (keywords: string[]) =>
         edit(withSkills(toFirstTurn(), { "home-2": ["Hatred(troll)"] }), (c) => void (c.players["away-2"]!.keywords = keywords));

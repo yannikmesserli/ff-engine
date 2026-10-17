@@ -534,6 +534,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   - Fury of the Blood God (Scyla Anfingrimm): once per game, when he rolls a 1 for Unchannelled Fury after declaring a
     Block (after any re-roll), he may make two Block actions instead, the first fully resolved (Frenzy included) before
     the second.
+  - The Flashing Blade (Jeremiah Kool): once per game, at the start of his activation, he stabs an opponent he marks,
+    then may go on with a Move action.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.
