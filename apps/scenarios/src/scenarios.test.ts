@@ -113,6 +113,13 @@ describe("scenarios", () => {
     expect(find(s, "SELECT_PLAYERS")).toMatchObject({ side: "away", playerIds: ["away-6"], reason: "Diving Catch: choose a player to catch the bomb" });
   });
 
+  it("hail-mary-bomb: Ludwig may throw the bomb to any square with Hail Mary Pass", () => {
+    let s = load("hail-mary-bomb");
+    s = step(s, { type: "START_ACTION", playerId: "home-1", action: "bomb" }).state;
+    s = step(s, { type: "HAIL_MARY_PASS", square: { x: 21, y: 7 } }).state;
+    expect(find(s, "ROLL")?.reason).toMatch(/^Hail Mary Pass/);
+  });
+
   it("wizard: the orcs' wizard zaps the ball carrier, who drops the ball, or a Fireball hits the lines of scrimmage", () => {
     const s = load("wizard");
     expect(find(s, "CAST_SPELL")).toEqual({ type: "CAST_SPELL", side: "away", spells: ["fireball", "zap"] });

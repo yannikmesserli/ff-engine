@@ -294,6 +294,47 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "hail-mary-bomb",
+    title: "Hail Mary Pass with a bomb",
+    instructions: [
+      "Home's first turn. Ludwig (#1) has Bombardier and Hail Mary Pass here (given in the team file in src/scenarios.ts).",
+      "Declare Throw Bomb with him, then click \"Hail Mary Pass\" and any square of the pitch, e.g. among the orcs at the back.",
+      "The roll counts as a Long Bomb; anything but a fumble scatters three times from the target, and nobody may intercept. Off the pitch the bomb is lost; otherwise it lands as a scattered bomb (catch, bounce or explosion). A fumble explodes on Ludwig.",
+    ],
+    home: {
+      name: "Altdorf Sappers",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Ludwig", position: "Human Thrower", skills: ["Bombardier", "Hail Mary Pass"] },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+        { number: 4, name: "Fritz", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Blast Radius",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Snaga", position: "Orc Lineman" },
+        { number: 2, name: "Grishnak", position: "Orc Lineman" },
+        { number: 3, name: "Lugbur", position: "Orc Lineman" },
+        { number: 4, name: "Ugluk", position: "Orc Lineman" },
+        { number: 5, name: "Gorbag", position: "Orc Lineman" },
+        { number: 6, name: "Lugdush", position: "Orc Lineman" },
+      ],
+    },
+    seed: 4,
+    actions: toFirstTurn({
+      home: { 1: { x: 11, y: 8 }, 2: { x: 12, y: 4 }, 3: { x: 12, y: 7 }, 4: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 4 }, 2: { x: 13, y: 7 }, 3: { x: 13, y: 10 }, 4: { x: 20, y: 6 }, 5: { x: 21, y: 7 }, 6: { x: 20, y: 8 } },
+      ball: { x: 5, y: 7 },
+    }),
+  },
+  {
     id: "diving-tackle",
     title: "Diving Tackle and Break Tackle on a dodge",
     instructions: [
