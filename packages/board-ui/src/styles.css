@@ -135,6 +135,8 @@
 .bb-block-dice button { padding: 2px; }
 .bb-player.bb-used { filter: grayscale(0.8) brightness(0.8); }
 .bb-player.bb-distracted { opacity: 0.6; outline: 2px dashed #c9a227; outline-offset: -2px; }
+.bb-player.bb-frog > img:first-child { filter: hue-rotate(90deg) saturate(1.5); transform: scale(0.75); }
+.bb-frog-badge { position: absolute; right: -2px; top: -4px; font-size: 11px; pointer-events: none; }
 .bb-player.bb-prone > img:first-child, .bb-player.bb-stunned > img:first-child { opacity: 0.6; }
 .bb-status { position: absolute; left: 0; bottom: 0; width: 14px; height: 14px; }
 .bb-held-ball { position: absolute; right: -2px; bottom: -2px; width: 14px; height: 14px; }

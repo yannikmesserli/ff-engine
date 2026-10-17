@@ -70,7 +70,7 @@ describe("data", () => {
     expect(() => resolveTeam(human({ bribes: 4 }))).toThrow(/At most 3 bribes/);
     expect(resolveTeam(human({ bribes: 6 }, ["Bribery and Corruption"])).inducements!.bribes).toBe(6);
     expect(() => resolveTeam(human({ plagueDoctor: 1 }))).toThrow(/Only teams with Favoured of Nurgle/);
-    expect(() => resolveTeam(human({ wizard: 1 }))).toThrow(/Invalid team file/);
+    expect(() => resolveTeam(human({ wizards: 1 }))).toThrow(/Invalid team file/);
     expect(() => resolveTeam(human({ tempCheerleaders: 4 }))).not.toThrow();
     expect(() => resolveTeam({ ...human({ partTimeCoaches: 3 }), assistantCoaches: 8 })).toThrow(/At most 1 partTimeCoaches/);
   });
@@ -327,6 +327,12 @@ function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, rand
       return { type: "CHOOSE_SKILL", skill: pick(t.skills) };
     case "THROW_A_ROCK":
       return { type: "THROW_A_ROCK", use: random() < 0.3 };
+    case "CAST_SPELL":
+      return { type: "CAST_SPELL", spell: random() < 0.3 && t.spells.length > 0 ? pick(t.spells) : null };
+    case "FIREBALL":
+      return { type: "FIREBALL", square: pick(t.squares) };
+    case "ZAP":
+      return { type: "ZAP", targetId: pick(t.targetIds) };
     case "WEATHER_MAGE":
       return { type: "WEATHER_MAGE" };
     case "CHOOSE_WEATHER":
@@ -466,7 +472,7 @@ describe("random games", () => {
   /** A game takes under a second; the margin keeps a busy or sleeping machine from failing the run. */
   const GAME_TIMEOUT_MS = 30_000;
   /** Inducements any team may buy, for the random games. */
-  const RANDOM_GAME_INDUCEMENTS = { bribes: 1, teamMascot: 1, partTimeCoaches: 1, tempCheerleaders: 1, blitzersBestKegs: 1, biasedReferee: 1, halflingMasterChef: 1, riotousRookies: 1, weatherMage: 1, prayers: 3 };
+  const RANDOM_GAME_INDUCEMENTS = { bribes: 1, teamMascot: 1, partTimeCoaches: 1, tempCheerleaders: 1, blitzersBestKegs: 1, biasedReferee: 1, halflingMasterChef: 1, riotousRookies: 1, weatherMage: 1, wizard: 1, prayers: 3 };
   /** Seed i: every roster plays at home once in 30 seeds (7 and 30 share no factor), against a different one away. */
   const matchup = (seed: number) => [rosters[(7 * seed) % rosters.length]!, rosters[(11 * seed + 3) % rosters.length]!] as const;
   it.each(Array.from({ length: 40 }, (_, i) => [i + 1, ...matchup(i + 1).map((r) => r.name)] as const))("plays a full game with random legal actions (seed %i: %s v %s)", (seed) => {

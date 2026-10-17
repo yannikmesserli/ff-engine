@@ -106,6 +106,8 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
   const foul = findTemplate(templates, "FOUL");
   const giveBall = findTemplate(templates, "GIVE_BALL");
   const select = findTemplate(templates, "SELECT_PLAYERS");
+  const fireball = findTemplate(templates, "FIREBALL");
+  const zap = findTemplate(templates, "ZAP");
   // A d8 roll is due: number the squares around where it moves from.
   const d8Origin = findTemplate(templates, "ROLL")?.dice.some((d) => d.kind === "d8") ? scatterOrigin(state) : null;
   const snap = findTemplate(templates, "SNAP");
@@ -126,10 +128,11 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
     ...(giveBall?.playerIds ?? []),
     ...(select?.playerIds ?? []),
     ...(snap?.moves.map((m) => m.playerId) ?? []),
+    ...(zap?.targetIds ?? []),
   ]);
   // Highlighted squares: at most one of these templates is offered at a time.
   const targets: Array<Square & { rolls?: CheckKind[] }> =
-    trick?.squares ?? swoop?.squares ?? carried?.squares ?? puntTo?.squares ?? ballTarget?.squares ?? push?.squares ?? (followUp ? [followUp.square] : undefined) ?? move?.squares ?? snapMove?.squares ?? [];
+    fireball?.squares ?? trick?.squares ?? swoop?.squares ?? carried?.squares ?? puntTo?.squares ?? ballTarget?.squares ?? push?.squares ?? (followUp ? [followUp.square] : undefined) ?? move?.squares ?? snapMove?.squares ?? [];
   const placementSquares = new Set((placement?.squares ?? []).map(squareId));
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
@@ -150,7 +153,8 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
     } else if (thrown && ttmSquares?.some((t) => sameSquare(t, s))) {
       dispatch({ type: "THROW_TEAM_MATE", targetId: thrown, square: s });
       setPicked([]);
-    } else if (push?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "PUSH", square: s });
+    } else if (fireball?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "FIREBALL", square: s });
+    else if (push?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "PUSH", square: s });
     else if (trick?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "TRICKSTER", square: s, pickUp: true });
     else if (swoop?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "SWOOP", square: s });
     else if (carried?.squares.some((t) => sameSquare(t, s))) dispatch({ type: "PLACE_CARRIED", square: s });
@@ -170,6 +174,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
       else if (select.max === 1) setPicked([p.id]);
       else if (picked.length < select.max) setPicked([...picked, p.id]);
     } else if (snap?.moves.some((m) => m.playerId === p.id)) setPicked([p.id]);
+    else if (zap?.targetIds.includes(p.id)) dispatch({ type: "ZAP", targetId: p.id });
     else if (giveBall?.playerIds.includes(p.id)) dispatch({ type: "GIVE_BALL", playerId: p.id });
     else if (pickingBlitzTarget) {
       if (startAction?.blitzTargets.includes(p.id)) {
@@ -232,7 +237,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
                   key={squareId(s)}
                   square={s}
                   droppable={placementSquares.has(squareId(s))}
-                  target={hailMary ? "pass-bomb" : pass ? `pass-${pass.range}` : target !== undefined ? (ballTarget || puntTo || swoop ? "kick" : "move") : null}
+                  target={hailMary ? "pass-bomb" : pass ? `pass-${pass.range}` : target !== undefined ? (ballTarget || puntTo || swoop || fireball ? "kick" : "move") : null}
                   risky={rolls.length > 0}
                   badge={pass ? "" : rolls.map((r) => ROLL_BADGES[r]).join("")}
                   title={pass ? `${PASS_RANGE_NAMES[pass.range]}: ${pass.needed}+ for an accurate pass` : undefined}
@@ -367,6 +372,7 @@ function PlayerToken(props: {
   if (props.draggable) classes.push("bb-draggable");
   if (player.activated && !props.active) classes.push("bb-used");
   if (player.distracted) classes.push("bb-distracted");
+  if (player.frog) classes.push("bb-frog");
   if (isDragging) classes.push("bb-dragging");
   if (props.blitzTarget) classes.push("bb-blitz-target");
   return (
@@ -374,7 +380,7 @@ function PlayerToken(props: {
       ref={setNodeRef}
       className={classes.join(" ")}
       style={transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined}
-      title={`#${player.nr} ${player.name} (${player.position})${player.distracted ? ", distracted: no tackle zone" : ""}`}
+      title={`#${player.nr} ${player.name} (${player.position})${player.distracted ? ", distracted: no tackle zone" : ""}${player.frog ? ", a frog until the end of the drive" : ""}`}
       onClick={props.onClick}
       onMouseEnter={() => props.onHover(player.id)}
       onMouseLeave={() => props.onHover(null)}
@@ -385,6 +391,7 @@ function PlayerToken(props: {
       {player.status !== "standing" && (
         <img className="bb-status" src={`${assets}/player_status/${player.status}.gif`} alt={player.status} draggable={false} />
       )}
+      {player.frog && <span className="bb-frog-badge" title="A frog until the end of the drive">🐸</span>}
       {props.hasBall && <img className="bb-held-ball" src={`${assets}/ball/sball_30x30.png`} alt="ball" draggable={false} />}
       {props.blockDice !== undefined && (
         <span className={`bb-dice-badge${props.blockDice < 0 ? " bb-defender-picks" : ""}`}>{diceLabel(props.blockDice)}</span>

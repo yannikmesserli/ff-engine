@@ -68,8 +68,8 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
   limits, special rules needed and costs are in `INDUCEMENT_RULES`: `bribes` (3, or 6 with Bribery and Corruption),
   `teamMascot` (1), `partTimeCoaches` (3, at most 9 coaches in all), `tempCheerleaders` (4, at most 16 cheerleaders),
   `blitzersBestKegs` (2), `halflingMasterChef` (1), `riotousRookies` (1, Low Cost Linemen), `plagueDoctor` (1,
-  Favoured of Nurgle), `mortuaryAssistant` (1, Masters of Undeath), `weatherMage` (1), `biasedReferee` (1), `prayers`
-  (3). The team file says what was bought, not how it was paid for; with the engine's `shop` option the inducements
+  Favoured of Nurgle), `mortuaryAssistant` (1, Masters of Undeath), `weatherMage` (1), `biasedReferee` (1), `wizard` (1),
+  `prayers` (3). The team file says what was bought, not how it was paid for; with the engine's `shop` option the inducements
   are bought in the game instead (then the team file must not list any).
 - `starPlayers`: the star players hired for this game, by name (from the roster's `stars`): at most 2, a pair hired
   together (Grak and Crumbleberry) counting as one. `mercenaries`: `{ "position": "Human Lineman", "skill": "Block" }`

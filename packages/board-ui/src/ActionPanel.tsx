@@ -13,7 +13,7 @@ import {
 } from "@bb/engine";
 import { formationActions, formations } from "@bb/data";
 import { DieFace } from "./Dice";
-import { SHOP_NAMES, WEATHER_NAMES, blockFaceName, casualtyName, gold } from "./describe";
+import { SHOP_NAMES, SPELL_NAMES, WEATHER_NAMES, blockFaceName, casualtyName, gold } from "./describe";
 import type { Aiming } from "./Board";
 import { findTemplate, type TemplateOf } from "./templates";
 
@@ -53,6 +53,9 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   CHOOSE_SKILL: "Intensive Training: choose the skill the player gains",
   BUY_INDUCEMENTS: "pre-game shop: buy inducements",
   THROW_A_ROCK: "Throw a Rock (once per game): a random standing opponent is knocked down on 4+",
+  CAST_SPELL: "Wizard (once per game): cast a spell now, or keep the wizard for later",
+  FIREBALL: "Fireball: click the centre of the 3x3 area to hit (each player in it is hit on 4+)",
+  ZAP: "Zap!: click the player to turn into a frog (6, or a roll equal to or above their ST)",
   SWOOP: "Swoop: click a square next to the target to face the throw-in template that way, or scatter as usual",
   TRICKSTER: "Trickster: click a square next to the attacker to move to before being hit, or stay",
   FOLLOW_UP: "follow up into the vacated square?",
@@ -317,6 +320,16 @@ export function ActionPanel(props: ActionPanelProps) {
           <>
             <button onClick={() => dispatch({ type: "THROW_A_ROCK", use: true })}>Throw a Rock</button>
             <button onClick={() => dispatch({ type: "THROW_A_ROCK", use: false })}>Keep it for later</button>
+          </>
+        )}
+        {findTemplate(templates, "CAST_SPELL") && (
+          <>
+            {findTemplate(templates, "CAST_SPELL")!.spells.map((spell) => (
+              <button key={spell} onClick={() => dispatch({ type: "CAST_SPELL", spell })}>
+                {SPELL_NAMES[spell]}
+              </button>
+            ))}
+            <button onClick={() => dispatch({ type: "CAST_SPELL", spell: null })}>Keep the wizard for later</button>
           </>
         )}
         {has("WEATHER_MAGE") && <button onClick={() => dispatch({ type: "WEATHER_MAGE" })}>Weather Mage</button>}

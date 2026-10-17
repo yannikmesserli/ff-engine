@@ -18,6 +18,7 @@ export { CASUALTY_DICE, casualtyFor, injuryOutcome } from "./procedures/injury";
 export { LAST_STALLING_TURN, isStalling } from "./procedures/stalling";
 export { leaderReroll, lonerTarget } from "./procedures/helpers";
 export { teamMateTargets, throwableTeamMates } from "./procedures/ttm";
+export { FIREBALL_TARGET, FROG, SPELLS } from "./procedures/wizard";
 export { PRAYER_NAMES } from "./procedures/prayers";
 export { SPP_VALUES, starPlayerPoints } from "./procedures/endgame";
 export { ballUnsettled, flightMarkers, scatterOrigin, type FlightMarker } from "./flight";

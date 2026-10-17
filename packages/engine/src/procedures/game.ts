@@ -4,6 +4,7 @@ import { isOnPitch, other, teamPlayers } from "../pitch";
 import { endDrive, resetForKickoff } from "./helpers";
 import { secretWeapons } from "./foul";
 import { hiredTwice } from "./shop";
+import { restoreFrogs, wizardAsk } from "./wizard";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -122,6 +123,7 @@ export const Half: Handler<P<"Half">> = {
       proc.stage = "kickoff";
       if (state.drive > 0) {
         endDrive(ctx);
+        restoreFrogs(ctx);
         const weapons = secretWeapons(state);
         for (const p of weapons) ctx.emit({ type: "SecretWeaponSpotted", playerId: p.id });
         ctx.push(
@@ -161,12 +163,12 @@ export const Half: Handler<P<"Half">> = {
       proc.turnPlayed = false;
       return "continue";
     }
-    // Throw a Rock (a prayer): between two turns of a drive.
+    // Throw a Rock (a prayer) and the wizard: between two turns of a drive.
     if (proc.turnPlayed) {
       proc.turnPlayed = false;
-      const rocks = throwRocks(state);
-      if (rocks.length > 0) {
-        ctx.push(...rocks);
+      const between = betweenTurns(state);
+      if (between.length > 0) {
+        ctx.push(...between);
         return "continue";
       }
     }
@@ -178,9 +180,12 @@ export const Half: Handler<P<"Half">> = {
   actions: () => [],
 };
 
-/** Throw a Rock: the teams that still have the prayer, each asked in turn. */
-const throwRocks = (state: GameState): Procedure[] =>
-  (["home", "away"] as const).filter((side) => state.teams[side].prayers.includes("throw-a-rock")).map((side) => ({ type: "ThrowRock", side, stage: "ask" }));
+/** Between two turns: each team in turn is asked about Throw a Rock (if it has the prayer), then its wizard. */
+const betweenTurns = (state: GameState): Procedure[] =>
+  (["home", "away"] as const).flatMap((side) => [
+    ...(state.teams[side].prayers.includes("throw-a-rock") ? [{ type: "ThrowRock" as const, side, stage: "ask" as const }] : []),
+    ...wizardAsk(state, side),
+  ]);
 
 /** Throw a Rock: the opponents standing on the pitch, one of whom is hit at random. */
 const rockTargets = (state: GameState, side: Side) => teamPlayers(state, other(side)).filter((p) => isOnPitch(p) && p.status === "standing");

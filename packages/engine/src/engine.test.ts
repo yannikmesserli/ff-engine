@@ -3898,6 +3898,67 @@ describe("engine", () => {
     });
   });
 
+  describe("Wizard", () => {
+    const wizard = () => toFirstTurn({ ...team("Home"), inducements: { wizard: 1 } });
+
+    it("once per game, between turns; Fireball hits each player in a 3x3 area on 4+, with +1 to armour or injury", () => {
+      let s = apply(wizard(), { type: "END_TURN" });
+      expect(getAvailableActions(s)).toEqual([{ type: "CAST_SPELL", side: "home", spells: ["fireball", "zap"] }]);
+      // Kept: asked again after the next turn.
+      s = apply(s, { type: "CAST_SPELL", spell: null }, { type: "END_TURN" });
+      s = apply(s, { type: "CAST_SPELL", spell: "fireball" });
+      const squares = find(s, "FIREBALL")!.squares;
+      expect(squares).toContainEqual({ x: 12, y: 7 });
+      expect(squares).not.toContainEqual({ x: 0, y: 0 });
+      expect(() => step(s, { type: "FIREBALL", square: { x: 0, y: 0 } })).toThrow(/at least one player/);
+      // Centred on (12,7): the three home and three away players on the lines of scrimmage.
+      s = apply(s, { type: "FIREBALL", square: { x: 12, y: 7 } });
+      expect(find(s, "ROLL")?.reason).toBe("Fireball 4+ (Home 1)");
+      s = apply(s, roll(3), roll(4));
+      expect(s.players["home-1"]!.status).toBe("standing");
+      expect(s.players["home-2"]!.status).toBe("prone");
+      // 7 + 1 breaks AV 8+: the injury roll gets no bonus.
+      expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Home 2) (+1 Fireball)");
+      s = apply(s, roll(4, 3));
+      expect(s.log.at(-1)).toEqual({ type: "ArmourBroken", playerId: "home-2", roll: 8 });
+      expect(find(s, "ROLL")?.reason).toBe("Injury");
+      s = apply(s, roll(1, 1));
+      // Home 3, then the away players; armour 9 breaks on its own, so the +1 goes to the injury roll.
+      s = apply(s, roll(1), roll(6), roll(5, 4));
+      expect(find(s, "ROLL")?.reason).toBe("Injury (+1 Fireball)");
+      s = apply(s, roll(1, 1), roll(1), roll(1));
+      expect([s.turnover, types(s)]).toEqual([false, expect.arrayContaining(["START_ACTION"])]);
+      expect(s.teams.home.inducementsUsed.wizard).toBe(1);
+      expect(types(apply(s, { type: "END_TURN" }))).not.toContain("CAST_SPELL");
+    });
+
+    it("Zap! turns a player into a frog on a 6 or a roll of their ST or more, until the end of the drive", () => {
+      const base = apply(wizard(), { type: "END_TURN" }, { type: "CAST_SPELL", spell: "zap" });
+      expect(find(base, "ZAP")?.targetIds).toHaveLength(22);
+      // A 2 against ST 3: the player resists, and the wizard is spent.
+      const resisted = apply(base, { type: "ZAP", targetId: "away-2" }, roll(2));
+      expect([resisted.players["away-2"]!.st, resisted.players["away-2"]!.frog]).toEqual([3, undefined]);
+      expect(types(apply(resisted, { type: "END_TURN" }))).not.toContain("CAST_SPELL");
+      // The ball carrier is zapped: the frog drops the ball.
+      const holding = edit(base, (c) => {
+        c.ball = { square: { x: 13, y: 7 }, carried: true };
+      });
+      let s = apply(holding, { type: "ZAP", targetId: "away-2" });
+      expect(find(s, "ROLL")?.reason).toBe("Zap! (Away 2, ST 3): 6, or 3+");
+      s = apply(s, roll(3));
+      expect(s.players["away-2"]).toMatchObject({ ma: 5, st: 1, ag: 2, pa: null, av: 5, skills: ["Dodge", "No Ball", "Titchy", "Stunty", "Very Long Legs", "Leap"] });
+      expect(s.ball.carried).toBe(false);
+      expect(find(s, "ROLL")?.dice).toEqual([{ kind: "d8", count: 1 }]);
+      // It bounces east; at the next drive the player is back.
+      s = apply(s, roll(3));
+      expect(s.ball).toEqual({ square: { x: 14, y: 7 }, carried: false });
+      s = endTurnsUntilSetup(s);
+      expect(s.players["away-2"]).toMatchObject({ ma: 6, st: 3, ag: 3, pa: 4, av: 8, skills: [] });
+      expect(s.players["away-2"]!.frog).toBeUndefined();
+      expect(s.log).toContainEqual({ type: "FrogRestored", playerId: "away-2" });
+    });
+  });
+
   describe("Weather Mage", () => {
     it("once per game, at the start of the team's turn: 2D6 on the weather table, with a modifier of -2 to +2 if desired", () => {
       let s = toFirstTurn({ ...team("Home"), inducements: { weatherMage: 1 } });

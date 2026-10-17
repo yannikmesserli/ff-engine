@@ -67,6 +67,7 @@ export const INDUCEMENT_RULES: Record<InducementId, { max: number; cost: number;
   mortuaryAssistant: { max: 1, cost: 100_000, requires: "Masters of Undeath" },
   weatherMage: { max: 1, cost: 30_000 },
   biasedReferee: { max: 1, cost: 120_000, discount: { rule: "Bribery and Corruption", cost: 80_000 } },
+  wizard: { max: 1, cost: 150_000 },
   prayers: { max: 3, cost: 50_000 },
 };
 

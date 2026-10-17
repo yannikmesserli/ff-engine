@@ -107,6 +107,7 @@ export const INDUCEMENT_NAMES: Record<InducementId, string> = {
   mortuaryAssistant: "the Mortuary Assistant",
   weatherMage: "the Weather Mage",
   biasedReferee: "the Biased Referee",
+  wizard: "the wizard",
   prayers: "a Prayer to Nuffle",
 };
 
@@ -123,8 +124,12 @@ export const SHOP_NAMES: Record<InducementId, string> = {
   mortuaryAssistant: "Mortuary Assistant",
   weatherMage: "Weather Mage",
   biasedReferee: "Biased Referee",
+  wizard: "Wizard",
   prayers: "Prayers to Nuffle",
 };
+
+/** Display names of the wizard's spells. */
+export const SPELL_NAMES = { fireball: "Fireball", zap: "Zap!" } as const;
 
 /** Gold pieces in thousands, as team values are usually written ("120k"). */
 export const gold = (gp: number) => `${gp / 1000}k`;
@@ -375,6 +380,16 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return e.roll === null
         ? `The crowd throws a rock at ${who(state, e.playerId)}, but it is too late in the half: it misses.`
         : `The crowd throws a rock at ${who(state, e.playerId)} (${e.roll}): ${e.hit ? "hit!" : "missed."}`;
+    case "SpellCast":
+      return e.spell === "fireball"
+        ? `The wizard of ${sideName(state, e.side)} hurls a Fireball at (${e.square!.x}, ${e.square!.y}).`
+        : `The wizard of ${sideName(state, e.side)} casts Zap! at ${who(state, e.playerId!)}.`;
+    case "SpellRolled":
+      return e.spell === "fireball"
+        ? `Fireball on ${who(state, e.playerId)} (${e.roll}): ${e.hit ? "hit!" : "missed."}`
+        : `Zap! (${e.roll}): ${e.hit ? `${who(state, e.playerId)} turns into a frog until the end of the drive!` : `${who(state, e.playerId)} resists.`}`;
+    case "FrogRestored":
+      return `${who(state, e.playerId)} is no longer a frog.`;
     case "SkillUsed":
       return `${who(state, e.playerId)} uses ${e.skill}${SKILL_USES[e.skill] ? ` ${SKILL_USES[e.skill]}` : ""}.`;
     case "PlayerDistracted":

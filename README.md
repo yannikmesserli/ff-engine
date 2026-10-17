@@ -68,7 +68,11 @@ const { state: next, events } = step(state, { type: "ROLL" });
   toss, 2D3 + 1 linemen with Loner (4+) join the reserves for the game. Mortuary Assistant (Masters of Undeath) and
   Plague Doctor (Favoured of Nurgle): once per game, re-roll a failed Regeneration roll; the Plague Doctor's single use
   may go to treating a player as an apothecary instead. Weather Mage: once per game, at the start of the team's turn,
-  2D6 on the weather table, with a modifier of +1 or +2, or -1 or -2, if the coach wants one.
+  2D6 on the weather table, with a modifier of +1 or +2, or -1 or -2, if the coach wants one. Wizard (150k): once per
+  game, between two turns of a drive, one spell. Fireball: each player in a 3x3 area is knocked down on 4+, with +1 to
+  the armour roll (or to the injury roll if the armour breaks without it). Zap!: on a 6, or on 2+ equal to or above
+  the target's ST, a player on the pitch becomes a frog until the end of the drive (MA 5, ST 1, AG 2+, no PA, AV 5+,
+  Dodge, No Ball, Titchy, Stunty, Very Long Legs, Leap), dropping the ball. No turnover either way.
 - Prayers to Nuffle (bought as inducements, up to 3, plus the underdog's free ones after the shop): before the coin toss, a D16 each on the BB2025 table, re-rolled
   when the team already has the result; they last the whole game. Stiletto (a random player gains Stab), Iron Man
   (+1 AV, up to 11+, to a player the coach picks), Knuckle Dusters (Mighty Blow, likewise), Bad Habits (D3 random
@@ -395,8 +399,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
   goes into the crowd, a turnover; otherwise she is dropped on an adjacent player, who is knocked down, and bounces on
   until she comes down, knocked down).
 
-Not yet: spending winnings and Star Player Points between games, Infamous Coaching Staff, wizards, the golden-goal
-overtime variant.
+Not yet: spending winnings and Star Player Points between games, Infamous Coaching Staff, the golden-goal overtime
+variant.
 
 The playground accepts `?seed=42` to replay the same dice.
 

@@ -249,6 +249,12 @@ const mightyBlowNote = (bonus: number, proc: P<"KnockDown">) => (bonus > 0 ? ` (
 /** The skill behind the armour or injury bonus: Mighty Blow, or Arm Bar. */
 const bonusSkill = (proc: P<"KnockDown">) => proc.mightyBlow?.skill ?? "Mighty Blow";
 
+/** Report the skill behind the bonus (a spell has no player to report). */
+function bonusUsed(ctx: Ctx, proc: P<"KnockDown">) {
+  const { playerId } = proc.mightyBlow!;
+  if (playerId !== undefined) ctx.emit({ type: "SkillUsed", playerId, skill: bonusSkill(proc) });
+}
+
 /** Claws: an armour roll of 8+ breaks the armour of a player with a higher AV. */
 export const CLAWS_ARMOUR = 8;
 
@@ -402,7 +408,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         if (bonus > 0 && !hasSkill(player, "Iron Hard Skin") && roll < player.av && roll + bonus >= player.av) {
           proc.mightyBlowOnArmour = true;
           roll += bonus;
-          ctx.emit({ type: "SkillUsed", playerId: proc.mightyBlow!.playerId, skill: bonusSkill(proc) });
+          bonusUsed(ctx, proc);
         }
         // BB2025: armour is broken when the roll equals or beats AV.
         if (roll >= player.av) {
@@ -418,7 +424,7 @@ export const KnockDown: Handler<P<"KnockDown">> = {
         if (action === null) return "wait";
         const bonus = injuryBonus(proc);
         const [a, b] = ctx.roll(action, [...ARMOUR_DICE], `Injury${mightyBlowNote(bonus, proc)}`);
-        if (bonus > 0) ctx.emit({ type: "SkillUsed", playerId: proc.mightyBlow!.playerId, skill: bonusSkill(proc) });
+        if (bonus > 0) bonusUsed(ctx, proc);
         // The casualty roll and the apothecary run before the ball bounces.
         injure(ctx, player, a! + b! + bonus, { attackerId: proc.blockerId, ...(proc.sppTo ? { sppTo: proc.sppTo } : {}) });
         proc.stage = "bounce";

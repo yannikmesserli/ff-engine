@@ -128,6 +128,8 @@ export interface PlayerState {
   raised?: boolean;
   /** A star player or mercenary hired for this game: not named MVP, nor chosen by a prayer. */
   hired?: Hired;
+  /** Zap!: turned into a frog until the end of the drive; the player's own characteristics and skills, restored then. */
+  frog?: Pick<PlayerState, "ma" | "st" | "ag" | "pa" | "av" | "skills">;
   /** Star Player Points earned this game. */
   spp: SppRecord;
 }
@@ -252,6 +254,7 @@ export const INDUCEMENTS = [
   "mortuaryAssistant",
   "weatherMage",
   "biasedReferee",
+  "wizard",
   "prayers",
 ] as const;
 export type InducementId = (typeof INDUCEMENTS)[number];
@@ -276,6 +279,9 @@ export const PRAYERS = [
   "intensive-training",
 ] as const;
 export type Prayer = (typeof PRAYERS)[number];
+
+/** The wizard's spells. */
+export type Spell = "fireball" | "zap";
 
 /** Inducements bought for the game, by id (missing: none). */
 export type Inducements = Partial<Record<InducementId, number>>;
@@ -448,13 +454,18 @@ export type Procedure =
       repeated?: Prayer;
     }
   | { type: "CoinToss"; stage: "call" | "flip" | "choose"; call?: "heads" | "tails"; winner?: Side }
-  /** `drives`: kick-offs so far in this half; `turnPlayed`: a team turn just ended (time for Throw a Rock). */
+  /** `drives`: kick-offs so far in this half; `turnPlayed`: a team turn just ended (time for Throw a Rock and the wizard). */
   | { type: "Half"; half: HalfNumber; stage: "driveEnd" | "kickoff" | "turns"; kicking: Side; nextSide: Side; drives?: number; turnPlayed?: boolean }
   /** Treacherous Trapdoor (a prayer): the player entered a trapdoor and falls through on a 1. */
   /** `sppTo`: the players earning Star Player Points if the fall causes a casualty (see `KnockDown`). */
   | { type: "Trapdoor"; playerId: string; stage: "roll" | "result" | "injury"; sppTo?: string[] }
   /** Throw a Rock (a prayer): between turns, the team may have a random standing opponent hit on 4+, once per game. */
   | { type: "ThrowRock"; side: Side; stage: "ask" | "roll" }
+  /**
+   * Wizard (once per game, between turns): pick a spell, then its target ("target"); Fireball rolls for each player
+   * in `hit` still to roll, Zap! for `targetId`.
+   */
+  | { type: "Wizard"; side: Side; stage: "ask" | "target" | "fireball" | "zap"; spell?: Spell; hit?: string[]; targetId?: string }
   /** Halfling Master Chef: each team with one rolls 3D6 (`sides` still to roll); every 4+ steals a team re-roll. */
   | { type: "MasterChef"; sides: Side[]; stolen: Partial<Record<Side, number>> }
   | { type: "SwelteringHeat" }
@@ -870,9 +881,10 @@ export type Procedure =
       turnover: boolean;
       /**
        * Mighty Blow of the blocker who knocked the player down: added to the armour or the injury roll (only to the
-       * armour roll when `armourOnly`: Animal Savagery). `skill` names it when it is another skill (Arm Bar).
+       * armour roll when `armourOnly`: Animal Savagery). `skill` names it when it is another skill (Arm Bar), or a
+       * spell (Fireball, without a player).
        */
-      mightyBlow?: { playerId: string; bonus: number; armourOnly?: boolean; skill?: string };
+      mightyBlow?: { playerId?: string; bonus: number; armourOnly?: boolean; skill?: string };
       /** The opponent whose block knocked the player down (Claws, Plague Ridden). */
       blockerId?: string;
       /** The opponents who earn Star Player Points if the player suffers a casualty (the blocker, Arm Bar...). */
@@ -986,6 +998,12 @@ export type Action =
   | { type: "BUY_INDUCEMENTS"; inducements: Inducements; stars?: string[]; mercenaries?: MercenaryChoice[] }
   /** Throw a Rock (a prayer): throw it now or keep it. */
   | { type: "THROW_A_ROCK"; use: boolean }
+  /** Wizard: the spell to cast (null: keep the wizard for later). */
+  | { type: "CAST_SPELL"; spell: Spell | null }
+  /** Wizard: the centre square of a Fireball. */
+  | { type: "FIREBALL"; square: Square }
+  /** Wizard: the player Zap! targets. */
+  | { type: "ZAP"; targetId: string }
   /** Use the Weather Mage at the start of the team's turn. */
   | { type: "WEATHER_MAGE" }
   /** Weather Mage: the modifier applied to the roll (-2 to +2, 0 for none). */
@@ -1047,6 +1065,12 @@ export type ActionTemplate =
   | { type: "CHOMP"; side: Side; playerId: string; targetIds: string[] }
   | { type: "WEATHER_MAGE"; side: Side }
   | { type: "THROW_A_ROCK"; side: Side }
+  /** Wizard: the spells the coach may cast now (or keep the wizard, with null). */
+  | { type: "CAST_SPELL"; side: Side; spells: Spell[] }
+  /** Fireball: the squares it may be centred on (a player on it or next to it). */
+  | { type: "FIREBALL"; side: Side; squares: Square[] }
+  /** Zap!: the players it may target. */
+  | { type: "ZAP"; side: Side; targetIds: string[] }
   /** Intensive Training: the skills `playerId` may gain. */
   | { type: "CHOOSE_SKILL"; side: Side; playerId: string; skills: string[] }
   /** Pre-game shop: the offer, and the budget: petty cash first, then the treasury that may be spent. */
@@ -1134,6 +1158,12 @@ export type GameEvent =
   | { type: "StallingDetected"; playerId: string }
   /** The crowd throws a rock: `roll` is null from turn 7 on, when it always misses. */
   | { type: "RockThrown"; playerId: string; roll: number | null; hit: boolean }
+  /** A wizard cast a spell: Fireball on `square`, or Zap! at `playerId`. */
+  | { type: "SpellCast"; side: Side; spell: Spell; square?: Square; playerId?: string }
+  /** The spell's D6 for a player: hit (Fireball) or turned into a frog (Zap!), or not. */
+  | { type: "SpellRolled"; spell: Spell; playerId: string; roll: number; hit: boolean }
+  /** The drive is over: a frog turns back into the player. */
+  | { type: "FrogRestored"; playerId: string }
   | { type: "BlockDeclared"; attackerId: string; defenderId: string; dice: number }
   | { type: "BlockResult"; attackerId: string; defenderId: string; face: number }
   | { type: "PlayerPushed"; playerId: string; from: Square; to: Square | null }
