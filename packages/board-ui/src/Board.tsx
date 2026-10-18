@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import {
   ballUnsettled,
+  blockDice,
   flightMarkers,
   inBounds,
   scatterOrigin,
@@ -24,7 +25,7 @@ import {
 } from "@bb/engine";
 import { ACTION_NAMES, PASS_RANGE_NAMES } from "./describe";
 import { playerIcon } from "./icons";
-import { findTemplate } from "./templates";
+import { findTemplate, multipleBlockFirst } from "./templates";
 
 /** Square size in pixels (keep in sync with --bb-square in styles.css). */
 const SQUARE_SIZE = 30;
@@ -88,6 +89,8 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
   const move = findTemplate(templates, "MOVE");
   const startAction = findTemplate(templates, "START_ACTION");
   const block = findTemplate(templates, "BLOCK");
+  const multi = findTemplate(templates, "MULTIPLE_BLOCK");
+  const firstTarget = multipleBlockFirst(templates, picked);
   const push = findTemplate(templates, "PUSH");
   const trick = findTemplate(templates, "TRICKSTER");
   const swoop = findTemplate(templates, "SWOOP");
@@ -181,6 +184,14 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
         dispatch({ type: "START_ACTION", playerId: pickingBlitzTarget, action: "blitz", targetId: p.id });
         setMenu(null);
       }
+    } else if (multi?.targetIds.includes(p.id)) {
+      // Multiple Block: a first click picks a target, a second one blocks both; the picked one again drops it.
+      if (!firstTarget) setPicked([p.id]);
+      else if (firstTarget === p.id) setPicked([]);
+      else {
+        dispatch({ type: "MULTIPLE_BLOCK", targetIds: [firstTarget, p.id] });
+        setPicked([]);
+      }
     } else if (block?.targets.some((t) => t.playerId === p.id)) dispatch({ type: "BLOCK", targetId: p.id });
     else if (handOff?.playerIds.includes(p.id)) dispatch({ type: "HAND_OFF", targetId: p.id });
     else if (ttm?.playerIds.includes(p.id) && !thrown) setPicked([p.id]);
@@ -209,7 +220,12 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
       draggable={draggable.has(p.id)}
       selectable={selectable.has(p.id)}
       hasBall={state.ball.carried && isOnPitch(p) && state.ball.square !== null && sameSquare(state.ball.square, p.at)}
-      blockDice={block?.targets.find((t) => t.playerId === p.id)?.dice}
+      blockDice={
+        // With a first Multiple Block target picked, the others show the dice of blocking both (-2 ST, fewer assists).
+        firstTarget && multi && p.id !== firstTarget && multi.targetIds.includes(p.id)
+          ? blockDice(state, state.players[multi.playerId]!, p, { multiple: firstTarget })
+          : block?.targets.find((t) => t.playerId === p.id)?.dice
+      }
       foulAssists={foul?.targets.find((t) => t.playerId === p.id)?.assists}
       blitzTarget={p.id === blitzTarget}
       onClick={() => {

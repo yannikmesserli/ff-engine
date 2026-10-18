@@ -137,6 +137,8 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
       const next = actions.reduce((s, a) => step(s, a).state, state);
       setError(null);
       setAiming(false);
+      // A choice half-made on the board (a first Multiple Block target, players picked) does not outlive the action.
+      setPicked([]);
       if (online) {
         online.send(actions);
         return;

@@ -1260,7 +1260,7 @@ export const SCENARIOS: Scenario[] = [
     id: "multiple-block",
     title: "Multiple Block: two blocks at once",
     instructions: [
-      "Home's first turn. Declare a Block with Grumbag (#1, Big Un Blocker, Multiple Block, ST 4) and click \"Multiple Block: Snotty and Nobbla\": the two goblins on either side of the one in front of him.",
+      "Home's first turn. Declare a Block with Grumbag (#1, Big Un Blocker, Multiple Block, ST 4) then click Snotty and Nobbla on the board, the two goblins on either side of the one in front of him: the first click picks Snotty (the other goblins then show the dice of blocking both), the second blocks both. Click Snotty again to drop the pick, or \"Block Snotty alone\" for a normal block.",
       "Each block is at ST 4 - 2 = 2 against ST 2, the goblins do not assist each other, and Snaga marks Gitsnik: one die each. The first block is rolled and its die chosen (a team re-roll is possible), then the second; only then are both resolved, in that order.",
       "There is no follow-up, and nobody is pushed into a square where a target stood: undo and block Snotty and Gitsnik (#3, Sidestep, in front of Grumbag). Once Snotty is pushed away, Gitsnik cannot sidestep into the square Snotty left.",
       "Try a Skull on the first block: Grumbag goes down, but the second block still resolves.",

@@ -15,7 +15,7 @@ import { formationActions, formations } from "@bb/data";
 import { DieFace } from "./Dice";
 import { SHOP_NAMES, SPELL_NAMES, WEATHER_NAMES, blockFaceName, casualtyName, gold } from "./describe";
 import type { Aiming } from "./Board";
-import { findTemplate, type TemplateOf } from "./templates";
+import { findTemplate, multipleBlockFirst, type TemplateOf } from "./templates";
 
 interface ActionPanelProps {
   state: GameState;
@@ -106,7 +106,7 @@ function throwingBomb(state: GameState) {
 }
 
 /** The prompt line, from the main template and the board's interaction mode. */
-function promptText(state: GameState, templates: ActionTemplate[], main: ActionTemplate, blitzFor: string | null, aiming: Aiming) {
+function promptText(state: GameState, templates: ActionTemplate[], main: ActionTemplate, blitzFor: string | null, aiming: Aiming, picked: string[]) {
   const roll = findTemplate(templates, "ROLL");
   const select = findTemplate(templates, "SELECT_PLAYERS");
   const snap = findTemplate(templates, "SNAP");
@@ -130,6 +130,11 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
     return top?.type === "Pass" ? `${state.players[top.throwerId]!.name} caught the bomb and must throw it again: aim it` : "aim the bomb (no move before throwing it)";
   }
   if (roll) return `roll for ${roll.reason}`;
+  const first = multipleBlockFirst(templates, picked);
+  if (first) return `Multiple Block: click a second highlighted opponent to block both with ST -2, or block ${state.players[first]!.name} alone`;
+  if (main.type === "BLOCK" && findTemplate(templates, "MULTIPLE_BLOCK")) {
+    return "click a highlighted opponent to block; with Multiple Block, click a second one to block both at once (ST -2)";
+  }
   if (select) return `${select.reason} (click players)`;
   const start = state.stack.at(-1);
   if (snap && start?.type === "StartSkill" && start.skill === "Furious Outburst") return "Furious Outburst: click the player, then the square to put them in";
@@ -188,12 +193,13 @@ export function ActionPanel(props: ActionPanelProps) {
   const blockDie = findTemplate(templates, "CHOOSE_BLOCK_DIE");
   const throwTo = findTemplate(templates, "THROW");
   const punt = findTemplate(templates, "PUNT");
+  const firstTarget = multipleBlockFirst(templates, picked);
 
   return (
     <div className={`bb-panel bb-actions${side ? ` bb-side-${side}` : ""}`}>
       <div className="bb-prompt">
         {side && <strong>{state.teams[side].name}: </strong>}
-        {promptText(state, templates, main, props.blitzFor, props.aiming)}
+        {promptText(state, templates, main, props.blitzFor, props.aiming, picked)}
       </div>
       <div className="bb-buttons">
         {throwTo && <ThrowControls template={throwTo} hailMary={has("HAIL_MARY_PASS")} aiming={props.aiming} setAiming={props.setAiming} />}
@@ -428,11 +434,21 @@ export function ActionPanel(props: ActionPanelProps) {
             Stab {state.players[id]!.name}
           </button>
         ))}
-        {pairs(findTemplate(templates, "MULTIPLE_BLOCK")?.targetIds ?? []).map(([a, b]) => (
-          <button key={`${a}+${b}`} onClick={() => dispatch({ type: "MULTIPLE_BLOCK", targetIds: [a, b] })}>
-            Multiple Block: {state.players[a]!.name} and {state.players[b]!.name}
-          </button>
-        ))}
+        {firstTarget && (
+          <>
+            {findTemplate(templates, "BLOCK")?.targets.some((t) => t.playerId === firstTarget) && (
+              <button
+                onClick={() => {
+                  dispatch({ type: "BLOCK", targetId: firstTarget });
+                  setPicked([]);
+                }}
+              >
+                Block {state.players[firstTarget]!.name} alone
+              </button>
+            )}
+            <button onClick={() => setPicked([])}>Cancel Multiple Block</button>
+          </>
+        )}
         {findTemplate(templates, "CHOMP")?.targetIds.map((id) => (
           <button key={id} onClick={() => dispatch({ type: "CHOMP", targetId: id })}>
             Chomp {state.players[id]!.name}
@@ -721,7 +737,3 @@ function SetupControls(props: {
   );
 }
 
-/** Every pair of distinct ids, in order (Multiple Block targets). */
-function pairs(ids: string[]): Array<[string, string]> {
-  return ids.flatMap((a, i) => ids.slice(i + 1).map((b): [string, string] => [a, b]));
-}
