@@ -16,8 +16,8 @@ import {
   type GameState,
   type PlayerState,
   type Side,
-} from "@bb/engine";
-import { resolveTeam, skillDescription, teamAfterGame } from "@bb/data";
+} from "@ff-engine/engine";
+import { resolveTeam, skillDescription, teamAfterGame } from "@ff-engine/data";
 import { ActionPanel } from "./ActionPanel";
 import { Board, type ActionMenuState, type Aiming } from "./Board";
 import { DiceRolls } from "./Dice";
@@ -27,7 +27,7 @@ import "./styles.css";
 
 /** Props of {@link BloodBowlGame}. */
 export interface BloodBowlGameProps {
-  /** Team files in @bb/data's format (see packages/data/README.md), validated by resolveTeam(). */
+  /** Team files in @ff-engine/data's format (see packages/data/README.md), validated by resolveTeam(). */
   home: unknown;
   away: unknown;
   /** Base URL of the image folder (layout in packages/board-ui/README.md). */

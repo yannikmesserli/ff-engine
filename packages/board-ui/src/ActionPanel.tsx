@@ -10,8 +10,8 @@ import {
   type MercenaryChoice,
   type PassRange,
   type Side,
-} from "@bb/engine";
-import { formationActions, formations } from "@bb/data";
+} from "@ff-engine/engine";
+import { formationActions, formations } from "@ff-engine/data";
 import { DieFace } from "./Dice";
 import { SHOP_NAMES, SPELL_NAMES, WEATHER_NAMES, blockFaceName, casualtyName, gold } from "./describe";
 import type { Aiming } from "./Board";

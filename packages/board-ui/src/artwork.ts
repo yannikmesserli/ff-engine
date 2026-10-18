@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { rosters, starPlayers, type Artwork } from "@bb/data";
-import type { PlayerState } from "@bb/engine";
+import { rosters, starPlayers, type Artwork } from "@ff-engine/data";
+import type { PlayerState } from "@ff-engine/engine";
 
 /**
  * Where the board finds its team artwork. No artwork is included: without it, players are numbered discs and teams

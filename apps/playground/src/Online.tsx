@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { BloodBowlGame, useDownloadedArtwork } from "@bb/board-ui";
-import type { Action, Side } from "@bb/engine";
-import { exampleTeams } from "@bb/data";
+import { BloodBowlGame, useDownloadedArtwork } from "@ff-engine/board-ui";
+import type { Action, Side } from "@ff-engine/engine";
+import { exampleTeams } from "@ff-engine/data";
 import type { ServerMessage } from "relay/protocol";
 import { TeamPicker, teamError } from "./TeamPicker";
 import { ARTWORK_URL } from "./artwork";

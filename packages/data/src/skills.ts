@@ -1,4 +1,4 @@
-import { sameSkill } from "@bb/engine";
+import { sameSkill } from "@ff-engine/engine";
 
 /**
  * Short BB2025 descriptions of the skills and traits, in our own words, for tooltips. `{X}` stands for the skill's

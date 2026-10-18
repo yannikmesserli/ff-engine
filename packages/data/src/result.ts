@@ -1,4 +1,4 @@
-import { starPlayerPoints, type GameState, type Side } from "@bb/engine";
+import { starPlayerPoints, type GameState, type Side } from "@ff-engine/engine";
 import { MAX_PLAYERS, TeamFileSchema, type TeamFile, type TeamPlayer } from "./schemas";
 
 /** BB2025 limits of Dedicated Fans. */

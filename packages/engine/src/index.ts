@@ -1,4 +1,4 @@
-/** Public API of @bb/engine: the game functions, state and action types, and rule helpers used by the UI. */
+/** Public API of @ff-engine/engine: the game functions, state and action types, and rule helpers used by the UI. */
 export * from "./types";
 export * from "./pitch";
 export { applyActions, createGame, getAvailableActions, step } from "./engine";

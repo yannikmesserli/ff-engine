@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { exampleTeams, resolveTeam } from "@bb/data";
+import { exampleTeams, resolveTeam } from "@ff-engine/data";
 
 const TEAM_KEYS = Object.keys(exampleTeams);
 

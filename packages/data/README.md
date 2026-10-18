@@ -1,4 +1,4 @@
-# @bb/data
+# @ff-engine/data
 
 Static data for the engine: BB2025 rosters, example teams, setup formations, the zod schemas that validate them, and
 `resolveTeam()` which turns a team file into the engine's `TeamSetup`.
@@ -8,7 +8,7 @@ artwork, never the images. `resolveTeam` checks a team file's format and limits,
 games: a server running league games should check advancements itself.
 
 ```ts
-import { exampleTeams, formationActions, formations, resolveTeam, rosters } from "@bb/data";
+import { exampleTeams, formationActions, formations, resolveTeam, rosters } from "@ff-engine/data";
 
 const home = resolveTeam(exampleTeams["human"]); // throws TeamError on an invalid team
 const actions = formationActions(state, "home", formations["def_spread"]!); // PLACE_PLAYER actions

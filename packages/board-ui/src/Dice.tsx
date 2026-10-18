@@ -1,4 +1,4 @@
-import { BLOCK_FACES, type DiceRoll } from "@bb/engine";
+import { BLOCK_FACES, type DiceRoll } from "@ff-engine/engine";
 
 /** One die: an image for d6, d8 and block dice, a text chip for coins, d3 and d16. */
 export function DieFace({ kind, value, assets }: { kind: DiceRoll["kind"]; value: number; assets: string }) {

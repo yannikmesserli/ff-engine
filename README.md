@@ -1,4 +1,4 @@
-# Blood Bowl frontend
+# ff-engine
 
 A browser-only Blood Bowl engine and game component, following the **BB2025** rules. MIT licensed (`LICENSE`).
 
@@ -7,11 +7,11 @@ A browser-only Blood Bowl engine and game component, following the **BB2025** ru
 An open-source rules engine, plus what it takes to try it. It is not a ready-to-host game: it comes without artwork,
 and its apps are for testing.
 
-- **The engine** (`@bb/engine`): the product. The BB2025 rules as a pure TypeScript library, with no UI: a
+- **The engine** (`@ff-engine/engine`): the product. The BB2025 rules as a pure TypeScript library, with no UI: a
   serializable `GameState`, every decision and die an explicit action, the legal actions offered at every step. A
   server or a client can run it.
-- **The data** (`@bb/data`): rosters, star players and the team file format the engine plays with (`resolveTeam`).
-- **The board** (`@bb/board-ui`): a React component that plays a game with the engine. It renders the engine's state
+- **The data** (`@ff-engine/data`): rosters, star players and the team file format the engine plays with (`resolveTeam`).
+- **The board** (`@ff-engine/board-ui`): a React component that plays a game with the engine. It renders the engine's state
   and turns clicks into actions; it holds no rules.
 - **The artwork, which you bring yourself**: no image is included or ever committed. The board draws player sprites
   and team logos from a `BoardArtwork` you pass in (numbered discs without one), and the pitch, dice and ball from an
@@ -39,9 +39,9 @@ pnpm fetch-artwork    # for testing only: FUMBBL's player sprites and team logos
 
 | Package | What |
 |---|---|
-| `packages/engine` (`@bb/engine`) | Pure TypeScript rules engine, no UI. Serializable `GameState`, seeded RNG. |
-| `packages/data` (`@bb/data`) | BB2025 rosters (from FUMBBL), example teams and formations, zod schemas, `resolveTeam()`. |
-| `packages/board-ui` (`@bb/board-ui`) | React `<BloodBowlGame home={teamJson} away={teamJson} />` component. |
+| `packages/engine` (`@ff-engine/engine`) | Pure TypeScript rules engine, no UI. Serializable `GameState`, seeded RNG. |
+| `packages/data` (`@ff-engine/data`) | BB2025 rosters (from FUMBBL), example teams and formations, zod schemas, `resolveTeam()`. |
+| `packages/board-ui` (`@ff-engine/board-ui`) | React `<BloodBowlGame home={teamJson} away={teamJson} />` component. |
 | `apps/playground` | For testing: Vite app hosting the component, online games through the relay, or hot-seat. |
 | `apps/relay` | For testing: Node WebSocket relay for online games, forwarding each player's actions, storing nothing. |
 | `apps/scenarios` | For testing: Vite app starting games from prepared positions (teams plus the actions leading there), to try a rule. |
@@ -141,7 +141,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
   only in setup, with fewer than 3 players able to play; otherwise the conceding team also gets no MVP (the winners
   get two), no winnings (the winners get the whole attendance), loses a D3 Dedicated Fans (keeping 1), and each of its
   players with 3 or more advancements leaves the team on a D6 of 1-3.
-- After the game, `teamAfterGame` (`@bb/data`) writes the result into the team file: Star Player Points, casualties
+- After the game, `teamAfterGame` (`@ff-engine/data`) writes the result into the team file: Star Player Points, casualties
   (missing the next game, Niggling and Lasting Injuries, the dead and departed removed), raised players, winnings and
   Dedicated Fans. The end-of-game summary has a "Download team" button for it.
 - Kick-off: D8 + D6 deviation, all 11 kick-off events (Solid Defence, High Kick, Quick Snap, Charge, Weather

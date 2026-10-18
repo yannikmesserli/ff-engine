@@ -1,4 +1,4 @@
-import type { Action, Square } from "@bb/engine";
+import type { Action, Square } from "@ff-engine/engine";
 
 /** A prepared position to test a rule in the browser: two teams and the actions that lead there from a new game. */
 export interface Scenario {
@@ -6,7 +6,7 @@ export interface Scenario {
   title: string;
   /** What to do once the scenario is loaded. */
   instructions: string[];
-  /** Team files in @bb/data's format; their few players are on purpose, so they take no journeymen. */
+  /** Team files in @ff-engine/data's format; their few players are on purpose, so they take no journeymen. */
   home: unknown;
   away: unknown;
   seed: number;

@@ -1,8 +1,8 @@
-# @bb/board-ui
+# @ff-engine/board-ui
 
 React component that plays a complete hot-seat BB2025 Blood Bowl game in the browser: scoreboard, pitch with both
 dugouts, decision panel, last roll with undo, player card (hovered, or pinned by clicking a player; skills have
-description tooltips) and game log. All rules come from `@bb/engine`; this
+description tooltips) and game log. All rules come from `@ff-engine/engine`; this
 package only renders the engine's state and turns clicks into engine actions.
 
 It comes without artwork: bring your own player sprites and team logos (`artwork`, see "Artwork") and image folder
@@ -12,14 +12,14 @@ testing, not for games that must be fair (see "What this project is" in the main
 ## Usage
 
 ```tsx
-import { BloodBowlGame } from "@bb/board-ui";
+import { BloodBowlGame } from "@ff-engine/board-ui";
 
 <BloodBowlGame home={teamJson} away={teamJson} />;
 ```
 
 | Prop | Type | |
 |---|---|---|
-| `home`, `away` | `unknown` | Team files in `@bb/data`'s format (see `packages/data/README.md`), validated by `resolveTeam()`. Invalid teams render the error message. |
+| `home`, `away` | `unknown` | Team files in `@ff-engine/data`'s format (see `packages/data/README.md`), validated by `resolveTeam()`. Invalid teams render the error message. |
 | `assetsUrl` | `string` | Base URL of the image folder (pitch, dice, ball, status overlays). Default `"/img"`. |
 | `artwork` | `BoardArtwork` | Player sprites and team logos (see "Artwork"). None by default: numbered discs, no logos. |
 | `seed` | `number` | RNG seed, to replay the same dice. Random when omitted. |
@@ -85,7 +85,7 @@ sprite sheet (four columns: red, red moving, blue, blue moving; `size` rows, one
 URL. Home players are drawn in blue and away players in red, the moving square when active, in the row picked by
 their number. Without artwork (or for a position it does not know), players are numbered discs and logos are left out.
 
-`fumbblArtwork(url)` reads FUMBBL's sheets and logos from the paths in the roster data (`@bb/data`, `artwork` and
+`fumbblArtwork(url)` reads FUMBBL's sheets and logos from the paths in the roster data (`@ff-engine/data`, `artwork` and
 `logo`): `fumbblArtwork((path) => artworkBase + path)` loads them from FUMBBL's image server, and
 `useDownloadedArtwork(base)` from copies downloaded for testing with `pnpm fetch-artwork` (see
 `apps/playground/README.md`). FUMBBL's artwork is not part of this project and does not belong to its authors: the download is for testing the

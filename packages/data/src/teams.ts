@@ -1,4 +1,4 @@
-import { SKILL_CATEGORIES, type HireOffer, type InducementId, type InducementPrices, type PositionStats, type TeamSetup } from "@bb/engine";
+import { SKILL_CATEGORIES, type HireOffer, type InducementId, type InducementPrices, type PositionStats, type TeamSetup } from "@ff-engine/engine";
 import rosterData from "./generated/rosters.json";
 import teamData from "./teams.json";
 import { MAX_PLAYERS, RosterSchema, StarPlayerSchema, TeamFileSchema, type Characteristic, type Roster, type StarPlayer, type TeamFile, type TeamPlayer } from "./schemas";

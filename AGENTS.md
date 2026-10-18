@@ -3,9 +3,9 @@
 A browser-only BB2025 Blood Bowl engine plus a React game component (pnpm workspace). Start with `README.md`, then the
 README of the package you touch:
 
-- `packages/engine` (`@bb/engine`): pure rules engine. Read `packages/engine/README.md` before changing rules.
-- `packages/data` (`@bb/data`): rosters, example teams, formations, zod schemas.
-- `packages/board-ui` (`@bb/board-ui`): the `<BloodBowlGame>` React component.
+- `packages/engine` (`@ff-engine/engine`): pure rules engine. Read `packages/engine/README.md` before changing rules.
+- `packages/data` (`@ff-engine/data`): rosters, example teams, formations, zod schemas.
+- `packages/board-ui` (`@ff-engine/board-ui`): the `<BloodBowlGame>` React component.
 - `apps/playground`: Vite app hosting the component (online games and hot-seat).
 - `apps/relay`: WebSocket relay for online games (Node, `ws`), no storage.
 - `apps/scenarios`: Vite app starting games from prepared positions (`src/scenarios.ts`), to try a rule in the browser.

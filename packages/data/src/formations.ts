@@ -1,5 +1,5 @@
-import { PITCH_WIDTH, isOnPitch, onLineOfScrimmage, teamPlayers } from "@bb/engine";
-import type { Action, GameState, PlayerState, Side, Square } from "@bb/engine";
+import { PITCH_WIDTH, isOnPitch, onLineOfScrimmage, teamPlayers } from "@ff-engine/engine";
+import type { Action, GameState, PlayerState, Side, Square } from "@ff-engine/engine";
 import formationData from "./formations.json";
 
 /**

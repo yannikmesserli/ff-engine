@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyActions, createGame, getAvailableActions, step, type Action, type ActionTemplate, type GameState } from "@bb/engine";
-import { resolveTeam } from "@bb/data";
+import { applyActions, createGame, getAvailableActions, step, type Action, type ActionTemplate, type GameState } from "@ff-engine/engine";
+import { resolveTeam } from "@ff-engine/data";
 import { SCENARIOS } from "./scenarios";
 
 const load = (id: string) => {

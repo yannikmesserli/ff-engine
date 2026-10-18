@@ -1,4 +1,4 @@
-import { BLOCK_FACES, type Casualty, type GameEvent, type GameState, type PassRange, type PlayerActionType, type Side, PRAYER_NAMES, type InducementId } from "@bb/engine";
+import { BLOCK_FACES, type Casualty, type GameEvent, type GameState, type PassRange, type PlayerActionType, type Side, PRAYER_NAMES, type InducementId } from "@ff-engine/engine";
 
 const CHECK_NAMES = {
   dodge: "dodge",

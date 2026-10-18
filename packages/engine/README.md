@@ -1,4 +1,4 @@
-# @bb/engine
+# @ff-engine/engine
 
 Pure TypeScript Blood Bowl rules engine, no UI. It follows the **BB2025** rules. The whole game is a serializable `GameState`,
 every random number comes from a seeded RNG stored in that state, and `step` is pure, so saves, replays and undo
@@ -10,7 +10,7 @@ decisions `getAvailableActions` offers their side; never their dice values (a `R
 dice, so a server should send `{ type: "ROLL" }` itself).
 
 ```ts
-import { createGame, getAvailableActions, step } from "@bb/engine";
+import { createGame, getAvailableActions, step } from "@ff-engine/engine";
 
 let state = createGame(home, away, { seed: 42 }); // TeamSetup x2, already at the first decision
 getAvailableActions(state); // [{ type: "ROLL", side: null, dice: [{ kind: "d3", count: 2 }], reason: "Fan factor (home, away)" }]

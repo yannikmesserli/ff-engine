@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { BloodBowlGame, useDownloadedArtwork } from "@bb/board-ui";
-import type { GameState } from "@bb/engine";
-import { exampleTeams } from "@bb/data";
+import { BloodBowlGame, useDownloadedArtwork } from "@ff-engine/board-ui";
+import type { GameState } from "@ff-engine/engine";
+import { exampleTeams } from "@ff-engine/data";
 import { GAME_ID } from "relay/protocol";
 import { OnlineGame, newGameId } from "./Online";
 import { TeamPicker } from "./TeamPicker";

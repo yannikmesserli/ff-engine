@@ -13,7 +13,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { artworkBase, rosters, starPlayers } from "@bb/data";
+import { artworkBase, rosters, starPlayers } from "@ff-engine/data";
 
 const OUT = join(import.meta.dirname, "../public/fumbbl");
 /** Pause between downloads, to be gentle with FUMBBL. */

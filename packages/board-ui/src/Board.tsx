@@ -22,7 +22,7 @@ import {
   type PlayerState,
   type Side,
   type Square,
-} from "@bb/engine";
+} from "@ff-engine/engine";
 import { ACTION_NAMES, PASS_RANGE_NAMES } from "./describe";
 import { spriteStyle, type BoardArtwork } from "./artwork";
 import { findTemplate, multipleBlockFirst } from "./templates";

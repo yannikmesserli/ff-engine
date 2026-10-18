@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { INDUCEMENTS } from "@bb/engine";
+import { INDUCEMENTS } from "@ff-engine/engine";
 
 /** Non-negative integer count (staff, re-rolls...). */
 const count = z.number().int().min(0);

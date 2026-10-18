@@ -1,4 +1,4 @@
-import type { ActionTemplate } from "@bb/engine";
+import type { ActionTemplate } from "@ff-engine/engine";
 
 /** The action template with the given `type`. */
 export type TemplateOf<T extends ActionTemplate["type"]> = Extract<ActionTemplate, { type: T }>;

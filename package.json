@@ -1,5 +1,5 @@
 {
-  "name": "bloodbowl-frontend",
+  "name": "ff-engine",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
     "build": "pnpm --filter playground build",
     "test": "vitest run",
     "typecheck": "pnpm -r typecheck",
-    "fetch-rosters": "pnpm --filter @bb/data fetch-rosters",
+    "fetch-rosters": "pnpm --filter @ff-engine/data fetch-rosters",
     "fetch-artwork": "tsx apps/playground/scripts/fetch-artwork.ts",
     "relay": "pnpm --filter relay start",
     "scenarios": "pnpm --filter scenarios dev"

@@ -1,4 +1,4 @@
-import { IMPLEMENTED_SKILLS, createGame, getAvailableActions, skillName, starPlayerPoints, step, type Action, type ActionTemplate, type GameState } from "@bb/engine";
+import { IMPLEMENTED_SKILLS, createGame, getAvailableActions, skillName, starPlayerPoints, step, type Action, type ActionTemplate, type GameState } from "@ff-engine/engine";
 import { afterAll, describe, expect, it } from "vitest";
 import { SKILL_DESCRIPTIONS, TeamError, exampleTeams, formationActions, formations, resolveTeam, rosters, skillDescription, teamAfterGame, teamValue } from "./index";
 

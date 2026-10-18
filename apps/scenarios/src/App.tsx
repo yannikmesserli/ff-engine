@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BloodBowlGame, useDownloadedArtwork } from "@bb/board-ui";
+import { BloodBowlGame, useDownloadedArtwork } from "@ff-engine/board-ui";
 import { SCENARIOS } from "./scenarios";
 
 /** `?scenario=<id>` opens that scenario; the first one otherwise. */

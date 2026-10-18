@@ -1,5 +1,5 @@
 {
-  "name": "@bb/board-ui",
+  "name": "@ff-engine/board-ui",
   "license": "MIT",
   "version": "0.0.1",
   "private": true,
@@ -14,8 +14,8 @@
     "@types/react": "^19.3.0"
   },
   "dependencies": {
-    "@bb/data": "workspace:*",
-    "@bb/engine": "workspace:*",
+    "@ff-engine/data": "workspace:*",
+    "@ff-engine/engine": "workspace:*",
     "@dnd-kit/core": "^6.3.1",
     "react": "^19.3.0"
   }
