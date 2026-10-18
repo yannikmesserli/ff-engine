@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BloodBowlGame, useDownloadedArtwork } from "@ff-engine/board-ui";
+import { FantasyFootballGame, useDownloadedArtwork } from "@ff-engine/board-ui";
 import type { GameState } from "@ff-engine/engine";
 import { exampleTeams } from "@ff-engine/data";
 import { GAME_ID } from "relay/protocol";
@@ -35,7 +35,7 @@ export function App() {
   if (PARAMS.has("local") || PARAMS.has("seed")) return <LocalGame />;
   return (
     <main className="pg-home">
-      <h1>Blood Bowl</h1>
+      <h1>Fantasy Football</h1>
       <button className="pg-primary" onClick={() => (location.search = `?game=${newGameId()}`)}>
         Create an online game
       </button>
@@ -80,7 +80,7 @@ function LocalGame() {
           New game
         </button>
       </header>
-      <BloodBowlGame
+      <FantasyFootballGame
         key={gameId}
         home={home}
         away={away}

@@ -25,8 +25,8 @@ import { WEATHER_NAMES, casualtyName, describeEvent } from "./describe";
 import type { BoardArtwork } from "./artwork";
 import "./styles.css";
 
-/** Props of {@link BloodBowlGame}. */
-export interface BloodBowlGameProps {
+/** Props of {@link FantasyFootballGame}. */
+export interface FantasyFootballGameProps {
   /** Team files in @ff-engine/data's format (see packages/data/README.md), validated by resolveTeam(). */
   home: unknown;
   away: unknown;
@@ -67,8 +67,8 @@ const AUTO_ROLL_DELAY_MS = 350;
 /** Default for `actions`: a stable empty list, so the game is not recreated on every render. */
 const NO_ACTIONS: readonly Action[] = [];
 
-/** A complete hot-seat Blood Bowl game between two teams; restarts when the teams, `seed`, the game options or `actions` change. */
-export function BloodBowlGame({ home, away, assetsUrl = "/img", artwork, seed, overtime = false, shop = false, actions = NO_ACTIONS, onChange, online }: BloodBowlGameProps) {
+/** A complete hot-seat fantasy football game between two teams; restarts when the teams, `seed`, the game options or `actions` change. */
+export function FantasyFootballGame({ home, away, assetsUrl = "/img", artwork, seed, overtime = false, shop = false, actions = NO_ACTIONS, onChange, online }: FantasyFootballGameProps) {
   const initial = useMemo(() => {
     try {
       return { state: applyActions(createGame(resolveTeam(home), resolveTeam(away), { seed, overtime, shop }), actions) };

@@ -1,6 +1,6 @@
 # @ff-engine/board-ui
 
-React component that plays a complete hot-seat BB2025 Blood Bowl game in the browser: scoreboard, pitch with both
+React component that plays a complete hot-seat BB2025 fantasy football game in the browser: scoreboard, pitch with both
 dugouts, decision panel, last roll with undo, player card (hovered, or pinned by clicking a player; skills have
 description tooltips) and game log. All rules come from `@ff-engine/engine`; this
 package only renders the engine's state and turns clicks into engine actions.
@@ -12,9 +12,9 @@ testing, not for games that must be fair (see "What this project is" in the main
 ## Usage
 
 ```tsx
-import { BloodBowlGame } from "@ff-engine/board-ui";
+import { FantasyFootballGame } from "@ff-engine/board-ui";
 
-<BloodBowlGame home={teamJson} away={teamJson} />;
+<FantasyFootballGame home={teamJson} away={teamJson} />;
 ```
 
 | Prop | Type | |
@@ -36,7 +36,7 @@ imported by the component.
 state ──getAvailableActions──▶ templates ──Board / ActionPanel──▶ dispatch(action) ──step──▶ next state
 ```
 
-1. `Game` (in `BloodBowlGame.tsx`) keeps the history of `GameState`s; the current state is the last one, and Undo pops
+1. `Game` (in `FantasyFootballGame.tsx`) keeps the history of `GameState`s; the current state is the last one, and Undo pops
    it.
 2. `getAvailableActions(state)` returns the **action templates**: what the current decision maker may do (`MOVE` with
    its squares and rolls, `BLOCK` with targets and dice, `ROLL` with the dice to roll...). The UI renders only from
@@ -57,8 +57,8 @@ state ──getAvailableActions──▶ templates ──Board / ActionPanel─�
 
 | File | What |
 |---|---|
-| `src/index.ts` | Public exports: `BloodBowlGame`, `decider`, `BloodBowlGameProps` and `OnlineControl`. |
-| `src/BloodBowlGame.tsx` | Game creation, state history, `dispatch`, auto-roll; scoreboard, last roll, player card, log. |
+| `src/index.ts` | Public exports: `FantasyFootballGame`, `decider`, `FantasyFootballGameProps` and `OnlineControl`. |
+| `src/FantasyFootballGame.tsx` | Game creation, state history, `dispatch`, auto-roll; scoreboard, last roll, player card, log. |
 | `src/Board.tsx` | Pitch, dugouts, player tokens, square highlights, setup drag and drop (dnd-kit), player action menu. |
 | `src/ActionPanel.tsx` | Prompt and buttons per template: coin, kick/receive, dice (or physical dice entry), re-rolls, block dice, setup formations, end turn... |
 | `src/describe.ts` | Display names and the game log text of every engine event. |

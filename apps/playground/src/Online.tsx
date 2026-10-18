@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BloodBowlGame, useDownloadedArtwork } from "@ff-engine/board-ui";
+import { FantasyFootballGame, useDownloadedArtwork } from "@ff-engine/board-ui";
 import type { Action, Side } from "@ff-engine/engine";
 import { exampleTeams } from "@ff-engine/data";
 import type { ServerMessage } from "relay/protocol";
@@ -99,7 +99,7 @@ export function OnlineGame({ gameId }: { gameId: string }) {
 
   if (started) {
     return (
-      <BloodBowlGame
+      <FantasyFootballGame
         home={ready.home}
         away={ready.away}
         seed={seed}

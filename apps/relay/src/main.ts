@@ -33,7 +33,7 @@ async function staticFile(path: string): Promise<{ body: Buffer; type: string } 
 const server = createServer(async (request, response) => {
   const found = await staticFile(new URL(request.url ?? "/", "http://relay").pathname);
   if (!found) {
-    response.writeHead(404).end("Blood Bowl relay: connect a WebSocket to /relay?game=<id>\n");
+    response.writeHead(404).end("Fantasy football relay: connect a WebSocket to /relay?game=<id>\n");
     return;
   }
   response.writeHead(200, { "content-type": found.type }).end(found.body);

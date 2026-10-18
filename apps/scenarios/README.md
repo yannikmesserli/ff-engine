@@ -1,7 +1,7 @@
 # scenarios
 
 Vite app to try a rule in the browser from a prepared position, without playing up to it: pick a scenario, follow its
-instructions, and play on with the full `<BloodBowlGame>` (physical dice entry, undo back to the scenario's start).
+instructions, and play on with the full `<FantasyFootballGame>` (physical dice entry, undo back to the scenario's start).
 
 **For testing only**: the scenario teams give players skills freely, and dice are entered by hand.
 
@@ -14,7 +14,7 @@ Images come from the playground's `apps/playground/public/img/` (git-ignored, se
 ## Adding a scenario
 
 A scenario (`src/scenarios.ts`) is two team files (often a few players each), a seed, and the engine actions that lead
-from a new game to the position. `<BloodBowlGame actions={...}>` replays them with the engine's `applyActions`, so a
+from a new game to the position. `<FantasyFootballGame actions={...}>` replays them with the engine's `applyActions`, so a
 scenario only goes through legal steps, and the state stays consistent.
 
 - `toFirstTurn({ home, away, ball })` builds the actions to reach home's first turn: nice weather, away kicks, both

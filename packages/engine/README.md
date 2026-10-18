@@ -1,6 +1,6 @@
 # @ff-engine/engine
 
-Pure TypeScript Blood Bowl rules engine, no UI. It follows the **BB2025** rules. The whole game is a serializable `GameState`,
+Pure TypeScript fantasy football rules engine, no UI. It follows the **BB2025** rules. The whole game is a serializable `GameState`,
 every random number comes from a seeded RNG stored in that state, and `step` is pure, so saves, replays and undo
 are just a matter of keeping states.
 

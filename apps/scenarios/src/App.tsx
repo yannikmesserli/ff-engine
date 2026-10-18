@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BloodBowlGame, useDownloadedArtwork } from "@ff-engine/board-ui";
+import { FantasyFootballGame, useDownloadedArtwork } from "@ff-engine/board-ui";
 import { SCENARIOS } from "./scenarios";
 
 /** `?scenario=<id>` opens that scenario; the first one otherwise. */
@@ -34,7 +34,7 @@ export function App() {
           <li key={line}>{line}</li>
         ))}
       </ol>
-      <BloodBowlGame key={`${scenario.id}-${run}`} artwork={artwork} home={scenario.home} away={scenario.away} seed={scenario.seed} shop={scenario.shop} actions={scenario.actions} />
+      <FantasyFootballGame key={`${scenario.id}-${run}`} artwork={artwork} home={scenario.home} away={scenario.away} seed={scenario.seed} shop={scenario.shop} actions={scenario.actions} />
     </main>
   );
 }

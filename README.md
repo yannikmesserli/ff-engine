@@ -1,6 +1,6 @@
 # ff-engine
 
-A browser-only Blood Bowl engine and game component, following the **BB2025** rules. MIT licensed (`LICENSE`).
+A browser-only fantasy football engine and game component, following the **BB2025** rules. MIT licensed (`LICENSE`).
 
 ## What this project is
 
@@ -41,7 +41,7 @@ pnpm fetch-artwork    # for testing only: FUMBBL's player sprites and team logos
 |---|---|
 | `packages/engine` (`@ff-engine/engine`) | Pure TypeScript rules engine, no UI. Serializable `GameState`, seeded RNG. |
 | `packages/data` (`@ff-engine/data`) | BB2025 rosters (from FUMBBL), example teams and formations, zod schemas, `resolveTeam()`. |
-| `packages/board-ui` (`@ff-engine/board-ui`) | React `<BloodBowlGame home={teamJson} away={teamJson} />` component. |
+| `packages/board-ui` (`@ff-engine/board-ui`) | React `<FantasyFootballGame home={teamJson} away={teamJson} />` component. |
 | `apps/playground` | For testing: Vite app hosting the component, online games through the relay, or hot-seat. |
 | `apps/relay` | For testing: Node WebSocket relay for online games, forwarding each player's actions, storing nothing. |
 | `apps/scenarios` | For testing: Vite app starting games from prepared positions (teams plus the actions leading there), to try a rule. |

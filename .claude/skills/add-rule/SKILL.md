@@ -1,6 +1,6 @@
 ---
 name: add-rule
-description: Implement a BB2025 Blood Bowl rule, action, kick-off event or player skill (Dirty Player, Mighty Blow...) in the frontend engine (packages/engine), with tests and UI. Use when asked to add or fix a rule.
+description: Implement a BB2025 fantasy football rule, action, kick-off event or player skill (Dirty Player, Mighty Blow...) in the frontend engine (packages/engine), with tests and UI. Use when asked to add or fix a rule.
 ---
 
 # Add a BB2025 rule to the engine

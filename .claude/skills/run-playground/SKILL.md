@@ -1,6 +1,6 @@
 ---
 name: run-playground
-description: Launch the Blood Bowl playground (Vite + React) from frontend/ and check a change in the browser. Use when asked to run, start, screenshot or manually test the frontend game.
+description: Launch the fantasy football playground (Vite + React) from frontend/ and check a change in the browser. Use when asked to run, start, screenshot or manually test the frontend game.
 ---
 
 # Run the playground

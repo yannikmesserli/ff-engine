@@ -1,6 +1,6 @@
 # playground
 
-Vite app hosting `<BloodBowlGame>` from `@ff-engine/board-ui`: online games between two browsers, or hot-seat.
+Vite app hosting `<FantasyFootballGame>` from `@ff-engine/board-ui`: online games between two browsers, or hot-seat.
 
 **For testing the engine only**, not for hosting games for others. **Online games cannot be trusted: cheating is easy.** Both browsers run the engine and the relay only forwards
 their actions, so nothing checks a player. The home browser picks the dice seed, so it can work out every roll in
