@@ -1,5 +1,6 @@
 {
   "source": "https://fumbbl.com/api/ruleset/get/2014",
+  "artworkBase": "https://cdn.fumbbl.com/",
   "rosters": [
     {
       "id": 8575,
@@ -18,6 +19,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486190",
       "positions": [
         {
           "id": 66160,
@@ -43,7 +45,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585645.png",
+              "size": 9
+            },
+            "portrait": "i/318580"
+          }
         },
         {
           "id": 66161,
@@ -73,7 +82,14 @@
           "keywords": [
             "human",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585646.png",
+              "size": 2
+            },
+            "portrait": "i/318579"
+          }
         },
         {
           "id": 66164,
@@ -101,7 +117,14 @@
           "keywords": [
             "blitzer",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/699881.png",
+              "size": 2
+            },
+            "portrait": "i/699697"
+          }
         },
         {
           "id": 66165,
@@ -128,7 +151,14 @@
           "keywords": [
             "blocker",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/699880.png",
+              "size": 2
+            },
+            "portrait": "i/699696"
+          }
         }
       ]
     },
@@ -149,6 +179,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/641574",
       "positions": [
         {
           "id": 66327,
@@ -179,7 +210,14 @@
           "keywords": [
             "goblin",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/707558.png",
+              "size": 8
+            },
+            "portrait": "i/673337"
+          }
         },
         {
           "id": 66328,
@@ -207,7 +245,14 @@
           "keywords": [
             "blocker",
             "orc"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673317.png",
+              "size": 6
+            },
+            "portrait": "i/673316"
+          }
         },
         {
           "id": 66329,
@@ -239,7 +284,14 @@
           "keywords": [
             "big guy",
             "troll"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673319.png",
+              "size": 1
+            },
+            "portrait": "i/673318"
+          }
         }
       ]
     },
@@ -260,6 +312,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/769337",
       "positions": [
         {
           "id": 66519,
@@ -285,7 +338,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/774975.png",
+              "size": 6
+            },
+            "portrait": "i/"
+          }
         },
         {
           "id": 66520,
@@ -313,7 +373,14 @@
           "keywords": [
             "catcher",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/771400.png",
+              "size": 3
+            },
+            "portrait": "i/"
+          }
         },
         {
           "id": 66521,
@@ -342,7 +409,14 @@
           "keywords": [
             "human",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/774976.png",
+              "size": 2
+            },
+            "portrait": "i/"
+          }
         },
         {
           "id": 66522,
@@ -370,7 +444,14 @@
           "keywords": [
             "blitzer",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/771402.png",
+              "size": 3
+            },
+            "portrait": "i/"
+          }
         }
       ]
     },
@@ -391,6 +472,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486247",
       "positions": [
         {
           "id": 66322,
@@ -420,7 +502,14 @@
           "keywords": [
             "beastman",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585629.png",
+              "size": 10
+            },
+            "portrait": "i/318583"
+          }
         },
         {
           "id": 66323,
@@ -448,7 +537,14 @@
           "keywords": [
             "blocker",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436254.png",
+              "size": 6
+            },
+            "portrait": "i/318582"
+          }
         },
         {
           "id": 66324,
@@ -482,7 +578,14 @@
           "keywords": [
             "big guy",
             "troll"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674129.png",
+              "size": 1
+            },
+            "portrait": "i/674128"
+          }
         },
         {
           "id": 66325,
@@ -513,7 +616,14 @@
           "keywords": [
             "big guy",
             "ogre"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674131.png",
+              "size": 1
+            },
+            "portrait": "i/674130"
+          }
         },
         {
           "id": 66326,
@@ -545,7 +655,14 @@
           "keywords": [
             "big guy",
             "minotaur"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436255.png",
+              "size": 1
+            },
+            "portrait": "i/318581"
+          }
         }
       ]
     },
@@ -566,6 +683,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486253",
       "positions": [
         {
           "id": 66316,
@@ -590,7 +708,14 @@
           "keywords": [
             "goblin",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585631.png",
+              "size": 10
+            },
+            "portrait": "i/318587"
+          }
         },
         {
           "id": 66317,
@@ -620,7 +745,14 @@
           "keywords": [
             "blocker",
             "dwarf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436257.png",
+              "size": 6
+            },
+            "portrait": "i/318586"
+          }
         },
         {
           "id": 66318,
@@ -651,7 +783,14 @@
           "keywords": [
             "blitzer",
             "dwarf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436258.png",
+              "size": 2
+            },
+            "portrait": "i/318585"
+          }
         },
         {
           "id": 66319,
@@ -683,7 +822,14 @@
           "keywords": [
             "big guy",
             "minotaur"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436259.png",
+              "size": 1
+            },
+            "portrait": "i/318584"
+          }
         },
         {
           "id": 66320,
@@ -711,7 +857,14 @@
           "keywords": [
             "goblin",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/745751.png",
+              "size": 2
+            },
+            "portrait": "i/745752"
+          }
         },
         {
           "id": 66321,
@@ -742,7 +895,14 @@
           "keywords": [
             "dwarf",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/745754.png",
+              "size": 2
+            },
+            "portrait": "i/745753"
+          }
         }
       ]
     },
@@ -763,6 +923,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/603755",
       "positions": [
         {
           "id": 66305,
@@ -790,7 +951,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/440149.png",
+              "size": 8
+            },
+            "portrait": "i/318592"
+          }
         },
         {
           "id": 66306,
@@ -821,7 +989,14 @@
           "keywords": [
             "human",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674124.png",
+              "size": 1
+            },
+            "portrait": "i/674125"
+          }
         },
         {
           "id": 66307,
@@ -852,7 +1027,14 @@
           "keywords": [
             "goblin",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674141.png",
+              "size": 1
+            },
+            "portrait": "i/318594"
+          }
         },
         {
           "id": 66308,
@@ -880,7 +1062,14 @@
           "keywords": [
             "lineman",
             "orc"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/568459.png",
+              "size": 1
+            },
+            "portrait": "i/568460"
+          }
         },
         {
           "id": 66309,
@@ -908,7 +1097,14 @@
           "keywords": [
             "lineman",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436380.png",
+              "size": 1
+            },
+            "portrait": "i/318593"
+          }
         },
         {
           "id": 66310,
@@ -936,7 +1132,14 @@
           "keywords": [
             "elf",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436379.png",
+              "size": 1
+            },
+            "portrait": "i/318591"
+          }
         },
         {
           "id": 66311,
@@ -970,7 +1173,14 @@
           "keywords": [
             "big guy",
             "troll"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436343.png",
+              "size": 1
+            },
+            "portrait": "i/318590"
+          }
         },
         {
           "id": 66312,
@@ -1001,7 +1211,14 @@
           "keywords": [
             "big guy",
             "ogre"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436344.png",
+              "size": 1
+            },
+            "portrait": "i/318589"
+          }
         },
         {
           "id": 66313,
@@ -1033,7 +1250,14 @@
           "keywords": [
             "big guy",
             "minotaur"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436345.png",
+              "size": 1
+            },
+            "portrait": "i/318588"
+          }
         },
         {
           "id": 66314,
@@ -1064,7 +1288,14 @@
           "keywords": [
             "big guy",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674127.png",
+              "size": 1
+            },
+            "portrait": "i/674126"
+          }
         }
       ]
     },
@@ -1085,6 +1316,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486259",
       "positions": [
         {
           "id": 66299,
@@ -1109,7 +1341,14 @@
           "keywords": [
             "elf",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674139.png",
+              "size": 8
+            },
+            "portrait": "i/318599"
+          }
         },
         {
           "id": 66300,
@@ -1138,7 +1377,14 @@
           "keywords": [
             "elf",
             "runner"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674132.png",
+              "size": 2
+            },
+            "portrait": "i/318598"
+          }
         },
         {
           "id": 66301,
@@ -1166,7 +1412,14 @@
           "keywords": [
             "blitzer",
             "elf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674138.png",
+              "size": 4
+            },
+            "portrait": "i/318596"
+          }
         },
         {
           "id": 66302,
@@ -1195,7 +1448,14 @@
           "keywords": [
             "elf",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585634.png",
+              "size": 2
+            },
+            "portrait": "i/318597"
+          }
         },
         {
           "id": 66303,
@@ -1224,7 +1484,14 @@
           "keywords": [
             "elf",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674137.png",
+              "size": 2
+            },
+            "portrait": "i/318595"
+          }
         }
       ]
     },
@@ -1245,6 +1512,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486265",
       "positions": [
         {
           "id": 65746,
@@ -1272,7 +1540,14 @@
           "keywords": [
             "dwarf",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436265.png",
+              "size": 6
+            },
+            "portrait": "i/318604"
+          }
         },
         {
           "id": 65747,
@@ -1301,7 +1576,14 @@
           "keywords": [
             "dwarf",
             "runner"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436266.png",
+              "size": 3
+            },
+            "portrait": "i/318603"
+          }
         },
         {
           "id": 65748,
@@ -1330,7 +1612,14 @@
           "keywords": [
             "blitzer",
             "dwarf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436267.png",
+              "size": 2
+            },
+            "portrait": "i/318602"
+          }
         },
         {
           "id": 65749,
@@ -1360,7 +1649,14 @@
           "keywords": [
             "dwarf",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436268.png",
+              "size": 2
+            },
+            "portrait": "i/318601"
+          }
         },
         {
           "id": 65750,
@@ -1394,7 +1690,14 @@
             "big guy",
             "dwarf",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436269.png",
+              "size": 1
+            },
+            "portrait": "i/318600"
+          }
         }
       ]
     },
@@ -1415,6 +1718,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486271",
       "positions": [
         {
           "id": 66292,
@@ -1440,7 +1744,14 @@
           "keywords": [
             "elf",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585637.png",
+              "size": 8
+            },
+            "portrait": "i/318608"
+          }
         },
         {
           "id": 66293,
@@ -1468,7 +1779,14 @@
           "keywords": [
             "elf",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/440145.png",
+              "size": 2
+            },
+            "portrait": "i/318607"
+          }
         },
         {
           "id": 66294,
@@ -1496,7 +1814,14 @@
           "keywords": [
             "catcher",
             "elf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/440143.png",
+              "size": 4
+            },
+            "portrait": "i/318606"
+          }
         },
         {
           "id": 66295,
@@ -1524,7 +1849,14 @@
           "keywords": [
             "blitzer",
             "elf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/440308.png",
+              "size": 2
+            },
+            "portrait": "i/318605"
+          }
         }
       ]
     },
@@ -1545,6 +1877,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/733575",
       "positions": [
         {
           "id": 66287,
@@ -1577,7 +1910,14 @@
           "keywords": [
             "big guy",
             "treeman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/733781.png",
+              "size": 3
+            },
+            "portrait": "i/733780"
+          }
         },
         {
           "id": 66288,
@@ -1607,7 +1947,14 @@
           "keywords": [
             "blocker",
             "gnome"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/735006.png",
+              "size": 2
+            },
+            "portrait": "i/735014"
+          }
         },
         {
           "id": 66289,
@@ -1637,7 +1984,14 @@
           "keywords": [
             "gnome",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/735007.png",
+              "size": 2
+            },
+            "portrait": "i/735016"
+          }
         },
         {
           "id": 66290,
@@ -1663,7 +2017,14 @@
           "keywords": [
             "animal",
             "runner"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/735008.png",
+              "size": 2
+            },
+            "portrait": "i/735015"
+          }
         },
         {
           "id": 66291,
@@ -1693,7 +2054,14 @@
           "keywords": [
             "gnome",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/735009.png",
+              "size": 10
+            },
+            "portrait": "i/735024"
+          }
         }
       ]
     },
@@ -1714,6 +2082,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486277",
       "positions": [
         {
           "id": 66279,
@@ -1743,7 +2112,14 @@
           "keywords": [
             "goblin",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585617.png",
+              "size": 12
+            },
+            "portrait": "i/318613"
+          }
         },
         {
           "id": 66280,
@@ -1774,7 +2150,14 @@
           "keywords": [
             "goblin",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436275.png",
+              "size": 2
+            },
+            "portrait": "i/318612"
+          }
         },
         {
           "id": 66281,
@@ -1804,7 +2187,14 @@
           "keywords": [
             "goblin",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436436.png",
+              "size": 2
+            },
+            "portrait": "i/318614"
+          }
         },
         {
           "id": 66282,
@@ -1833,7 +2223,14 @@
           "keywords": [
             "goblin",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436377.png",
+              "size": 2
+            },
+            "portrait": "i/318611"
+          }
         },
         {
           "id": 66283,
@@ -1865,7 +2262,14 @@
           "keywords": [
             "goblin",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/568462.png",
+              "size": 1
+            },
+            "portrait": "i/568463"
+          }
         },
         {
           "id": 66284,
@@ -1895,7 +2299,14 @@
           "keywords": [
             "goblin",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/578021.png",
+              "size": 1
+            },
+            "portrait": "i/578022"
+          }
         },
         {
           "id": 66285,
@@ -1927,7 +2338,14 @@
           "keywords": [
             "big guy",
             "troll"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436280.png",
+              "size": 3
+            },
+            "portrait": "i/318609"
+          }
         },
         {
           "id": 66286,
@@ -1957,7 +2375,14 @@
           "keywords": [
             "goblin",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436278.png",
+              "size": 2
+            },
+            "portrait": "i/318610"
+          }
         }
       ]
     },
@@ -1980,6 +2405,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486283",
       "positions": [
         {
           "id": 66275,
@@ -2008,7 +2434,14 @@
           "keywords": [
             "halfling",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436281.png",
+              "size": 16
+            },
+            "portrait": "i/318616"
+          }
         },
         {
           "id": 66276,
@@ -2038,7 +2471,14 @@
           "keywords": [
             "blocker",
             "halfling"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/588601.png",
+              "size": 2
+            },
+            "portrait": "i/588602"
+          }
         },
         {
           "id": 66277,
@@ -2069,7 +2509,14 @@
           "keywords": [
             "catcher",
             "halfling"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/588599.png",
+              "size": 2
+            },
+            "portrait": "i/588600"
+          }
         },
         {
           "id": 66278,
@@ -2102,7 +2549,14 @@
           "keywords": [
             "big guy",
             "treeman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436282.png",
+              "size": 3
+            },
+            "portrait": "i/318615"
+          }
         }
       ]
     },
@@ -2123,6 +2577,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486289",
       "positions": [
         {
           "id": 66271,
@@ -2146,7 +2601,14 @@
           "keywords": [
             "elf",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585638.png",
+              "size": 8
+            },
+            "portrait": "i/318620"
+          }
         },
         {
           "id": 66272,
@@ -2175,7 +2637,14 @@
           "keywords": [
             "elf",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436284.png",
+              "size": 2
+            },
+            "portrait": "i/318619"
+          }
         },
         {
           "id": 66273,
@@ -2203,7 +2672,14 @@
           "keywords": [
             "blitzer",
             "elf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585639.png",
+              "size": 4
+            },
+            "portrait": "i/318618"
+          }
         },
         {
           "id": 66274,
@@ -2232,7 +2708,14 @@
             "blitzer",
             "elf",
             "runner"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436286.png",
+              "size": 2
+            },
+            "portrait": "i/318617"
+          }
         }
       ]
     },
@@ -2253,6 +2736,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486295",
       "positions": [
         {
           "id": 66265,
@@ -2277,7 +2761,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585640.png",
+              "size": 8
+            },
+            "portrait": "i/318821"
+          }
         },
         {
           "id": 66266,
@@ -2306,7 +2797,14 @@
           "keywords": [
             "human",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645274.png",
+              "size": 2
+            },
+            "portrait": "i/318820"
+          }
         },
         {
           "id": 66267,
@@ -2335,7 +2833,14 @@
           "keywords": [
             "catcher",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645253.png",
+              "size": 4
+            },
+            "portrait": "i/318834"
+          }
         },
         {
           "id": 66268,
@@ -2363,7 +2868,14 @@
           "keywords": [
             "blitzer",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645251.png",
+              "size": 4
+            },
+            "portrait": "i/318819"
+          }
         },
         {
           "id": 66269,
@@ -2392,7 +2904,14 @@
           "keywords": [
             "halfling",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673315.png",
+              "size": 2
+            },
+            "portrait": "i/673314"
+          }
         },
         {
           "id": 66270,
@@ -2422,7 +2941,14 @@
           "keywords": [
             "big guy",
             "ogre"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645254.png",
+              "size": 1
+            },
+            "portrait": "i/318818"
+          }
         }
       ]
     },
@@ -2443,6 +2969,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/673311",
       "positions": [
         {
           "id": 66260,
@@ -2468,7 +2995,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673321.png",
+              "size": 6
+            },
+            "portrait": "i/673320"
+          }
         },
         {
           "id": 66261,
@@ -2497,7 +3031,14 @@
           "keywords": [
             "human",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673323.png",
+              "size": 2
+            },
+            "portrait": "i/673322"
+          }
         },
         {
           "id": 66262,
@@ -2526,7 +3067,14 @@
           "keywords": [
             "blitzer",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673325.png",
+              "size": 2
+            },
+            "portrait": "i/673324"
+          }
         },
         {
           "id": 66263,
@@ -2553,7 +3101,14 @@
           "keywords": [
             "blocker",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/707560.png",
+              "size": 4
+            },
+            "portrait": "i/673326"
+          }
         },
         {
           "id": 66264,
@@ -2583,7 +3138,14 @@
           "keywords": [
             "big guy",
             "ogre"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/707559.png",
+              "size": 1
+            },
+            "portrait": "i/673328"
+          }
         }
       ]
     },
@@ -2604,6 +3166,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/681361",
       "positions": [
         {
           "id": 66256,
@@ -2631,7 +3194,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/682594.png",
+              "size": 7
+            },
+            "portrait": "i/682595"
+          }
         },
         {
           "id": 66257,
@@ -2663,7 +3233,14 @@
           "keywords": [
             "beastman",
             "runner"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/692163.png",
+              "size": 4
+            },
+            "portrait": "i/682596"
+          }
         },
         {
           "id": 66258,
@@ -2691,7 +3268,14 @@
           "keywords": [
             "blocker",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/692162.png",
+              "size": 4
+            },
+            "portrait": "i/682599"
+          }
         },
         {
           "id": 66259,
@@ -2722,7 +3306,14 @@
           "keywords": [
             "big guy",
             "spawn"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/682600.png",
+              "size": 1
+            },
+            "portrait": "i/682601"
+          }
         }
       ]
     },
@@ -2743,6 +3334,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486307",
       "positions": [
         {
           "id": 66252,
@@ -2771,7 +3363,14 @@
           "keywords": [
             "lineman",
             "lizardman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436296.png",
+              "size": 6
+            },
+            "portrait": "i/318627"
+          }
         },
         {
           "id": 66253,
@@ -2802,7 +3401,14 @@
           "keywords": [
             "lizardman",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/596628.png",
+              "size": 2
+            },
+            "portrait": "i/596649"
+          }
         },
         {
           "id": 66254,
@@ -2829,7 +3435,14 @@
           "keywords": [
             "blocker",
             "lizardman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436297.png",
+              "size": 6
+            },
+            "portrait": "i/318626"
+          }
         },
         {
           "id": 66255,
@@ -2859,7 +3472,14 @@
           "keywords": [
             "big guy",
             "lizardman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436298.png",
+              "size": 1
+            },
+            "portrait": "i/318625"
+          }
         }
       ]
     },
@@ -2880,6 +3500,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486313",
       "positions": [
         {
           "id": 66247,
@@ -2908,7 +3529,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/440138.png",
+              "size": 12
+            },
+            "portrait": "i/318632"
+          }
         },
         {
           "id": 66248,
@@ -2938,7 +3566,14 @@
             "ghoul",
             "runner",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436300.png",
+              "size": 2
+            },
+            "portrait": "i/318631"
+          }
         },
         {
           "id": 66249,
@@ -2969,7 +3604,14 @@
             "blocker",
             "undead",
             "wraith"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674123.png",
+              "size": 2
+            },
+            "portrait": "i/674122"
+          }
         },
         {
           "id": 66250,
@@ -3000,7 +3642,14 @@
             "blitzer",
             "undead",
             "werewolf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436303.png",
+              "size": 2
+            },
+            "portrait": "i/318628"
+          }
         },
         {
           "id": 66251,
@@ -3031,7 +3680,14 @@
             "blocker",
             "construct",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436302.png",
+              "size": 2
+            },
+            "portrait": "i/318629"
+          }
         }
       ]
     },
@@ -3052,6 +3708,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486319",
       "positions": [
         {
           "id": 66239,
@@ -3081,7 +3738,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585611.png",
+              "size": 10
+            },
+            "portrait": "i/318638"
+          }
         },
         {
           "id": 66242,
@@ -3110,7 +3774,14 @@
           "keywords": [
             "blitzer",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585614.png",
+              "size": 2
+            },
+            "portrait": "i/318635"
+          }
         },
         {
           "id": 66243,
@@ -3137,7 +3808,14 @@
           "keywords": [
             "blocker",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585615.png",
+              "size": 2
+            },
+            "portrait": "i/318634"
+          }
         },
         {
           "id": 66244,
@@ -3167,7 +3845,14 @@
           "keywords": [
             "big guy",
             "yhetee"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585616.png",
+              "size": 1
+            },
+            "portrait": "i/318633"
+          }
         },
         {
           "id": 66245,
@@ -3194,7 +3879,14 @@
           "keywords": [
             "animal",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/692133.png",
+              "size": 2
+            },
+            "portrait": "i/692134"
+          }
         },
         {
           "id": 66246,
@@ -3225,7 +3917,14 @@
             "catcher",
             "human",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/692135.png",
+              "size": 2
+            },
+            "portrait": "i/692160"
+          }
         }
       ]
     },
@@ -3246,6 +3945,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486325",
       "positions": [
         {
           "id": 66235,
@@ -3274,7 +3974,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436310.png",
+              "size": 6
+            },
+            "portrait": "i/318647"
+          }
         },
         {
           "id": 66236,
@@ -3307,7 +4014,14 @@
           "keywords": [
             "beastman",
             "runner"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436311.png",
+              "size": 4
+            },
+            "portrait": "i/318646"
+          }
         },
         {
           "id": 66237,
@@ -3340,7 +4054,14 @@
           "keywords": [
             "blocker",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436312.png",
+              "size": 4
+            },
+            "portrait": "i/318645"
+          }
         },
         {
           "id": 66238,
@@ -3375,7 +4096,14 @@
           "keywords": [
             "big guy",
             "spawn"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436313.png",
+              "size": 1
+            },
+            "portrait": "i/318678"
+          }
         }
       ]
     },
@@ -3396,6 +4124,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486331",
       "positions": [
         {
           "id": 66232,
@@ -3425,7 +4154,14 @@
           "keywords": [
             "gnoblar",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674134.png",
+              "size": 12
+            },
+            "portrait": "i/318649"
+          }
         },
         {
           "id": 66233,
@@ -3457,7 +4193,14 @@
             "big guy",
             "ogre",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674133.png",
+              "size": 1
+            },
+            "portrait": "i/605363"
+          }
         },
         {
           "id": 66234,
@@ -3489,7 +4232,14 @@
             "big guy",
             "blocker",
             "ogre"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/605358.png",
+              "size": 6
+            },
+            "portrait": "i/605359"
+          }
         }
       ]
     },
@@ -3510,6 +4260,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/637106",
       "positions": [
         {
           "id": 66221,
@@ -3533,7 +4284,14 @@
           "keywords": [
             "human",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645241.png",
+              "size": 6
+            },
+            "portrait": "i/674112"
+          }
         },
         {
           "id": 66222,
@@ -3561,7 +4319,14 @@
           "keywords": [
             "human",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645242.png",
+              "size": 1
+            },
+            "portrait": "i/674113"
+          }
         },
         {
           "id": 66223,
@@ -3589,7 +4354,14 @@
           "keywords": [
             "catcher",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645243.png",
+              "size": 1
+            },
+            "portrait": "i/674114"
+          }
         },
         {
           "id": 66224,
@@ -3616,7 +4388,14 @@
           "keywords": [
             "blitzer",
             "human"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645244.png",
+              "size": 1
+            },
+            "portrait": "i/674115"
+          }
         },
         {
           "id": 66225,
@@ -3644,7 +4423,14 @@
           "keywords": [
             "dwarf",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645245.png",
+              "size": 2
+            },
+            "portrait": "i/674116"
+          }
         },
         {
           "id": 66226,
@@ -3673,7 +4459,14 @@
           "keywords": [
             "dwarf",
             "runner"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645246.png",
+              "size": 1
+            },
+            "portrait": "i/674117"
+          }
         },
         {
           "id": 66227,
@@ -3702,7 +4495,14 @@
           "keywords": [
             "blitzer",
             "dwarf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645247.png",
+              "size": 1
+            },
+            "portrait": "i/674118"
+          }
         },
         {
           "id": 66228,
@@ -3732,7 +4532,14 @@
           "keywords": [
             "dwarf",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645248.png",
+              "size": 1
+            },
+            "portrait": "i/674119"
+          }
         },
         {
           "id": 66229,
@@ -3760,7 +4567,14 @@
           "keywords": [
             "halfling",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645249.png",
+              "size": 2
+            },
+            "portrait": "i/674120"
+          }
         },
         {
           "id": 66230,
@@ -3790,7 +4604,14 @@
           "keywords": [
             "big guy",
             "ogre"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/645250.png",
+              "size": 1
+            },
+            "portrait": "i/674121"
+          }
         },
         {
           "id": 66231,
@@ -3824,7 +4645,14 @@
           "keywords": [
             "big guy",
             "treeman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673336.png",
+              "size": 1
+            },
+            "portrait": "i/673335"
+          }
         }
       ]
     },
@@ -3845,6 +4673,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486337",
       "positions": [
         {
           "id": 66215,
@@ -3869,7 +4698,14 @@
           "keywords": [
             "lineman",
             "orc"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585649.png",
+              "size": 6
+            },
+            "portrait": "i/318826"
+          }
         },
         {
           "id": 66216,
@@ -3898,7 +4734,14 @@
           "keywords": [
             "orc",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585651.png",
+              "size": 2
+            },
+            "portrait": "i/318825"
+          }
         },
         {
           "id": 66217,
@@ -3926,7 +4769,14 @@
           "keywords": [
             "blitzer",
             "orc"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585652.png",
+              "size": 4
+            },
+            "portrait": "i/318824"
+          }
         },
         {
           "id": 66218,
@@ -3956,7 +4806,14 @@
           "keywords": [
             "blocker",
             "orc"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674110.png",
+              "size": 4
+            },
+            "portrait": "i/674109"
+          }
         },
         {
           "id": 66219,
@@ -3986,7 +4843,14 @@
           "keywords": [
             "goblin",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585650.png",
+              "size": 4
+            },
+            "portrait": "i/318827"
+          }
         },
         {
           "id": 66220,
@@ -4019,7 +4883,14 @@
           "keywords": [
             "big guy",
             "troll"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585653.png",
+              "size": 1
+            },
+            "portrait": "i/318822"
+          }
         }
       ]
     },
@@ -4040,6 +4911,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486349",
       "positions": [
         {
           "id": 66210,
@@ -4069,7 +4941,14 @@
             "lineman",
             "skeleton",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436327.png",
+              "size": 3
+            },
+            "portrait": "i/318662"
+          }
         },
         {
           "id": 66211,
@@ -4100,7 +4979,14 @@
             "lineman",
             "undead",
             "zombie"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/440137.png",
+              "size": 12
+            },
+            "portrait": "i/318663"
+          }
         },
         {
           "id": 66212,
@@ -4130,7 +5016,14 @@
             "ghoul",
             "runner",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436329.png",
+              "size": 4
+            },
+            "portrait": "i/318661"
+          }
         },
         {
           "id": 66213,
@@ -4162,7 +5055,14 @@
             "human",
             "skeleton",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436330.png",
+              "size": 2
+            },
+            "portrait": "i/318660"
+          }
         },
         {
           "id": 66214,
@@ -4191,7 +5091,14 @@
             "blocker",
             "human",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436331.png",
+              "size": 2
+            },
+            "portrait": "i/318659"
+          }
         }
       ]
     },
@@ -4212,6 +5119,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486343",
       "positions": [
         {
           "id": 66205,
@@ -4237,7 +5145,14 @@
           "keywords": [
             "lineman",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585625.png",
+              "size": 9
+            },
+            "portrait": "i/318654"
+          }
         },
         {
           "id": 66206,
@@ -4267,7 +5182,14 @@
           "keywords": [
             "skaven",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585626.png",
+              "size": 2
+            },
+            "portrait": "i/318653"
+          }
         },
         {
           "id": 66207,
@@ -4296,7 +5218,14 @@
           "keywords": [
             "runner",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436324.png",
+              "size": 4
+            },
+            "portrait": "i/318652"
+          }
         },
         {
           "id": 66208,
@@ -4325,7 +5254,14 @@
           "keywords": [
             "blitzer",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436325.png",
+              "size": 2
+            },
+            "portrait": "i/318651"
+          }
         },
         {
           "id": 66209,
@@ -4356,7 +5292,14 @@
           "keywords": [
             "big guy",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436326.png",
+              "size": 1
+            },
+            "portrait": "i/318650"
+          }
         }
       ]
     },
@@ -4377,6 +5320,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/643386",
       "positions": [
         {
           "id": 66199,
@@ -4407,7 +5351,14 @@
           "keywords": [
             "lineman",
             "snotling"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/643392.png",
+              "size": 12
+            },
+            "portrait": "i/643472"
+          }
         },
         {
           "id": 66200,
@@ -4440,7 +5391,14 @@
           "keywords": [
             "snotling",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/643393.png",
+              "size": 2
+            },
+            "portrait": "i/643471"
+          }
         },
         {
           "id": 66201,
@@ -4470,7 +5428,14 @@
           "keywords": [
             "snotling",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/643395.png",
+              "size": 2
+            },
+            "portrait": "i/643473"
+          }
         },
         {
           "id": 66202,
@@ -4500,7 +5465,14 @@
           "keywords": [
             "runner",
             "snotling"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/643396.png",
+              "size": 2
+            },
+            "portrait": "i/643469"
+          }
         },
         {
           "id": 66203,
@@ -4532,7 +5504,14 @@
             "big guy",
             "snotling",
             "special"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674135.png",
+              "size": 2
+            },
+            "portrait": "i/643468"
+          }
         },
         {
           "id": 66204,
@@ -4564,7 +5543,14 @@
           "keywords": [
             "big guy",
             "troll"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/643466.png",
+              "size": 2
+            },
+            "portrait": "i/643467"
+          }
         }
       ]
     },
@@ -4585,6 +5571,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486301",
       "positions": [
         {
           "id": 66195,
@@ -4614,7 +5601,14 @@
             "lineman",
             "skeleton",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585607.png",
+              "size": 8
+            },
+            "portrait": "i/318624"
+          }
         },
         {
           "id": 66196,
@@ -4647,7 +5641,14 @@
             "skeleton",
             "thrower",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585608.png",
+              "size": 2
+            },
+            "portrait": "i/318623"
+          }
         },
         {
           "id": 66197,
@@ -4678,7 +5679,14 @@
             "human",
             "skeleton",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585609.png",
+              "size": 2
+            },
+            "portrait": "i/318622"
+          }
         },
         {
           "id": 66198,
@@ -4708,7 +5716,14 @@
             "blocker",
             "human",
             "undead"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585610.png",
+              "size": 4
+            },
+            "portrait": "i/318621"
+          }
         }
       ]
     },
@@ -4729,6 +5744,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/603379",
       "positions": [
         {
           "id": 66187,
@@ -4759,7 +5775,14 @@
           "keywords": [
             "goblin",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585622.png",
+              "size": 10
+            },
+            "portrait": "i/318668"
+          }
         },
         {
           "id": 66188,
@@ -4791,7 +5814,14 @@
           "keywords": [
             "lineman",
             "snotling"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673331.png",
+              "size": 6
+            },
+            "portrait": "i/673330"
+          }
         },
         {
           "id": 66189,
@@ -4819,7 +5849,14 @@
           "keywords": [
             "lineman",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585623.png",
+              "size": 2
+            },
+            "portrait": "i/318667"
+          }
         },
         {
           "id": 66190,
@@ -4850,7 +5887,14 @@
           "keywords": [
             "skaven",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585624.png",
+              "size": 2
+            },
+            "portrait": "i/318666"
+          }
         },
         {
           "id": 66191,
@@ -4880,7 +5924,14 @@
           "keywords": [
             "runner",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/634872.png",
+              "size": 4
+            },
+            "portrait": "i/674111"
+          }
         },
         {
           "id": 66192,
@@ -4910,7 +5961,14 @@
           "keywords": [
             "blitzer",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436353.png",
+              "size": 2
+            },
+            "portrait": "i/318665"
+          }
         },
         {
           "id": 66193,
@@ -4944,7 +6002,14 @@
           "keywords": [
             "big guy",
             "troll"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/436354.png",
+              "size": 1
+            },
+            "portrait": "i/318664"
+          }
         },
         {
           "id": 66194,
@@ -4975,7 +6040,14 @@
           "keywords": [
             "big guy",
             "skaven"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673333.png",
+              "size": 1
+            },
+            "portrait": "i/673332"
+          }
         }
       ]
     },
@@ -4998,6 +6070,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486355",
       "positions": [
         {
           "id": 66181,
@@ -5022,7 +6095,14 @@
             "human",
             "lineman",
             "thrall"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585630.png",
+              "size": 10
+            },
+            "portrait": "i/318670"
+          }
         },
         {
           "id": 66183,
@@ -5052,7 +6132,14 @@
             "runner",
             "undead",
             "vampire"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/719285.png",
+              "size": 2
+            },
+            "portrait": "i/719286"
+          }
         },
         {
           "id": 66184,
@@ -5083,7 +6170,14 @@
             "thrower",
             "undead",
             "vampire"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/719288.png",
+              "size": 2
+            },
+            "portrait": "i/719287"
+          }
         },
         {
           "id": 66185,
@@ -5112,7 +6206,14 @@
             "blitzer",
             "undead",
             "vampire"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/719289.png",
+              "size": 4
+            },
+            "portrait": "i/719290"
+          }
         },
         {
           "id": 66186,
@@ -5143,7 +6244,14 @@
             "big guy",
             "undead",
             "vampire"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/719292.png",
+              "size": 1
+            },
+            "portrait": "i/719291"
+          }
         }
       ]
     },
@@ -5164,6 +6272,7 @@
         "Grak",
         "Morg 'n' Thorg"
       ],
+      "logo": "i/486361",
       "positions": [
         {
           "id": 66176,
@@ -5187,7 +6296,14 @@
           "keywords": [
             "elf",
             "lineman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585618.png",
+              "size": 9
+            },
+            "portrait": "i/318675"
+          }
         },
         {
           "id": 66177,
@@ -5215,7 +6331,14 @@
           "keywords": [
             "elf",
             "thrower"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/674136.png",
+              "size": 2
+            },
+            "portrait": "i/318674"
+          }
         },
         {
           "id": 66178,
@@ -5244,7 +6367,14 @@
           "keywords": [
             "catcher",
             "elf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585619.png",
+              "size": 4
+            },
+            "portrait": "i/318673"
+          }
         },
         {
           "id": 66179,
@@ -5273,7 +6403,14 @@
           "keywords": [
             "blitzer",
             "elf"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/585621.png",
+              "size": 2
+            },
+            "portrait": "i/318672"
+          }
         },
         {
           "id": 66180,
@@ -5306,7 +6443,14 @@
           "keywords": [
             "big guy",
             "treeman"
-          ]
+          ],
+          "artwork": {
+            "sprites": {
+              "path": "i/673334.png",
+              "size": 1
+            },
+            "portrait": "i/318671"
+          }
         }
       ]
     }
@@ -5337,7 +6481,14 @@
       "keywords": [
         "blitzer",
         "squirrel"
-      ]
+      ],
+      "artwork": {
+        "sprites": {
+          "path": "i/682638.png",
+          "size": 1
+        },
+        "portrait": "i/682637"
+      }
     },
     {
       "id": 65792,
@@ -5361,7 +6512,14 @@
         "halfling",
         "lineman"
       ],
-      "partner": "Grak"
+      "partner": "Grak",
+      "artwork": {
+        "sprites": {
+          "path": "i/674106.gif",
+          "size": 1
+        },
+        "portrait": "i/674107"
+      }
     },
     {
       "id": 65791,
@@ -5384,7 +6542,14 @@
         "big guy",
         "ogre"
       ],
-      "partner": "Crumbleberry"
+      "partner": "Crumbleberry",
+      "artwork": {
+        "sprites": {
+          "path": "i/674105.gif",
+          "size": 1
+        },
+        "portrait": "i/674104"
+      }
     },
     {
       "id": 65801,
@@ -5408,7 +6573,14 @@
       "keywords": [
         "big guy",
         "ogre"
-      ]
+      ],
+      "artwork": {
+        "sprites": {
+          "path": "i/674075.png",
+          "size": 1
+        },
+        "portrait": "i/674074"
+      }
     }
   ]
 }

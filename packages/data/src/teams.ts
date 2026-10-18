@@ -9,6 +9,9 @@ export const rosters: Roster[] = RosterSchema.array().parse(rosterData.rosters);
 /** BB2025 star players, fetched from FUMBBL; each roster lists those it may hire (`Roster.stars`). */
 export const starPlayers: StarPlayer[] = StarPlayerSchema.array().parse(rosterData.starPlayers);
 
+/** FUMBBL's image server, which the artwork paths of rosters and star players are relative to (images not included). */
+export const artworkBase: string = rosterData.artworkBase;
+
 /** Bundled example teams, keyed by name, e.g. "human". */
 export const exampleTeams: Record<string, TeamFile> = Object.fromEntries(
   Object.entries(teamData).map(([key, value]) => [key, TeamFileSchema.parse(value)]),

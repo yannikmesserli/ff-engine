@@ -16,6 +16,7 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 |---|---|
 | `rosters` | The 30 BB2025 rosters from FUMBBL ruleset 2014 (`src/generated/rosters.json`); `stars` names the star players each may hire. |
 | `starPlayers` | The BB2025 star players from the same rosters: characteristics, skills and special rules, cost, and the partner a pair is hired with. |
+| `artworkBase` | FUMBBL's image server. Rosters have a `logo` path, positions and star players an `artwork` (`sprites` sheet with its `size`, `portrait`): paths only, the images are not included. |
 | `exampleTeams` | 13 example teams (`src/teams.json`), keyed by name (`"human"`, `"wood-elf"`...). |
 | `formations` | Setups in a text format (`src/formations.json`: `def_boat`, `def_spread`, `def_zone`, `off_line`, `off_wedge`). |
 | `formationActions(state, side, formation)` | `PLACE_PLAYER` actions that clear a side's half and set up a formation. |

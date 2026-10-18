@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { BloodBowlGame } from "@bb/board-ui";
+import { BloodBowlGame, useDownloadedArtwork } from "@bb/board-ui";
 import type { Action, Side } from "@bb/engine";
 import { exampleTeams } from "@bb/data";
 import type { ServerMessage } from "relay/protocol";
 import { TeamPicker, teamError } from "./TeamPicker";
+import { ARTWORK_URL } from "./artwork";
 
 /** What the players send each other through the relay. */
 type Payload =
@@ -58,6 +59,7 @@ const inviteUrl = (gameId: string) => `${location.origin}${location.pathname}?ga
  * page ends the game.
  */
 export function OnlineGame({ gameId }: { gameId: string }) {
+  const artwork = useDownloadedArtwork(ARTWORK_URL);
   const [team, setTeam] = useState<unknown>(exampleTeams["human"]);
   const [ready, setReady] = useState<Partial<Record<Side, unknown>>>({});
   const [seed, setSeed] = useState<number | null>(null);
@@ -103,6 +105,7 @@ export function OnlineGame({ gameId }: { gameId: string }) {
         seed={seed}
         shop={shop}
         assetsUrl="/img"
+        artwork={artwork}
         online={{ side, actions: batches, send: (actions) => relay.send({ kind: "actions", actions }) }}
       />
     );

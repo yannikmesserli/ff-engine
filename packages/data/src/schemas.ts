@@ -103,6 +103,19 @@ export type TeamFileInput = z.input<typeof TeamFileSchema>;
 export type TeamPlayer = z.infer<typeof TeamPlayerSchema>;
 
 /** BB2025 roster as published by FUMBBL (see scripts/fetch-rosters.ts). */
+/**
+ * FUMBBL's artwork for a position or star player, as paths on FUMBBL's image server (`ARTWORK_BASE`); the images are
+ * not part of this package. `sprites`: a sheet of square sprites, four columns (home, home moving, away, away moving)
+ * and `size` rows, one look per row. `portrait`: a picture of the position.
+ */
+export const ArtworkSchema = z.object({
+  sprites: z.object({ path: z.string(), size: z.number() }).optional(),
+  portrait: z.string().optional(),
+});
+
+/** FUMBBL artwork paths for a position or star player (see ArtworkSchema). */
+export type Artwork = z.infer<typeof ArtworkSchema>;
+
 export const RosterSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -116,6 +129,8 @@ export const RosterSchema = z.object({
   keywords: z.array(z.string()),
   /** Names of the star players the roster may hire (see StarPlayerSchema). */
   stars: z.array(z.string()),
+  /** FUMBBL's team logo, as a path on its image server (see ArtworkSchema). */
+  logo: z.string().optional(),
   positions: z.array(
     z.object({
       id: z.number(),
@@ -135,6 +150,7 @@ export const RosterSchema = z.object({
       normal: z.array(z.string()),
       double: z.array(z.string()),
       keywords: z.array(z.string()),
+      artwork: ArtworkSchema.optional(),
     }),
   ),
 });
@@ -157,6 +173,7 @@ export const StarPlayerSchema = z.object({
   keywords: z.array(z.string()),
   /** A star hired together with this one (Grak and Crumbleberry), as one star player. */
   partner: z.string().optional(),
+  artwork: ArtworkSchema.optional(),
 });
 
 /** A BB2025 star player. */

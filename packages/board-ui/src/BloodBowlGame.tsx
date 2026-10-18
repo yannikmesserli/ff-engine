@@ -22,7 +22,7 @@ import { ActionPanel } from "./ActionPanel";
 import { Board, type ActionMenuState, type Aiming } from "./Board";
 import { DiceRolls } from "./Dice";
 import { WEATHER_NAMES, casualtyName, describeEvent } from "./describe";
-import { teamLogo } from "./icons";
+import type { BoardArtwork } from "./artwork";
 import "./styles.css";
 
 /** Props of {@link BloodBowlGame}. */
@@ -32,6 +32,8 @@ export interface BloodBowlGameProps {
   away: unknown;
   /** Base URL of the image folder (layout in packages/board-ui/README.md). */
   assetsUrl?: string;
+  /** Player sprites and team logos (see `BoardArtwork`); none by default: numbered discs, no logos. */
+  artwork?: BoardArtwork;
   /** RNG seed, to replay the same dice. Random when omitted. */
   seed?: number;
   /** A draw after the second half goes to overtime (a third half). Off by default. */
@@ -66,7 +68,7 @@ const AUTO_ROLL_DELAY_MS = 350;
 const NO_ACTIONS: readonly Action[] = [];
 
 /** A complete hot-seat Blood Bowl game between two teams; restarts when the teams, `seed`, the game options or `actions` change. */
-export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, overtime = false, shop = false, actions = NO_ACTIONS, onChange, online }: BloodBowlGameProps) {
+export function BloodBowlGame({ home, away, assetsUrl = "/img", artwork, seed, overtime = false, shop = false, actions = NO_ACTIONS, onChange, online }: BloodBowlGameProps) {
   const initial = useMemo(() => {
     try {
       return { state: applyActions(createGame(resolveTeam(home), resolveTeam(away), { seed, overtime, shop }), actions) };
@@ -76,7 +78,7 @@ export function BloodBowlGame({ home, away, assetsUrl = "/img", seed, overtime =
   }, [home, away, seed, overtime, shop, actions]);
   if ("error" in initial) return <div className="bb-game bb-error">{initial.error}</div>;
   return (
-    <Game key={JSON.stringify([home, away, seed, overtime, shop, actions])} initial={initial.state} teams={{ home, away }} assets={assetsUrl} onChange={onChange} online={online} />
+    <Game key={JSON.stringify([home, away, seed, overtime, shop, actions])} initial={initial.state} teams={{ home, away }} assets={assetsUrl} artwork={artwork} onChange={onChange} online={online} />
   );
 }
 
@@ -104,8 +106,8 @@ function useReplay(initial: GameState, batches: Action[][] | undefined): GameSta
 }
 
 /** The game screen: owns the state history (for undo) and the board's interaction state. */
-function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets: string; onChange?(s: GameState): void; online?: OnlineControl }) {
-  const { initial, assets, onChange, online } = props;
+function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets: string; artwork?: BoardArtwork | undefined; onChange?(s: GameState): void; online?: OnlineControl }) {
+  const { initial, assets, artwork, onChange, online } = props;
   const [history, setHistory] = useState<GameState[]>([initial]);
   const [error, setError] = useState<string | null>(null);
   const [autoRoll, setAutoRoll] = useState(false);
@@ -177,11 +179,12 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
 
   return (
     <div className="bb-game">
-      <Scoreboard state={state} assets={assets} />
+      <Scoreboard state={state} artwork={artwork} />
       <Board
         state={state}
         templates={templates}
         assets={assets}
+        artwork={artwork}
         dispatch={dispatch}
         onHover={setHovered}
         onInspect={setPinned}
@@ -220,10 +223,10 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
 }
 
 /** Both teams (logo, turn, re-rolls) around the score, half and weather. */
-function Scoreboard({ state, assets }: { state: GameState; assets: string }) {
+function Scoreboard({ state, artwork }: { state: GameState; artwork?: BoardArtwork | undefined }) {
   return (
     <div className="bb-scoreboard">
-      <TeamBanner state={state} side="home" assets={assets} />
+      <TeamBanner state={state} side="home" artwork={artwork} />
       <div className="bb-score">
         <div>
           {state.teams.home.score} – {state.teams.away.score}
@@ -232,16 +235,17 @@ function Scoreboard({ state, assets }: { state: GameState; assets: string }) {
           {state.half === 3 ? "Overtime" : `Half ${state.half}`} · {WEATHER_NAMES[state.weather]}
         </div>
       </div>
-      <TeamBanner state={state} side="away" assets={assets} />
+      <TeamBanner state={state} side="away" artwork={artwork} />
     </div>
   );
 }
 
-function TeamBanner({ state, side, assets }: { state: GameState; side: Side; assets: string }) {
+function TeamBanner({ state, side, artwork }: { state: GameState; side: Side; artwork?: BoardArtwork | undefined }) {
   const t = state.teams[side];
+  const logo = artwork?.logo(t.roster);
   return (
     <div className={`bb-team bb-side-${side}${state.activeSide === side ? " bb-acting" : ""}`}>
-      <img src={teamLogo(assets, t.roster)} alt="" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
+      {logo ? <img src={logo} alt="" onError={(e) => (e.currentTarget.style.visibility = "hidden")} /> : <span className="bb-no-logo" />}
       <div>
         <div className="bb-team-name">{t.name}</div>
         <div className="bb-team-info">

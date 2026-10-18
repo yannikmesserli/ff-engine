@@ -24,7 +24,7 @@ import {
   type Square,
 } from "@bb/engine";
 import { ACTION_NAMES, PASS_RANGE_NAMES } from "./describe";
-import { playerIcon } from "./icons";
+import { spriteStyle, type BoardArtwork } from "./artwork";
 import { findTemplate, multipleBlockFirst } from "./templates";
 
 /** Square size in pixels (keep in sync with --bb-square in styles.css). */
@@ -50,6 +50,7 @@ interface BoardProps {
   templates: ActionTemplate[];
   /** Base URL of the image folder. */
   assets: string;
+  artwork?: BoardArtwork | undefined;
   dispatch(action: Action): void;
   /** Called with the hovered player, or null when the pointer leaves it. */
   onHover(playerId: string | null): void;
@@ -82,7 +83,7 @@ const squareId = (s: Square) => `sq-${s.x}-${s.y}`;
 const at = (s: Square) => ({ left: s.x * SQUARE_SIZE, top: s.y * SQUARE_SIZE });
 
 /** The pitch between both dugouts: renders the board templates and turns clicks and drags into actions. */
-export function Board({ state, templates, assets, dispatch, onHover, onInspect, picked, setPicked, menu, setMenu, aiming }: BoardProps) {
+export function Board({ state, templates, assets, artwork, dispatch, onHover, onInspect, picked, setPicked, menu, setMenu, aiming }: BoardProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const placement = findTemplate(templates, "PLACE_PLAYER");
   const ballTarget = findTemplate(templates, "PLACE_BALL");
@@ -215,6 +216,7 @@ export function Board({ state, templates, assets, dispatch, onHover, onInspect, 
       player={p}
       roster={state.teams[p.side].roster}
       assets={assets}
+      artwork={artwork}
       // The acting player, or the one moving out of their turn (On the Ball, Hit and Run).
       active={state.activePlayerId === p.id || move?.playerId === p.id || picked.includes(p.id)}
       draggable={draggable.has(p.id)}
@@ -363,7 +365,8 @@ function PlayerToken(props: {
   player: PlayerState;
   roster: string;
   assets: string;
-  /** Acting or picked: highlighted with the animated sprite. */
+  artwork?: BoardArtwork | undefined;
+  /** Acting or picked: highlighted with the moving sprite. */
   active: boolean;
   draggable: boolean;
   selectable: boolean;
@@ -381,7 +384,7 @@ function PlayerToken(props: {
     id: player.id,
     disabled: !props.draggable,
   });
-  const icon = playerIcon(assets, props.roster, player, props.active);
+  const sheet = props.artwork?.sprites(props.roster, player);
   const classes = ["bb-player", `bb-${player.side}`, `bb-${player.status}`];
   if (props.active) classes.push("bb-active");
   if (props.selectable) classes.push("bb-selectable");
@@ -403,7 +406,7 @@ function PlayerToken(props: {
       // dnd-kit marks disabled draggables aria-disabled, which would hide clickable tokens from assistive tech.
       {...(props.draggable ? { ...listeners, ...attributes } : props.selectable ? { role: "button", tabIndex: 0 } : {})}
     >
-      {icon ? <img src={icon} alt="" draggable={false} /> : <span className="bb-player-fallback">{player.nr}</span>}
+      {sheet ? <span className="bb-sprite" style={spriteStyle(sheet, player, props.active)} /> : <span className="bb-player-fallback">{player.nr}</span>}
       {player.status !== "standing" && (
         <img className="bb-status" src={`${assets}/player_status/${player.status}.gif`} alt={player.status} draggable={false} />
       )}

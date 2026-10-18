@@ -30,7 +30,7 @@
 /* Scoreboard */
 .bb-scoreboard { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .bb-team { display: flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 6px; border-bottom: 3px solid transparent; }
-.bb-team img { width: 48px; height: 48px; object-fit: contain; }
+.bb-team img, .bb-no-logo { width: 48px; height: 48px; object-fit: contain; flex: none; }
 .bb-team.bb-side-home { border-color: var(--bb-home); }
 .bb-team.bb-side-away { flex-direction: row-reverse; text-align: right; border-color: var(--bb-away); }
 .bb-team.bb-acting { background: #2b2f35; }
@@ -104,7 +104,7 @@
   position: relative; width: var(--bb-square); height: var(--bb-square);
   display: flex; align-items: center; justify-content: center; z-index: 2; touch-action: none;
 }
-.bb-player > img:first-child { width: 28px; height: 28px; }
+.bb-sprite { width: 28px; height: 28px; background-repeat: no-repeat; image-rendering: pixelated; }
 .bb-player.bb-draggable { cursor: grab; }
 .bb-player.bb-dragging { z-index: 10; cursor: grabbing; opacity: 0.85; }
 .bb-player.bb-selectable { cursor: pointer; }
@@ -135,9 +135,9 @@
 .bb-block-dice button { padding: 2px; }
 .bb-player.bb-used { filter: grayscale(0.8) brightness(0.8); }
 .bb-player.bb-distracted { opacity: 0.6; outline: 2px dashed #c9a227; outline-offset: -2px; }
-.bb-player.bb-frog > img:first-child { filter: hue-rotate(90deg) saturate(1.5); transform: scale(0.75); }
+.bb-player.bb-frog > .bb-sprite { filter: hue-rotate(90deg) saturate(1.5); transform: scale(0.75); }
 .bb-frog-badge { position: absolute; right: -2px; top: -4px; font-size: 11px; pointer-events: none; }
-.bb-player.bb-prone > img:first-child, .bb-player.bb-stunned > img:first-child { opacity: 0.6; }
+.bb-player.bb-prone > .bb-sprite, .bb-player.bb-stunned > .bb-sprite { opacity: 0.6; }
 .bb-status { position: absolute; left: 0; bottom: 0; width: 14px; height: 14px; }
 .bb-held-ball { position: absolute; right: -2px; bottom: -2px; width: 14px; height: 14px; }
 .bb-player-fallback {

@@ -9,6 +9,7 @@ pnpm scenarios    # prepared positions to try a rule in the browser, on http://l
 pnpm test         # engine + data tests (incl. full random games)
 pnpm typecheck
 pnpm fetch-rosters    # download the BB2025 rosters from FUMBBL (ruleset 2014) into packages/data/src/generated
+pnpm fetch-artwork    # for testing only: FUMBBL's player sprites and team logos (not ours: never commit them)
 ```
 
 ## Packages
@@ -560,5 +561,8 @@ Conventions: home on the left (scores at x=25), d8 directions clockwise from nor
 
 ## Assets
 
-Board graphics are not included. The playground serves `apps/playground/public/` (git-ignored), which must contain
-an `img/` folder; see `packages/board-ui/README.md` for the expected layout.
+Board graphics are not included, and no image may be committed (`.gitignore` refuses image files). The playground
+serves `apps/playground/public/` (git-ignored), which must contain an `img/` folder for the pitch, dice, ball and
+status overlays; see `packages/board-ui/README.md` for the expected layout. To test with player sprites and team
+logos, `pnpm fetch-artwork` downloads FUMBBL's into `apps/playground/public/fumbbl/`. FUMBBL's artwork is not part of this project and does not belong to its authors: the download is for testing the
+engine only. Do not commit, publish or ship it, and ask FUMBBL (https://fumbbl.com) for any other use.

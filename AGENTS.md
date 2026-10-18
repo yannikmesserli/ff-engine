@@ -29,6 +29,8 @@ Run `pnpm typecheck && pnpm test` before reporting any change as done.
 - Describe rules in game terms in comments and docs (what is rolled, modifiers, who chooses). Don't cite other Blood
   Bowl implementations or their class names.
 - Rosters come from FUMBBL's BB2025 ruleset (`pnpm fetch-rosters`, network).
+- Never commit an image. Graphics are not part of this project: FUMBBL's player sprites and team logos are only
+  downloaded for testing (`pnpm fetch-artwork`, into the git-ignored `apps/playground/public/fumbbl/`).
 
 ## Engine conventions
 

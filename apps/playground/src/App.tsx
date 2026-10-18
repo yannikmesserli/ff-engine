@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { BloodBowlGame } from "@bb/board-ui";
+import { BloodBowlGame, useDownloadedArtwork } from "@bb/board-ui";
 import type { GameState } from "@bb/engine";
 import { exampleTeams } from "@bb/data";
 import { GAME_ID } from "relay/protocol";
 import { OnlineGame, newGameId } from "./Online";
 import { TeamPicker } from "./TeamPicker";
+import { ARTWORK_URL } from "./artwork";
 
 const PARAMS = new URLSearchParams(location.search);
 
@@ -49,6 +50,7 @@ export function App() {
  * disabled while a game is in progress (undoing back to the first roll enables them again).
  */
 function LocalGame() {
+  const artwork = useDownloadedArtwork(ARTWORK_URL);
   const [home, setHome] = useState<unknown>(exampleTeams["human"]);
   const [away, setAway] = useState<unknown>(exampleTeams["orc"]);
   const [gameId, setGameId] = useState(0);
@@ -83,6 +85,7 @@ function LocalGame() {
         home={home}
         away={away}
         assetsUrl="/img"
+        artwork={artwork}
         seed={gameId === 0 ? SEED : undefined}
         overtime={overtime}
         shop={shop}

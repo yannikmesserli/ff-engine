@@ -33,6 +33,11 @@ ends; undoing back to the start enables them again).
 
 ## Assets
 
-Graphics are not included. Vite serves `public/` (git-ignored) at the site root, and the component loads its images
-from `/img/...`, so put them in `public/img/` (layout in `packages/board-ui/README.md`). A symlink to an existing
-image folder works.
+Graphics are not included, and no image may be committed (`.gitignore` refuses image files). Vite serves `public/`
+(git-ignored) at the site root, for this app and the scenarios app.
+
+- Player sprites and team logos: `pnpm fetch-artwork` (`scripts/fetch-artwork.ts`) downloads FUMBBL's into
+  `public/fumbbl/`, with a `manifest.json` the apps read (`useDownloadedArtwork("/fumbbl")`). Without them, players
+  are numbered discs and teams have no logo. FUMBBL's artwork is not part of this project and does not belong to its authors: the download is for testing the engine only. Do not commit, publish or ship it, and ask FUMBBL (https://fumbbl.com) for any other use.
+- The pitch, dice, ball and status overlays: loaded from `/img/...`, so put them in `public/img/` (layout in
+  `packages/board-ui/README.md`). A symlink to an existing image folder works.

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BloodBowlGame } from "@bb/board-ui";
+import { BloodBowlGame, useDownloadedArtwork } from "@bb/board-ui";
 import { SCENARIOS } from "./scenarios";
 
 /** `?scenario=<id>` opens that scenario; the first one otherwise. */
@@ -7,6 +7,8 @@ const initialId = () => new URLSearchParams(location.search).get("scenario") ?? 
 
 /** A scenario picker, its instructions, and the game starting from the scenario's position. */
 export function App() {
+  // FUMBBL's artwork, if downloaded for testing (`pnpm fetch-artwork`, shared with the playground).
+  const artwork = useDownloadedArtwork("/fumbbl");
   const [id, setId] = useState(initialId);
   // Bumped by "Restart" to start the scenario over.
   const [run, setRun] = useState(0);
@@ -32,7 +34,7 @@ export function App() {
           <li key={line}>{line}</li>
         ))}
       </ol>
-      <BloodBowlGame key={`${scenario.id}-${run}`} home={scenario.home} away={scenario.away} seed={scenario.seed} shop={scenario.shop} actions={scenario.actions} />
+      <BloodBowlGame key={`${scenario.id}-${run}`} artwork={artwork} home={scenario.home} away={scenario.away} seed={scenario.seed} shop={scenario.shop} actions={scenario.actions} />
     </main>
   );
 }

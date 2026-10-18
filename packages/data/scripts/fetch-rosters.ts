@@ -8,7 +8,7 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { XMLParser } from "fast-xml-parser";
-import { RosterSchema, StarPlayerSchema, type Roster, type StarPlayer } from "../src/schemas";
+import { RosterSchema, StarPlayerSchema, type Artwork, type Roster, type StarPlayer } from "../src/schemas";
 
 /** FUMBBL ruleset holding the BB2025 rosters. */
 const RULESET_ID = 2014;
@@ -42,6 +42,9 @@ interface RosterXml {
   necromancer: Xml;
   maxBigGuys?: Xml;
   keywords?: { keyword?: Xml[] };
+  logo?: Xml;
+  /** The image server the artwork paths are relative to. */
+  baseIconPath?: Xml;
   position?: PositionXml[];
 }
 
@@ -61,6 +64,18 @@ interface PositionXml {
   skillList?: { skill?: Xml[] };
   skillCategoryList?: { normal?: Xml[]; double?: Xml[] };
   keywords?: { keyword?: Xml[] };
+  portrait?: Xml;
+  /** The sprite sheet: its path as text, the number of rows in `size`. */
+  iconSet?: Xml;
+}
+
+/** Paths of FUMBBL's artwork for a position or star player (only the paths: the images stay on FUMBBL). */
+function artwork(p: PositionXml): Artwork | undefined {
+  const sprites = text(p.iconSet);
+  const size = typeof p.iconSet === "object" && !Array.isArray(p.iconSet) ? Number(text(p.iconSet.size)) || 1 : 1;
+  const portrait = text(p.portrait);
+  if (!sprites && !portrait) return undefined;
+  return { ...(sprites ? { sprites: { path: sprites, size } } : {}), ...(portrait ? { portrait } : {}) };
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -124,11 +139,16 @@ function convertStar(p: PositionXml, positions: PositionXml[]): StarPlayer {
     skills: skillList(p),
     keywords: (p.keywords?.keyword ?? []).map(text),
     ...(partner ? { partner: text(partner.name) } : {}),
+    ...(artwork(p) ? { artwork: artwork(p) } : {}),
   };
 }
 
+/** The image server of FUMBBL's artwork, from the roster documents. */
+let artworkBase = "";
+
 function convertRoster(xml: string, tier: number): Roster {
   const r = (parser.parse(xml) as { roster: RosterXml }).roster;
+  artworkBase ||= text(r.baseIconPath);
   const name = text(r.name);
   const stars = (r.position ?? []).filter((p) => text(p.type) === "Star");
   for (const star of stars) starPlayers.set(Number(star.id), convertStar(star, r.position ?? []));
@@ -144,6 +164,7 @@ function convertRoster(xml: string, tier: number): Roster {
     maxBigGuys: Number(text(r.maxBigGuys) || 0),
     keywords: (r.keywords?.keyword ?? []).map(text),
     stars: stars.map((p) => text(p.name)).sort(),
+    ...(text(r.logo) ? { logo: text(r.logo) } : {}),
     positions: (r.position ?? [])
       .filter((p) => text(p.type) !== "Star")
       .map((p) => {
@@ -163,6 +184,7 @@ function convertRoster(xml: string, tier: number): Roster {
           normal: (p.skillCategoryList?.normal ?? []).map(category),
           double: (p.skillCategoryList?.double ?? []).map(category),
           keywords: (p.keywords?.keyword ?? []).map(text),
+          ...(artwork(p) ? { artwork: artwork(p) } : {}),
         };
       }),
   };
@@ -180,5 +202,5 @@ rosters.sort((a, b) => a.name.localeCompare(b.name));
 RosterSchema.array().parse(rosters);
 const stars = [...starPlayers.values()].sort((a, b) => a.name.localeCompare(b.name));
 StarPlayerSchema.array().parse(stars);
-writeFileSync(OUT, JSON.stringify({ source: `${FUMBBL}/api/ruleset/get/${RULESET_ID}`, rosters, starPlayers: stars }, null, 2) + "\n");
+writeFileSync(OUT, JSON.stringify({ source: `${FUMBBL}/api/ruleset/get/${RULESET_ID}`, artworkBase, rosters, starPlayers: stars }, null, 2) + "\n");
 console.log(`Wrote ${rosters.length} rosters to ${OUT}`);
