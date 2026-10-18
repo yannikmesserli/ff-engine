@@ -127,7 +127,7 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Actions: players declare Move, Block, Blitz, Pass, Hand-off, Foul or Secure the Ball from an action menu (all but Move
   and Block once per turn; a Blitz names its target up front).
 - Pass: BB2025 range table (Quick/Short/Long/Long Bomb, Blizzard: Quick and Short only), PA + range + tackle
-  zones + Very Sunny, accurate / inaccurate (3 scatters) / fumble, team re-roll, interception by one opponent under
+  zones + Very Sunny, accurate / inaccurate (3 scatters, rolled one die at a time; the board shows the ball after each) / fumble, team re-roll, interception by one opponent under
   the ruler (AG +3 / +2), catch (+1 after a scatter), turnover unless a team-mate ends up with the ball.
 - Hand-off to an adjacent standing team-mate (catch on AG). Secure the Ball: loose ball with no standing opponent
   within 2 squares, not for Big Guys, pick-up on 2+, turnover if the player does not end up with the ball.
@@ -543,8 +543,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
     bombs instead of one; after the second, a D6 of 1-3 sends her off.
   - Old Pro (Helmut Wulf): once per game, his Pro (3+) re-rolls one die of an armour roll: the lower die when his
     block failed to break armour, the higher die when his own armour broke.
-  - Blast It! (Barik Farblast): on his Hail Mary Pass (not a bomb), the three scatter dice are rolled one at a time and
-    each may be re-rolled once; a team-mate catching the ball gets +1.
+  - Blast It! (Barik Farblast): on his Hail Mary Pass (not a bomb), each of the three scatter dice may be re-rolled
+    once; a team-mate catching the ball gets +1.
 <!-- star rules -->
 
 Not yet: spending winnings and Star Player Points between games, the golden-goal overtime variant.

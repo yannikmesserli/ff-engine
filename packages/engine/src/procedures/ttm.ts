@@ -91,7 +91,15 @@ function eat(ctx: Ctx, thrower: PlayerState, thrown: PlayerState) {
 }
 
 /** The d8 scatters of the thrown player: three from the target, or one from their own square after a fumble. */
-const scatterDice = (proc: P<"ThrowTeamMate">) => [{ kind: "d8" as const, count: proc.result === "fumble" ? 1 : 3 }];
+const scatterCount = (proc: P<"ThrowTeamMate">) => (proc.result === "fumble" ? 1 : 3);
+
+/** The scatter die being rolled, one at a time (the thrown player is on `at` after each), or the bounce. */
+const scatterReason = (proc: P<"ThrowTeamMate">) =>
+  proc.stage === "bounce"
+    ? "Thrown player bounces"
+    : scatterCount(proc) === 1
+      ? "Thrown player scatters"
+      : `Thrown player scatters (${(proc.scatters ?? 0) + 1} of 3)`;
 
 /**
  * Throw Team-mate: the throw is rolled like a pass (PA, range, tackle zones on the thrower, Very Sunny, Disturbing
@@ -256,33 +264,31 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
       }
       case "scatter":
       case "bounce": {
-        if (proc.stage === "scatter" && proc.bullseye === undefined && proc.result === "accurate" && !proc.kicked && hasSkill(thrower, "Bullseye")) {
+        const first = proc.stage === "scatter" && !proc.scatters;
+        if (first && proc.bullseye === undefined && proc.result === "accurate" && !proc.kicked && hasSkill(thrower, "Bullseye")) {
           proc.stage = "bullseye";
           return "continue";
         }
         // Swoop: a thrown player who is not fumbled may travel in a line instead of scattering.
-        if (proc.stage === "scatter" && proc.swoop === undefined && proc.result !== "fumble" && hasSkill(thrown, "Swoop")) {
+        if (first && proc.swoop === undefined && proc.result !== "fumble" && hasSkill(thrown, "Swoop")) {
           proc.stage = "swoop";
           return "continue";
         }
         // A fumbled kick does not scatter: the kicked player is hurt.
-        if (proc.stage === "scatter" && proc.kicked && proc.result === "fumble") {
+        if (first && proc.kicked && proc.result === "fumble") {
           proc.stage = "fumbled";
           return "continue";
         }
         if (action === null) return "wait";
-        const dice = proc.stage === "bounce" ? [{ kind: "d8" as const, count: 1 }] : scatterDice(proc);
-        const start = proc.stage === "bounce" ? proc.at! : proc.result === "fumble" ? squareOf(ctx, thrown) : proc.target;
-        let at = start;
-        for (const d of ctx.roll(action, dice, proc.stage === "bounce" ? "Thrown player bounces" : "Thrown player scatters")) {
-          const next = offset(at, SCATTER[d]!);
-          if (!inBounds(next)) {
-            proc.crowdFrom = { ...at };
-            break;
-          }
-          at = next;
-        }
-        proc.at = { ...at };
+        // One die at a time: the thrown player is on `at` between the scatters.
+        const at = proc.stage === "bounce" || proc.scatters ? proc.at! : proc.result === "fumble" ? squareOf(ctx, thrown) : proc.target;
+        const [d] = ctx.roll(action, [{ kind: "d8", count: 1 }], scatterReason(proc));
+        const next = offset(at, SCATTER[d!]!);
+        if (!inBounds(next)) proc.crowdFrom = { ...at };
+        proc.at = inBounds(next) ? next : { ...at };
+        if (proc.stage === "scatter") proc.scatters = (proc.scatters ?? 0) + 1;
+        if (proc.stage === "scatter" && !proc.crowdFrom && proc.scatters! < scatterCount(proc)) return "continue";
+        delete proc.scatters;
         proc.stage = "land";
         return "continue";
       }
@@ -402,7 +408,7 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         return proTemplates(state, proc.stage, thrower);
       case "scatter":
         if (proc.kicked && proc.result === "fumble") return [];
-        return [{ type: "ROLL", side: null, dice: scatterDice(proc), reason: "Thrown player scatters" }];
+        return [{ type: "ROLL", side: null, dice: [{ kind: "d8", count: 1 }], reason: scatterReason(proc) }];
       case "bullseye":
         return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Bullseye" }];
       case "swoop":

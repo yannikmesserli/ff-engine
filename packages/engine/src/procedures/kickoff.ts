@@ -181,6 +181,9 @@ export const SwelteringHeat: Handler<P<"SwelteringHeat">> = {
   actions: () => [{ type: "ROLL", side: null, dice: D3, reason: SWELTERING_HEAT }],
 };
 
+/** Gust of wind: the scatter die being rolled, one at a time. */
+const gustReason = (proc: P<"Kickoff">) => `Gust of wind (scatter ${(proc.gusts ?? 0) + 1} of 3)`;
+
 /**
  * Kick-off: place the ball, deviate it (D8 + D6), roll the kick-off event, then land the ball.
  * In BB2025 the event is resolved while the ball is in the air.
@@ -249,15 +252,13 @@ export const Kickoff: Handler<P<"Kickoff">> = {
       }
       case "gusts": {
         if (action === null) return "wait";
-        const directions = ctx.roll(action, [{ kind: "d8", count: 3 }], "Gust of wind");
-        for (const d of directions) {
-          const next = offset(proc.landing!, SCATTER[d]!);
-          if (!inHalf(receiving, next)) {
-            proc.touchback = true;
-            break;
-          }
-          proc.landing = next;
-        }
+        // One die at a time: the ball is on `landing` between the scatters.
+        const [d] = ctx.roll(action, [{ kind: "d8", count: 1 }], gustReason(proc));
+        const next = offset(proc.landing!, SCATTER[d!]!);
+        if (!inHalf(receiving, next)) proc.touchback = true;
+        else proc.landing = next;
+        proc.gusts = (proc.gusts ?? 0) + 1;
+        if (!proc.touchback && proc.gusts < 3) return "continue";
         ctx.emit({ type: "BallScattered", to: proc.landing! });
         proc.stage = "land";
         return "continue";
@@ -286,7 +287,7 @@ export const Kickoff: Handler<P<"Kickoff">> = {
       case "weather":
         return [{ type: "ROLL", side: null, dice: TWO_D6, reason: "Weather change" }];
       case "gusts":
-        return [{ type: "ROLL", side: null, dice: [{ kind: "d8", count: 3 }], reason: "Gust of wind" }];
+        return [{ type: "ROLL", side: null, dice: [{ kind: "d8", count: 1 }], reason: gustReason(proc) }];
       case "land":
         return [];
     }

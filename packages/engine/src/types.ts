@@ -516,6 +516,8 @@ export type Procedure =
       target?: Square;
       /** Where the ball will come down; may be off the pitch. */
       landing?: Square;
+      /** Gust of wind: the scatter dice rolled so far, one at a time (the ball on `landing` after each). */
+      gusts?: number;
       touchback?: boolean;
     }
   /** "mascot": Cheering Fans, a team with a Team Mascot re-rolls its natural 1 (`rolls`: the first rolls). */
@@ -643,7 +645,7 @@ export type Procedure =
       /** "yoink": the interceptor may use Yoink! (`yoink` if they did). */
       /** "strongPass": the thrower may use Strong Passing Game (`strong` once used). */
       stage: "aim" | "animosity" | "animosityResult" | "roll" | "strongPass" | "reroll" | "loner" | "pro" | "proTeam" | "proLoner" | "outcome" | "safePass" | "scatter" | "blastIt" | "blastItRoll" | "intercept" | "yoink" | "interceptRoll" | "land" | "end";
-      /** Blast It!: the scatter dice rolled so far, one at a time ("blastIt": the last may be re-rolled). */
+      /** The scatter dice rolled so far, one at a time, the ball on `landing` ("blastIt": the last may be re-rolled). */
       scatters?: number[];
       strong?: boolean;
       yoink?: boolean;
@@ -697,6 +699,8 @@ export type Procedure =
       /** Where the thrown player comes down. */
       at?: Square;
       /** The thrown player left the pitch from this square: the crowd gets them. */
+      /** The scatter dice rolled so far, one at a time (the thrown player on `at` after each). */
+      scatters?: number;
       crowdFrom?: Square;
       /** The landing fails without a roll: the player landed on someone, or was down or distracted before the throw. */
       autoFail?: boolean;

@@ -30,6 +30,9 @@ export function flightMarkers(state: GameState): FlightMarker[] {
       const kind = p.bomb ? "bomb" : "ball";
       const thrower = state.players[p.throwerId];
       if (p.stage === "aim" && thrower && isOnPitch(thrower)) markers.push({ kind, square: thrower.at, state: "held" });
+      // Between two scatter dice, the ball is drawn where the last one moved it.
+      else if (p.stage === "scatter" && p.scatters?.length && p.landing) markers.push({ kind, square: p.landing, state: "aimed" });
+      else if (p.stage === "blastIt" || p.stage === "blastItRoll") markers.push({ kind, square: p.landing!, state: "aimed" });
       else if (AIMING.includes(p.stage)) markers.push({ kind, square: p.target, state: "aimed" });
       else if (LANDING.includes(p.stage) && p.landing && !p.throwInFrom) markers.push({ kind, square: p.landing, state: "landing" });
     } else if (p.type === "BombLanding") {
@@ -43,8 +46,8 @@ export function flightMarkers(state: GameState): FlightMarker[] {
 
 /**
  * The square the next d8 roll moves the ball, a bomb or a thrown player from (a bounce, a kick-off deviation, gusts of
- * wind, an inaccurate pass, a team-mate throw), for display; null when no such roll is due. With several d8, the first
- * one moves from there.
+ * wind, an inaccurate pass, a team-mate throw), for display; null when no such roll is due. Several scatters are
+ * rolled one die at a time, each from where the last one left it.
  */
 export function scatterOrigin(state: GameState): Square | null {
   const p = state.stack.at(-1);
@@ -55,13 +58,17 @@ export function scatterOrigin(state: GameState): Square | null {
     case "Kickoff":
       return p.stage === "scatter" ? (p.target ?? null) : p.stage === "gusts" ? (p.landing ?? null) : null;
     case "Pass":
-      return p.stage === "scatter" ? p.target : null;
+      // Each scatter die moves the ball on from where the last one left it. Blast It!: the ball has not moved yet with
+      // the die that may be re-rolled.
+      if (p.stage === "blastIt" || p.stage === "blastItRoll") return p.landing!;
+      return p.stage === "scatter" ? (p.scatters?.length ? p.landing! : p.target) : null;
     case "BombLanding":
       return p.stage === "land" && !p.bounced && !playerAt(state, p.square) ? p.square : null;
     case "ThrowTeamMate": {
       if (p.stage === "bounce") return p.at ?? null;
       if (p.stage !== "scatter") return null;
       const thrown = state.players[p.thrownId];
+      if (p.scatters) return p.at!;
       return p.result === "fumble" ? (thrown && isOnPitch(thrown) ? thrown.at : null) : p.target;
     }
     default:

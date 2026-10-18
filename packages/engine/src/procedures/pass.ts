@@ -95,15 +95,17 @@ export function throwTargets(state: GameState, thrower: PlayerState, bomb = fals
 export const hailMaryNeeded = (state: GameState, thrower: PlayerState & { at: Square }) =>
   thrower.pa === null ? 6 : Math.min(6, Math.max(2, 2 + passModifiers(state, thrower, "bomb")));
 
-/** Blast It!: the thrower's Hail Mary Pass with the ball (not a bomb) scatters one die at a time, each may be re-rolled. */
+/** Blast It!: each scatter die of the thrower's Hail Mary Pass with the ball (not a bomb) may be re-rolled. */
 const blastIt = (thrower: PlayerState, proc: P<"Pass">) => !!proc.hailMary && !proc.bomb && hasSkill(thrower, "Blast It!");
 
-/** Blast It!: the scatter die being rolled, or rolled again. */
+/** The scatter die being rolled (one at a time, the ball moving after each), or rolled again with Blast It!. */
 const scatterReason = (proc: P<"Pass">) =>
-  proc.stage === "blastItRoll" ? `Blast It! (re-roll scatter ${proc.scatters!.length} of 3)` : `Hail Mary Pass scatter ${(proc.scatters?.length ?? 0) + 1} of 3`;
+  proc.stage === "blastItRoll"
+    ? `Blast It! (re-roll scatter ${proc.scatters!.length} of 3)`
+    : `${proc.hailMary ? "Hail Mary Pass" : "Inaccurate pass"} (scatter ${(proc.scatters?.length ?? 0) + 1} of 3)`;
 
-/** Blast It!: the ball moves with the last scatter die; it stops on leaving the pitch or after the third. */
-function blastScatter(ctx: Ctx, proc: P<"Pass">): StepResult {
+/** The ball moves with the last scatter die (`landing`); it stops on leaving the pitch or after the third. */
+function scatterStep(ctx: Ctx, proc: P<"Pass">): StepResult {
   const landing = proc.landing!;
   const d = proc.scatters!.at(-1)!;
   const next = { x: landing.x + SCATTER[d]!.x, y: landing.y + SCATTER[d]!.y };
@@ -409,32 +411,19 @@ export const Pass: Handler<P<"Pass">> = {
       case "scatter":
       case "blastItRoll": {
         if (action === null) return "wait";
-        if (blastIt(thrower, proc)) {
-          // Blast It!: the scatter dice one at a time, each of which may be re-rolled once.
-          const [d] = ctx.roll(action, [{ kind: "d8", count: 1 }], scatterReason(proc));
-          if (proc.stage === "scatter") {
-            proc.stage = "blastIt";
-            proc.scatters = [...(proc.scatters ?? []), d!];
-            return "wait";
-          }
+        // An inaccurate pass scatters three times from the target square, one die at a time; with Blast It!, each die
+        // may be re-rolled once.
+        const [d] = ctx.roll(action, [{ kind: "d8", count: 1 }], scatterReason(proc));
+        if (proc.stage === "blastItRoll") {
           proc.scatters = [...proc.scatters!.slice(0, -1), d!];
-          return blastScatter(ctx, proc);
+          return scatterStep(ctx, proc);
         }
-        // An inaccurate pass scatters three times from the target square.
-        const directions = ctx.roll(action, [{ kind: "d8", count: 3 }], "Inaccurate pass");
-        let landing = proc.target;
-        for (const d of directions) {
-          const next = { x: landing.x + SCATTER[d]!.x, y: landing.y + SCATTER[d]!.y };
-          if (!inBounds(next)) {
-            proc.throwInFrom = { ...landing };
-            break;
-          }
-          landing = next;
+        proc.scatters = [...(proc.scatters ?? []), d!];
+        if (blastIt(thrower, proc)) {
+          proc.stage = "blastIt";
+          return "wait";
         }
-        proc.landing = { ...landing };
-        ctx.emit({ type: "BallScattered", to: landing });
-        proc.stage = "intercept";
-        return "continue";
+        return scatterStep(ctx, proc);
       }
       case "blastIt":
         if (action === null) return "wait";
@@ -443,7 +432,7 @@ export const Pass: Handler<P<"Pass">> = {
           proc.stage = "blastItRoll";
           return "wait";
         }
-        return blastScatter(ctx, proc);
+        return scatterStep(ctx, proc);
       case "intercept": {
         // Nobody may intercept a Hail Mary Pass.
         const candidates = proc.hailMary ? [] : interceptors(state, thrower, proc.landing!);
@@ -550,7 +539,7 @@ export const Pass: Handler<P<"Pass">> = {
         return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Safe Pass" }];
       case "scatter":
       case "blastItRoll":
-        return [{ type: "ROLL", side: null, dice: [{ kind: "d8", count: blastIt(thrower, proc) ? 1 : 3 }], reason: blastIt(thrower, proc) ? scatterReason(proc) : "Inaccurate pass" }];
+        return [{ type: "ROLL", side: null, dice: [{ kind: "d8", count: 1 }], reason: scatterReason(proc) }];
       case "blastIt":
         return [{ type: "USE_SKILL", side: thrower.side, playerId: thrower.id, skill: "Blast It!" }];
       case "intercept":

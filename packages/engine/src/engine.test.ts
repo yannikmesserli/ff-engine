@@ -53,6 +53,8 @@ const team = (name: string, options: { rerolls?: number; ma?: number; st?: numbe
 
 const apply = (state: GameState, ...actions: Action[]) => actions.reduce((s, a) => step(s, a).state, state);
 const roll = (...values: number[]): Action => ({ type: "ROLL", values });
+/** Scatter dice, one roll per d8. */
+const scatter = (...directions: number[]): Action[] => directions.map((d) => roll(d));
 const declare = (playerId: string, action: PlayerActionType, targetId?: string): Action => ({
   type: "START_ACTION",
   playerId,
@@ -2417,12 +2419,12 @@ describe("engine", () => {
         expect(s.log).toContainEqual({ type: "PassThrown", playerId: "home-4", target: { x: 20, y: 10 }, range: "bomb", bomb: true, hailMary: true });
         expect(find(s, "ROLL")?.reason).toMatch(/^Hail Mary Pass/);
         s = apply(s, roll(6));
-        expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
+        expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass (scatter 1 of 3)");
         // East three times: (23,10), empty, so it bounces once (south) and explodes.
-        s = apply(s, roll(3, 3, 3), roll(5));
+        s = apply(s, ...scatter(3, 3, 3), roll(5));
         expect(s.log).toContainEqual({ type: "BombExploded", square: { x: 23, y: 11 } });
-        // Out of the pitch: the bomb is lost.
-        const lost = apply(hmp, declare("home-4", "bomb"), { type: "HAIL_MARY_PASS", square: { x: 24, y: 14 } }, roll(6), roll(5, 5, 5));
+        // Out of the pitch with the first scatter: the bomb is lost, without rolling the other two.
+        const lost = apply(hmp, declare("home-4", "bomb"), { type: "HAIL_MARY_PASS", square: { x: 24, y: 14 } }, roll(6), roll(5));
         expect(lost.log).toContainEqual({ type: "BombLost" });
         // A fumble explodes on the thrower.
         expect(apply(hmp, declare("home-4", "bomb"), { type: "HAIL_MARY_PASS", square: { x: 20, y: 10 } }, roll(1), { type: "DECLINE_REROLL" }).log).toContainEqual({ type: "BombHit", playerId: "home-4" });
@@ -3123,15 +3125,15 @@ describe("engine", () => {
         // Even a 6 is inaccurate, and it is not worth a re-roll.
         s = apply(s, roll(6));
         expect(s.log).toContainEqual({ type: "PassResult", playerId: "home-5", result: "inaccurate" });
-        expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
-        s = apply(s, roll(1, 5, 1));
+        expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass (scatter 1 of 3)");
+        s = apply(s, ...scatter(1, 5, 1));
         expect(s.log).toContainEqual({ type: "BallScattered", to: { x: 20, y: 9 } });
       });
 
       it("cannot be intercepted; a fumble may be re-rolled", () => {
         let s = apply(thrower(place(toFirstTurn(), { "away-4": { x: 9, y: 3 } })), { type: "HAIL_MARY_PASS", square: { x: 12, y: 4 } }, roll(5));
         expect(types(s)).toEqual(["ROLL"]);
-        expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
+        expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass (scatter 1 of 3)");
         s = apply(thrower(), { type: "HAIL_MARY_PASS", square: { x: 12, y: 4 } }, roll(4));
         expect(s.log).toContainEqual({ type: "PassResult", playerId: "home-5", result: "fumble" });
         expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
@@ -3140,7 +3142,7 @@ describe("engine", () => {
       it("Blast It!: each scatter die may be re-rolled, and a team-mate gets +1 to catch it", () => {
         const barik = edit(thrower(place(toFirstTurn(), { "home-2": { x: 20, y: 9 } })), (c) => void c.players["home-5"]!.skills.push("Blast It!"));
         let s = apply(barik, { type: "HAIL_MARY_PASS", square: { x: 20, y: 10 } }, roll(6));
-        expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass scatter 1 of 3");
+        expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass (scatter 1 of 3)");
         s = apply(s, roll(1));
         expect(find(s, "USE_SKILL")).toEqual({ type: "USE_SKILL", side: "home", playerId: "home-5", skill: "Blast It!" });
         s = apply(s, { type: "USE_SKILL", use: false }, roll(5), { type: "USE_SKILL", use: true });
@@ -3597,9 +3599,9 @@ describe("engine", () => {
         let s = apply(declared(), throwTo({ x: 7, y: 4 }));
         expect(find(s, "ROLL")?.reason).toBe("Throw team-mate 4+ (quick)");
         s = apply(s, roll(4));
-        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 3 }] });
+        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }] });
         // North, south, east: from (7,4) to (8,4).
-        s = apply(s, roll(1, 5, 3));
+        s = apply(s, ...scatter(1, 5, 3));
         expect(find(s, "ROLL")?.reason).toMatch(/^Landing 3\+ \(Home 5\)/);
         s = apply(s, roll(3));
         expect(s.players["home-5"]).toMatchObject({ at: { x: 8, y: 4 }, status: "standing", activated: false });
@@ -3618,7 +3620,7 @@ describe("engine", () => {
         s = apply(s, roll(3));
         expect(s.players["home-5"]).toMatchObject({ at: { x: 7, y: 4 }, status: "standing" });
         // Declined: the usual three scatters. A subpar throw does not offer it.
-        expect(find(apply(declared(bullseye(ttmTeam())), throwTo({ x: 7, y: 4 }), roll(4), { type: "USE_SKILL", use: false, skill: "Bullseye" }), "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 3 }] });
+        expect(find(apply(declared(bullseye(ttmTeam())), throwTo({ x: 7, y: 4 }), roll(4), { type: "USE_SKILL", use: false, skill: "Bullseye" }), "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }] });
         expect(types(apply(declared(bullseye(ttmTeam())), throwTo({ x: 7, y: 4 }), roll(3), { type: "DECLINE_REROLL" }))).toEqual(["ROLL"]);
       });
 
@@ -3629,16 +3631,16 @@ describe("engine", () => {
         s = apply(s, { type: "USE_SKILL", use: true, skill: "Pro" });
         expect(find(s, "ROLL")?.reason).toBe("Pro 3+ (Home 4)");
         s = apply(s, roll(3), roll(4));
-        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 3 }] });
+        expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }] });
         // A failed landing: the thrown player is not the active player, so only the team re-roll is offered.
-        s = apply(s, roll(1, 5, 3), roll(1));
+        s = apply(s, ...scatter(1, 5, 3), roll(1));
         expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
         s = apply(declared(pros(ttmTeam(), ["Always Hungry"])), throwTo({ x: 7, y: 4 }), roll(1));
         expect(types(s)).toContain("USE_SKILL");
       });
 
       it("a subpar throw or a fumble makes the landing 1 harder; a fumble scatters once from the thrown player", () => {
-        const subpar = apply(declared(), throwTo({ x: 7, y: 4 }), roll(2), { type: "DECLINE_REROLL" }, roll(1, 5, 3));
+        const subpar = apply(declared(), throwTo({ x: 7, y: 4 }), roll(2), { type: "DECLINE_REROLL" }, ...scatter(1, 5, 3));
         expect(find(subpar, "ROLL")?.reason).toMatch(/^Landing 4\+/);
         let fumble = apply(declared(), throwTo({ x: 7, y: 4 }), roll(1), { type: "DECLINE_REROLL" });
         expect(find(fumble, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }] });
@@ -3670,7 +3672,7 @@ describe("engine", () => {
 
       it("landing on a team-mate knocks them down (turnover), scatters on and fails the landing", () => {
         // East, north, south from (9,6) ends on home-6 at (10,6).
-        let s = apply(declared(), throwTo({ x: 9, y: 6 }), roll(5), roll(3, 1, 5));
+        let s = apply(declared(), throwTo({ x: 9, y: 6 }), roll(5), ...scatter(3, 1, 5));
         expect(s.players["home-6"]!.status).toBe("prone");
         s = apply(s, roll(2, 2));
         expect(find(s, "ROLL")?.reason).toBe("Thrown player bounces");
@@ -3684,23 +3686,23 @@ describe("engine", () => {
       it("Lethal Flight: +1 to the armour or injury roll of an opponent landed on", () => {
         // The scatters end on away-6, at (10,6) instead of home-6.
         const lethal = withSkills(place(ttmTeam(), { "home-6": { x: 2, y: 6 }, "away-6": { x: 10, y: 6 } }), { "home-5": ["Right Stuff", "Lethal Flight"] });
-        let s = apply(declared(lethal), throwTo({ x: 9, y: 6 }), roll(5), roll(3, 1, 5));
+        let s = apply(declared(lethal), throwTo({ x: 9, y: 6 }), roll(5), ...scatter(3, 1, 5));
         expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 6) (+1 Lethal Flight)");
         s = apply(s, roll(4, 3));
         expect(s.log).toContainEqual({ type: "SkillUsed", playerId: "home-5", skill: "Lethal Flight" });
         expect(find(s, "ROLL")?.reason).toBe("Injury");
-        expect(find(apply(declared(lethal), throwTo({ x: 9, y: 6 }), roll(5), roll(3, 1, 5), roll(5, 4)), "ROLL")?.reason).toBe("Injury (+1 Lethal Flight)");
+        expect(find(apply(declared(lethal), throwTo({ x: 9, y: 6 }), roll(5), ...scatter(3, 1, 5), roll(5, 4)), "ROLL")?.reason).toBe("Injury (+1 Lethal Flight)");
       });
 
       it("leaving the pitch means the crowd and a turnover", () => {
         const s = apply(ttmTeam(place(toFirstTurn(), { "home-4": { x: 10, y: 1 } })), declare("home-4", "ttm"));
-        const after = apply(edit(s, (c) => void (c.players["home-5"]!.at = { x: 10, y: 0 })), throwTo({ x: 8, y: 0 }), roll(4), roll(1, 1, 1));
+        const after = apply(edit(s, (c) => void (c.players["home-5"]!.at = { x: 10, y: 0 })), throwTo({ x: 8, y: 0 }), roll(4), roll(1));
         expect(find(after, "ROLL")?.reason).toMatch(/pushed into the crowd/);
         expect(apply(after, roll(2, 2)).activeSide).toBe("away");
       });
 
       it("a failed landing is a knock-down, a turnover only with the ball", () => {
-        const landing = (s: GameState) => apply(s, declare("home-4", "ttm"), throwTo({ x: 7, y: 4 }), roll(4), roll(1, 5, 3), roll(1), { type: "DECLINE_REROLL" });
+        const landing = (s: GameState) => apply(s, declare("home-4", "ttm"), throwTo({ x: 7, y: 4 }), roll(4), ...scatter(1, 5, 3), roll(1), { type: "DECLINE_REROLL" });
         expect(apply(landing(ttmTeam()), roll(2, 2)).activeSide).toBe("home");
         const carrying = edit(ttmTeam(), (c) => (c.ball = { square: { x: 10, y: 5 }, carried: true }));
         const s = apply(landing(carrying), roll(2, 2));
@@ -3717,7 +3719,7 @@ describe("engine", () => {
 
       it("a prone team-mate can be thrown, but does not land on their feet", () => {
         const prone = edit(ttmTeam(), (c) => void (c.players["home-5"]!.status = "prone"));
-        const s = apply(prone, declare("home-4", "ttm"), throwTo({ x: 7, y: 4 }), roll(4), roll(1, 5, 3));
+        const s = apply(prone, declare("home-4", "ttm"), throwTo({ x: 7, y: 4 }), roll(4), ...scatter(1, 5, 3));
         expect(find(s, "ROLL")?.reason).toMatch(/^Armour/);
       });
     });
@@ -3749,7 +3751,7 @@ describe("engine", () => {
       });
 
       it("declined, the player scatters as usual; off the pitch, the crowd", () => {
-        expect(find(apply(swooper(), { type: "SWOOP", square: null }), "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 3 }] });
+        expect(find(apply(swooper(), { type: "SWOOP", square: null }), "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }] });
         const s = apply(swooper(), { type: "SWOOP", square: { x: 7, y: 3 } }, roll(3), decline, roll(6), decline);
         expect(s.players["home-5"]!.at).toBe("reserves");
         expect(s.turnover).toBe(true);
@@ -3766,7 +3768,7 @@ describe("engine", () => {
         expect(actionsOf(kicker(), "home-4")).not.toContain("ttm");
         let s = apply(kicker(), declare("home-4", "ktm"), kickTo({ x: 7, y: 4 }));
         expect(find(s, "ROLL")?.reason).toBe("Kick team-mate 4+ (quick)");
-        s = apply(s, roll(4), roll(1, 5, 3), roll(3));
+        s = apply(s, roll(4), ...scatter(1, 5, 3), roll(3));
         expect(s.players["home-5"]).toMatchObject({ at: { x: 8, y: 4 }, status: "standing" });
         expect(actionsOf(s, "home-6")).not.toContain("ktm");
       });
@@ -4092,8 +4094,23 @@ describe("engine", () => {
       let s = apply(pickUp(toFirstTurn()), { type: "THROW", square: { x: 10, y: 3 } }, roll(3), { type: "DECLINE_REROLL" });
       expect(s.log).toContainEqual({ type: "PassResult", playerId: "home-5", result: "inaccurate" });
       // Scatter S (5), N (1), S (5): from (10,3) to (10,4), where home-4 stands.
-      s = apply(s, roll(5, 1, 5));
+      s = apply(s, ...scatter(5, 1, 5));
       expect(find(s, "ROLL")?.reason).toMatch(/^Catch 4\+/);
+    });
+
+    it("the scatter dice come one at a time: the ball is shown, and scatters on, from where each one left it", () => {
+      let s = apply(pickUp(toFirstTurn()), { type: "THROW", square: { x: 10, y: 3 } }, roll(3), { type: "DECLINE_REROLL" });
+      const scattered = (st: GameState) => st.log.filter((e) => e.type === "BallScattered").length;
+      const before = scattered(s);
+      expect([scatterOrigin(s), flightMarkers(s)]).toEqual([{ x: 10, y: 3 }, [{ kind: "ball", square: { x: 10, y: 3 }, state: "aimed" }]]);
+      // A 2: north-east, to (11,2).
+      s = apply(s, roll(2));
+      expect(find(s, "ROLL")).toMatchObject({ dice: [{ kind: "d8", count: 1 }], reason: "Inaccurate pass (scatter 2 of 3)" });
+      expect([scatterOrigin(s), flightMarkers(s)]).toEqual([{ x: 11, y: 2 }, [{ kind: "ball", square: { x: 11, y: 2 }, state: "aimed" }]]);
+      expect(scattered(s)).toBe(before);
+      // Then east (3) and south (5): (12,3).
+      s = apply(s, roll(3), roll(5));
+      expect(s.log).toContainEqual({ type: "BallScattered", to: { x: 12, y: 3 } });
     });
 
     it("fumble: the ball bounces from the thrower and it is a turnover", () => {
@@ -4464,7 +4481,7 @@ describe("engine", () => {
     });
 
     it("Weather Change to nice weather blows the ball three more squares", () => {
-      const s = apply(kickWith(4, 4), roll(3, 4), roll(3, 3, 3));
+      const s = apply(kickWith(4, 4), roll(3, 4), ...scatter(3, 3, 3));
       expect(s.log.findLast((e) => e.type === "BallScattered")).toEqual({ type: "BallScattered", to: { x: 7, y: 1 } });
       expect(find(s, "ROLL")?.reason).toBe("Bounce");
     });
@@ -5089,7 +5106,7 @@ describe("engine", () => {
       const s = apply(pickUp(toFirstTurn()), { type: "THROW", square: { x: 10, y: 4 } }, roll(5), roll(3));
       expect([s.players["home-5"]!.spp.completions, spp(s, "home-5"), spp(s, "home-4")]).toEqual([1, 1, 0]);
       // Scatters S, N, S onto home-4, who catches it.
-      const inaccurate = apply(pickUp(toFirstTurn()), { type: "THROW", square: { x: 10, y: 3 } }, roll(3), { type: "DECLINE_REROLL" }, roll(5, 1, 5), roll(4));
+      const inaccurate = apply(pickUp(toFirstTurn()), { type: "THROW", square: { x: 10, y: 3 } }, roll(3), { type: "DECLINE_REROLL" }, ...scatter(5, 1, 5), roll(4));
       expect(inaccurate.ball).toEqual({ square: { x: 10, y: 4 }, carried: true });
       expect(spp(inaccurate, "home-5")).toBe(0);
     });

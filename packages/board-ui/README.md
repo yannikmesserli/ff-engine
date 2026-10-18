@@ -40,7 +40,9 @@ state ──getAvailableActions──▶ templates ──Board / ActionPanel─�
    buttons for everything else. The board also draws `flightMarkers(state)`: a kicked or thrown ball or bomb where it
    was aimed (dashed ring, it may still deviate or scatter) and where it comes down (solid ring), a bomb held by a
    player who must throw it again, and an exploding bomb. While a d8 roll is due (a bounce, the kick-off deviation, a
-   scatter), the squares around `scatterOrigin(state)` show the d8 number that moves the ball (or player) there. A loose
+   scatter), the squares around `scatterOrigin(state)` show the d8 number that moves the ball (or player) there.
+   Several scatters (an inaccurate pass, a team-mate throw, a gust of wind) are rolled one die at a time: the ball is
+   drawn where each die left it, and the next die's numbers around that square. A loose
    ball that is not settled yet (`ballUnsettled`: a catch, Diving Catch, bounce or Safe Pair of Hands is pending) is
    drawn half transparent.
 4. `dispatch(...actions)` applies them with `step` as a single undo entry. An `IllegalActionError` is shown in the

@@ -499,7 +499,7 @@ describe("scenarios", () => {
     let s = applyActions(load("hail-mary-pass"), [{ type: "START_ACTION", playerId: "home-1", action: "pass" }]);
     expect(find(s, "HAIL_MARY_PASS")?.needed).toBe(5);
     s = applyActions(s, [{ type: "HAIL_MARY_PASS", square: { x: 20, y: 7 } }, { type: "ROLL", values: [6] }]);
-    expect(find(s, "ROLL")?.reason).toBe("Inaccurate pass");
+    expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass (scatter 1 of 3)");
   });
 
   it("trickster: the Illusionist moves next to the attacker with the ball", () => {
@@ -621,7 +621,7 @@ describe("scenarios", () => {
 
   it("blast-it: the Hail Mary Pass scatters one die at a time, each may be re-rolled", () => {
     let s = applyActions(load("blast-it"), [{ type: "START_ACTION", playerId: "home-1", action: "pass" }, { type: "HAIL_MARY_PASS", square: { x: 9, y: 12 } }, { type: "ROLL", values: [6] }]);
-    expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass scatter 1 of 3");
+    expect(find(s, "ROLL")?.reason).toBe("Hail Mary Pass (scatter 1 of 3)");
     s = step(s, { type: "ROLL", values: [1] }).state;
     expect(find(s, "USE_SKILL")).toMatchObject({ playerId: "home-1", skill: "Blast It!" });
     // North, re-rolled to south; then north and south: one square below Kurt.
