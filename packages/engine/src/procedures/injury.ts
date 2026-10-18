@@ -6,11 +6,11 @@ import { createPlayer, earnSpp, getPlayer, inducementsLeft, spendInducement, use
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
-/** D16 for the casualty table and D6 for the lasting injury, rolled together. */
-export const CASUALTY_DICE: DiceSpec[] = [
-  { kind: "d16", count: 1 },
-  { kind: "d6", count: 1 },
-];
+/** D16 for the casualty table. */
+export const CASUALTY_DICE: DiceSpec[] = [{ kind: "d16", count: 1 }];
+
+/** D6 for the lasting injury table, rolled only on a Lasting Injury. */
+export const LASTING_INJURY_DICE: DiceSpec[] = [{ kind: "d6", count: 1 }];
 
 /**
  * BB2025 injury table on the 2D6 total: 2-7 Stunned, 8-9 KO'd, 10+ casualty. Stunty: 7 is KO'd and 9 Badly Hurt.
@@ -138,11 +138,33 @@ export function knockOut(ctx: Ctx, player: PlayerState): Procedure {
   return { type: "Injury", playerId: player.id, outcome: "ko", crowd: false, stage: "apothecary" };
 }
 
-/** Roll the casualty dice and read the table. */
-function rollCasualty(ctx: Ctx, player: PlayerState, action: Action, reason: string) {
-  const [d16, d6] = ctx.roll(action, CASUALTY_DICE, reason);
-  const casualty = casualtyFor(player, d16!, d6!);
-  ctx.emit({ type: "CasualtyRolled", playerId: player.id, roll: d16! + casualtyModifier(player), casualty });
+/** A Lasting Injury on the casualty table (13-14 after modifiers): the D6 for the characteristic comes next. */
+const isLastingInjury = (player: PlayerState, d16: number) => {
+  const roll = d16 + casualtyModifier(player);
+  return roll >= 13 && roll < 15;
+};
+
+/** Roll the D16 and read the table; on a Lasting Injury, keep the D16 (`casualtyD16`) and return nothing yet. */
+function rollCasualty(ctx: Ctx, proc: P<"Injury">, player: PlayerState, action: Action, reason: string): Casualty | undefined {
+  const [d16] = ctx.roll(action, CASUALTY_DICE, reason);
+  if (isLastingInjury(player, d16!)) {
+    proc.casualtyD16 = d16!;
+    return undefined;
+  }
+  return readCasualty(ctx, player, d16!, 1);
+}
+
+/** Lasting Injury: roll the D6 for the characteristic, with the D16 kept by `rollCasualty`. */
+function rollLastingInjury(ctx: Ctx, proc: P<"Injury">, player: PlayerState, action: Action, reason: string): Casualty {
+  const [d6] = ctx.roll(action, LASTING_INJURY_DICE, reason);
+  const casualty = readCasualty(ctx, player, proc.casualtyD16!, d6!);
+  delete proc.casualtyD16;
+  return casualty;
+}
+
+function readCasualty(ctx: Ctx, player: PlayerState, d16: number, d6: number): Casualty {
+  const casualty = casualtyFor(player, d16, d6);
+  ctx.emit({ type: "CasualtyRolled", playerId: player.id, roll: d16 + casualtyModifier(player), casualty });
   return casualty;
 }
 
@@ -160,9 +182,16 @@ export const Injury: Handler<P<"Injury">> = {
     const player = getPlayer(ctx, proc.playerId);
     const team = state.teams[player.side];
     switch (proc.stage) {
-      case "casualty": {
+      case "casualty":
+      case "lasting": {
         if (action === null) return "wait";
-        proc.casualty = rollCasualty(ctx, player, action, `Casualty (${player.name})`);
+        const casualty =
+          proc.stage === "casualty" ? rollCasualty(ctx, proc, player, action, `Casualty (${player.name})`) : rollLastingInjury(ctx, proc, player, action, `Lasting injury (${player.name})`);
+        if (!casualty) {
+          proc.stage = "lasting";
+          return "wait";
+        }
+        proc.casualty = casualty;
         proc.stage = afterCasualty(player);
         return "continue";
       }
@@ -221,9 +250,18 @@ export const Injury: Handler<P<"Injury">> = {
         }
         return "continue";
       }
-      case "apothecaryRoll": {
+      case "apothecaryRoll":
+      case "apothecaryLasting": {
         if (action === null) return "wait";
-        proc.reroll = rollCasualty(ctx, player, action, `Casualty re-roll (${player.name})`);
+        const reroll =
+          proc.stage === "apothecaryRoll"
+            ? rollCasualty(ctx, proc, player, action, `Casualty re-roll (${player.name})`)
+            : rollLastingInjury(ctx, proc, player, action, `Lasting injury re-roll (${player.name})`);
+        if (!reroll) {
+          proc.stage = "apothecaryLasting";
+          return "wait";
+        }
+        proc.reroll = reroll;
         if (proc.reroll.result === "badly-hurt") proc.healed = true;
         proc.stage = proc.healed ? "place" : "apothecaryChoice";
         return "continue";
@@ -245,12 +283,16 @@ export const Injury: Handler<P<"Injury">> = {
     switch (proc.stage) {
       case "casualty":
         return [{ type: "ROLL", side: null, dice: CASUALTY_DICE, reason: `Casualty (${player.name})` }];
+      case "lasting":
+        return [{ type: "ROLL", side: null, dice: LASTING_INJURY_DICE, reason: `Lasting injury (${player.name})` }];
       case "regenerationReroll":
         return [{ type: "USE_SKILL", side, playerId: player.id, skill: INDUCEMENT_SKILLS[regenerationReroll(state.teams[side])!] }];
       case "apothecary":
         return [{ type: "USE_APOTHECARY", side, playerId: player.id, outcome: proc.outcome, casualty: proc.casualty ?? null }];
       case "apothecaryRoll":
         return [{ type: "ROLL", side, dice: CASUALTY_DICE, reason: `Casualty re-roll (${player.name})` }];
+      case "apothecaryLasting":
+        return [{ type: "ROLL", side, dice: LASTING_INJURY_DICE, reason: `Lasting injury re-roll (${player.name})` }];
       case "apothecaryChoice":
         return [{ type: "APOTHECARY_CHOICE", side, playerId: player.id, first: proc.casualty!, second: proc.reroll! }];
       case "regeneration":

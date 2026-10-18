@@ -147,8 +147,8 @@ const { state: next, events } = step(state, { type: "ROLL" });
 - Drives: KO recovery (4+), Sweltering Heat exhaustion, drive-long effects reset.
 
 - Injuries: BB2025 injury table (Stunty: 7 KO'd, 9 Badly Hurt; Thick Skull: KO'd on 8, or 7 for Stunty, becomes
-  Stunned), casualty table (D16 + Niggling Injuries: Badly Hurt, Seriously Hurt, Serious Injury, Lasting Injury on a
-  D6, Dead; a characteristic at its limit becomes Seriously Hurt instead), apothecary once per game (KO'd to Stunned,
+  Stunned), casualty table (D16 + Niggling Injuries: Badly Hurt, Seriously Hurt, Serious Injury, Lasting Injury with a
+  D6 rolled only then, Dead; a characteristic at its limit becomes Seriously Hurt instead), apothecary once per game (KO'd to Stunned,
   or to the reserves from the crowd; Badly Hurt healed; worse casualties re-rolled, Badly Hurt heals, otherwise the
   coach keeps either result). Regeneration (4+, team re-roll in the player's own turn) heals any casualty before the
   apothecary. Getting Even: a player left Seriously Hurt, with a Serious Injury or a Lasting Injury (after the

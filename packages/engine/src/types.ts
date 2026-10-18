@@ -901,7 +901,9 @@ export type Procedure =
       /** The opponent who caused it, by a block, a foul or a special action (Getting Even). */
       byId?: string;
       /** "regenerationReroll": a Mortuary Assistant or Plague Doctor may re-roll a failed Regeneration roll. */
-      stage: "casualty" | "regeneration" | "regenerated" | "regenerationReroll" | "apothecary" | "apothecaryRoll" | "apothecaryChoice" | "place";
+      /** "lasting", "apothecaryLasting": a Lasting Injury, the D6 for the characteristic (`casualtyD16` kept). */
+      stage: "casualty" | "lasting" | "regeneration" | "regenerated" | "regenerationReroll" | "apothecary" | "apothecaryRoll" | "apothecaryLasting" | "apothecaryChoice" | "place";
+      casualtyD16?: number;
       /** The inducement re-rolling Regeneration was offered. */
       regenerationRerolled?: boolean;
       casualty?: Casualty;

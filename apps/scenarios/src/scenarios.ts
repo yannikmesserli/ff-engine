@@ -1675,7 +1675,7 @@ export const SCENARIOS: Scenario[] = [
     title: "Getting Even: Hatred after a bad injury",
     instructions: [
       "Home's first turn. Mortis (#4) is a Wight Blitzer: keywords human, skeleton, undead (and blitzer, a role that does not count).",
-      "Click \"Physical dice\", then declare a Block by Mortis on Ugluk (#4, at (13,5)): enter a 6 (Pow), push him back, then armour 6+6, injury 6+6, and a casualty roll of 9 to 14 on the D16 (Seriously Hurt, Serious Injury or Lasting Injury; any D6).",
+      "Click \"Physical dice\", then declare a Block by Mortis on Ugluk (#4, at (13,5)): enter a 6 (Pow), push him back, then armour 6+6, injury 6+6, and a casualty roll of 9 to 14 on the D16 (Seriously Hurt, Serious Injury or Lasting Injury; a 13 or 14 asks for the D6 of the lasting injury).",
       "Ugluk gets even: the orcs' coach picks human, skeleton or undead, then a D6: on 4+ Ugluk gains Hatred against it (no team re-roll: it is not the orcs' turn). The log says so; teamAfterGame writes it into the team file's `hatred`.",
       "A casualty roll of 1-8 (Badly Hurt) or 15-16 (Dead) gives no Getting Even roll.",
     ],
@@ -1716,7 +1716,7 @@ export const SCENARIOS: Scenario[] = [
     title: "Masters of Undeath: raise a killed opponent",
     instructions: [
       "Home's first turn. The Grave Guard have the Masters of Undeath special rule (in the team file in src/scenarios.ts).",
-      "Click \"Physical dice\", then declare a Block by Mortis (#4) on Wilhelm (#4, at (13,5)): enter a 6 (Pow), push him back, then armour 6+6, injury 6+6, and a casualty roll of 15 or 16 on the D16 (Dead; any D6).",
+      "Click \"Physical dice\", then declare a Block by Mortis (#4) on Wilhelm (#4, at (13,5)): enter a 6 (Pow), push him back, then armour 6+6, injury 6+6, and a casualty roll of 15 or 16 on the D16 (Dead).",
       "Wilhelm rises again: pick Skeleton Lineman or Zombie Lineman. He joins the home reserves under his own name, and stays in the team file after the game. Only once per game, and not for an opponent of ST 5 or more, or a Stunty one.",
     ],
     home: {
@@ -2129,7 +2129,7 @@ export const SCENARIOS: Scenario[] = [
       { type: "FOLLOW_UP", follow: false },
       roll(6, 5),
       roll(6, 4),
-      roll(1, 1),
+      roll(1),
     ],
   },
   {

@@ -14,7 +14,7 @@ export { FREE_PRAYER_GAP, UNDERDOG_TREASURY, shopBudget } from "./procedures/sho
 export { foulAssists, foulTargets } from "./procedures/foul";
 export { RANGE_MODIFIER, evaluatePass, handOffTargets, interceptors, passRange, throwTargets, underRuler } from "./procedures/pass";
 export { neededRoll } from "./procedures/checks";
-export { CASUALTY_DICE, casualtyFor, injuryOutcome } from "./procedures/injury";
+export { CASUALTY_DICE, LASTING_INJURY_DICE, casualtyFor, injuryOutcome } from "./procedures/injury";
 export { LAST_STALLING_TURN, isStalling } from "./procedures/stalling";
 export { leaderReroll, lonerTarget } from "./procedures/helpers";
 export { teamMateTargets, throwableTeamMates } from "./procedures/ttm";

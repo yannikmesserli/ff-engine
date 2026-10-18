@@ -47,7 +47,7 @@ describe("scenarios", () => {
     if (find(s, "CHOOSE_BLOCK_DIE")) s = step(s, { type: "CHOOSE_BLOCK_DIE", index: 0 }).state;
     s = step(s, { type: "PUSH", square: find(s, "PUSH")!.squares[0]! }).state;
     s = step(s, { type: "FOLLOW_UP", follow: false }).state;
-    for (const values of [[6, 6], [6, 6], [10, 1]]) s = step(s, { type: "ROLL", values }).state;
+    for (const values of [[6, 6], [6, 6], [10]]) s = step(s, { type: "ROLL", values }).state;
     expect(find(s, "CHOOSE_KEYWORD")).toMatchObject({ side: "away", playerId: "away-4", keywords: ["human", "skeleton", "undead"] });
     s = step(step(s, { type: "CHOOSE_KEYWORD", keyword: "undead" }).state, { type: "ROLL", values: [4] }).state;
     expect(s.players["away-4"]!.gainedHatred).toEqual(["undead"]);
@@ -61,7 +61,7 @@ describe("scenarios", () => {
     if (find(s, "CHOOSE_BLOCK_DIE")) s = step(s, { type: "CHOOSE_BLOCK_DIE", index: 0 }).state;
     s = step(s, { type: "PUSH", square: find(s, "PUSH")!.squares[0]! }).state;
     s = step(s, { type: "FOLLOW_UP", follow: false }).state;
-    for (const values of [[6, 6], [6, 6], [16, 1]]) s = step(s, { type: "ROLL", values }).state;
+    for (const values of [[6, 6], [6, 6], [16]]) s = step(s, { type: "ROLL", values }).state;
     expect(find(s, "CHOOSE_POSITION")?.positions).toEqual(["Skeleton Lineman", "Zombie Lineman"]);
     s = step(s, { type: "CHOOSE_POSITION", position: "Zombie Lineman" }).state;
     expect(s.players["home-6"]).toMatchObject({ name: "Wilhelm", position: "Zombie Lineman", at: "reserves" });

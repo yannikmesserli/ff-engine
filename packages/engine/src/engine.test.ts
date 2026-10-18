@@ -415,10 +415,13 @@ describe("engine", () => {
       apply(edit(toFirstTurn(), change), startMove("home-11"), ...HOME_11_FULL_MOVE, ...HOME_11_RUSH, roll(1), { type: "DECLINE_REROLL" }, roll(4, 4));
     const withApothecary = (s: GameState) => void (s.teams.home.apothecaries = 1);
 
-    it("rolls a D16 and a D6 on a casualty and sends the player to the casualty box", () => {
+    it("rolls a D16 on a casualty, and a D6 only for a Lasting Injury, and sends the player to the casualty box", () => {
       let s = apply(toInjury(), roll(5, 5));
-      expect(find(s, "ROLL")).toMatchObject({ reason: "Casualty (Home 11)", dice: CASUALTY_DICE });
-      s = apply(s, roll(13, 3));
+      expect(find(s, "ROLL")).toMatchObject({ reason: "Casualty (Home 11)", dice: [{ kind: "d16", count: 1 }] });
+      s = apply(s, roll(13));
+      expect(find(s, "ROLL")).toMatchObject({ reason: "Lasting injury (Home 11)", dice: [{ kind: "d6", count: 1 }] });
+      expect(s.log.some((e) => e.type === "CasualtyRolled")).toBe(false);
+      s = apply(s, roll(3));
       expect(s.players["home-11"]).toMatchObject({ at: "cas", casualty: { result: "lasting-injury", lasting: "ma" } });
       expect(s.log).toContainEqual({ type: "CasualtyRolled", playerId: "home-11", roll: 13, casualty: { result: "lasting-injury", lasting: "ma" } });
     });
@@ -443,16 +446,18 @@ describe("engine", () => {
     });
 
     it("the apothecary heals a Badly Hurt player back to the reserves", () => {
-      const s = apply(toInjury(withApothecary), roll(5, 5), roll(4, 1), { type: "USE_APOTHECARY", use: true });
+      const s = apply(toInjury(withApothecary), roll(5, 5), roll(4), { type: "USE_APOTHECARY", use: true });
       expect(s.players["home-11"]).toMatchObject({ at: "reserves", casualty: null });
     });
 
     it("the apothecary re-rolls a worse casualty: Badly Hurt heals, otherwise the coach picks a result", () => {
-      let s = apply(toInjury(withApothecary), roll(5, 5), roll(16, 1), { type: "USE_APOTHECARY", use: true });
+      let s = apply(toInjury(withApothecary), roll(5, 5), roll(16), { type: "USE_APOTHECARY", use: true });
       expect(find(s, "ROLL")?.reason).toBe("Casualty re-roll (Home 11)");
-      const healed = apply(s, roll(2, 6));
+      const healed = apply(s, roll(2));
       expect(healed.players["home-11"]!.at).toBe("reserves");
-      s = apply(s, roll(13, 6));
+      s = apply(s, roll(13));
+      expect(find(s, "ROLL")).toMatchObject({ side: "home", reason: "Lasting injury re-roll (Home 11)" });
+      s = apply(s, roll(6));
       expect(find(s, "APOTHECARY_CHOICE")).toMatchObject({ first: { result: "dead" }, second: { result: "lasting-injury", lasting: "st" } });
       s = apply(s, { type: "APOTHECARY_CHOICE", keep: "second" });
       expect(s.players["home-11"]).toMatchObject({ at: "cas", casualty: { result: "lasting-injury", lasting: "st" } });
@@ -461,7 +466,7 @@ describe("engine", () => {
     const regenerating = (s: GameState) => void (s.players["home-11"]!.skills = ["Regeneration"]);
 
     it("Regeneration on 4+ heals a casualty before the apothecary", () => {
-      let s = apply(toInjury((c) => (regenerating(c), withApothecary(c))), roll(5, 5), roll(16, 1));
+      let s = apply(toInjury((c) => (regenerating(c), withApothecary(c))), roll(5, 5), roll(16));
       expect(find(s, "ROLL")?.reason).toBe("Regeneration 4+ (Home 11)");
       s = apply(s, roll(4));
       expect(s.players["home-11"]).toMatchObject({ at: "reserves", casualty: null });
@@ -470,7 +475,7 @@ describe("engine", () => {
     });
 
     it("a failed Regeneration can use a team re-roll in the player's turn, then the apothecary is offered", () => {
-      let s = apply(toInjury((c) => (regenerating(c), withApothecary(c))), roll(5, 5), roll(16, 1), roll(3));
+      let s = apply(toInjury((c) => (regenerating(c), withApothecary(c))), roll(5, 5), roll(16), roll(3));
       expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
       s = apply(s, { type: "USE_REROLL" }, roll(2));
       expect(find(s, "USE_APOTHECARY")).toMatchObject({ casualty: { result: "dead" } });
@@ -481,7 +486,7 @@ describe("engine", () => {
         regenerating(c);
         c.teams.home.inducements = { mortuaryAssistant: 1 };
       };
-      let s = apply(toInjury(assisted), roll(5, 5), roll(16, 1), roll(3), { type: "DECLINE_REROLL" });
+      let s = apply(toInjury(assisted), roll(5, 5), roll(16), roll(3), { type: "DECLINE_REROLL" });
       expect(find(s, "USE_SKILL")).toMatchObject({ side: "home", playerId: "home-11", skill: "Mortuary Assistant" });
       s = apply(s, { type: "USE_SKILL", use: true });
       expect(find(s, "ROLL")?.reason).toBe("Regeneration 4+ (Home 11)");
@@ -498,7 +503,7 @@ describe("engine", () => {
       s = apply(s, { type: "USE_APOTHECARY", use: true });
       expect([s.players["home-11"]!.status, s.teams.home.inducementsUsed]).toEqual(["stunned", { plagueDoctor: 1 }]);
       // Used for Regeneration instead, it is gone for the apothecary.
-      s = apply(toInjury((c) => (regenerating(c), doctor(c))), roll(5, 5), roll(16, 1), roll(3), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: true }, roll(3));
+      s = apply(toInjury((c) => (regenerating(c), doctor(c))), roll(5, 5), roll(16), roll(3), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: true }, roll(3));
       expect(s.players["home-11"]!.at).toBe("cas");
     });
 
@@ -756,7 +761,7 @@ describe("engine", () => {
       const ROTTER = { position: "Rotter Lineman", ma: 5, st: 3, ag: 4, pa: 6, av: 9, skills: ["Decay", "Plague Ridden"], keywords: ["human", "lineman"] };
       /** home-2 (Plague Ridden) knocks away-2 down and kills them: armour 12, injury 12, casualty 16. */
       const kill = (s: GameState) =>
-        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(16, 1));
+        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(16));
       const nurgle = (change: (c: GameState) => void = () => {}) =>
         edit(withSkills(toFirstTurn({ ...team("Home"), raisePositions: [ROTTER] }), { "home-2": ["Plague Ridden"] }), change);
 
@@ -781,7 +786,7 @@ describe("engine", () => {
       const SKELETON = { position: "Skeleton Lineman", ma: 5, st: 3, ag: 4, pa: 6, av: 8, skills: ["Regeneration", "Thick Skull"], keywords: ["human", "lineman", "skeleton", "undead"] };
       /** home-2 knocks away-2 down and kills them: armour 12, injury 12, casualty 16. */
       const kill = (s: GameState) =>
-        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(16, 1));
+        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(16));
       const undead = (positions = [ZOMBIE, SKELETON], change: (c: GameState) => void = () => {}) =>
         edit(toFirstTurn({ ...team("Home"), specialRules: ["Masters of Undeath"], raisePositions: positions }), change);
 
@@ -807,7 +812,7 @@ describe("engine", () => {
     describe("Getting Even", () => {
       /** home-2 knocks away-2 down: armour 12, injury 12, then the casualty roll (9: Seriously Hurt). */
       const hurt = (s: GameState, casualty = 9) =>
-        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(casualty, 1));
+        apply(blockAway2(s), roll(6), pick, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(6, 6), roll(6, 6), roll(casualty));
       const keywords = (home2: string[], away2Skills: string[] = []) =>
         edit(toFirstTurn(), (c) => {
           c.players["home-2"]!.keywords = home2;
@@ -1483,7 +1488,7 @@ describe("engine", () => {
       let s = apply(hakflem, startMove("home-1"), { type: "ACTIVATION_SKILL", skill: "Treacherous" }, { type: "SELECT_PLAYERS", playerIds: ["home-2"] });
       expect(s.ball).toEqual({ square: { x: 12, y: 6 }, carried: true });
       expect(s.players["home-2"]!.status).toBe("prone");
-      s = apply(s, roll(6, 6), roll(6, 6), roll(16, 1));
+      s = apply(s, roll(6, 6), roll(6, 6), roll(16));
       expect([s.turnover, types(s).includes("MOVE")]).toEqual([false, true]);
     });
 
@@ -2455,7 +2460,7 @@ describe("engine", () => {
 
       it("a thrower killed by their own fumbled bomb leaves the pitch, and the turn ends", () => {
         // Armour broken, a casualty, then a dead result on the casualty roll.
-        const s = apply(throwBomb(bomber(), { x: 6, y: 4 }), roll(1), { type: "DECLINE_REROLL" }, roll(6, 6), roll(6, 5), roll(15, 1));
+        const s = apply(throwBomb(bomber(), { x: 6, y: 4 }), roll(1), { type: "DECLINE_REROLL" }, roll(6, 6), roll(6, 5), roll(15));
         expect(s.players["home-4"]!.at).toBe("cas");
         expect(s.activeSide).toBe("away");
       });
@@ -5108,16 +5113,16 @@ describe("engine", () => {
     });
 
     it("a casualty from a block earns the blocker 2 (3 for Brawlin' Brutes), even if the apothecary heals it", () => {
-      const s = apply(casualty(toFirstTurn()), roll(1, 1));
+      const s = apply(casualty(toFirstTurn()), roll(1));
       expect(s.players["away-2"]!.at).toBe("cas");
       expect([s.players["home-2"]!.spp.casualties, spp(s, "home-2")]).toEqual([1, 2]);
       expect(spp(edit(s, (c) => void (c.teams.home.specialRules = ["Brawlin' Brutes"])), "home-2")).toBe(3);
-      const healed = apply(casualty(edit(toFirstTurn(), (c) => void (c.teams.away.apothecaries = 1))), roll(1, 1), { type: "USE_APOTHECARY", use: true });
+      const healed = apply(casualty(edit(toFirstTurn(), (c) => void (c.teams.away.apothecaries = 1))), roll(1), { type: "USE_APOTHECARY", use: true });
       expect([healed.players["away-2"]!.at, spp(healed, "home-2")]).toEqual(["reserves", 2]);
     });
 
     it("the defender earns it when the attacker falls on their own block; a KO earns nothing", () => {
-      const s = apply(toFirstTurn(), declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(1), { type: "CHOOSE_BLOCK_DIE", index: 0 }, roll(5, 4), roll(6, 5), roll(1, 1));
+      const s = apply(toFirstTurn(), declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(1), { type: "CHOOSE_BLOCK_DIE", index: 0 }, roll(5, 4), roll(6, 5), roll(1));
       expect(spp(s, "away-2")).toBe(2);
       const ko = apply(toFirstTurn(), declare("home-2", "block"), { type: "BLOCK", targetId: "away-2" }, roll(6), { type: "CHOOSE_BLOCK_DIE", index: 0 }, { type: "PUSH", square: { x: 14, y: 7 } }, { type: "FOLLOW_UP", follow: false }, roll(5, 4), roll(4, 4));
       expect([ko.players["away-2"]!.at, spp(ko, "home-2")]).toEqual(["ko", 0]);
@@ -5129,7 +5134,7 @@ describe("engine", () => {
           c.players["away-1"]!.status = "prone";
           c.teams.home.prayers = prayers;
         });
-      const foul = (s: GameState) => apply(s, declare("home-4", "foul"), { type: "FOUL", targetId: "away-1" }, roll(5, 4), roll(6, 5), roll(1, 1));
+      const foul = (s: GameState) => apply(s, declare("home-4", "foul"), { type: "FOUL", targetId: "away-1" }, roll(5, 4), roll(6, 5), roll(1));
       expect(foul(fouling([])).players["away-1"]!.at).toBe("cas");
       expect(spp(foul(fouling([])), "home-4")).toBe(0);
       expect(spp(foul(fouling(["fouling-frenzy"])), "home-4")).toBe(2);
@@ -5174,7 +5179,7 @@ describe("engine", () => {
 
     it("Violent Innovator: a casualty from a Stab earns Star Player Points", () => {
       const stabbing = (skills: string[]) => edit(toFirstTurn(), (c) => void (c.players["home-2"]!.skills = skills));
-      const stab = (s: GameState) => apply(s, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(5, 4), roll(6, 5), roll(1, 1));
+      const stab = (s: GameState) => apply(s, declare("home-2", "block"), { type: "STAB", targetId: "away-2" }, roll(5, 4), roll(6, 5), roll(1));
       expect(stab(stabbing(["Stab"])).players["away-2"]!.at).toBe("cas");
       expect(spp(stab(stabbing(["Stab"])), "home-2")).toBe(0);
       expect(spp(stab(stabbing(["Stab", "Violent Innovator"])), "home-2")).toBe(2);

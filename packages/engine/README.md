@@ -124,7 +124,7 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
   `setupErrors`, `KICKOFF_TABLE`, `openPlayers`, `weatherFor`, `declarableActions`,
   `legalMoves`, `adjacentTargets`, `blockDice`, `pushbackSquares`, `foulAssists`, `foulTargets`,
   `RANGE_MODIFIER`, `evaluatePass`, `passRange`, `throwTargets`, `handOffTargets`, `interceptors`, `underRuler`,
-  `neededRoll`, `injuryOutcome`, `casualtyFor`, `CASUALTY_DICE`, `hasSkill`, `skillName`, `skillValue`.
+  `neededRoll`, `injuryOutcome`, `casualtyFor`, `CASUALTY_DICE`, `LASTING_INJURY_DICE`, `hasSkill`, `skillName`, `skillValue`.
 - Skills: automatic skill re-rolls (Dodge, Sure Hands, Catch) live in `skillReroll` (`procedures/checks.ts`). The
   rules make them optional ("may re-roll"), but they are used without asking: keeping a failed dodge, pick-up or
   catch almost never helps, and a prompt on each one would slow the game down. An
