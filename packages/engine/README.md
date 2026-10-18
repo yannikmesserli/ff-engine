@@ -4,6 +4,11 @@ Pure TypeScript Blood Bowl rules engine, no UI. It follows the **BB2025** rules.
 every random number comes from a seeded RNG stored in that state, and `step` is pure, so saves, replays and undo
 are just a matter of keeping states.
 
+This is the published part of the project (MIT): no UI, no artwork, and nothing about how games are hosted. To run
+games others can trust, run it on a server that keeps the state and the RNG, and accept from each player only the
+decisions `getAvailableActions` offers their side; never their dice values (a `ROLL` with `values` is for physical
+dice, so a server should send `{ type: "ROLL" }` itself).
+
 ```ts
 import { createGame, getAvailableActions, step } from "@bb/engine";
 

@@ -1,5 +1,6 @@
 {
   "name": "bloodbowl-frontend",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

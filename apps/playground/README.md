@@ -2,6 +2,12 @@
 
 Vite app hosting `<BloodBowlGame>` from `@bb/board-ui`: online games between two browsers, or hot-seat.
 
+**For testing the engine only**, not for hosting games for others. **Online games cannot be trusted: cheating is easy.** Both browsers run the engine and the relay only forwards
+their actions, so nothing checks a player. The home browser picks the dice seed, so it can work out every roll in
+advance; either player can send any dice values (physical dice entry is a legal action); and team files are only
+checked for format, not for how the team was built (any player can be given any skill). A trustworthy game needs a
+server that runs the engine itself, keeps the RNG and the teams, and accepts only its players' own decisions.
+
 ```
 pnpm dev      # from frontend/: http://localhost:5173, plus the relay (apps/relay) on :8787
 pnpm build    # typecheck + production build

@@ -3,6 +3,10 @@
 Static data for the engine: BB2025 rosters, example teams, setup formations, the zod schemas that validate them, and
 `resolveTeam()` which turns a team file into the engine's `TeamSetup`.
 
+The rosters and star players are downloaded from FUMBBL (`pnpm fetch-rosters`); they hold the paths of FUMBBL's
+artwork, never the images. `resolveTeam` checks a team file's format and limits, not how the team was built over its
+games: a server running league games should check advancements itself.
+
 ```ts
 import { exampleTeams, formationActions, formations, resolveTeam, rosters } from "@bb/data";
 

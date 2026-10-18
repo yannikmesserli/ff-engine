@@ -1,6 +1,11 @@
 # relay
 
-The backend of online games: a Node WebSocket relay (`ws`), with no database and nothing stored.
+The backend of the playground's online games: a Node WebSocket relay (`ws`), with no database and nothing stored.
+
+**For testing the engine only, and it cannot be trusted.** The relay knows no rules and checks nothing: it forwards
+whatever a player sends. Either player can cheat: the home browser picks the dice seed (and can work out every roll),
+any player can send any dice values, and team files are not checked against how the team was built. See "What this
+project is" in the main README for what a trustworthy server would need.
 
 ```
 pnpm dev               # from frontend/: the relay (watch mode) and the playground together
@@ -15,8 +20,8 @@ pnpm relay             # from frontend/: the relay alone, on PORT (default 8787)
 - The relay does not know the rules: `data` is whatever the playground sends (teams, then batches of actions).
 - Message types are in `src/protocol.ts` (exported as `relay/protocol`).
 
-## Deploying
+## Running it on a server (for testing)
 
-`node src/main.ts` (Node 23.6+ runs the TypeScript directly). It also serves a built playground
+Only to let testers play each other, never as a public game service. `node src/main.ts` (Node 23.6+ runs the TypeScript directly). It also serves a built playground
 (`apps/playground/dist`, or `STATIC_DIR`), so one process serves the app and the relay on one port. Behind HTTPS,
 browsers connect with `wss://` automatically.

@@ -5,6 +5,10 @@ dugouts, decision panel, last roll with undo, player card (hovered, or pinned by
 description tooltips) and game log. All rules come from `@bb/engine`; this
 package only renders the engine's state and turns clicks into engine actions.
 
+It comes without artwork: bring your own player sprites and team logos (`artwork`, see "Artwork") and image folder
+(`assetsUrl`, see "Assets"). Online play (`online`) runs the engine in each browser and trusts both players: fine for
+testing, not for games that must be fair (see "What this project is" in the main README).
+
 ## Usage
 
 ```tsx

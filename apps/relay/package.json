@@ -1,5 +1,6 @@
 {
   "name": "relay",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

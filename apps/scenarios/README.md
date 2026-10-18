@@ -3,6 +3,8 @@
 Vite app to try a rule in the browser from a prepared position, without playing up to it: pick a scenario, follow its
 instructions, and play on with the full `<BloodBowlGame>` (physical dice entry, undo back to the scenario's start).
 
+**For testing only**: the scenario teams give players skills freely, and dice are entered by hand.
+
 ```
 pnpm scenarios    # from frontend/: http://localhost:5174 (?scenario=<id> opens one directly)
 ```
