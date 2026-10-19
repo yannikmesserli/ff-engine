@@ -3,10 +3,12 @@
   "license": "MIT",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.13.1",
   "scripts": {
     "dev": "pnpm --parallel --filter playground --filter relay dev",
     "build": "pnpm --filter playground build",
     "test": "vitest run",
+    "lint": "biome lint .",
     "typecheck": "pnpm -r typecheck",
     "fetch-rosters": "pnpm --filter @ff-engine/data fetch-rosters",
     "fetch-artwork": "tsx apps/playground/scripts/fetch-artwork.ts",
@@ -14,6 +16,7 @@
     "scenarios": "pnpm --filter scenarios dev"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
     "@types/node": "^26.6.4",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"

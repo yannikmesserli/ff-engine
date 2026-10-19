@@ -120,12 +120,14 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
   const onlineState = useReplay(initial, online?.actions);
   const state = online ? onlineState : history.at(-1)!;
   // Online, the board only offers this browser's decisions.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `decider` is a pure import; only `online.side` matters.
   const templates = useMemo(() => {
     const all = getAvailableActions(state);
     return online ? all.filter((t) => decider(state, t) === online.side) : all;
   }, [state, online?.side]);
   const waitingFor = online && templates.length === 0 && !state.finished ? state.teams[online.side === "home" ? "away" : "home"].name : null;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: report new states only, not a new `onChange` or `online` prop.
   useEffect(() => {
     if (online) onChange?.(state);
   }, [state]);
@@ -167,6 +169,7 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
 
   const onlyRoll = templates.length === 1 && templates[0]!.type === "ROLL";
   // `dispatch` only depends on `state` (and `onChange`), so the timer restarts on new states, not on every render.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above.
   useEffect(() => {
     if (!autoRoll || !onlyRoll) return;
     const timer = setTimeout(() => dispatch({ type: "ROLL" }), AUTO_ROLL_DELAY_MS);
@@ -357,6 +360,7 @@ function Skill({ skill }: { skill: string }) {
   const description = skillDescription(skill) ?? "No description yet.";
   const missing = !IMPLEMENTED_SKILLS.some((s) => sameSkill(s, skillName(skill)));
   return (
+    // biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so keyboard users can open the tooltip.
     <span className={`bb-skill${missing ? " bb-skill-missing" : ""}`} tabIndex={0}>
       {skill}
       <span className="bb-tip" role="tooltip">

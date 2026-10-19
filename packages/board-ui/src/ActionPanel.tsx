@@ -643,7 +643,7 @@ function ShopControls({ template, dispatch }: { template: TemplateOf<"BUY_INDUCE
           })}
         </tbody>
       </table>
-      {hires && hires.mercenaries.some((m) => m.max > 0) && (
+      {hires?.mercenaries.some((m) => m.max > 0) && (
         <MercenaryPicker hires={hires} disabled={slotsLeft === 0} add={(m) => setMercs([...mercs, m])} budgetLeft={budget - total} cost={mercCost} />
       )}
       {mercs.map((m, i) => (
