@@ -61,6 +61,8 @@ export interface OnlineControl {
   side: Side;
   actions: Action[][];
   send(actions: Action[]): void;
+  /** While true (not connected, or catching up with the opponent), the board offers no decision and auto-roll waits. */
+  paused?: boolean;
 }
 
 /** Who takes a decision: its side, or for rolls anyone could make, the team whose turn it is (home before kick-off). */
@@ -165,13 +167,15 @@ function Game(props: {
   const [aiming, setAiming] = useState<Aiming>(false);
   const onlineState = useReplay(initial, online?.actions);
   const state = online ? onlineState : history.at(-1)!.state;
-  // Online, the board only offers this browser's decisions.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `decider` is a pure import; only `online.side` matters.
+  // Online, the board only offers this browser's decisions, and none while paused. Auto-roll restarts when a pause ends,
+  // since the lone roll template comes back.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `decider` is a pure import; only `online.side` and `online.paused` matter.
   const templates = useMemo(() => {
+    if (online?.paused) return [];
     const all = getAvailableActions(state);
     return online ? all.filter((t) => decider(state, t) === online.side) : all;
-  }, [state, online?.side]);
-  const waitingFor = online && templates.length === 0 && !state.finished ? state.teams[online.side === "home" ? "away" : "home"].name : null;
+  }, [state, online?.side, online?.paused]);
+  const waitingFor = online && !online.paused && templates.length === 0 && !state.finished ? state.teams[online.side === "home" ? "away" : "home"].name : null;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: report new states only, not a new `onChange` or `online` prop.
   useEffect(() => {

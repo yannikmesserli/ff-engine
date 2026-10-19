@@ -36,8 +36,13 @@ The relay stores nothing, so the browsers catch up with each other (`src/sync.ts
 - Each batch of actions is sent with its position in the game. A browser appends a batch only if it is the next
   one. A lower position is a duplicate, or a batch sent at the same time as the one the relay passed first: both
   browsers drop it the same way. A higher position means batches were missed.
-- When a player (re)connects, or sees a gap, both send a sync: the teams, home's seed and every batch they have. The
-  browser behind adopts the longer list (lists that disagree, which should not happen, resolve to home's).
+- When a player (re)connects, or sees a gap, both send a snapshot: the teams, home's seed and shop option, and every
+  batch they have, in chunks small enough for the relay. Both settle on the same snapshot, taken whole: the longer
+  list of batches of the same game; a started game over a lobby (a player who lost their tab and picked a team
+  again); between two different started games, the one with more batches, then home's.
+- After each (re)connection the board is paused (no decision, no auto-roll) until the opponent's snapshot has
+  arrived, so a player never plays from a position the opponent has already left. A player who stays connected
+  keeps playing; auto-roll picks up again when the pause ends.
 
 A player who closed the tab (and lost its storage) can open the link again: they get the free side back and the
 whole game from the opponent.
