@@ -19,8 +19,6 @@ import { findTemplate, multipleBlockFirst, type TemplateOf } from "./templates";
 
 interface ActionPanelProps {
   state: GameState;
-  /** Base URL of the image folder. */
-  assets: string;
   /** Set while picking the target of a Blitz. */
   blitzFor: string | null;
   cancelBlitz(): void;
@@ -159,15 +157,15 @@ function promptText(state: GameState, templates: ActionTemplate[], main: ActionT
 }
 
 /** Pick any number of block dice to re-roll (Savage Blow), then confirm. */
-function BlockDicePicker(props: { template: TemplateOf<"REROLL_BLOCK_DIE">; assets: string; dispatch(action: Action): void }) {
-  const { template, assets, dispatch } = props;
+function BlockDicePicker(props: { template: TemplateOf<"REROLL_BLOCK_DIE">; dispatch(action: Action): void }) {
+  const { template, dispatch } = props;
   const [chosen, setChosen] = useState<number[]>([]);
   const toggle = (i: number) => setChosen(chosen.includes(i) ? chosen.filter((c) => c !== i) : [...chosen, i]);
   return (
     <span className="bb-block-dice">
       {template.results.map((v, i) => (
         <button key={i} className={chosen.includes(i) ? "bb-picked" : undefined} title={`Re-roll this ${blockFaceName(v)}`} onClick={() => toggle(i)}>
-          <DieFace kind="block" value={v} assets={assets} />
+          <DieFace kind="block" value={v} />
         </button>
       ))}
       <button disabled={chosen.length === 0} onClick={() => dispatch({ type: "REROLL_BLOCK_DIE", index: chosen[0]!, indexes: chosen })}>
@@ -179,7 +177,7 @@ function BlockDicePicker(props: { template: TemplateOf<"REROLL_BLOCK_DIE">; asse
 
 /** The decision panel: a prompt and one button per available non-board action. */
 export function ActionPanel(props: ActionPanelProps) {
-  const { state, assets, templates, dispatch, autoRoll, setAutoRoll, picked, setPicked } = props;
+  const { state, templates, dispatch, autoRoll, setAutoRoll, picked, setPicked } = props;
   // The block die choice may belong to the defending coach even if the attacker can still re-roll.
   const main = templates.find((t) => t.type === "CHOOSE_BLOCK_DIE") ?? templates.find((t) => t.type in PROMPTS) ?? templates[0];
   if (!main) {
@@ -259,7 +257,7 @@ export function ActionPanel(props: ActionPanelProps) {
           <span className="bb-block-dice">
             {blockDie.results.map((v, i) => (
               <button key={i} title={blockFaceName(v)} onClick={() => dispatch({ type: "CHOOSE_BLOCK_DIE", index: i })}>
-                <DieFace kind="block" value={v} assets={assets} />
+                <DieFace kind="block" value={v} />
               </button>
             ))}
           </span>
@@ -309,12 +307,12 @@ export function ActionPanel(props: ActionPanelProps) {
             </button>
           ) : null,
         )}
-        {main.type === "REROLL_BLOCK_DIE" && main.multiple && <BlockDicePicker template={main} assets={assets} dispatch={dispatch} />}
+        {main.type === "REROLL_BLOCK_DIE" && main.multiple && <BlockDicePicker template={main} dispatch={dispatch} />}
         {main.type === "REROLL_BLOCK_DIE" && !main.multiple && (
           <span className="bb-block-dice">
             {main.results.map((v, i) => (
               <button key={i} title={`Re-roll this ${blockFaceName(v)} (${main.skill})`} onClick={() => dispatch({ type: "REROLL_BLOCK_DIE", index: i })}>
-                <DieFace kind="block" value={v} assets={assets} />
+                <DieFace kind="block" value={v} />
               </button>
             ))}
           </span>

@@ -66,8 +66,9 @@ ends; undoing back to the start enables them again). The game is saved in the ta
 Graphics are not included, and no image may be committed (`.gitignore` refuses image files). Vite serves `public/`
 (git-ignored) at the site root, for this app and the scenarios app.
 
-- Player sprites and team logos: `pnpm fetch-artwork` (`scripts/fetch-artwork.ts`) downloads FUMBBL's into
-  `public/fumbbl/`, with a `manifest.json` the apps read (`useDownloadedArtwork("/fumbbl")`). Without them, players
-  are numbered discs and teams have no logo. FUMBBL's artwork is not part of this project and does not belong to its authors: the download is for testing the engine only. Do not commit, publish or ship it, and ask FUMBBL (https://fumbbl.com) for any other use.
-- The pitch, dice, ball and status overlays: loaded from `/img/...`, so put them in `public/img/` (layout in
-  `packages/board-ui/README.md`). A symlink to an existing image folder works.
+- Player sprites, team logos and pitches: `pnpm fetch-artwork` (`scripts/fetch-artwork.ts`) downloads FUMBBL's into
+  `public/fumbbl/` (the pitches, one per weather, unpacked from FUMBBL's zip), with a `manifest.json` the apps read
+  (`useDownloadedArtwork("/fumbbl")`). Without them, players are numbered discs, teams have no logo and the pitch
+  comes from `public/img/`. FUMBBL's artwork is not part of this project and does not belong to its authors: the download is for testing the engine only. Do not commit, publish or ship it, and ask FUMBBL (https://fumbbl.com) for any other use.
+- The ball, status overlays and fallback pitch: loaded from `/img/...`, so put them in `public/img/` (layout in
+  `packages/board-ui/README.md`). A symlink to an existing image folder works. The dice are drawn in code.

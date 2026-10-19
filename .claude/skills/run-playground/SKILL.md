@@ -13,10 +13,10 @@ pnpm dev                # Vite on http://localhost:5173 (run it in the backgroun
 ```
 
 - `http://localhost:5173/?seed=42` replays the same dice; use a fixed seed to reproduce a situation.
-- The pitch, dice and ball come from `apps/playground/public/img/` (git-ignored, not shipped; layout in
-  `packages/board-ui/README.md`). Player sprites and team logos come from `pnpm fetch-artwork` (FUMBBL's, downloaded
-  into `apps/playground/public/fumbbl/` for testing only, never committed); without them the board shows numbered
-  discs.
+- The ball, status overlays and fallback pitch come from `apps/playground/public/img/` (git-ignored, not shipped;
+  layout in `packages/board-ui/README.md`); the dice are drawn in code. Player sprites, team logos and the pitch of
+  each weather come from `pnpm fetch-artwork` (FUMBBL's, downloaded into `apps/playground/public/fumbbl/` for testing
+  only, never committed); without them the board shows numbered discs.
 - `pnpm build` makes a production build. It catches errors that `pnpm typecheck` misses in the app entry.
 
 To reach a game situation faster than clicking through, reproduce it in an engine test

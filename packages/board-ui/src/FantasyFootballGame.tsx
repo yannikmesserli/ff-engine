@@ -264,7 +264,6 @@ function Game(props: {
           {state.finished && state.result && <GameSummary state={state} teams={props.teams} />}
           <ActionPanel
             state={state}
-            assets={assets}
             blitzFor={menu?.mode === "blitz-target" ? menu.playerId : null}
             cancelBlitz={() => setMenu(null)}
             templates={templates}
@@ -278,7 +277,7 @@ function Game(props: {
             waitingFor={waitingFor}
           />
           {error && <div className="bb-panel bb-error">{error}</div>}
-          <LastRoll state={state} assets={assets} canUndo={!online && history.length > 1} onUndo={undo} />
+          <LastRoll state={state} canUndo={!online && history.length > 1} onUndo={undo} />
           {player && <PlayerCard player={player} pinned={player.id === pinned} onClose={() => setPinned(null)} />}
         </div>
         <GameLog state={state} />
@@ -398,14 +397,14 @@ function GameSummary({ state, teams }: { state: GameState; teams: Record<Side, u
 }
 
 /** The latest dice roll, with the undo button. */
-function LastRoll(props: { state: GameState; assets: string; canUndo: boolean; onUndo(): void }) {
+function LastRoll(props: { state: GameState; canUndo: boolean; onUndo(): void }) {
   const lastRoll = props.state.log.findLast((e): e is Extract<GameEvent, { type: "DiceRolled" }> => e.type === "DiceRolled");
   return (
     <div className="bb-panel bb-last-roll">
       {lastRoll ? (
         <>
           <span>{lastRoll.reason}</span>
-          <DiceRolls rolls={lastRoll.rolls} assets={props.assets} />
+          <DiceRolls rolls={lastRoll.rolls} />
         </>
       ) : (
         <span>No dice rolled yet.</span>

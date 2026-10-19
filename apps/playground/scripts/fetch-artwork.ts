@@ -1,24 +1,30 @@
 /**
- * Downloads FUMBBL's player sprites and team logos into apps/playground/public/fumbbl/, for testing the engine in the
- * playground and the scenarios app.
+ * Downloads FUMBBL's player sprites, team logos and pitches (one per weather) into apps/playground/public/fumbbl/, for
+ * testing the engine in the playground and the scenarios app.
  *
  * THESE IMAGES ARE NOT PART OF THIS PROJECT AND DO NOT BELONG TO ITS AUTHORS. They are FUMBBL's (https://fumbbl.com)
  * and its artists'. This script exists only so that people testing the engine can see who is who on the pitch. Use the
  * copies for your own testing only, and ask FUMBBL before doing anything else with them (publishing them, shipping
  * them in a build, hosting a game). Never commit them: the repository ignores the folder and every image file.
  *
- * Without them, players are numbered discs and teams have no logo.
+ * Without them, players are numbered discs, teams have no logo and the pitch comes from the image folder.
  *
  * Run with: pnpm fetch-artwork (files already downloaded are skipped; --refresh downloads them again)
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { unzipSync } from "fflate";
 import { artworkBase, rosters, starPlayers } from "@ff-engine/data";
+import type { Weather } from "@ff-engine/engine";
 
 const OUT = join(import.meta.dirname, "../public/fumbbl");
 /** Pause between downloads, to be gentle with FUMBBL. */
 const DELAY_MS = 200;
 const EXTENSIONS: Record<string, string> = { "image/png": "png", "image/gif": "gif", "image/jpeg": "jpg", "image/webp": "webp" };
+/** FUMBBL's default pitches: a zip with one image per weather, named in its pitch.ini (`sunny=sunny.png`). */
+const PITCHES = "https://fumbbl.com/FUMBBL/Images/Pitches/Default.zip";
+/** The weather of each pitch.ini name. */
+const PITCH_WEATHER: Record<string, Weather> = { heat: "sweltering-heat", sunny: "very-sunny", nice: "nice", rain: "pouring-rain", blizzard: "blizzard" };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -58,5 +64,31 @@ for (const path of paths) {
   downloaded += 1;
   await sleep(DELAY_MS);
 }
+console.log(`Sprites and logos: ${downloaded} downloaded, ${paths.size - downloaded} already there.`);
+
+// The pitches, unpacked as pitch-<weather>.png under the manifest keys pitch/<weather>.
+const weathers = Object.values(PITCH_WEATHER);
+if (weathers.every((w) => manifest[`pitch/${w}`] && existsSync(join(OUT, manifest[`pitch/${w}`]!)))) {
+  console.log("Pitches: already there.");
+} else {
+  const response = await fetch(PITCHES);
+  if (!response.ok) console.error(`Skipped the pitches: HTTP ${response.status}`);
+  else {
+    const files = unzipSync(new Uint8Array(await response.arrayBuffer()));
+    const ini = new TextDecoder().decode(files["pitch.ini"]);
+    let unpacked = 0;
+    for (const line of ini.split(/\r?\n/)) {
+      const [name, file] = line.split("=").map((part) => part.trim());
+      const weather = name ? PITCH_WEATHER[name] : undefined;
+      const image = file ? files[file] : undefined;
+      if (!weather || !image) continue;
+      manifest[`pitch/${weather}`] = `pitch-${weather}.png`;
+      writeFileSync(join(OUT, `pitch-${weather}.png`), image);
+      unpacked += 1;
+    }
+    console.log(`Pitches: ${unpacked} of ${weathers.length} unpacked.`);
+  }
+}
+
 writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
-console.log(`${downloaded} downloaded, ${paths.size - downloaded} already there, in ${OUT}`);
+console.log(`In ${OUT}`);
