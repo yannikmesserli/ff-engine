@@ -15,12 +15,14 @@ README of the package you touch:
 ```
 pnpm test        # vitest: engine unit tests + 40 full random games between test teams of every roster (data.test.ts)
 pnpm typecheck   # tsc in every package
+pnpm lint        # biome (lint only, no formatting)
 pnpm build       # playground production build
 pnpm dev         # playground on http://localhost:5173 (?seed=42 replays the same dice) + relay on :8787
 pnpm scenarios   # prepared positions on http://localhost:5174 (?scenario=<id>)
 ```
 
-Run `pnpm typecheck && pnpm test` before reporting any change as done.
+Run `pnpm lint && pnpm typecheck && pnpm test` before reporting any change as done. CI runs all three on every pull
+request, and they must pass before merging.
 
 ## Rules
 

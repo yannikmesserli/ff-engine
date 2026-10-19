@@ -31,6 +31,7 @@ pnpm dev          # playground at http://localhost:5173, with the relay for onli
 pnpm scenarios    # prepared positions to try a rule in the browser, on http://localhost:5174
 pnpm test         # engine + data tests (incl. full random games)
 pnpm typecheck
+pnpm lint
 pnpm fetch-rosters    # download the BB2025 rosters from FUMBBL (ruleset 2014) into packages/data/src/generated
 pnpm fetch-artwork    # for testing only: FUMBBL's player sprites and team logos (not ours: never commit them)
 ```

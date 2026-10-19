@@ -3,7 +3,7 @@ import type { GameState, PassRange, PlayerState, Procedure, Square } from "../ty
 import { SCATTER, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, isPinned, offset, playerAt, sameSquare, tackleZones } from "../pitch";
 import { hasSkill } from "../skills";
-import { ballista, canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
+import { ballista, canTeamReroll, canUsePro, checkTouchdown, getPlayer, lonerRollTemplate, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
 import { evaluatePass, passModifiers, passRange, shownNeeded } from "./pass";
 import { injure } from "./injury";
 import { trapdoor } from "./prayers";
@@ -188,12 +188,13 @@ export const ThrowTeamMate: Handler<P<"ThrowTeamMate">> = {
         } else proc.stage = "scatter";
         return "continue";
       }
-      case "loner":
+      case "loner": {
         if (action === null) return "wait";
         const gate = rollLoner(ctx, action, thrower);
         if (gate === "offer") mascotFailed(proc);
         proc.stage = gate === "reroll" ? "roll" : gate === "offer" ? "reroll" : "scatter";
         return "continue";
+      }
       case "pro":
       case "proTeam":
       case "proLoner": {

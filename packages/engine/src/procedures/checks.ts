@@ -3,7 +3,7 @@ import type { CheckKind, GameState, PlayerState, Procedure } from "../types";
 import { passes } from "../dice";
 import { adjacent, ballCarrier, hasTackleZone, isOnPitch, other, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { hasSkill } from "../skills";
-import { PRO_TARGET, canTeamReroll, canUsePro, getPlayer, luckSkill, useLuck, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
+import { PRO_TARGET, canTeamReroll, canUsePro, getPlayer, luckSkill, useLuck, useOncePerGame, lonerRollTemplate, mascotFailed, proTemplate, proTemplates, rerollGate, rollLoner, squareOf, stepPro, teamRerollTemplate, useTeamReroll } from "./helpers";
 import { injure, injuryOutcome, knockOut, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 

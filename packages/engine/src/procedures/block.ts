@@ -1,12 +1,12 @@
 import type { Ctx, Handler, StepResult } from "../context";
 import type { GameState, PlayerState, Procedure, Side, Square } from "../types";
-import { adjacent, ballCarrier, chompHolds, hasTackleZone, inBounds, isOnPitch, isPinned, isRooted, playerAt, sameSquare, tackleZoneAt, tackleZones } from "../pitch";
+import { adjacent, ballCarrier, chompHolds, hasTackleZone, inBounds, isOnPitch, isPinned, isRooted, playerAt, sameSquare, tackleZoneAt } from "../pitch";
 import { BLOCK_FACES } from "../dice";
 import { hatedKeywords, injure, injuryOutcome, savageMauling } from "./injury";
 import { dropBall } from "./ball";
 import { trapdoor } from "./prayers";
-import { hasSkill, skillName, skillValue, tandemRole } from "../skills";
-import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, luckSkill, sneakyPair, useLuck, useOncePerGame, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
+import { hasSkill, skillValue, tandemRole } from "../skills";
+import { canTeamReroll, canUsePro, checkTouchdown, getPlayer, luckSkill, sneakyPair, useLuck, useOncePerGame, lonerRollTemplate, mascotFailed, proTemplate, proTemplates, rerollGate, rollLoner, rushModifier, squareOf, stepPro, teamRerollTemplate, pickupModifier, useTeamReroll } from "./helpers";
 import { RUSH_TARGET, maxMoves } from "./turn";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
@@ -778,13 +778,14 @@ export const Block: Handler<P<"Block">> = {
         proc.stage = "choose";
         return "continue";
       }
-      case "loner":
+      case "loner": {
         if (action === null) return "wait";
         // A failed Loner roll keeps the dice already rolled; a failed Team Mascot asks again.
         const gate = rollLoner(ctx, action, attacker);
         if (gate === "offer") mascotFailed(proc);
         proc.stage = gate === "reroll" ? "roll" : gate === "offer" && proc.dice < 0 ? "reroll" : "choose";
         return "continue";
+      }
       case "choose": {
         // A single die without a possible re-roll leaves nothing to decide.
         if (proc.results!.length === 1 && !(proc.dice > 0 && anyReroll(state, proc, attacker, defender))) proc.face = proc.results![0]!;

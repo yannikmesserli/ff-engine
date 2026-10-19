@@ -58,5 +58,5 @@ for (const path of paths) {
   downloaded += 1;
   await sleep(DELAY_MS);
 }
-writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + "\n");
+writeFileSync(manifestFile, `${JSON.stringify(manifest, null, 2)}\n`);
 console.log(`${downloaded} downloaded, ${paths.size - downloaded} already there, in ${OUT}`);

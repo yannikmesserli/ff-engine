@@ -1175,7 +1175,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
         proc.stage = "dodge";
         if (player.movesUsed + 1 >= player.ma && !proc.onTheBall) check("rush", RUSH_TARGET, rushModifier(state, player));
         return "continue";
-      case "dodge":
+      case "dodge": {
         if (failed(ctx)) return fall(proc.jump);
         if (proc.held) return holdInPlace(ctx, proc, player);
         // Tentacles: the opponents may first try to hold a player dodging or jumping away.
@@ -1202,6 +1202,7 @@ export const MoveStep: Handler<P<"MoveStep">> = {
           check("dodge", player.ag, dodgeModifier(state, player, leaving.from, proc.to), leaving);
         }
         return "continue";
+      }
       case "bounding":
         if (action === null) return "wait";
         proc.bounding = ctx.expect(action, "USE_SKILL").use;

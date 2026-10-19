@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { interceptionTarget, interceptors } from "./procedures/pass";
 import {
-  CASUALTY_DICE,
   ballUnsettled,
   blockDice,
   flightMarkers,
@@ -468,7 +467,10 @@ describe("engine", () => {
     const regenerating = (s: GameState) => void (s.players["home-11"]!.skills = ["Regeneration"]);
 
     it("Regeneration on 4+ heals a casualty before the apothecary", () => {
-      let s = apply(toInjury((c) => (regenerating(c), withApothecary(c))), roll(5, 5), roll(16));
+      let s = apply(toInjury((c) => {
+        regenerating(c);
+        withApothecary(c);
+      }), roll(5, 5), roll(16));
       expect(find(s, "ROLL")?.reason).toBe("Regeneration 4+ (Home 11)");
       s = apply(s, roll(4));
       expect(s.players["home-11"]).toMatchObject({ at: "reserves", casualty: null });
@@ -477,7 +479,10 @@ describe("engine", () => {
     });
 
     it("a failed Regeneration can use a team re-roll in the player's turn, then the apothecary is offered", () => {
-      let s = apply(toInjury((c) => (regenerating(c), withApothecary(c))), roll(5, 5), roll(16), roll(3));
+      let s = apply(toInjury((c) => {
+        regenerating(c);
+        withApothecary(c);
+      }), roll(5, 5), roll(16), roll(3));
       expect(types(s)).toEqual(["USE_REROLL", "DECLINE_REROLL"]);
       s = apply(s, { type: "USE_REROLL" }, roll(2));
       expect(find(s, "USE_APOTHECARY")).toMatchObject({ casualty: { result: "dead" } });
@@ -505,7 +510,10 @@ describe("engine", () => {
       s = apply(s, { type: "USE_APOTHECARY", use: true });
       expect([s.players["home-11"]!.status, s.teams.home.inducementsUsed]).toEqual(["stunned", { plagueDoctor: 1 }]);
       // Used for Regeneration instead, it is gone for the apothecary.
-      s = apply(toInjury((c) => (regenerating(c), doctor(c))), roll(5, 5), roll(16), roll(3), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: true }, roll(3));
+      s = apply(toInjury((c) => {
+        regenerating(c);
+        doctor(c);
+      }), roll(5, 5), roll(16), roll(3), { type: "DECLINE_REROLL" }, { type: "USE_SKILL", use: true }, roll(3));
       expect(s.players["home-11"]!.at).toBe("cas");
     });
 
@@ -645,7 +653,7 @@ describe("engine", () => {
     const loner = (id: string) => (s: GameState) => edit(s, (c) => void (c.players[id]!.skills = ["Loner(4)"]));
 
     it("rolls before a team re-roll can be used; a failure loses the re-roll and keeps the result", () => {
-      let s = apply(loner("home-1")(toFirstTurn()), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(2), { type: "USE_REROLL" });
+      const s = apply(loner("home-1")(toFirstTurn()), startMove("home-1"), ...move({ x: 11, y: 5 }), roll(2), { type: "USE_REROLL" });
       expect(s.teams.home.rerolls).toBe(0);
       expect(find(s, "ROLL")?.reason).toBe("Loner 4+ (Home 1)");
       const lost = apply(s, roll(3));
@@ -1734,7 +1742,7 @@ describe("engine", () => {
       let s = apply(swiftvine, startMove("home-4"), { type: "ACTIVATION_SKILL", skill: "Furious Outburst" });
       expect(find(s, "SELECT_PLAYERS")?.playerIds).toContain("away-1");
       s = apply(s, { type: "SELECT_PLAYERS", playerIds: ["away-1"] });
-      expect(find(s, "SNAP")?.moves[0]!.squares).toContainEqual({ x: 14, y: 5 });
+      expect(find(s, "SNAP")!.moves[0]!.squares).toContainEqual({ x: 14, y: 5 });
       s = apply(s, { type: "SNAP", playerId: "home-4", square: { x: 14, y: 5 } });
       expect(s.players["home-4"]!.at).toEqual({ x: 14, y: 5 });
       expect(find(s, "ROLL")?.reason).toBe("Armour 8+ (Away 1, stab)");

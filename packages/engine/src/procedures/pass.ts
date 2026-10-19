@@ -4,7 +4,7 @@ import { SCATTER, passes, templateDirection } from "../dice";
 import { adjacent, allSquares, ballCarrier, hasTackleZone, inBounds, isOnPitch, other, playerAt, sameSquare, tackleZones, teamPlayers } from "../pitch";
 import { hasSkill, skillName, tandemRole } from "../skills";
 import { explosion, rethrow } from "./bomb";
-import { ballista, canTeamReroll, canUsePro, checkTouchdown, disturbingPresences, getPlayer, landBall, luckSkill, useLuck, lonerRollTemplate, lonerTarget, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
+import { ballista, canTeamReroll, canUsePro, checkTouchdown, disturbingPresences, getPlayer, landBall, luckSkill, useLuck, lonerRollTemplate, mascotFailed, proTemplate, proTemplates, rerollGate, rerollsLeft, rollLoner, squareOf, stepPro, teamRerollTemplate, useOncePerGame, useTeamReroll } from "./helpers";
 
 type P<T extends Procedure["type"]> = Extract<Procedure, { type: T }>;
 
@@ -356,13 +356,14 @@ export const Pass: Handler<P<"Pass">> = {
         } else proc.stage = "outcome";
         return "continue";
       }
-      case "loner":
+      case "loner": {
         if (action === null) return "wait";
         // A failed Loner roll keeps the first pass result; a failed Team Mascot asks again.
         const gate = rollLoner(ctx, action, thrower);
         if (gate === "offer") mascotFailed(proc);
         proc.stage = gate === "reroll" ? "roll" : gate === "offer" ? "reroll" : "outcome";
         return "continue";
+      }
       case "pro":
       case "proTeam":
       case "proLoner": {
@@ -717,7 +718,7 @@ export const Punt: Handler<P<"Punt">> = {
         }
         return "continue";
       }
-      case "loner":
+      case "loner": {
         if (action === null) return "wait";
         // A failed Loner roll keeps the first result.
         const gate = rollLoner(ctx, action, punter);
@@ -726,6 +727,7 @@ export const Punt: Handler<P<"Punt">> = {
         else if (gate === "offer") proc.stage = "reroll";
         else nextPuntStep(proc);
         return "continue";
+      }
       case "pro":
       case "proTeam":
       case "proLoner": {

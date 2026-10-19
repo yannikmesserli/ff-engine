@@ -202,5 +202,5 @@ rosters.sort((a, b) => a.name.localeCompare(b.name));
 RosterSchema.array().parse(rosters);
 const stars = [...starPlayers.values()].sort((a, b) => a.name.localeCompare(b.name));
 StarPlayerSchema.array().parse(stars);
-writeFileSync(OUT, JSON.stringify({ source: `${FUMBBL}/api/ruleset/get/${RULESET_ID}`, artworkBase, rosters, starPlayers: stars }, null, 2) + "\n");
+writeFileSync(OUT, `${JSON.stringify({ source: `${FUMBBL}/api/ruleset/get/${RULESET_ID}`, artworkBase, rosters, starPlayers: stars }, null, 2)}\n`);
 console.log(`Wrote ${rosters.length} rosters to ${OUT}`);

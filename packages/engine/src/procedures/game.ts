@@ -224,7 +224,7 @@ export const ThrowRock: Handler<P<"ThrowRock">> = {
     if (hit) ctx.push({ type: "KnockDown", playerId: target.id, turnover: false, stage: "fall" });
     return "done";
   },
-  actions(state, proc) {
+  actions(_state, proc) {
     if (proc.stage === "ask") return [{ type: "THROW_A_ROCK", side: proc.side }];
     return [{ type: "ROLL", side: proc.side, dice: [{ kind: "d6", count: 1 }], reason: `Throw a Rock ${THROW_A_ROCK_TARGET}+ (a random standing opponent)` }];
   },
