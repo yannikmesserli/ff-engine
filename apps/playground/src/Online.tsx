@@ -6,7 +6,7 @@ import type { ServerMessage } from "relay/protocol";
 import { TeamPicker, teamError } from "./TeamPicker";
 import { ARTWORK_URL } from "./artwork";
 import { load, randomSeed, save } from "./saved";
-import { type Lobby, mergeLobby, receiveBatch, reconcile } from "./sync";
+import { type Snapshot, chunk, receiveBatch, reconcileSnapshot, snapshotAssembler, started as isStarted } from "./sync";
 
 /** What the players send each other through the relay. */
 type Payload =
@@ -14,8 +14,11 @@ type Payload =
   | { kind: "team"; team: unknown; seed?: number; shop?: boolean }
   /** Actions taken in the game, applied by both browsers in the relay's order; `at` is their position in the game. */
   | { kind: "actions"; actions: Action[]; at: number }
-  /** Everything the sender knows, sent when the opponent (re)connects or is behind (see `sync.ts`). */
-  | ({ kind: "sync"; batches: Action[][] } & Lobby);
+  /**
+   * One chunk (`index` of `count`) of the JSON of everything the sender knows (a `Snapshot`), sent when the opponent
+   * (re)connects or is behind (see `sync.ts`). `id` tells the chunks of one snapshot from the next.
+   */
+  | { kind: "sync"; id: string; index: number; count: number; data: string };
 
 /** "reconnecting": the connection dropped (or the page was reloaded) and is being opened again. */
 type Connection = "connecting" | "open" | "reconnecting" | "full";
@@ -97,17 +100,17 @@ function useRelay(gameId: string, wanted: Side | undefined, handlers: RelayHandl
 const inviteUrl = (gameId: string) => `${location.origin}${location.pathname}?game=${gameId}`;
 
 /** An online game as saved in the tab: our side, the team picked, the lobby and every batch played. */
-interface SavedOnlineGame extends Lobby {
+interface SavedOnlineGame extends Snapshot {
   side: Side | null;
   team: unknown;
-  batches: Action[][];
 }
 
 /**
  * An online game through the relay: the first player in is home, the second away. Both pick a team; once both are
  * ready the game starts with home's seed, and every action goes through the relay. The game is saved in the tab
  * (`saved.ts`): after a reload, or when the connection drops, the player comes back to their side, and both browsers
- * catch up with each other (`sync.ts`).
+ * catch up with each other (`sync.ts`). After each (re)connection the board is paused until the opponent's snapshot
+ * has arrived, so that it never plays from a position the opponent has already left.
  */
 export function OnlineGame({ gameId }: { gameId: string }) {
   const key = `ff-online-${gameId}`;
@@ -118,23 +121,49 @@ export function OnlineGame({ gameId }: { gameId: string }) {
   const [opponent, setOpponent] = useState(false);
   // The lobby and the batches change from relay messages that may arrive between two renders: the ref is the truth,
   // the state a copy to render.
-  const initial = { ready: saved?.ready ?? {}, seed: saved?.seed ?? null, shop: saved?.shop ?? true, batches: saved?.batches ?? [] };
+  const initial: Snapshot = { ready: saved?.ready ?? {}, seed: saved?.seed ?? null, shop: saved?.shop ?? true, batches: saved?.batches ?? [] };
   const game = useRef(initial);
   const [view, setView] = useState(initial);
-  const update = (change: (g: typeof initial) => typeof initial) => {
+  const update = (change: (g: Snapshot) => Snapshot) => {
     game.current = change(game.current);
     setView(game.current);
   };
-  const started = view.ready.home !== undefined && view.ready.away !== undefined && view.seed !== null;
+  const started = isStarted(view);
+  /** We have the opponent's snapshot since our last (re)connection: we are in step and may take decisions. */
+  const [synced, setSynced] = useState(false);
+  const [assemble] = useState(snapshotAssembler);
 
-  const sendSync = () => relay.send({ kind: "sync", ...game.current });
+  /** Sends everything we know, in chunks small enough for the relay. */
+  const sendSync = () => {
+    const id = Math.random().toString(36).slice(2);
+    const parts = chunk(JSON.stringify(game.current));
+    parts.forEach((data, index) => relay.send({ kind: "sync", id, index, count: parts.length, data }));
+  };
+  /** The opponent's whole snapshot: settle on one snapshot with them (see `reconcileSnapshot`). */
+  const receiveSnapshot = (from: Side, text: string) => {
+    let theirs: Snapshot;
+    try {
+      theirs = JSON.parse(text);
+    } catch {
+      return;
+    }
+    if (!Array.isArray(theirs?.batches) || typeof theirs.ready !== "object" || theirs.ready === null) return;
+    const { snapshot, reply } = reconcileSnapshot(game.current, theirs, from);
+    update(() => snapshot);
+    setSynced(true);
+    if (reply) sendSync();
+  };
+
   const relay = useRelay(gameId, saved?.side ?? undefined, {
     onWelcome: (present) => {
       setOpponent(present);
+      // Until the opponent's snapshot arrives, they may have played on without us.
+      setSynced(false);
       if (present) sendSync();
     },
     onPayload: (from, data) => {
-      if (data?.kind === "team") {
+      // A started game keeps the teams, seed and options it was created with.
+      if (data?.kind === "team" && !isStarted(game.current)) {
         update((g) => ({
           ...g,
           ready: { ...g.ready, [from]: data.team },
@@ -144,10 +173,9 @@ export function OnlineGame({ gameId }: { gameId: string }) {
         const { batches, missing } = receiveBatch(game.current.batches, data.actions, data.at);
         update((g) => ({ ...g, batches }));
         if (missing) sendSync();
-      } else if (data?.kind === "sync" && from !== relay.side && Array.isArray(data.batches)) {
-        const { batches, reply } = reconcile(game.current.batches, data.batches, from);
-        update((g) => ({ ...g, ...mergeLobby(g, data), batches }));
-        if (reply) sendSync();
+      } else if (data?.kind === "sync" && from !== relay.side && typeof data.id === "string" && typeof data.data === "string") {
+        const text = assemble(data.id, data.index, data.count, data.data);
+        if (text !== null) receiveSnapshot(from, text);
       }
     },
     onOpponent: (present) => {
@@ -163,14 +191,19 @@ export function OnlineGame({ gameId }: { gameId: string }) {
 
   if (relay.connection === "full") return <p>This game already has two players, or the relay is not running. <a href="?">Start a new game</a></p>;
   if (!side) return <p>Connecting to the relay…</p>;
+  const paused = relay.connection !== "open" || !synced;
   const status =
     relay.connection === "reconnecting"
       ? "Lost the connection to the relay, reconnecting…"
       : relay.connection === "connecting"
         ? "Connecting to the relay…"
-        : started && !opponent
-          ? "Your opponent is disconnected: waiting for them to come back."
-          : null;
+        : started && !opponent && !synced
+          ? "Your opponent is disconnected: the game resumes once they are back and you have caught up with each other."
+          : started && !opponent
+            ? "Your opponent is disconnected: waiting for them to come back."
+            : started && !synced
+              ? "Catching up with your opponent…"
+              : null;
 
   if (started) {
     return (
@@ -183,7 +216,7 @@ export function OnlineGame({ gameId }: { gameId: string }) {
           shop={view.shop}
           assetsUrl="/img"
           artwork={artwork}
-          online={{ side, actions: view.batches, send: (actions) => relay.send({ kind: "actions", actions, at: game.current.batches.length }) }}
+          online={{ side, paused, actions: view.batches, send: (actions) => relay.send({ kind: "actions", actions, at: game.current.batches.length }) }}
         />
       </>
     );
