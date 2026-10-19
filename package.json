@@ -11,7 +11,7 @@
     "lint": "biome lint .",
     "typecheck": "pnpm -r typecheck",
     "fetch-rosters": "pnpm --filter @ff-engine/data fetch-rosters",
-    "fetch-artwork": "tsx apps/playground/scripts/fetch-artwork.ts",
+    "fetch-artwork": "pnpm --filter playground fetch-artwork",
     "relay": "pnpm --filter relay start",
     "scenarios": "pnpm --filter scenarios dev"
   },
