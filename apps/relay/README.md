@@ -13,10 +13,12 @@ pnpm relay             # from frontend/: the relay alone, on PORT (default 8787)
 ```
 
 - A browser connects to `ws://<host>/relay?game=<id>` (id: 4-32 lowercase letters and digits). The first one in a
-  game plays home, the second away; a third is refused (HTTP 409).
+  game plays home, the second away; a third is refused (HTTP 409). `&side=home` or `&side=away` asks for that side,
+  to come back to it after a reload; it is refused (409) while that side is taken.
 - Every `{ type: "relay", data }` a player sends is forwarded, as is, to both players of the game, the sender
   included. Both browsers therefore see the same messages in the same order, which keeps their games identical.
-- Players are told when their opponent connects or leaves. A game is forgotten once both players are gone.
+- Players are told when their opponent connects or leaves. A game is forgotten once both players are gone: players
+  who come back catch up from each other (see "Reloads and dropped connections" in `apps/playground/README.md`).
 - The relay does not know the rules: `data` is whatever the playground sends (teams, then batches of actions).
 - Message types are in `src/protocol.ts` (exported as `relay/protocol`).
 

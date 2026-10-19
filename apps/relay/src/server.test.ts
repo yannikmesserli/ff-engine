@@ -17,8 +17,8 @@ async function start() {
 }
 
 /** A player connected to a game, with the messages it received so far. */
-async function join(port: number, game: string) {
-  const ws = new WebSocket(`ws://localhost:${port}/relay?game=${game}`);
+async function join(port: number, game: string, side?: string) {
+  const ws = new WebSocket(`ws://localhost:${port}/relay?game=${game}${side ? `&side=${side}` : ""}`);
   sockets.push(ws);
   const received: ServerMessage[] = [];
   ws.on("message", (raw) => received.push(JSON.parse(raw.toString())));
@@ -70,6 +70,19 @@ describe("relay", () => {
     home.ws.close();
     await settle();
     expect(relay.rooms.has("game2")).toBe(false);
+  });
+
+  it("gives a player who comes back the side they ask for", async () => {
+    const port = await start();
+    const home = await join(port, "game3");
+    home.ws.close();
+    await settle();
+    // Away comes first after both reloaded: it takes away back, and home is still free.
+    const away = await join(port, "game3", "away");
+    expect(away.received).toEqual([{ type: "welcome", side: "away", opponent: false }]);
+    await expect(join(port, "game3", "away")).rejects.toThrow(/409/);
+    const back = await join(port, "game3", "home");
+    expect(back.received).toEqual([{ type: "welcome", side: "home", opponent: true }]);
   });
 
   it("rejects bad game ids", async () => {

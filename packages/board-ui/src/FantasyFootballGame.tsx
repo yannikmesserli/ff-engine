@@ -42,8 +42,12 @@ export interface FantasyFootballGameProps {
   shop?: boolean;
   /** Actions applied right after the game is created, to start from a prepared position; undo stops there. */
   actions?: readonly Action[];
-  /** Called with the new state after every successful action. */
+  /** Called with the new state after every successful action (and once at the start when resuming). */
   onChange?(state: GameState): void;
+  /** Hot-seat: batches of actions to replay when the game starts, as reported by `onActions`, to resume a saved game. */
+  resume?: readonly Action[][];
+  /** Hot-seat: called with every batch played since the start (one per undo step) after each action and undo, to save the game. */
+  onActions?(batches: Action[][]): void;
   /** Play online against another browser instead of hot-seat (see {@link OnlineControl}). */
   online?: OnlineControl;
 }
@@ -68,7 +72,7 @@ const AUTO_ROLL_DELAY_MS = 350;
 const NO_ACTIONS: readonly Action[] = [];
 
 /** A complete hot-seat fantasy football game between two teams; restarts when the teams, `seed`, the game options or `actions` change. */
-export function FantasyFootballGame({ home, away, assetsUrl = "/img", artwork, seed, overtime = false, shop = false, actions = NO_ACTIONS, onChange, online }: FantasyFootballGameProps) {
+export function FantasyFootballGame({ home, away, assetsUrl = "/img", artwork, seed, overtime = false, shop = false, actions = NO_ACTIONS, onChange, resume, onActions, online }: FantasyFootballGameProps) {
   const initial = useMemo(() => {
     try {
       return { state: applyActions(createGame(resolveTeam(home), resolveTeam(away), { seed, overtime, shop }), actions) };
@@ -78,7 +82,17 @@ export function FantasyFootballGame({ home, away, assetsUrl = "/img", artwork, s
   }, [home, away, seed, overtime, shop, actions]);
   if ("error" in initial) return <div className="bb-game bb-error">{initial.error}</div>;
   return (
-    <Game key={JSON.stringify([home, away, seed, overtime, shop, actions])} initial={initial.state} teams={{ home, away }} assets={assetsUrl} artwork={artwork} onChange={onChange} online={online} />
+    <Game
+      key={JSON.stringify([home, away, seed, overtime, shop, actions])}
+      initial={initial.state}
+      teams={{ home, away }}
+      assets={assetsUrl}
+      artwork={artwork}
+      onChange={onChange}
+      resume={resume}
+      onActions={onActions}
+      online={online}
+    />
   );
 }
 
@@ -94,21 +108,53 @@ function replay(from: GameState, batches: Action[][]): GameState {
   }, from);
 }
 
-/** The online game state, replaying only the batches received since the last render. */
+/**
+ * The online game state, replaying only the batches received since the last render. Replays from the start when the
+ * batches already applied changed (the last one is no longer the same object): a list replaced by a sync.
+ */
 function useReplay(initial: GameState, batches: Action[][] | undefined): GameState {
-  const cache = useRef({ applied: 0, state: initial });
+  const cache = useRef<{ applied: number; last: Action[] | undefined; state: GameState }>({ applied: 0, last: undefined, state: initial });
   if (!batches) return initial;
-  if (batches.length < cache.current.applied) cache.current = { applied: 0, state: initial };
+  const { applied, last } = cache.current;
+  if (batches.length < applied || batches[applied - 1] !== last) cache.current = { applied: 0, last: undefined, state: initial };
   if (batches.length > cache.current.applied) {
-    cache.current = { applied: batches.length, state: replay(cache.current.state, batches.slice(cache.current.applied)) };
+    cache.current = { applied: batches.length, last: batches.at(-1), state: replay(cache.current.state, batches.slice(cache.current.applied)) };
   }
   return cache.current.state;
 }
 
+/** One undo step of a hot-seat game: the state after `actions` (none for the first step). */
+interface Step {
+  state: GameState;
+  actions: Action[];
+}
+
+/** The undo steps of a resumed game: one per saved batch, skipping a batch that is no longer legal. */
+function resumeSteps(initial: GameState, batches: readonly Action[][] | undefined): Step[] {
+  const steps: Step[] = [{ state: initial, actions: [] }];
+  for (const actions of batches ?? []) {
+    try {
+      steps.push({ state: actions.reduce((s, a) => step(s, a).state, steps.at(-1)!.state), actions });
+    } catch (e) {
+      if (!(e instanceof IllegalActionError)) throw e;
+    }
+  }
+  return steps;
+}
+
 /** The game screen: owns the state history (for undo) and the board's interaction state. */
-function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets: string; artwork?: BoardArtwork | undefined; onChange?(s: GameState): void; online?: OnlineControl }) {
-  const { initial, assets, artwork, onChange, online } = props;
-  const [history, setHistory] = useState<GameState[]>([initial]);
+function Game(props: {
+  initial: GameState;
+  teams: Record<Side, unknown>;
+  assets: string;
+  artwork?: BoardArtwork | undefined;
+  onChange?(s: GameState): void;
+  resume?: readonly Action[][] | undefined;
+  onActions?(batches: Action[][]): void;
+  online?: OnlineControl | undefined;
+}) {
+  const { initial, assets, artwork, onChange, onActions, online } = props;
+  const [history, setHistory] = useState<Step[]>(() => (online ? [{ state: initial, actions: [] }] : resumeSteps(initial, props.resume)));
   const [error, setError] = useState<string | null>(null);
   const [autoRoll, setAutoRoll] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -118,7 +164,7 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
   const [menu, setMenu] = useState<ActionMenuState | null>(null);
   const [aiming, setAiming] = useState<Aiming>(false);
   const onlineState = useReplay(initial, online?.actions);
-  const state = online ? onlineState : history.at(-1)!;
+  const state = online ? onlineState : history.at(-1)!.state;
   // Online, the board only offers this browser's decisions.
   // biome-ignore lint/correctness/useExhaustiveDependencies: `decider` is a pure import; only `online.side` matters.
   const templates = useMemo(() => {
@@ -131,6 +177,18 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
   useEffect(() => {
     if (online) onChange?.(state);
   }, [state]);
+
+  // A resumed hot-seat game reports where it starts from.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, when the game starts.
+  useEffect(() => {
+    if (!online && history.length > 1) onChange?.(state);
+  }, []);
+
+  /** Replaces the undo steps, and reports their batches to `onActions`. */
+  const saveHistory = (steps: Step[]) => {
+    setHistory(steps);
+    onActions?.(steps.slice(1).map((s) => s.actions));
+  };
 
   /**
    * Applies the actions in order as one undo step; an illegal action is shown instead of applied.
@@ -147,7 +205,7 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
         online.send(actions);
         return;
       }
-      setHistory((h) => [...h, next]);
+      saveHistory([...history, { state: next, actions }]);
       onChange?.(next);
     } catch (e) {
       if (!(e instanceof IllegalActionError)) throw e;
@@ -157,9 +215,9 @@ function Game(props: { initial: GameState; teams: Record<Side, unknown>; assets:
 
   /** Back to the previous state, dropping any half-made choice on the board. */
   const undo = () => {
-    const previous = history.at(-2);
+    const previous = history.at(-2)?.state;
     if (!previous) return;
-    setHistory(history.slice(0, -1));
+    saveHistory(history.slice(0, -1));
     setPicked([]);
     setMenu(null);
     setAiming(false);
