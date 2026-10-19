@@ -1,17 +1,23 @@
 import { useEffect, useState } from "react";
 import { rosters, starPlayers, type Artwork } from "@ff-engine/data";
-import type { PlayerState } from "@ff-engine/engine";
+import type { PlayerState, Weather } from "@ff-engine/engine";
 
 /**
- * Where the board finds its team artwork. No artwork is included: without it, players are numbered discs and teams
- * have no logo. `fumbblArtwork` reads FUMBBL's, from FUMBBL's image server or from copies downloaded for testing.
+ * Where the board finds its artwork. No artwork is included: without it, players are numbered discs, teams have no
+ * logo and the pitch comes from the image folder. `fumbblArtwork` reads FUMBBL's, from FUMBBL's image server or from
+ * copies downloaded for testing.
  */
 export interface BoardArtwork {
   /** The sprite sheet of the player's position: four columns (red, red moving, blue, blue moving), `size` rows. */
   sprites(roster: string, player: PlayerState): { url: string; size: number } | null;
   /** The team logo of a roster. */
   logo(roster: string): string | null;
+  /** The pitch in this weather: 26 x 15 squares inside a 1 px border (782 x 452 px at 30 px a square). */
+  pitch?(weather: Weather): string | null;
 }
+
+/** Manifest key of the downloaded pitch for a weather (`pnpm fetch-artwork` writes them). */
+const pitchKey = (weather: Weather) => `pitch/${weather}`;
 
 /** FUMBBL's artwork paths of a position (by roster and title) or a star player (by name). */
 function artworkOf(roster: string, position: string): Artwork | undefined {
@@ -40,14 +46,16 @@ export function fumbblArtwork(url: (path: string) => string | null): BoardArtwor
 
 /**
  * FUMBBL's artwork downloaded for testing (`pnpm fetch-artwork`): `base` is the folder holding the copies and their
- * `manifest.json` (FUMBBL path to file name). Resolves to undefined when nothing was downloaded.
+ * `manifest.json` (FUMBBL path, or `pitch/<weather>` for the pitches, to file name). Resolves to undefined when nothing
+ * was downloaded.
  */
 export async function loadDownloadedArtwork(base: string): Promise<BoardArtwork | undefined> {
   try {
     const response = await fetch(`${base}/manifest.json`);
     if (!response.ok) return undefined;
     const manifest = (await response.json()) as Record<string, string>;
-    return fumbblArtwork((path) => (manifest[path] ? `${base}/${manifest[path]}` : null));
+    const url = (path: string) => (manifest[path] ? `${base}/${manifest[path]}` : null);
+    return { ...fumbblArtwork(url), pitch: (weather) => url(pitchKey(weather)) };
   } catch {
     return undefined;
   }

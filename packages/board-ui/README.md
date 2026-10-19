@@ -5,8 +5,8 @@ dugouts, decision panel, last roll with undo, player card (hovered, or pinned by
 description tooltips) and game log. All rules come from `@ff-engine/engine`; this
 package only renders the engine's state and turns clicks into engine actions.
 
-It comes without artwork: bring your own player sprites and team logos (`artwork`, see "Artwork") and image folder
-(`assetsUrl`, see "Assets"). Online play (`online`) runs the engine in each browser and trusts both players: fine for
+It comes without artwork: bring your own player sprites, team logos and pitches (`artwork`, see "Artwork") and image
+folder (`assetsUrl`, see "Assets"). The dice are drawn in code (SVG) and need neither. Online play (`online`) runs the engine in each browser and trusts both players: fine for
 testing, not for games that must be fair (see "What this project is" in the main README).
 
 ## Usage
@@ -20,8 +20,8 @@ import { FantasyFootballGame } from "@ff-engine/board-ui";
 | Prop | Type | |
 |---|---|---|
 | `home`, `away` | `unknown` | Team files in `@ff-engine/data`'s format (see `packages/data/README.md`), validated by `resolveTeam()`. Invalid teams render the error message. |
-| `assetsUrl` | `string` | Base URL of the image folder (pitch, dice, ball, status overlays). Default `"/img"`. |
-| `artwork` | `BoardArtwork` | Player sprites and team logos (see "Artwork"). None by default: numbered discs, no logos. |
+| `assetsUrl` | `string` | Base URL of the image folder (ball, status overlays, fallback pitch). Default `"/img"`. |
+| `artwork` | `BoardArtwork` | Player sprites, team logos and pitches (see "Artwork"). None by default: numbered discs, no logos, the image folder's pitch. |
 | `seed` | `number` | RNG seed, to replay the same dice. Random when omitted. |
 | `actions` | `Action[]` | Applied right after the game is created (`applyActions`), to start from a prepared position (`apps/scenarios`). Undo stops there; an illegal action renders the error message. |
 | `onChange` | `(state: GameState) => void` | Called with the new state after every successful action. |
@@ -62,7 +62,7 @@ state ──getAvailableActions──▶ templates ──Board / ActionPanel─�
 | `src/Board.tsx` | Pitch, dugouts, player tokens, square highlights, setup drag and drop (dnd-kit), player action menu. |
 | `src/ActionPanel.tsx` | Prompt and buttons per template: coin, kick/receive, dice (or physical dice entry), re-rolls, block dice, setup formations, end turn... |
 | `src/describe.ts` | Display names and the game log text of every engine event. |
-| `src/Dice.tsx` | Dice faces and rolls. |
+| `src/Dice.tsx` | Dice faces (drawn as SVG: d6 pips, d8 arrows, block dice with skulls and explosions) and rolls. |
 | `src/artwork.ts` | `BoardArtwork`, FUMBBL's artwork (`fumbblArtwork`, `loadDownloadedArtwork`, `useDownloadedArtwork`), sprite CSS. |
 | `src/templates.ts` | `findTemplate`: the available template of a type, narrowed. |
 | `src/styles.css` | All styles; `--bb-square` must match `SQUARE_SIZE` in `Board.tsx`. |
@@ -73,8 +73,7 @@ Graphics are not included. Images are loaded from `assetsUrl` with this layout:
 
 | Path | What |
 |---|---|
-| `arenas/pitch/nice-26x15.jpg` | Pitch background (26 x 15 squares). |
-| `dice/<1-6>.png`, `dice/d8-<1-8>.png`, `dice/<block face>.png` | Dice faces (block faces as in `BLOCK_FACES`). |
+| `arenas/pitch/<heat\|sunny\|nice\|rain\|blizzard>-26x15.jpg` | Pitch of each weather (26 x 15 squares), when the artwork has none. |
 | `ball/sball_30x30.png`, `ball/sbomb_30x30.png` | The ball, and a bomb. |
 | `player_status/<prone\|stunned>.gif` | Status overlays. |
 
@@ -84,11 +83,13 @@ Player sprites and team logos come from the `artwork` prop, a `BoardArtwork`: `s
 sprite sheet (four columns: red, red moving, blue, blue moving; `size` rows, one look each) and `logo(roster)` a logo
 URL. Home players are drawn in blue and away players in red, the moving square when active, in the row picked by
 their number. Without artwork (or for a position it does not know), players are numbered discs and logos are left out.
+The optional `pitch(weather)` returns the pitch of the current weather: 26 x 15 squares inside a 1 px border (782 x 452
+px), the border cropped. Without it, the pitch comes from the image folder.
 
 `fumbblArtwork(url)` reads FUMBBL's sheets and logos from the paths in the roster data (`@ff-engine/data`, `artwork` and
 `logo`): `fumbblArtwork((path) => artworkBase + path)` loads them from FUMBBL's image server, and
 `useDownloadedArtwork(base)` from copies downloaded for testing with `pnpm fetch-artwork` (see
-`apps/playground/README.md`). FUMBBL's artwork is not part of this project and does not belong to its authors: the download is for testing the
+`apps/playground/README.md`), pitches included (FUMBBL serves those as a zip, so only the downloaded copies have them). FUMBBL's artwork is not part of this project and does not belong to its authors: the download is for testing the
 engine only. Do not commit, publish or ship it, and ask FUMBBL (https://fumbbl.com) for any other use.
 
 ## Adding UI for a new action template

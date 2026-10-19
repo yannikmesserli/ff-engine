@@ -22,6 +22,7 @@ import {
   type PlayerState,
   type Side,
   type Square,
+  type Weather,
 } from "@ff-engine/engine";
 import { ACTION_NAMES, PASS_RANGE_NAMES } from "./describe";
 import { spriteStyle, type BoardArtwork } from "./artwork";
@@ -78,6 +79,16 @@ const diceLabel = (dice: number) => `${Math.abs(dice)}D${dice < 0 ? "!" : ""}`;
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? String(n) : "±0");
 
 const squareId = (s: Square) => `sq-${s.x}-${s.y}`;
+
+/** File names of the pitches in the image folder, by weather. */
+const PITCH_FILES: Record<Weather, string> = { "sweltering-heat": "heat", "very-sunny": "sunny", nice: "nice", "pouring-rain": "rain", blizzard: "blizzard" };
+
+/** The pitch background in this weather: the artwork's (cropping its 1 px border), else the image folder's. */
+function pitchStyle(weather: Weather, assets: string, artwork: BoardArtwork | undefined) {
+  const pitch = artwork?.pitch?.(weather);
+  if (pitch) return { backgroundImage: `url("${pitch}")`, backgroundSize: "calc(100% + 2px) calc(100% + 2px)", backgroundPosition: "-1px -1px" };
+  return { backgroundImage: `url(${assets}/arenas/pitch/${PITCH_FILES[weather]}-26x15.jpg)` };
+}
 
 /** Pixel position of a square's top-left corner on the pitch. */
 const at = (s: Square) => ({ left: s.x * SQUARE_SIZE, top: s.y * SQUARE_SIZE });
@@ -245,7 +256,7 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
       <div className="bb-board-wrap">
         <div className="bb-board">
           <Dugout side="home" state={state} droppable={placement?.side === "home"} render={token} />
-          <div className="bb-pitch" style={{ backgroundImage: `url(${assets}/arenas/pitch/nice-26x15.jpg)` }}>
+          <div className="bb-pitch" style={pitchStyle(state.weather, assets, artwork)}>
             {ALL_SQUARES.map((s) => {
               const target = targets.find((t) => sameSquare(t, s));
               const rolls = target?.rolls ?? [];
