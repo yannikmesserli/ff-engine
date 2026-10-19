@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FantasyFootballGame, useDownloadedArtwork } from "@ff-engine/board-ui";
-import type { GameState } from "@ff-engine/engine";
+import type { Action, GameState } from "@ff-engine/engine";
 import { exampleTeams } from "@ff-engine/data";
 import { GAME_ID } from "relay/protocol";
 import { OnlineGame, newGameId } from "./Online";
 import { TeamPicker } from "./TeamPicker";
+import { load, randomSeed, save } from "./saved";
 import { ARTWORK_URL } from "./artwork";
 
 const PARAMS = new URLSearchParams(location.search);
@@ -45,35 +46,64 @@ export function App() {
   );
 }
 
+/** A hot-seat game as saved: what it was created with, and every batch of actions played (`onActions`). */
+interface SavedLocalGame {
+  home: unknown;
+  away: unknown;
+  overtime: boolean;
+  shop: boolean;
+  seed: number;
+  batches: Action[][];
+}
+
+/** Saved per URL, so that `?seed=42` and `?local` keep separate games. */
+const LOCAL_KEY = `ff-local${location.search}`;
+
 /**
  * Hot-seat: two team pickers and a "New game" button above the game; each new game gets fresh random dice. They are
- * disabled while a game is in progress (undoing back to the first roll enables them again).
+ * disabled while a game is in progress (undoing back to the first roll enables them again). The game is saved in the
+ * tab (see `saved.ts`): reloading the page resumes it, undo history included.
  */
 function LocalGame() {
   const artwork = useDownloadedArtwork(ARTWORK_URL);
-  const [home, setHome] = useState<unknown>(exampleTeams["human"]);
-  const [away, setAway] = useState<unknown>(exampleTeams["orc"]);
-  const [gameId, setGameId] = useState(0);
+  const [saved] = useState(() => load<SavedLocalGame>(LOCAL_KEY));
+  const [home, setHome] = useState<unknown>(saved?.home ?? exampleTeams["human"]);
+  const [away, setAway] = useState<unknown>(saved?.away ?? exampleTeams["orc"]);
+  const [seed, setSeed] = useState(saved?.seed ?? SEED ?? randomSeed());
+  const [overtime, setOvertime] = useState(saved?.overtime ?? false);
+  const [shop, setShop] = useState(saved?.shop ?? true);
+  const [batches, setBatches] = useState<Action[][]>(saved?.batches ?? []);
+  /** The saved batches, replayed by the first game only: any change of team or option starts a new game. */
+  const [resume, setResume] = useState(saved?.batches);
   const [playing, setPlaying] = useState(false);
-  const [overtime, setOvertime] = useState(false);
-  const [shop, setShop] = useState(true);
   const locked = playing ? "Finish the game first (or reload the page)" : undefined;
+
+  useEffect(() => save(LOCAL_KEY, { home, away, overtime, shop, seed, batches } satisfies SavedLocalGame), [home, away, overtime, shop, seed, batches]);
+  /** Sets a team or an option: the game starts over. */
+  const restart =
+    <T,>(set: (value: T) => void) =>
+    (value: T) => {
+      set(value);
+      setResume(undefined);
+      setBatches([]);
+    };
+
   return (
     <main>
       <header>
-        <TeamPicker label="Home" value={home} disabled={playing} onChange={setHome} />
-        <TeamPicker label="Away" value={away} disabled={playing} onChange={setAway} />
+        <TeamPicker label="Home" value={home} disabled={playing} onChange={restart(setHome)} />
+        <TeamPicker label="Away" value={away} disabled={playing} onChange={restart(setAway)} />
         <label title="Cup games: a draw after the second half is played on in a third half">
-          <input type="checkbox" checked={overtime} disabled={playing} onChange={(e) => setOvertime(e.target.checked)} /> Overtime on a draw
+          <input type="checkbox" checked={overtime} disabled={playing} onChange={(e) => restart(setOvertime)(e.target.checked)} /> Overtime on a draw
         </label>
         <label title="Buy inducements before the game with petty cash and the treasury (otherwise the team files list them)">
-          <input type="checkbox" checked={shop} disabled={playing} onChange={(e) => setShop(e.target.checked)} /> Pre-game shop
+          <input type="checkbox" checked={shop} disabled={playing} onChange={(e) => restart(setShop)(e.target.checked)} /> Pre-game shop
         </label>
         <button
           disabled={playing}
           title={locked}
           onClick={() => {
-            setGameId((n) => n + 1);
+            restart(setSeed)(randomSeed());
             setPlaying(false);
           }}
         >
@@ -81,14 +111,15 @@ function LocalGame() {
         </button>
       </header>
       <FantasyFootballGame
-        key={gameId}
         home={home}
         away={away}
         assetsUrl="/img"
         artwork={artwork}
-        seed={gameId === 0 ? SEED : undefined}
+        seed={seed}
         overtime={overtime}
         shop={shop}
+        resume={resume}
+        onActions={setBatches}
         onChange={(state) => setPlaying(inProgress(state))}
       />
     </main>

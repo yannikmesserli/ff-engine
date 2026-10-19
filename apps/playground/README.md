@@ -22,13 +22,32 @@ pnpm build    # typecheck + production build
 
 Both browsers run the engine; only the actions travel, through the relay (`/relay`, proxied to `localhost:8787` in
 dev). Each browser can only take its own side's decisions (rolls anyone could make go to the team whose turn it is,
-or home before the kick-off). Nothing is saved: if a player reloads the page or leaves, the game is over.
+or home before the kick-off).
+
+### Reloads and dropped connections
+
+Each tab saves its game in `sessionStorage` (`src/saved.ts`): its side, the teams, the seed and every batch of
+actions. sessionStorage is per tab, so two tabs of one browser can play both sides. After a reload, or when the
+connection drops (the relay restarts, the network blips), the page reconnects on its own and asks the relay for the
+same side. While a player is away, the other sees a notice and can go on playing their decisions.
+
+The relay stores nothing, so the browsers catch up with each other (`src/sync.ts`):
+
+- Each batch of actions is sent with its position in the game. A browser appends a batch only if it is the next
+  one. A lower position is a duplicate, or a batch sent at the same time as the one the relay passed first: both
+  browsers drop it the same way. A higher position means batches were missed.
+- When a player (re)connects, or sees a gap, both send a sync: the teams, home's seed and every batch they have. The
+  browser behind adopts the longer list (lists that disagree, which should not happen, resolve to home's).
+
+A player who closed the tab (and lost its storage) can open the link again: they get the free side back and the
+whole game from the opponent.
 
 ## Hot-seat
 
 `?local` plays both teams on this computer. Pick the home and away teams; "New game" restarts with the current
 teams. The team pickers and "New game" are disabled while a game is in progress (from the first roll until the game
-ends; undoing back to the start enables them again).
+ends; undoing back to the start enables them again). The game is saved in the tab, per URL (`?local` and each
+`?seed=` keep their own): reloading resumes it, with its undo history.
 
 ## Query parameters
 

@@ -1,6 +1,11 @@
-/** Messages between the relay and the players' browsers (JSON over a WebSocket on `/relay?game=<id>`). */
+/**
+ * Messages between the relay and the players' browsers (JSON over a WebSocket on `/relay?game=<id>`, or
+ * `/relay?game=<id>&side=<home|away>` to take that side back after a reload).
+ */
 
 export type Side = "home" | "away";
+
+export const SIDES: readonly Side[] = ["home", "away"];
 
 /** A game id in a URL: 4 to 32 lowercase letters and digits. */
 export const GAME_ID = /^[a-z0-9]{4,32}$/;
@@ -12,7 +17,7 @@ export interface ClientMessage {
 }
 
 export type ServerMessage =
-  /** On connection: the side this player plays (first in the game: home) and whether the opponent is there. */
+  /** On connection: the side this player plays (the one asked for, else the first free: home) and whether the opponent is there. */
   | { type: "welcome"; side: Side; opponent: boolean }
   /** The opponent connected or left. */
   | { type: "opponent"; present: boolean }
