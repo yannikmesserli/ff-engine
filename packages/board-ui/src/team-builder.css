@@ -1,0 +1,46 @@
+.bb-tb {
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: #e8e6e1;
+  background: #16181b;
+  padding: 12px 16px;
+  border-radius: 8px;
+  max-width: 900px;
+  box-sizing: border-box;
+}
+.bb-tb h3 { margin: 16px 0 6px; font-size: 15px; }
+.bb-tb input, .bb-tb select { background: #23262b; color: inherit; border: 1px solid #555; border-radius: 4px; padding: 3px 6px; }
+.bb-tb input[type="number"] { width: 64px; }
+.bb-tb button {
+  background: #3a3f47;
+  color: inherit;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.bb-tb button:hover:not(:disabled) { background: #4a515b; }
+.bb-tb button:disabled { opacity: 0.4; cursor: default; }
+.bb-tb button.bb-confirm { background: #2e7d32; border-color: #4caf50; }
+.bb-tb button.bb-link { background: none; border: none; text-decoration: underline; padding: 2px 0; }
+.bb-tb-head { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.bb-tb-table { border-collapse: collapse; width: 100%; }
+.bb-tb-table th, .bb-tb-table td { padding: 3px 6px; text-align: center; border-bottom: 1px solid #2b2f35; }
+.bb-tb-table th { font-weight: 600; opacity: 0.8; font-size: 12px; }
+.bb-tb-table .bb-tb-left { text-align: left; }
+.bb-tb-skills { font-size: 12px; opacity: 0.85; }
+.bb-tb-skills span[title] { cursor: help; }
+.bb-tb-staff { width: auto; }
+.bb-tb .bb-tb-number { width: 48px; }
+.bb-tb-remove { padding: 0 8px; }
+.bb-tb-tag { margin-left: 6px; font-size: 11px; padding: 0 4px; border-radius: 3px; background: #5a3d8a; }
+.bb-tb-note { font-size: 12px; opacity: 0.7; margin: 4px 0; }
+.bb-tb-rules { margin-top: 12px; }
+.bb-tb-rule-group { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 6px 0; font-size: 13px; }
+.bb-tb-stepper { display: inline-flex; align-items: center; gap: 8px; }
+.bb-tb-stepper span { min-width: 16px; text-align: center; }
+.bb-tb-totals { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 16px; padding: 8px; background: #23262b; border-radius: 6px; }
+.bb-tb-over { color: #ff7961; }
+.bb-tb-errors { color: #ffb74d; font-size: 13px; margin: 8px 0; padding-left: 20px; }
+.bb-tb-actions { display: flex; gap: 8px; margin: 12px 0; }
+.bb-tb-json { font-family: ui-monospace, monospace; font-size: 12px; max-height: 320px; overflow: auto; background: #0e0f11; padding: 8px; border-radius: 4px; }

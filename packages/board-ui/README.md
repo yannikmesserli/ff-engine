@@ -32,6 +32,22 @@ import { FantasyFootballGame } from "@ff-engine/board-ui";
 Changing `home`, `away`, `seed` or `actions` starts a new game. The stylesheet (`styles.css`, all classes prefixed `bb-`) is
 imported by the component.
 
+## Team builder
+
+`<TeamBuilder onDone={(team) => ...} />` drafts a new BB2025 team and hands back its team file, ready for `home` or
+`away`. The coach picks a roster, adds players from its positions (within each position's quantity and the Big Guy
+limit), names and numbers them, picks a Team Captain, and buys re-rolls, an apothecary, assistant coaches,
+cheerleaders and Dedicated Fans. Running totals show what is left of the budget, and `creationErrors` from
+`@ff-engine/data` lists what stops the team from being valid. The team can also be downloaded or copied as JSON.
+The roster data does not say which special rules (league, "Favoured of...") each roster has, so the coach ticks them.
+
+| Prop | Type | |
+|---|---|---|
+| `onDone` | `(team: TeamFileInput) => void` | Called by "Use this team" with the team file; the gold left over is its `treasury`. |
+| `initial` | `unknown` | A team file to edit: its roster, staff and players' numbers, names and positions (advancements are dropped). |
+| `budget` | `number` | Gold to draft with, editable in the form. Default 1,000,000. |
+| `onCancel` | `() => void` | Shows a Cancel button. |
+
 ## How it drives the engine
 
 ```
@@ -59,7 +75,7 @@ state ──getAvailableActions──▶ templates ──Board / ActionPanel─�
 
 | File | What |
 |---|---|
-| `src/index.ts` | Public exports: `FantasyFootballGame`, `decider`, `FantasyFootballGameProps` and `OnlineControl`. |
+| `src/index.ts` | Public exports: `FantasyFootballGame`, `decider`, `FantasyFootballGameProps`, `OnlineControl`, `TeamBuilder` and `TeamBuilderProps`. |
 | `src/FantasyFootballGame.tsx` | Game creation, state history, `dispatch`, auto-roll; scoreboard, last roll, player card, log. |
 | `src/Board.tsx` | Pitch, dugouts, player tokens, square highlights, setup drag and drop (dnd-kit), player action menu. |
 | `src/ActionPanel.tsx` | Prompt and buttons per template: coin, kick/receive, dice (or physical dice entry), re-rolls, block dice, setup formations, end turn... |
@@ -67,7 +83,9 @@ state ──getAvailableActions──▶ templates ──Board / ActionPanel─�
 | `src/Dice.tsx` | Dice faces (drawn as SVG: d6 pips, d8 arrows, block dice with skulls and explosions) and rolls. |
 | `src/artwork.ts` | `BoardArtwork`, FUMBBL's artwork (`fumbblArtwork`, `loadDownloadedArtwork`, `useDownloadedArtwork`), sprite CSS. |
 | `src/templates.ts` | `findTemplate`: the available template of a type, narrowed. |
-| `src/styles.css` | All styles; `--bb-square` must match `SQUARE_SIZE` in `Board.tsx`. |
+| `src/TeamBuilder.tsx` | `<TeamBuilder>`: drafts a new team file (see "Team builder"). |
+| `src/styles.css` | All styles of the game; `--bb-square` must match `SQUARE_SIZE` in `Board.tsx`. |
+| `src/team-builder.css` | Styles of `<TeamBuilder>` (classes prefixed `bb-tb-`). |
 
 ## Assets
 

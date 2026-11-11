@@ -27,6 +27,7 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 | `INDUCEMENT_RULES` | BB2025 inducement limits, required special rules and costs, by inducement id. |
 | `resolveTeam(json, rosters?)` | Validates a team file against its roster and merges in position stats, the Current Team Value, treasury and the shop's prices. Throws `TeamError`. |
 | `teamValue(json, rosters?)` | The Current Team Value of a team file: players available and their advancements, journeymen, re-rolls and staff. |
+| `TEAM_CREATION`, `creationCost(json, roster)`, `creationErrors(json, budget?)`, `draftTeam(json, budget?)` | BB2025 team creation: a 1,000,000 gp budget, 11 to 16 players, the apothecary (50k), up to 6 assistant coaches and 6 cheerleaders (10k each), 1 free Dedicated Fan and up to 2 more (10k each), re-rolls at the roster's price. `creationErrors` lists what breaks these rules (and `resolveTeam`'s) for a new team, which has no advancements or hired players; `draftTeam` returns the team file with the gold left over as its treasury. |
 | `teamAfterGame(json, state, side)` | The team file after a finished game: Star Player Points, casualties, Getting Even, raised players, winnings, Dedicated Fans. |
 | `TeamFileSchema`, `RosterSchema` | zod schemas (and the `TeamFile`, `Roster` types). |
 | `SKILL_DESCRIPTIONS`, `skillDescription(skill)` | Short BB2025 descriptions of every skill and trait (our own wording), for tooltips; `skillDescription("Loner(4)")` fills in the value. |
