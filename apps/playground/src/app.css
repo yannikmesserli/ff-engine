@@ -12,3 +12,5 @@ a { color: #8ab4f8; }
 .pg-error { color: #ffb74d; font-size: 13px; max-width: 600px; }
 .pg-lobby { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; max-width: 720px; padding-top: 40px; }
 .pg-invite code { background: #1c1e22; padding: 2px 6px; border-radius: 4px; }
+.pg-modal { border: none; padding: 0; margin: 32px auto; max-width: calc(100vw - 32px); max-height: calc(100vh - 64px); overflow: auto; background: transparent; border-radius: 8px; }
+.pg-modal::backdrop { background: rgba(0, 0, 0, 0.7); }
