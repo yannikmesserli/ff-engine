@@ -234,10 +234,13 @@ export const Turn: Handler<P<"Turn">> = {
       ctx.reject("A Blitz must name a standing opponent as its target.");
     }
     // Sneakiest of the Lot: the player's Foul does not use up the team's Foul action.
-    if (ONCE_PER_TURN.includes(a.action) && !(a.action === "foul" && hasSkill(player, "Sneakiest of the Lot"))) proc.used.push(a.action);
+    const used = ONCE_PER_TURN.includes(a.action) && !(a.action === "foul" && hasSkill(player, "Sneakiest of the Lot"));
+    if (used) proc.used.push(a.action);
+    const declared = { logAt: 0, used, acted: proc.acted ?? false, distracted: player.distracted, gouged: player.gouged };
     proc.acted = true;
     state.activePlayerId = player.id;
     ctx.emit({ type: "ActionDeclared", playerId: player.id, action: a.action, ...(a.targetId ? { targetId: a.targetId } : {}) });
+    declared.logAt = state.log.length;
     // Dump-off: the Blitz target may pass as soon as they are named, before the blitzer does anything.
     const dumpOff: Procedure[] = a.action === "blitz" ? [{ type: "DumpOff", attackerId: player.id, defenderId: a.targetId!, declared: true }] : [];
     ctx.push(...dumpOff, {
@@ -246,6 +249,7 @@ export const Turn: Handler<P<"Turn">> = {
       stage: "start",
       action: a.action,
       ...(a.action === "blitz" ? { targetId: a.targetId! } : {}),
+      declared,
     });
     return "continue";
   },
@@ -590,7 +594,8 @@ export const MoveAction: Handler<P<"MoveAction">> = {
         puntOptions(state, proc) === null);
     if (finished) return endActivation(ctx, proc, player);
     if (action === null) return "wait";
-    const a = ctx.expect(action, "MOVE", "BLOCK", "MULTIPLE_BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "CHAINSAW", "CHOMP", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION");
+    const a = ctx.expect(action, "MOVE", "BLOCK", "MULTIPLE_BLOCK", "VOMIT", "STAB", "BREATHE_FIRE", "CHAINSAW", "CHOMP", "THROW", "HAIL_MARY_PASS", "HAND_OFF", "FOUL", "GAZE", "THROW_TEAM_MATE", "PUNT", "USE_SKILL", "END_PLAYER_ACTION", "CANCEL_ACTION");
+    if (a.type === "CANCEL_ACTION") return cancelAction(ctx, proc, player);
     if (a.type === "USE_SKILL") {
       if (!canFumblerooski(state, proc)) ctx.reject("Fumblerooski cannot be used now.");
       if (a.use) proc.fumblerooski = true;
@@ -796,10 +801,36 @@ export const MoveAction: Handler<P<"MoveAction">> = {
       ...(throwable.length > 0
         ? [{ type: "THROW_TEAM_MATE" as const, side: player.side, playerId: player.id, playerIds: throwable, squares: teamMateTargets(state, player) }]
         : []),
+      ...(cancellable(state, proc) ? [{ type: "CANCEL_ACTION" as const, side: player.side, playerId: player.id }] : []),
       { type: "END_PLAYER_ACTION", side: player.side },
     ];
   },
 };
+
+/**
+ * The declared action may be taken back (a convenience of this engine, as on a real table before the player is
+ * touched): nothing has happened since it was declared (no die rolled, no step, no skill used), and it was declared
+ * in the team's turn.
+ */
+export function cancellable(state: GameState, proc: P<"MoveAction">): boolean {
+  return proc.declared !== undefined && proc.stage === "main" && state.log.length === proc.declared.logAt && state.stack.at(-2)?.type === "Turn";
+}
+
+/** Takes back the declared action: the player is not activated, and a once-per-turn action may be declared again. */
+function cancelAction(ctx: Ctx, proc: P<"MoveAction">, player: PlayerState): "done" {
+  const { state } = ctx;
+  if (!cancellable(state, proc)) ctx.reject("The action has started: it can no longer be taken back.");
+  const declared = proc.declared!;
+  const turn = state.stack.at(-2) as P<"Turn">;
+  if (declared.used) turn.used.splice(turn.used.lastIndexOf(proc.action), 1);
+  turn.acted = declared.acted;
+  player.activated = false;
+  player.distracted = declared.distracted;
+  player.gouged = declared.gouged;
+  state.activePlayerId = null;
+  ctx.emit({ type: "ActionCancelled", playerId: player.id, action: proc.action });
+  return "done";
+}
 
 const holdsBall = (state: GameState, player: PlayerState) => ballCarrier(state)?.id === player.id;
 

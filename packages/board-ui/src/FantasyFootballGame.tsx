@@ -238,6 +238,27 @@ function Game(props: {
     return () => clearTimeout(timer);
   }, [autoRoll, onlyRoll, state]);
 
+  // Esc steps back: closes the action menu, stops aiming, drops a half-made choice, else takes back an action not
+  // started yet.
+  const cancelAvailable = templates.some((t) => t.type === "CANCEL_ACTION");
+  const onEscape = useRef<() => void>(() => {});
+  onEscape.current = () => {
+    if (menu) setMenu(null);
+    else if (aiming) setAiming(false);
+    else if (picked.length > 0) setPicked([]);
+    else if (cancelAvailable) dispatch({ type: "CANCEL_ACTION" });
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      // Leave Esc to text fields and open dialogs.
+      if (e.target instanceof HTMLElement && e.target.closest("input, textarea, select, dialog")) return;
+      onEscape.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   // The hovered player's card, else the pinned one.
   const shown = hovered ?? pinned;
   const player = shown ? state.players[shown] : undefined;

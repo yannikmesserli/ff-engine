@@ -457,6 +457,11 @@ export function ActionPanel(props: ActionPanelProps) {
             Breathe fire on {state.players[id]!.name}
           </button>
         ))}
+        {has("CANCEL_ACTION") && (
+          <button title="Nothing has happened yet: pick another player or action (Esc)" onClick={() => dispatch({ type: "CANCEL_ACTION" })}>
+            Take back action
+          </button>
+        )}
         {has("END_PLAYER_ACTION") && <button onClick={() => dispatch({ type: "END_PLAYER_ACTION" })}>End action</button>}
         {(has("END_TURN") || has("END_PLAYER_ACTION")) && (
           <button

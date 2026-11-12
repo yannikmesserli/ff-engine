@@ -2390,7 +2390,7 @@ describe("engine", () => {
 
       it("Throw Bomb: once per turn, no move before the throw, thrown like a pass", () => {
         let s = apply(bomber(), declare("home-4", "bomb"));
-        expect(types(s)).toEqual(["THROW", "END_PLAYER_ACTION"]);
+        expect(types(s)).toEqual(["THROW", "CANCEL_ACTION", "END_PLAYER_ACTION"]);
         s = apply(s, { type: "THROW", square: { x: 6, y: 4 } });
         expect(s.log).toContainEqual({ type: "PassThrown", playerId: "home-4", target: { x: 6, y: 4 }, range: "short", bomb: true });
         expect(find(s, "ROLL")?.reason).toBe("Pass 5+ (short)");
@@ -2422,7 +2422,7 @@ describe("engine", () => {
       it("Hail Mary Pass: a bomb to any square, never accurate, scattering three times, without interception", () => {
         const hmp = withSkills(bomber(), { "home-4": ["Bombardier", "Hail Mary Pass"] });
         let s = apply(hmp, declare("home-4", "bomb"));
-        expect(types(s)).toEqual(["THROW", "HAIL_MARY_PASS", "END_PLAYER_ACTION"]);
+        expect(types(s)).toEqual(["THROW", "HAIL_MARY_PASS", "CANCEL_ACTION", "END_PLAYER_ACTION"]);
         s = apply(s, { type: "HAIL_MARY_PASS", square: { x: 20, y: 10 } });
         expect(s.log).toContainEqual({ type: "PassThrown", playerId: "home-4", target: { x: 20, y: 10 }, range: "bomb", bomb: true, hailMary: true });
         expect(find(s, "ROLL")?.reason).toMatch(/^Hail Mary Pass/);
@@ -5346,6 +5346,47 @@ describe("engine", () => {
       const s = edit(toSetup(), (c) => void (c.players["away-1"]!.skills = ["Team Captain"]));
       const placed = apply(s, ...setupActions("away").slice(1, -1));
       expect(find(placed, "END_SETUP")?.errors).toContain("The Team Captain (Away 1) must be set up.");
+    });
+  });
+
+  describe("taking back a declared action", () => {
+    const cancel: Action = { type: "CANCEL_ACTION" };
+
+    it("before anything happens, the player is free again and the Blitz may be declared again", () => {
+      const s = apply(toFirstTurn(), declare("home-11", "blitz", "away-1"));
+      expect(find(s, "CANCEL_ACTION")).toEqual({ type: "CANCEL_ACTION", side: "home", playerId: "home-11" });
+      const back = apply(s, cancel);
+      expect(back.activePlayerId).toBeNull();
+      expect(back.players["home-11"]!.activated).toBe(false);
+      expect(actionsOf(back, "home-11")).toContain("blitz");
+      expect(actionsOf(back, "home-2")).toContain("blitz");
+      expect(back.log.at(-1)).toEqual({ type: "ActionCancelled", playerId: "home-11", action: "blitz" });
+    });
+
+    it("keeps the player distracted when they were", () => {
+      const s = edit(toFirstTurn(), (c) => {
+        c.players["home-11"]!.distracted = true;
+      });
+      const back = apply(s, startMove("home-11"), cancel);
+      expect(back.players["home-11"]!.distracted).toBe(true);
+    });
+
+    it("is not offered once the player has moved", () => {
+      const s = apply(toFirstTurn(), startMove("home-11"), ...HOME_11_FULL_MOVE.slice(0, 1));
+      expect(types(s)).not.toContain("CANCEL_ACTION");
+      expect(() => apply(s, cancel)).toThrow(IllegalActionError);
+    });
+
+    it("is not offered once a die was rolled at activation (Bone Head)", () => {
+      const s = apply(
+        edit(toFirstTurn(), (c) => {
+          c.players["home-11"]!.skills = ["Bone Head"];
+        }),
+        startMove("home-11"),
+        roll(4),
+      );
+      expect(types(s)).toContain("MOVE");
+      expect(types(s)).not.toContain("CANCEL_ACTION");
     });
   });
 });

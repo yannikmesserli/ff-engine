@@ -123,6 +123,11 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
   const select = findTemplate(templates, "SELECT_PLAYERS");
   const fireball = findTemplate(templates, "FIREBALL");
   const zap = findTemplate(templates, "ZAP");
+  // The declared action may still be taken back: clicking another player who can act switches to them. Not while
+  // aiming (a pass to a team-mate) or with a choice half-made (a thrown team-mate's landing square): those clicks pick.
+  const cancel = findTemplate(templates, "CANCEL_ACTION");
+  const canSwitchTo = (p: PlayerState) =>
+    cancel !== undefined && !aiming && picked.length === 0 && p.side === cancel.side && p.id !== cancel.playerId && !p.activated && isOnPitch(p) && (p.status === "standing" || p.status === "prone");
   // A d8 roll is due: number the squares around where it moves from.
   const d8Origin = findTemplate(templates, "ROLL")?.dice.some((d) => d.kind === "d8") ? scatterOrigin(state) : null;
   const snap = findTemplate(templates, "SNAP");
@@ -144,6 +149,7 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
     ...(select?.playerIds ?? []),
     ...(snap?.moves.map((m) => m.playerId) ?? []),
     ...(zap?.targetIds ?? []),
+    ...Object.values(state.players).filter(canSwitchTo).map((p) => p.id),
   ]);
   // Highlighted squares: at most one of these templates is offered at a time.
   const targets: Array<Square & { rolls?: CheckKind[] }> =
@@ -209,6 +215,10 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
     else if (ttm?.playerIds.includes(p.id) && !thrown) setPicked([p.id]);
     else if (foul?.targets.some((t) => t.playerId === p.id)) dispatch({ type: "FOUL", targetId: p.id });
     else if (choiceFor(p.id)) setMenu(menu?.playerId === p.id ? null : { playerId: p.id, mode: "actions" });
+    else if (canSwitchTo(p)) {
+      dispatch({ type: "CANCEL_ACTION" });
+      setMenu({ playerId: p.id, mode: "actions" });
+    }
     // Otherwise the click is about the square under the player (kick or pass target, push square...).
     else if (isOnPitch(p)) clickSquare(p.at);
   };
