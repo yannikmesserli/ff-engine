@@ -31,7 +31,7 @@
       {
         "number": 5,
         "name": "Okypous Orithia",
-        "position": "Piranha Warrior"
+        "position": "Eagle Warrior"
       },
       {
         "number": 6,
@@ -201,20 +201,20 @@
     "name": "Dark Elf Team",
     "roster": "Dark Elf",
     "rerolls": 2,
-    "apothecary": true,
+    "apothecary": false,
     "assistantCoaches": 0,
-    "cheerleaders": 1,
+    "cheerleaders": 0,
     "dedicatedFans": 2,
     "players": [
       {
         "number": 1,
         "name": "Caloshir Coolstream",
-        "position": "Dark Elf Runner"
+        "position": "Dark Elf Lineman"
       },
       {
         "number": 2,
         "name": "Endomnir Lightfoot",
-        "position": "Dark Elf Assassin"
+        "position": "Dark Elf Lineman"
       },
       {
         "number": 3,
@@ -249,7 +249,7 @@
       {
         "number": 9,
         "name": "Iysenil Slenderblade",
-        "position": "Dark Elf Assassin"
+        "position": "Dark Elf Lineman"
       },
       {
         "number": 10,
@@ -266,11 +266,11 @@
   "elven-union": {
     "name": "Elven Union Team",
     "roster": "Elven Union",
-    "rerolls": 3,
+    "rerolls": 2,
     "apothecary": true,
     "assistantCoaches": 0,
-    "cheerleaders": 1,
-    "dedicatedFans": 3,
+    "cheerleaders": 0,
+    "dedicatedFans": 1,
     "players": [
       {
         "number": 1,
@@ -285,7 +285,7 @@
       {
         "number": 3,
         "name": "Glorsemain Fastspear",
-        "position": "Elf Blitzer"
+        "position": "Elf Lineman"
       },
       {
         "number": 4,
@@ -332,11 +332,11 @@
   "high-elf": {
     "name": "High Elf Team",
     "roster": "High Elf",
-    "rerolls": 3,
+    "rerolls": 2,
     "apothecary": true,
     "assistantCoaches": 0,
-    "cheerleaders": 1,
-    "dedicatedFans": 3,
+    "cheerleaders": 0,
+    "dedicatedFans": 1,
     "players": [
       {
         "number": 1,
@@ -351,7 +351,7 @@
       {
         "number": 3,
         "name": "Glorsemain Fastspear",
-        "position": "White Lion"
+        "position": "High Elf Lineman"
       },
       {
         "number": 4,
@@ -361,7 +361,7 @@
       {
         "number": 5,
         "name": "Finannean Whitereed",
-        "position": "Dragon Prince"
+        "position": "High Elf Lineman"
       },
       {
         "number": 6,
@@ -470,10 +470,10 @@
     "name": "Lizardmen Team",
     "roster": "Lizardmen",
     "rerolls": 2,
-    "apothecary": true,
-    "assistantCoaches": 2,
-    "cheerleaders": 1,
-    "dedicatedFans": 5,
+    "apothecary": false,
+    "assistantCoaches": 0,
+    "cheerleaders": 0,
+    "dedicatedFans": 1,
     "players": [
       {
         "number": 1,
@@ -503,12 +503,12 @@
       {
         "number": 6,
         "name": "Kroxzlat",
-        "position": "Saurus Blocker"
+        "position": "Skink Lineman"
       },
       {
         "number": 7,
         "name": "Itzazlat of Xahutec",
-        "position": "Saurus Blocker"
+        "position": "Skink Lineman"
       },
       {
         "number": 8,
@@ -537,9 +537,9 @@
     "roster": "Orc",
     "rerolls": 2,
     "apothecary": true,
-    "assistantCoaches": 2,
-    "cheerleaders": 1,
-    "dedicatedFans": 5,
+    "assistantCoaches": 0,
+    "cheerleaders": 0,
+    "dedicatedFans": 1,
     "players": [
       {
         "number": 1,
@@ -599,7 +599,7 @@
       {
         "number": 12,
         "name": "Eruk Ogrehack",
-        "position": "Orc Lineman"
+        "position": "Goblin Lineman"
       }
     ]
   },
@@ -609,7 +609,7 @@
     "rerolls": 2,
     "apothecary": true,
     "assistantCoaches": 0,
-    "cheerleaders": 1,
+    "cheerleaders": 0,
     "dedicatedFans": 3,
     "players": [
       {
@@ -675,7 +675,7 @@
     "rerolls": 3,
     "assistantCoaches": 0,
     "cheerleaders": 0,
-    "dedicatedFans": 3,
+    "dedicatedFans": 1,
     "players": [
       {
         "number": 1,
@@ -804,10 +804,10 @@
     "name": "Wood Elf Team",
     "roster": "Wood Elf",
     "rerolls": 2,
-    "apothecary": true,
+    "apothecary": false,
     "assistantCoaches": 0,
-    "cheerleaders": 1,
-    "dedicatedFans": 3,
+    "cheerleaders": 0,
+    "dedicatedFans": 2,
     "players": [
       {
         "number": 1,
@@ -822,7 +822,7 @@
       {
         "number": 3,
         "name": "Glorsemain Fastspear",
-        "position": "Wardancer"
+        "position": "Wood Elf Lineman"
       },
       {
         "number": 4,
@@ -832,7 +832,7 @@
       {
         "number": 5,
         "name": "Finannean Whitereed",
-        "position": "Wood Elf Catcher"
+        "position": "Wood Elf Lineman"
       },
       {
         "number": 6,

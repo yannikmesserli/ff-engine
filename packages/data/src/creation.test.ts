@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TEAM_CREATION, TeamError, creationCost, creationErrors, draftTeam, rosters, type TeamFileInput } from "./index";
+import { TEAM_CREATION, TeamError, creationCost, creationErrors, draftTeam, exampleTeams, rosters, teamValue, type TeamFileInput } from "./index";
 
 const human = rosters.find((r) => r.name === "Human")!;
 
@@ -15,6 +15,11 @@ const newHumans = (): TeamFileInput => ({
 });
 
 describe("team creation", () => {
+  it.each(Object.keys(exampleTeams))("the %s example team is a new team of a standard game (1000k)", (key) => {
+    expect(creationErrors(exampleTeams[key]!)).toEqual([]);
+    expect(teamValue(exampleTeams[key])).toBeLessThanOrEqual(TEAM_CREATION.budget);
+  });
+
   it("costs the players, re-rolls, staff and the Dedicated Fans after the first", () => {
     expect(creationCost(newHumans(), human)).toEqual({ players: 550_000, rerolls: 100_000, staff: 70_000, dedicatedFans: 20_000, total: 740_000 });
   });
