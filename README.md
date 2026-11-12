@@ -13,8 +13,8 @@ and its apps are for testing.
 - **The data** (`@ff-engine/data`): rosters, star players and the team file format the engine plays with (`resolveTeam`).
 - **The board** (`@ff-engine/board-ui`): a React component that plays a game with the engine. It renders the engine's state
   and turns clicks into actions; it holds no rules.
-- **The artwork, which you bring yourself**: no image file is included or ever committed; only the dice are drawn
-  in code (SVG). The board draws player sprites, team logos and the pitch of each weather from a `BoardArtwork` you
+- **The artwork, which you bring yourself**: no image file is included or ever committed; only the dice and a
+  fallback ball and bomb are drawn in code (SVG). The board draws player sprites, team logos and the pitch of each weather from a `BoardArtwork` you
   pass in (numbered discs without one), and the ball, status overlays and a fallback pitch from an image folder
   (`assetsUrl`). For testing, `pnpm fetch-artwork` downloads FUMBBL's sprites, logos and pitches (see "Assets").
 - **For testing only**: the playground (hot-seat and online games), the relay that links two browsers, and the
@@ -81,7 +81,8 @@ Conventions: home on the left (scores at x=25), d8 directions clockwise from nor
 ## Assets
 
 Board graphics are not included, and no image file may be committed (`.gitignore` refuses image files). The only
-graphics in the repository are the dice, drawn in code as SVG for this project (`packages/board-ui/src/Dice.tsx`).
+graphics in the repository are the dice and a fallback ball and bomb, drawn in code as SVG for this project
+(`packages/board-ui/src/Dice.tsx`, `packages/board-ui/src/Ball.tsx`).
 The playground serves `apps/playground/public/` (git-ignored), which must contain an `img/` folder for the ball,
 status overlays and fallback pitch; see `packages/board-ui/README.md` for the expected layout. To test with player
 sprites, team logos and FUMBBL's pitches, `pnpm fetch-artwork` downloads them into `apps/playground/public/fumbbl/`. FUMBBL's artwork is not part of this project and does not belong to its authors: the download is for testing the
