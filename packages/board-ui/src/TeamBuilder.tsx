@@ -25,6 +25,7 @@ function startingDraft(initial: unknown): Draft {
     const t = parsed.data;
     return {
       name: t.name,
+      ...(t.coach ? { coach: t.coach } : {}),
       roster: t.roster,
       rerolls: t.rerolls,
       apothecary: t.apothecary,
@@ -113,6 +114,9 @@ export function TeamBuilder(props: TeamBuilderProps) {
       <div className="bb-tb-head">
         <label>
           Team name <input value={draft.name} onChange={(e) => update({ name: e.target.value })} />
+        </label>
+        <label>
+          Coach <input value={draft.coach ?? ""} placeholder="optional" onChange={(e) => update({ coach: e.target.value || undefined })} />
         </label>
         <label>
           Roster{" "}

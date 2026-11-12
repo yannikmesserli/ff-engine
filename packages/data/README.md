@@ -43,6 +43,7 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
 ```json
 {
   "name": "Reikland Reavers",
+  "coach": "Griff's mum",
   "roster": "Human",
   "rerolls": 3,
   "apothecary": true,
@@ -64,7 +65,7 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
 }
 ```
 
-- Team: `apothecary` (default `false`), `assistantCoaches` and `cheerleaders` (default 0), `dedicatedFans` 1-7
+- Team: `coach` (the coach's name, optional), `apothecary` (default `false`), `assistantCoaches` and `cheerleaders` (default 0), `dedicatedFans` 1-7
   (default 1), 1 to 16 players with unique positive `number`s.
 - `captain`: the number of the player who is Team Captain (gains Pro, unless they have it, and the Team Captain
   trait; neither counts as an advancement). `teamAfterGame` drops it when that player is gone.

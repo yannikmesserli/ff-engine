@@ -150,6 +150,8 @@ export interface PlayerState {
 export interface TeamState {
   side: Side;
   name: string;
+  /** The coach's name, if known. */
+  coach?: string;
   /** BB2025 roster name, e.g. "Human". */
   roster: string;
   score: number;
@@ -341,6 +343,8 @@ export type InducementPrices = Partial<Record<InducementId, { cost: number; max:
 /** Input shape used to create a game: a fully resolved team (stats already merged from the roster). */
 export interface TeamSetup {
   name: string;
+  /** The coach's name, if known. */
+  coach?: string;
   /** BB2025 roster name, e.g. "Human". */
   roster: string;
   rerolls: number;

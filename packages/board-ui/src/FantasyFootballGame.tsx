@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   IMPLEMENTED_SKILLS,
   sameSkill,
@@ -7,6 +7,7 @@ import {
   createGame,
   getAvailableActions,
   leaderReroll,
+  PRAYER_NAMES,
   skillName,
   starPlayerPoints,
   step,
@@ -14,6 +15,7 @@ import {
   type ActionTemplate,
   type GameEvent,
   type GameState,
+  type InducementId,
   type PlayerState,
   type Side,
 } from "@ff-engine/engine";
@@ -21,7 +23,7 @@ import { resolveTeam, skillDescription, teamAfterGame } from "@ff-engine/data";
 import { ActionPanel } from "./ActionPanel";
 import { Board, type ActionMenuState, type Aiming } from "./Board";
 import { DiceRolls } from "./Dice";
-import { WEATHER_NAMES, casualtyName, describeEvent } from "./describe";
+import { SHOP_NAMES, WEATHER_NAMES, casualtyName, describeEvent, gold } from "./describe";
 import type { BoardArtwork } from "./artwork";
 import "./styles.css";
 
@@ -325,12 +327,59 @@ function Scoreboard({ state, artwork }: { state: GameState; artwork?: BoardArtwo
   );
 }
 
+/** A team's logo (its details on hover or click), name, turn and re-rolls. */
 function TeamBanner({ state, side, artwork }: { state: GameState; side: Side; artwork?: BoardArtwork | undefined }) {
   const t = state.teams[side];
   const logo = artwork?.logo(t.roster);
+  // The details show while clicked open, or while hovered unless dismissed (Esc, or a click closing them) until the
+  // pointer leaves.
+  const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const visible = open || (hovered && !dismissed);
+  const close = () => {
+    setOpen(false);
+    setDismissed(true);
+  };
+  // While they show, Esc closes them first: caught before the board's own Esc handler (which skips handled events).
+  useEffect(() => {
+    if (!visible) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      e.preventDefault();
+      setOpen(false);
+      setDismissed(true);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [visible]);
   return (
     <div className={`bb-team bb-side-${side}${state.activeSide === side ? " bb-acting" : ""}`}>
-      {logo ? <img src={logo} alt="" onError={(e) => (e.currentTarget.style.visibility = "hidden")} /> : <span className="bb-no-logo" />}
+      <div
+        className={`bb-team-logo${visible ? " bb-open" : ""}`}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => {
+          setHovered(false);
+          setDismissed(false);
+        }}
+      >
+        <button
+          className="bb-team-logo-button"
+          title={`About ${t.name}`}
+          aria-expanded={visible}
+          onClick={() => {
+            if (visible) close();
+            else {
+              setOpen(true);
+              setDismissed(false);
+            }
+          }}
+          onBlur={() => setOpen(false)}
+        >
+          {logo ? <img src={logo} alt={`${t.name} logo`} onError={(e) => (e.currentTarget.style.visibility = "hidden")} /> : <span className="bb-no-logo" />}
+        </button>
+        <TeamDetails state={state} side={side} />
+      </div>
       <div>
         <div className="bb-team-name">{t.name}</div>
         <div className="bb-team-info">
@@ -339,6 +388,53 @@ function TeamBanner({ state, side, artwork }: { state: GameState; side: Side; ar
           {leaderReroll(state, side) ? " +1 Leader" : ""}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** A team's coach, value, staff, re-rolls, inducements and prayers, shown from its logo. */
+function TeamDetails({ state, side }: { state: GameState; side: Side }) {
+  const t = state.teams[side];
+  const inducements = (Object.entries(t.inducements) as Array<[InducementId, number]>).filter(([id, n]) => n > 0 && id !== "prayers");
+  const rows: Array<[string, ReactNode]> = [
+    ["Coach", t.coach ?? "–"],
+    ["Roster", t.roster],
+    ["Team value", t.teamValue > 0 ? gold(t.teamValue) : "–"],
+    ["Treasury", gold(t.treasury - t.treasurySpent)],
+    [
+      "Re-rolls",
+      <>
+        {t.rerolls} of {t.rerollsPerHalf} this half
+        {t.driveRerolls > 0 && ` · +${t.driveRerolls} this drive`}
+        {leaderReroll(state, side) && " · +1 Leader"}
+      </>,
+    ],
+    ["Apothecaries", String(t.apothecaries)],
+    ["Assistant coaches", String(t.assistantCoaches)],
+    ["Cheerleaders", String(t.cheerleaders)],
+    ["Dedicated fans", `${t.dedicatedFans} (fan factor ${t.fanFactor})`],
+    ["Bribes", String(t.bribes)],
+  ];
+  if (t.inducementsCost > 0) rows.push(["Inducements cost", gold(t.inducementsCost)]);
+  if (inducements.length > 0) {
+    rows.push(["Inducements", inducements.map(([id, n]) => `${SHOP_NAMES[id]}${n > 1 ? ` ×${n}` : ""}${(t.inducementsUsed[id] ?? 0) > 0 ? ` (${t.inducementsUsed[id]} used)` : ""}`).join(", ")]);
+  }
+  if (t.prayers.length > 0) rows.push(["Prayers to Nuffle", t.prayers.map((p) => PRAYER_NAMES[p]).join(", ")]);
+  if (t.specialRules.length > 0) rows.push(["Special rules", t.specialRules.join(", ")]);
+  if (t.coachBanned) rows.push(["", "The coach was sent off for arguing the call."]);
+  return (
+    <div className="bb-team-details" role="tooltip">
+      <div className="bb-team-details-name">{t.name}</div>
+      <table>
+        <tbody>
+          {rows.map(([label, value], i) => (
+            <tr key={label || i}>
+              <th>{label}</th>
+              <td>{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

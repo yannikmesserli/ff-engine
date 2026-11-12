@@ -2,7 +2,9 @@
 
 React component that plays a complete hot-seat BB2025 fantasy football game in the browser: scoreboard, pitch with both
 dugouts, decision panel, last roll with undo, player card (hovered, or pinned by clicking a player; skills have
-description tooltips) and game log. All rules come from `@ff-engine/engine`; this
+description tooltips), team details (coach, team value, staff, re-rolls, inducements) on each logo and game log. Esc
+steps back: it closes the action menu or stops aiming, then takes back a declared action that has not started yet
+(clicking another player who can act does the same and opens their menu). All rules come from `@ff-engine/engine`; this
 package only renders the engine's state and turns clicks into engine actions.
 
 It comes without artwork: bring your own player sprites, team logos and pitches (`artwork`, see "Artwork") and image

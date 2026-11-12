@@ -63,6 +63,8 @@ export const SPECIAL_RULES = [
 /** A BB2025 team: its roster, staff and players. */
 export const TeamFileSchema = z.strictObject({
   name: z.string().min(1),
+  /** The coach's name, shown with the team. */
+  coach: z.string().min(1).optional(),
   /** Roster name, e.g. "Human", "Shambling Undead". */
   roster: z.string().min(1),
   /** Team re-rolls. */
