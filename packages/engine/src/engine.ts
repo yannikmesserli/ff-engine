@@ -37,6 +37,7 @@ function initialState(home: TeamSetup, away: TeamSetup, seed: number, overtime: 
   const team = (side: Side) => ({
     side,
     name: teams[side].name,
+    ...(teams[side].coach ? { coach: teams[side].coach } : {}),
     roster: teams[side].roster,
     score: 0,
     turn: 0,

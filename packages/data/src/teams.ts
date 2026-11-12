@@ -299,6 +299,7 @@ export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters
   if (players.length + stars.length > MAX_PLAYERS) throw new TeamError(`At most ${MAX_PLAYERS} players, star players and mercenaries included.`);
   return {
     name: team.name,
+    ...(team.coach ? { coach: team.coach } : {}),
     roster: team.roster,
     rerolls: team.rerolls,
     apothecary: team.apothecary,
