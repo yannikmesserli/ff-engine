@@ -22,7 +22,7 @@ import { FantasyFootballGame } from "@ff-engine/board-ui";
 | Prop | Type | |
 |---|---|---|
 | `home`, `away` | `unknown` | Team files in `@ff-engine/data`'s format (see `packages/data/README.md`), validated by `resolveTeam()`. Invalid teams render the error message. |
-| `assetsUrl` | `string` | Base URL of the image folder (ball, status overlays, fallback pitch). Default `"/img"`. |
+| `assetsUrl` | `string` | Base URL of the image folder (ball, fallback pitch). Default `"/img"`. |
 | `artwork` | `BoardArtwork` | Player sprites, team logos and pitches (see "Artwork"). None by default: numbered discs, no logos, the image folder's pitch. |
 | `seed` | `number` | RNG seed, to replay the same dice. Random when omitted. |
 | `actions` | `Action[]` | Applied right after the game is created (`applyActions`), to start from a prepared position (`apps/scenarios`). Undo stops there; an illegal action renders the error message. |
@@ -97,7 +97,6 @@ Graphics are not included. Images are loaded from `assetsUrl` with this layout:
 |---|---|
 | `arenas/pitch/<heat\|sunny\|nice\|rain\|blizzard>-26x15.jpg` | Pitch of each weather (26 x 15 squares), when the artwork has none. |
 | `ball/sball_30x30.png`, `ball/sbomb_30x30.png` | The ball, and a bomb. Drawn in code (`BallIcon`) when missing. |
-| `player_status/<prone\|stunned>.gif` | Status overlays. |
 
 ## Artwork
 

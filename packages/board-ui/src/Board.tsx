@@ -4,9 +4,12 @@ import {
   ballUnsettled,
   blockDice,
   flightMarkers,
+  hasSkill,
   inBounds,
   scatterOrigin,
   SCATTER,
+  STAND_UP_COST,
+  STAND_UP_TARGET,
   PITCH_HEIGHT,
   PITCH_WIDTH,
   isOnPitch,
@@ -72,6 +75,28 @@ export type Aiming = false | "throw" | "hailMary";
 
 /** Alt text of the flight markers. */
 const FLIGHT_NAMES = { aimed: "aimed here", landing: "coming down here", held: "to throw again", exploding: "exploding" } as const;
+
+/** Tooltip of a prone or stunned player's marker: what standing up costs this player (Jump Up, MA below 3). */
+function statusName(player: PlayerState): string {
+  if (player.status === "stunned") return "Stunned: no tackle zone; turns prone at the start of their team's next turn, without acting in it";
+  const standUp = hasSkill(player, "Jump Up")
+    ? "standing up is free (Jump Up)"
+    : player.ma < STAND_UP_COST
+      ? `standing up takes a ${STAND_UP_TARGET}+ roll and all of their movement`
+      : `standing up costs ${STAND_UP_COST} squares of movement`;
+  return `Prone: no tackle zone; ${standUp}`;
+}
+
+/**
+ * Players a procedure is about: every `...Id` / `...Ids` / `playerId` value in it, nested ones included (a push
+ * chain, the other target of a Multiple Block).
+ */
+function participants(value: unknown, key = ""): string[] {
+  if (typeof value === "string") return /Ids?$/.test(key) ? [value] : [];
+  if (Array.isArray(value)) return value.flatMap((v) => participants(v, key));
+  if (typeof value === "object" && value !== null) return Object.entries(value).flatMap(([k, v]) => participants(v, k));
+  return [];
+}
 
 /** "2D" when the attacker picks, "2D!" when the defender picks. */
 const diceLabel = (dice: number) => `${Math.abs(dice)}D${dice < 0 ? "!" : ""}`;
@@ -232,7 +257,19 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
     }
   };
 
-  const token = (p: PlayerState) => (
+  // Greyed out during a team turn (not the kick-off's Charge): the players of the team not playing, and those of the
+  // acting team who have played. Not the ones a decision is about (acting, picked or clickable), nor those of the
+  // block, reaction or roll being resolved over the activation (the defender, a pushed player, a Stand Firm...).
+  const turnAt = state.stack.findLastIndex((proc) => proc.type === "Turn");
+  const turn = state.stack[turnAt];
+  const inTurn = state.activeSide !== null && turn?.type === "Turn" && !turn.charge;
+  const involved = new Set(state.stack.slice(turnAt + 1).filter((proc) => proc.type !== "MoveAction").flatMap((proc) => participants(proc)));
+  const isUsed = (p: PlayerState, active: boolean) =>
+    inTurn && isOnPitch(p) && !active && !selectable.has(p.id) && !involved.has(p.id) && (p.side !== state.activeSide || p.activated);
+
+  const token = (p: PlayerState) => {
+    const active = state.activePlayerId === p.id || move?.playerId === p.id || picked.includes(p.id);
+    return (
     <PlayerToken
       key={p.id}
       player={p}
@@ -240,7 +277,8 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
       assets={assets}
       artwork={artwork}
       // The acting player, or the one moving out of their turn (On the Ball, Hit and Run).
-      active={state.activePlayerId === p.id || move?.playerId === p.id || picked.includes(p.id)}
+      active={active}
+      used={isUsed(p, active)}
       draggable={draggable.has(p.id)}
       selectable={selectable.has(p.id)}
       hasBall={state.ball.carried && isOnPitch(p) && state.ball.square !== null && sameSquare(state.ball.square, p.at)}
@@ -258,7 +296,8 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
       }}
       onHover={onHover}
     />
-  );
+    );
+  };
 
   const menuChoice = menu?.mode === "actions" ? choiceFor(menu.playerId) : undefined;
 
@@ -390,6 +429,8 @@ function PlayerToken(props: {
   artwork?: BoardArtwork | undefined;
   /** Acting or picked: highlighted with the moving sprite. */
   active: boolean;
+  /** Greyed out: has played this turn, or their team is not playing. */
+  used: boolean;
   draggable: boolean;
   selectable: boolean;
   hasBall: boolean;
@@ -411,7 +452,7 @@ function PlayerToken(props: {
   if (props.active) classes.push("bb-active");
   if (props.selectable) classes.push("bb-selectable");
   if (props.draggable) classes.push("bb-draggable");
-  if (player.activated && !props.active) classes.push("bb-used");
+  if (props.used) classes.push("bb-used");
   if (player.distracted) classes.push("bb-distracted");
   if (player.frog) classes.push("bb-frog");
   if (isDragging) classes.push("bb-dragging");
@@ -421,7 +462,7 @@ function PlayerToken(props: {
       ref={setNodeRef}
       className={classes.join(" ")}
       style={transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined}
-      title={`#${player.nr} ${player.name} (${player.position})${player.distracted ? ", distracted: no tackle zone" : ""}${player.frog ? ", a frog until the end of the drive" : ""}`}
+      title={`#${player.nr} ${player.name} (${player.position})${player.status !== "standing" ? `, ${statusName(player).toLowerCase()}` : ""}${player.distracted ? ", distracted: no tackle zone" : ""}${player.frog ? ", a frog until the end of the drive" : ""}`}
       onClick={props.onClick}
       onMouseEnter={() => props.onHover(player.id)}
       onMouseLeave={() => props.onHover(null)}
@@ -430,7 +471,11 @@ function PlayerToken(props: {
     >
       {sheet ? <span className="bb-sprite" style={spriteStyle(sheet, player, props.active)} /> : <span className="bb-player-fallback">{player.nr}</span>}
       {player.status !== "standing" && (
-        <img className="bb-status" src={`${assets}/player_status/${player.status}.gif`} alt={player.status} draggable={false} />
+        // Prone: a white "/" (and a greyed sprite); stunned: a red "X". Drawn in code, see-through.
+        <svg className={`bb-status bb-status-${player.status}`} viewBox="0 0 24 24" role="img" aria-label={statusName(player)}>
+          <line x1="4" y1="20" x2="20" y2="4" />
+          {player.status === "stunned" && <line x1="4" y1="4" x2="20" y2="20" />}
+        </svg>
       )}
       {player.frog && <span className="bb-frog-badge" title="A frog until the end of the drive">🐸</span>}
       {props.hasBall && <BallImage assets={assets} className="bb-held-ball" alt="ball" />}
