@@ -627,6 +627,11 @@ export type Procedure =
       released?: boolean;
       /** Quick Foul: the player fouled and moves on (no second foul). */
       fouled?: boolean;
+      /**
+       * Declared in the team's turn: what to restore if the action is taken back (CANCEL_ACTION) before anything happens,
+       * i.e. while the log is `logAt` events long.
+       */
+      declared?: { logAt: number; used: boolean; acted: boolean; distracted: boolean; gouged: boolean };
     }
   | {
       type: "Pass";
@@ -1147,6 +1152,8 @@ export type Action =
   /** The block die to re-roll; `indexes` when several may be picked (Savage Blow). */
   | { type: "REROLL_BLOCK_DIE"; index: number; indexes?: number[] }
   | { type: "END_PLAYER_ACTION" }
+  /** Take back the declared action before the player has done anything (see the CANCEL_ACTION template). */
+  | { type: "CANCEL_ACTION" }
   | { type: "END_TURN" }
   /** Choose players for a kick-off event (Solid Defence, High Kick, Charge). May be empty. */
   | { type: "SELECT_PLAYERS"; playerIds: string[] }
@@ -1243,6 +1250,8 @@ export type ActionTemplate =
   | { type: "USE_SKILL"; side: Side; playerId: string; skill: string }
   | { type: "MOVE_INSTEAD"; side: Side; playerId: string }
   | { type: "END_PLAYER_ACTION"; side: Side }
+  /** Nothing has happened since `playerId`'s action was declared: it may be taken back, leaving them free to act. */
+  | { type: "CANCEL_ACTION"; side: Side; playerId: string }
   | { type: "END_TURN"; side: Side }
   /** `min`: players that must be chosen (none by default). */
   | { type: "SELECT_PLAYERS"; side: Side; playerIds: string[]; max: number; min?: number; reason: string }
@@ -1283,6 +1292,7 @@ export type GameEvent =
   | { type: "PlayerMoved"; playerId: string; from: Square; to: Square }
   | { type: "PlayerStoodUp"; playerId: string }
   | { type: "ActionDeclared"; playerId: string; action: PlayerActionType; targetId?: string }
+  | { type: "ActionCancelled"; playerId: string; action: PlayerActionType }
   /** An unmarked ball carrier who could reach the end zone was activated (or the turn was ended without them). */
   | { type: "StallingDetected"; playerId: string }
   /** The crowd throws a rock: `roll` is null from turn 7 on, when it always misses. */

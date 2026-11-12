@@ -286,10 +286,10 @@ function randomActions(state: GameState, templates: ActionTemplate[], random: ()
   return [randomAction(templates.filter((t) => t.type !== "HAIL_MARY_PASS"), pick, random)];
 }
 
-/** One random answer to a random template; ending a turn or player action is rarer so games progress. */
+/** One random answer to a random template; ending (or taking back) a turn or player action is rarer so games progress. */
 function randomAction(templates: ActionTemplate[], pick: <T>(xs: T[]) => T, random: () => number): Action {
   // Nobody concedes: the games are played to the end.
-  const t = pick(templates.filter((t) => t.type !== "CONCEDE" && ((t.type !== "END_TURN" && t.type !== "END_PLAYER_ACTION") || random() < 0.1)));
+  const t = pick(templates.filter((t) => t.type !== "CONCEDE" && ((t.type !== "END_TURN" && t.type !== "END_PLAYER_ACTION" && t.type !== "CANCEL_ACTION") || random() < 0.1)));
   switch (t.type) {
     case "CALL_COIN":
       return { type: "CALL_COIN", call: pick(["heads", "tails"] as const) };

@@ -102,6 +102,9 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
   a natural 1 fails and a natural 6 succeeds (`passes`).
 - Player ids are `"<side>-<nr>"`. Players off the pitch are in a dugout box: `"reserves"`, `"ko"`, `"cas"` or
   `"banned"`.
+- A declared action can be taken back (`CANCEL_ACTION`, offered as a template) as long as nothing has happened since:
+  no die rolled, no step, no skill used. The player is no longer activated and a once-per-turn action (Blitz, Pass...)
+  may be declared again. This is a convenience of the engine, not a rule: the declaration simply did not happen.
 - JSDoc states the rule in game terms ("Foul assists: +1 per team-mate next to the victim..."), so it can be
   checked against the rulebook.
 

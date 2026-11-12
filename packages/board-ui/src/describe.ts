@@ -280,6 +280,8 @@ export function describeEvent(state: GameState, e: GameEvent): string | null {
       return null;
     case "ActionDeclared":
       return `${who(state, e.playerId)} declares a ${ACTION_NAMES[e.action]}${e.targetId ? ` on ${who(state, e.targetId)}` : ""}.`;
+    case "ActionCancelled":
+      return `${who(state, e.playerId)} takes back the ${ACTION_NAMES[e.action]}.`;
     case "BlockDeclared":
       return `${who(state, e.attackerId)} blocks ${who(state, e.defenderId)} (${Math.abs(e.dice)} ${Math.abs(e.dice) > 1 ? "dice" : "die"}${e.dice < 0 ? ", defender chooses" : ""}).`;
     case "BlockResult":
