@@ -32,7 +32,7 @@ request, and they must pass before merging.
   Bowl implementations or their class names.
 - Rosters come from FUMBBL's BB2025 ruleset (`pnpm fetch-rosters`, network).
 - Never commit an image file. The only graphics in the repository are drawn in code for this project (the SVG dice in
-  `packages/board-ui/src/Dice.tsx`); never copy or trace someone else's art. FUMBBL's player sprites, team logos and
+  `packages/board-ui/src/Dice.tsx`, the fallback ball and bomb in `packages/board-ui/src/Ball.tsx`); never copy or trace someone else's art. FUMBBL's player sprites, team logos and
   pitches are only downloaded for testing (`pnpm fetch-artwork`, into the git-ignored `apps/playground/public/fumbbl/`).
 
 ## Engine conventions

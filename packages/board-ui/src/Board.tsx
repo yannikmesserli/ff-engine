@@ -26,6 +26,7 @@ import {
 } from "@ff-engine/engine";
 import { ACTION_NAMES, PASS_RANGE_NAMES } from "./describe";
 import { spriteStyle, type BoardArtwork } from "./artwork";
+import { BallImage } from "./Ball";
 import { findTemplate, multipleBlockFirst } from "./templates";
 
 /** Square size in pixels (keep in sync with --bb-square in styles.css). */
@@ -292,9 +293,9 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
                 </div>
               ))}
             {state.ball.square && !state.ball.carried && (
-              <img
+              <BallImage
+                assets={assets}
                 className={`bb-ball${ballUnsettled(state) ? " bb-ball-unsettled" : ""}`}
-                src={`${assets}/ball/sball_30x30.png`}
                 alt={ballUnsettled(state) ? "ball (not settled yet)" : "ball"}
                 style={at(state.ball.square)}
               />
@@ -310,7 +311,7 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
               })}
             {flightMarkers(state).map((m) => (
               <div key={`${m.kind}-${m.state}-${squareId(m.square)}`} className={`bb-flight bb-flight-${m.state}`} style={at(m.square)}>
-                <img src={`${assets}/ball/${m.kind === "bomb" ? "sbomb_30x30.png" : "sball_30x30.png"}`} alt={`${m.kind} ${FLIGHT_NAMES[m.state]}`} />
+                <BallImage assets={assets} kind={m.kind === "bomb" ? "bomb" : "ball"} className="bb-flight-ball" alt={`${m.kind} ${FLIGHT_NAMES[m.state]}`} />
               </div>
             ))}
           </div>
@@ -432,7 +433,7 @@ function PlayerToken(props: {
         <img className="bb-status" src={`${assets}/player_status/${player.status}.gif`} alt={player.status} draggable={false} />
       )}
       {player.frog && <span className="bb-frog-badge" title="A frog until the end of the drive">🐸</span>}
-      {props.hasBall && <img className="bb-held-ball" src={`${assets}/ball/sball_30x30.png`} alt="ball" draggable={false} />}
+      {props.hasBall && <BallImage assets={assets} className="bb-held-ball" alt="ball" />}
       {props.blockDice !== undefined && (
         <span className={`bb-dice-badge${props.blockDice < 0 ? " bb-defender-picks" : ""}`}>{diceLabel(props.blockDice)}</span>
       )}

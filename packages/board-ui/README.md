@@ -94,7 +94,7 @@ Graphics are not included. Images are loaded from `assetsUrl` with this layout:
 | Path | What |
 |---|---|
 | `arenas/pitch/<heat\|sunny\|nice\|rain\|blizzard>-26x15.jpg` | Pitch of each weather (26 x 15 squares), when the artwork has none. |
-| `ball/sball_30x30.png`, `ball/sbomb_30x30.png` | The ball, and a bomb. |
+| `ball/sball_30x30.png`, `ball/sbomb_30x30.png` | The ball, and a bomb. Drawn in code (`BallIcon`) when missing. |
 | `player_status/<prone\|stunned>.gif` | Status overlays. |
 
 ## Artwork
