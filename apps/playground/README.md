@@ -15,10 +15,20 @@ pnpm build    # typecheck + production build
 
 ## Online games
 
-1. The first player opens the app and clicks "Create an online game": the URL becomes `?game=<id>`. They play home.
+1. The first player opens the app and clicks "Create an online game" (ticking "Allow watchers" first, to let others
+   watch): the URL becomes `?game=<id>` (`&watchers` too). They play home.
 2. They send that link to the second player, who plays away.
 3. Each picks an example team, builds one ("Build a team" opens `<TeamBuilder>`), loads a team JSON file or pastes one (format in `packages/data/README.md`), then
    clicks "Ready". The game starts when both are ready, with dice seeded by home.
+
+### Watchers
+
+In a game created with "Allow watchers", anyone who opens the game link once both players are in watches: before the
+kick-off they see who is there and ready, then the board live, without any decision (the panel says which team the
+game waits for). The players see how many watch. The relay keeps nothing, so a watcher asks the players for a
+snapshot when it joins, when a player comes back, and whenever it sees a batch missing; it takes the snapshot the
+players settle on and never answers one. A reloaded watcher comes back as a watcher. While a player is disconnected
+their side is free: someone new opening the link takes it (as a player who lost their tab would).
 
 Both browsers run the engine; only the actions travel, through the relay (`/relay`, proxied to `localhost:8787` in
 dev). Each browser can only take its own side's decisions (rolls anyone could make go to the team whose turn it is,
@@ -56,7 +66,8 @@ ends; undoing back to the start enables them again). The game is saved in the ta
 
 ## Query parameters
 
-- `?game=<id>`: join an online game (4-32 lowercase letters and digits).
+- `?game=<id>`: join an online game (4-32 lowercase letters and digits), or watch it.
+- `&watchers`: with `?game=`, the game may be watched (set by "Allow watchers"; the invite link leaves it out).
 - `?local`: hot-seat game.
 - `?seed=42`: hot-seat game whose first game uses these dice, to replay it (e.g. to reproduce a bug). Non-numeric
   values are ignored. Games started with "New game" use random seeds.
