@@ -17,7 +17,7 @@ pnpm build    # typecheck + production build
 
 1. The first player opens the app and clicks "Create an online game": the URL becomes `?game=<id>`. They play home.
 2. They send that link to the second player, who plays away.
-3. Each picks an example team, builds one ("Build a team" opens `<TeamBuilder>`), loads a team JSON file or pastes one (format in `packages/data/README.md`), then
+3. Each picks an example team, builds one ("Build a team" opens `<TeamBuilder>`), loads a team JSON file or pastes one (a team file, or a team exported from FUMBBL at `https://fumbbl.com/api/team/get/<team id>`; formats in `packages/data/README.md`), then
    clicks "Ready". The game starts when both are ready, with dice seeded by home.
 
 Both browsers run the engine; only the actions travel, through the relay (`/relay`, proxied to `localhost:8787` in

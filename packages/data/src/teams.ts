@@ -2,6 +2,7 @@ import { SKILL_CATEGORIES, type HireOffer, type InducementId, type InducementPri
 import rosterData from "./generated/rosters.json";
 import teamData from "./teams.json";
 import { MAX_PLAYERS, RosterSchema, StarPlayerSchema, TeamFileSchema, type Characteristic, type Roster, type StarPlayer, type TeamFile, type TeamPlayer } from "./schemas";
+import { teamFile } from "./fumbbl";
 
 /** BB2025 rosters, fetched from FUMBBL (see scripts/fetch-rosters.ts). */
 export const rosters: Roster[] = RosterSchema.array().parse(rosterData.rosters);
@@ -231,7 +232,7 @@ export const journeymenPositions = (roster: Roster) => roster.positions.filter((
  * Loner (4+).
  */
 export function resolveTeam(input: unknown, availableRosters: Roster[] = rosters): TeamSetup {
-  const parsed = TeamFileSchema.safeParse(input);
+  const parsed = TeamFileSchema.safeParse(teamFile(input));
   if (!parsed.success) throw new TeamError(`Invalid team file: ${parsed.error.message}`);
   const team = parsed.data;
   const roster = availableRosters.find((r) => r.name === team.roster);
