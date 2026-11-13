@@ -4,8 +4,12 @@ React component that plays a complete hot-seat BB2025 fantasy football game in t
 dugouts, decision panel, last roll with undo, player card (hovered, or pinned by clicking a player; skills have
 description tooltips), team details (coach, team value, staff, re-rolls, inducements) on each logo and game log. Esc
 steps back: it closes the action menu or stops aiming, then takes back a declared action that has not started yet
-(clicking another player who can act does the same and opens their menu). All rules come from `@ff-engine/engine`; this
-package only renders the engine's state and turns clicks into engine actions.
+(clicking another player who can act does the same and opens their menu). While the acting player may move (a Move or
+Blitz action, or the moves of a Pass, Hand-off or Foul action), hovering a square
+further than one step shows the shortest path there that needs no roll (light yellow, numbered), and a click takes all
+of it as one undo step: it stays within MA and out of tackle zones, ending in one at most. A player moving several
+squares at once (also an opponent's move arriving online) is shown walking them, one square at a time. All rules come
+from `@ff-engine/engine`; this package only renders the engine's state and turns clicks into engine actions.
 
 It comes without artwork: bring your own player sprites, team logos and pitches (`artwork`, see "Artwork") and image
 folder (`assetsUrl`, see "Assets"). The dice are drawn in code (SVG) and need neither. Online play (`online`) runs the engine in each browser and trusts both players: fine for

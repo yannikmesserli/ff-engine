@@ -335,6 +335,44 @@ export const SCENARIOS: Scenario[] = [
     }),
   },
   {
+    id: "move-path",
+    title: "Move along the shortest path in one click",
+    instructions: [
+      "Home's first turn. Click Gunther (#1, holding the ball) and declare a Move.",
+      "Hover a square two or more squares away: the shortest path there is shown in light yellow, numbered with the square of movement each step uses. Click it to take every step at once (one Undo takes it back).",
+      "The path stays out of the orcs' tackle zones and may only end in one: hover the square behind Ugluk (#2) to see it go around the orcs' line, or one next to them. Squares past Gunther's MA (6) show none: no Rush.",
+      "End the action, then declare a Move with Hans (#2), marked by an orc: no path is shown until he dodges out square by square.",
+    ],
+    home: {
+      name: "Altdorf Runners",
+      roster: "Human",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Gunther", position: "Human Lineman" },
+        { number: 2, name: "Hans", position: "Human Lineman" },
+        { number: 3, name: "Otto", position: "Human Lineman" },
+      ],
+    },
+    away: {
+      name: "Gouged Eye",
+      roster: "Orc",
+      rerolls: 2,
+      journeymen: false,
+      players: [
+        { number: 1, name: "Grishnak", position: "Orc Lineman" },
+        { number: 2, name: "Ugluk", position: "Orc Lineman" },
+        { number: 3, name: "Snaga", position: "Orc Lineman" },
+      ],
+    },
+    seed: 1,
+    actions: toFirstTurn({
+      home: { 1: { x: 12, y: 9 }, 2: { x: 12, y: 6 }, 3: { x: 12, y: 10 } },
+      away: { 1: { x: 13, y: 4 }, 2: { x: 13, y: 5 }, 3: { x: 13, y: 6 } },
+      ball: { x: 12, y: 9 },
+    }),
+  },
+  {
     id: "diving-tackle",
     title: "Diving Tackle and Break Tackle on a dodge",
     instructions: [

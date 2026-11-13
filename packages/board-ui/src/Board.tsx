@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { DndContext, PointerSensor, useDraggable, useDroppable, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import {
   ballUnsettled,
@@ -13,6 +13,7 @@ import {
   PITCH_HEIGHT,
   PITCH_WIDTH,
   isOnPitch,
+  movePath,
   sameSquare,
   teamPlayers,
   type Action,
@@ -56,7 +57,8 @@ interface BoardProps {
   /** Base URL of the image folder. */
   assets: string;
   artwork?: BoardArtwork | undefined;
-  dispatch(action: Action): void;
+  /** Applies the actions in order, as one undo step. */
+  dispatch(...actions: Action[]): void;
   /** Called with the hovered player, or null when the pointer leaves it. */
   onHover(playerId: string | null): void;
   /** A player was clicked (anywhere: pitch or dugout), e.g. to pin their card. */
@@ -118,6 +120,41 @@ function pitchStyle(weather: Weather, assets: string, artwork: BoardArtwork | un
 
 /** Pixel position of a square's top-left corner on the pitch. */
 const at = (s: Square) => ({ left: s.x * SQUARE_SIZE, top: s.y * SQUARE_SIZE });
+
+/** A walking player glides to the next square of a move of several squares, then pauses there before going on. */
+const WALK_GLIDE_MS = 30;
+const WALK_PAUSE_MS = 20;
+const WALK_STEP_MS = WALK_GLIDE_MS + WALK_PAUSE_MS;
+
+/** A player shown walking along the squares they just moved through, `step` being the square they are drawn on. */
+type Walk = { playerId: string; squares: Square[]; step: number };
+
+/**
+ * When new events move one player (and nobody else) through several squares, as a move path does, the square to draw
+ * them on while they walk there: one square per WALK_STEP_MS, from where they started. The state has already moved them.
+ */
+function useWalk(log: GameState["log"]): { playerId: string; at: Square } | null {
+  const seen = useRef(log.length);
+  const [walk, setWalk] = useState<Walk | null>(null);
+  // Before paint, so the player does not flash on the last square first.
+  useLayoutEffect(() => {
+    const fresh = log.length > seen.current ? log.slice(seen.current) : [];
+    seen.current = log.length;
+    const moves = fresh.filter((e): e is Extract<GameState["log"][number], { type: "PlayerMoved" }> => e.type === "PlayerMoved");
+    const chained = moves.every((m, i) => m.playerId === moves[0]!.playerId && (i === 0 || sameSquare(moves[i - 1]!.to, m.from)));
+    setWalk(moves.length >= 2 && chained ? { playerId: moves[0]!.playerId, squares: [moves[0]!.from, ...moves.map((m) => m.to)], step: 0 } : null);
+  }, [log]);
+  useEffect(() => {
+    if (!walk) return;
+    // Leave the first square almost at once; on the last one (where the state has the player) the walk is over.
+    const timer = setTimeout(
+      () => setWalk(walk.step + 1 < walk.squares.length ? { ...walk, step: walk.step + 1 } : null),
+      walk.step === 0 ? 30 : WALK_STEP_MS,
+    );
+    return () => clearTimeout(timer);
+  }, [walk]);
+  return walk ? { playerId: walk.playerId, at: walk.squares[walk.step]! } : null;
+}
 
 /** The pitch between both dugouts: renders the board templates and turns clicks and drags into actions. */
 export function Board({ state, templates, assets, artwork, dispatch, onHover, onInspect, picked, setPicked, menu, setMenu, aiming }: BoardProps) {
@@ -181,6 +218,22 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
   const targets: Array<Square & { rolls?: CheckKind[] }> =
     fireball?.squares ?? trick?.squares ?? swoop?.squares ?? carried?.squares ?? puntTo?.squares ?? ballTarget?.squares ?? push?.squares ?? (followUp ? [followUp.square] : undefined) ?? move?.squares ?? snapMove?.squares ?? [];
   const placementSquares = new Set((placement?.squares ?? []).map(squareId));
+  // Hovering a square the player cannot step to now shows the shortest path there that needs no roll, if any; a click
+  // takes all of its steps. Into or out of tackle zones, the coach moves square by square.
+  const [hovered, setHovered] = useState<Square | null>(null);
+  const walking = useWalk(state.log);
+  const path =
+    hovered &&
+    !walking &&
+    move &&
+    targets === move.squares &&
+    !aiming &&
+    !menu &&
+    // Nothing half-chosen on the board (a team-mate to throw, a first Multiple Block target): clicks pick for it.
+    picked.length === 0 &&
+    !move.squares.some((t) => sameSquare(t, hovered))
+      ? movePath(state, hovered)
+      : null;
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || !placement) return;
@@ -194,7 +247,10 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
   };
 
   const clickSquare = (s: Square) => {
-    if (snapMove?.squares.some((t) => sameSquare(t, s))) {
+    if (path && hovered && sameSquare(hovered, s)) {
+      dispatch(...path.map((square): Action => ({ type: "MOVE", square })));
+      setHovered(null);
+    } else if (snapMove?.squares.some((t) => sameSquare(t, s))) {
       dispatch({ type: "SNAP", playerId: snapMove.playerId, square: s });
       setPicked([]);
     } else if (thrown && ttmSquares?.some((t) => sameSquare(t, s))) {
@@ -306,11 +362,12 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
       <div className="bb-board-wrap">
         <div className="bb-board">
           <Dugout side="home" state={state} droppable={placement?.side === "home"} render={token} />
-          <div className="bb-pitch" style={pitchStyle(state.weather, assets, artwork)}>
+          <div className="bb-pitch" style={pitchStyle(state.weather, assets, artwork)} onMouseLeave={() => setHovered(null)}>
             {ALL_SQUARES.map((s) => {
               const target = targets.find((t) => sameSquare(t, s));
               const rolls = target?.rolls ?? [];
               const pass = (throwTo ?? (ttmSquares ? { squares: ttmSquares } : undefined))?.squares.find((t) => sameSquare(t, s));
+              const pathStep = path ? path.findIndex((t) => sameSquare(t, s)) : -1;
               return (
                 <PitchSquare
                   key={squareId(s)}
@@ -320,6 +377,8 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
                   risky={rolls.length > 0}
                   badge={pass ? "" : rolls.map((r) => ROLL_BADGES[r]).join("")}
                   title={pass ? `${PASS_RANGE_NAMES[pass.range]}: ${pass.needed}+ for an accurate pass` : undefined}
+                  pathStep={pathStep >= 0 && move ? state.players[move.playerId]!.movesUsed + pathStep + 1 : undefined}
+                  onHover={() => setHovered(s)}
                   onClick={() => clickSquare(s)}
                 />
               );
@@ -327,7 +386,11 @@ export function Board({ state, templates, assets, artwork, dispatch, onHover, on
             {Object.values(state.players)
               .filter(isOnPitch)
               .map((p) => (
-                <div key={p.id} className="bb-on-square" style={at(p.at)}>
+                <div
+                  key={p.id}
+                  className={`bb-on-square${walking?.playerId === p.id ? " bb-walking" : ""}`}
+                  style={walking?.playerId === p.id ? { ...at(walking.at), transitionDuration: `${WALK_GLIDE_MS}ms` } : at(p.at)}
+                >
                   {token(p)}
                 </div>
               ))}
@@ -379,6 +442,9 @@ function PitchSquare(props: {
   risky: boolean;
   badge: string;
   title?: string | undefined;
+  /** On the hovered move path: the player's square of movement it uses (1 for the first). */
+  pathStep?: number | undefined;
+  onHover(): void;
   onClick(): void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: squareId(props.square), disabled: !props.droppable });
@@ -388,8 +454,10 @@ function PitchSquare(props: {
   if (props.target === "kick") classes.push("bb-kick-target");
   if (props.target?.startsWith("pass-")) classes.push("bb-pass-target", `bb-${props.target}`);
   if (props.target === "move") classes.push(props.risky ? "bb-target-risky" : "bb-target");
+  if (props.pathStep !== undefined) classes.push("bb-path");
   return (
-    <div ref={setNodeRef} className={classes.join(" ")} style={at(props.square)} title={props.title} onClick={props.onClick}>
+    <div ref={setNodeRef} className={classes.join(" ")} style={at(props.square)} title={props.title} onMouseEnter={props.onHover} onClick={props.onClick}>
+      {props.pathStep !== undefined && <span className="bb-path-step">{props.pathStep}</span>}
       {props.badge && <span className="bb-badge">{props.badge}</span>}
     </div>
   );
