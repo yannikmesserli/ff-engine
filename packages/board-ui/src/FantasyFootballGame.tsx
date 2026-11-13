@@ -60,7 +60,8 @@ export interface FantasyFootballGameProps {
  * same teams, seed and actions, both browsers compute the same game. There is no undo.
  */
 export interface OnlineControl {
-  side: Side;
+  /** The side this browser plays; null for a watcher, who sees the game live but takes no decision. */
+  side: Side | null;
   actions: Action[][];
   send(actions: Action[]): void;
   /** While true (not connected, or catching up with the opponent), the board offers no decision and auto-roll waits. */
@@ -169,15 +170,16 @@ function Game(props: {
   const [aiming, setAiming] = useState<Aiming>(false);
   const onlineState = useReplay(initial, online?.actions);
   const state = online ? onlineState : history.at(-1)!.state;
-  // Online, the board only offers this browser's decisions, and none while paused. Auto-roll restarts when a pause ends,
-  // since the lone roll template comes back.
+  // Online, the board only offers this browser's decisions (none to a watcher), and none while paused. Auto-roll
+  // restarts when a pause ends, since the lone roll template comes back. `deciding`: the side the game waits for.
   // biome-ignore lint/correctness/useExhaustiveDependencies: `decider` is a pure import; only `online.side` and `online.paused` matter.
-  const templates = useMemo(() => {
-    if (online?.paused) return [];
+  const { templates, deciding } = useMemo(() => {
+    if (online?.paused) return { templates: [], deciding: null };
     const all = getAvailableActions(state);
-    return online ? all.filter((t) => decider(state, t) === online.side) : all;
+    const deciding = all[0] ? decider(state, all[0]) : null;
+    return { templates: online ? all.filter((t) => decider(state, t) === online.side) : all, deciding };
   }, [state, online?.side, online?.paused]);
-  const waitingFor = online && !online.paused && templates.length === 0 && !state.finished ? state.teams[online.side === "home" ? "away" : "home"].name : null;
+  const waitingFor = online && !online.paused && templates.length === 0 && !state.finished && deciding ? state.teams[deciding].name : null;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: report new states only, not a new `onChange` or `online` prop.
   useEffect(() => {

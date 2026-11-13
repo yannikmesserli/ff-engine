@@ -29,18 +29,27 @@ export function App() {
   if (game !== null) {
     return (
       <main>
-        {GAME_ID.test(game) ? <OnlineGame gameId={game} /> : <p>Invalid game link. <a href="?">Start a new game</a></p>}
+        {GAME_ID.test(game) ? <OnlineGame gameId={game} watchable={PARAMS.has("watchers")} /> : <p>Invalid game link. <a href="?">Start a new game</a></p>}
       </main>
     );
   }
   if (PARAMS.has("local") || PARAMS.has("seed")) return <LocalGame />;
+  return <Home />;
+}
+
+/** The start page: create an online game (watchers allowed or not), or play hot-seat. */
+function Home() {
+  const [watchers, setWatchers] = useState(false);
   return (
     <main className="pg-home">
       <h1>Fantasy Football</h1>
-      <button className="pg-primary" onClick={() => (location.search = `?game=${newGameId()}`)}>
+      <button className="pg-primary" onClick={() => (location.search = `?game=${newGameId()}${watchers ? "&watchers" : ""}`)}>
         Create an online game
       </button>
-      <p>You get a link to send to your opponent; each of you then picks a team.</p>
+      <label title="Anyone who opens the game link after your opponent watches the game live, without taking any decision">
+        <input type="checkbox" checked={watchers} onChange={(e) => setWatchers(e.target.checked)} /> Allow watchers
+      </label>
+      <p>You get a link to send to your opponent; each of you then picks a team. With watchers allowed, anyone else who opens the link watches.</p>
       <a href="?local">Or play hot-seat on this computer</a>
     </main>
   );

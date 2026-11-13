@@ -29,7 +29,7 @@ import { FantasyFootballGame } from "@ff-engine/board-ui";
 | `onChange` | `(state: GameState) => void` | Called with the new state after every successful action (and once at the start when resuming). |
 | `onActions` | `(batches: Action[][]) => void` | Hot-seat: called with every batch of actions played since the start (one per undo step) after each action and undo, to save the game. |
 | `resume` | `Action[][]` | Hot-seat: batches to replay when the game starts, as reported by `onActions`, to resume a saved game. Each stays an undo step. Read once, when the game starts. |
-| `online` | `OnlineControl` | Online play: `{ side, actions, send }`. The component only offers `side`'s decisions (`decider()`), sends actions with `send` instead of applying them, and plays the batches in `actions` (both players', in the relay's order). No undo. |
+| `online` | `OnlineControl` | Online play: `{ side, actions, send }`. The component only offers `side`'s decisions (`decider()`), sends actions with `send` instead of applying them, and plays the batches in `actions` (both players', in the relay's order). No undo. `side: null` watches: no decision, the panel says which team the game waits for. |
 
 Changing `home`, `away`, `seed` or `actions` starts a new game. The stylesheet (`styles.css`, all classes prefixed `bb-`) is
 imported by the component.
