@@ -7,7 +7,7 @@ export { IllegalActionError } from "./context";
 export { BLOCK_FACES, DIE_FACES, SCATTER, isCorner, throwInDirection } from "./dice";
 export { setupErrors } from "./procedures/setup";
 export { KICKOFF_TABLE, openPlayers, weatherFor } from "./procedures/kickoff";
-export { STAND_UP_COST, STAND_UP_TARGET, adjacentTargets, declarableActions, legalMoves } from "./procedures/turn";
+export { STAND_UP_COST, STAND_UP_TARGET, adjacentTargets, declarableActions, legalMoves, movePath } from "./procedures/turn";
 export { blockDice, pushbackSquares } from "./procedures/block";
 export { IMPLEMENTED_SKILLS, SKILL_CATEGORIES, hasSkill, sameSkill, skillName, skillValue } from "./skills";
 export { FREE_PRAYER_GAP, UNDERDOG_TREASURY, shopBudget } from "./procedures/shop";

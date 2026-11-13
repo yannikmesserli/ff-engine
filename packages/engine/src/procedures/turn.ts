@@ -2,8 +2,8 @@ import type { Ctx, Handler, StepResult } from "../context";
 import type { Action, CheckKind, GameState, PlayerActionType, PlayerState, Procedure, Side, Square, Weather } from "../types";
 import { templateDirection } from "../dice";
 import { weatherFor } from "./kickoff";
-import { trapdoor } from "./prayers";
-import { adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isPinned, other, playerAt, sameSquare, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
+import { TRAPDOORS, trapdoor } from "./prayers";
+import { PITCH_WIDTH, adjacent, ballCarrier, hasTackleZone, inBounds, inHalf, isOnPitch, isPinned, other, playerAt, sameSquare, scoringEndZoneX, tackleZoneAt, tackleZones, teamPlayers } from "../pitch";
 import { blockDice, dumpOff, revolted, rollFoulAppearance } from "./block";
 import { dropBall } from "./ball";
 import { canHailMary, hailMaryNeeded, handOffTargets, puntTargets, throwTargets } from "./pass";
@@ -133,6 +133,63 @@ export function legalMoves(state: GameState, player: PlayerState): Array<Square 
   if (left < 2) return steps;
   const jumps = jumpSquares(state, player).map((s) => ({ ...s, jump: true, rolls: [...rushes(2), "jump" as const, ...pickup(s)] }));
   return [...steps, ...jumps];
+}
+
+/**
+ * The shortest safe path of steps for the active player to `to`, or null if there is none: only while their action
+ * lets them move now (a Move or Blitz action, or the moving part of a Pass, Hand-off, Foul... action; not a Block or
+ * Throw Bomb action, nor once the action is over). A safe
+ * path needs no roll on the way: it stays within the player's MA (no Rush), never leaves an opponent's tackle zone (so
+ * none if the player starts in one, and it may enter one only on its last square), and goes around players. The loose
+ * ball, an active trapdoor and, with the ball, the end zone the player scores in may only be its last square. Not with
+ * Ball & Chain. With several shortest paths, diagonal steps come first.
+ */
+export function movePath(state: GameState, to: Square): Square[] | null {
+  const proc = state.stack.at(-1);
+  if (proc?.type !== "MoveAction" || proc.stage !== "main" || !inBounds(to) || playerAt(state, to)) return null;
+  const player = state.players[proc.playerId]!;
+  if (!isOnPitch(player) || hasSkill(player, "Ball & Chain") || activationMoves(state, proc).length === 0) return null;
+  const from = player.at;
+  const left = player.ma - player.movesUsed;
+  if (sameSquare(from, to) || tackleZones(state, player.side, from) > 0) return null;
+  const { ball } = state;
+  const carrying = ball.carried && ball.square !== null && sameSquare(ball.square, from);
+  const trapdoors = Object.values(state.teams).some((t) => t.prayers.includes("treacherous-trapdoor")) ? TRAPDOORS : [];
+  /** A square the path may go through (not only end on). */
+  const through = (s: Square) =>
+    !playerAt(state, s) &&
+    tackleZones(state, player.side, s) === 0 &&
+    !(ball.square && !ball.carried && sameSquare(ball.square, s)) &&
+    !trapdoors.some((t) => sameSquare(t, s)) &&
+    !(carrying && s.x === scoringEndZoneX(player.side));
+  // Steps to `to` from each square, searching back from it through the squares a path may cross.
+  const key = (s: Square) => s.y * PITCH_WIDTH + s.x;
+  const steps = new Map([[key(to), 0]]);
+  let frontier = [to];
+  for (let d = 1; d <= left && !steps.has(key(from)); d++) {
+    const next: Square[] = [];
+    for (const s of frontier) {
+      for (const n of adjacent(s)) {
+        if (steps.has(key(n)) || !(sameSquare(n, from) || through(n))) continue;
+        steps.set(key(n), d);
+        next.push(n);
+      }
+    }
+    frontier = next;
+  }
+  const total = steps.get(key(from));
+  if (total === undefined) return null;
+  // Walk forward, one square closer each step, preferring the one nearest to `to` without diagonals (diagonals first).
+  const manhattan = (s: Square) => Math.abs(s.x - to.x) + Math.abs(s.y - to.y);
+  const path: Square[] = [];
+  let at = from;
+  for (let d = total - 1; d >= 0; d--) {
+    at = adjacent(at)
+      .filter((n) => steps.get(key(n)) === d)
+      .reduce((best, n) => (manhattan(n) < manhattan(best) ? n : best));
+    path.push(at);
+  }
+  return path;
 }
 
 /** The last Check (stand-up, rush, dodge, pick-up) failed, after any re-roll. */

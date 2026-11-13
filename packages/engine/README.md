@@ -130,7 +130,7 @@ Every die is an explicit `ROLL` action, so a coach (or a test) can enter physica
   `scatterOrigin` (the square the next d8 roll moves from), `ballUnsettled` (the loose ball is about to be caught,
   bounce or be placed),
   `setupErrors`, `KICKOFF_TABLE`, `openPlayers`, `weatherFor`, `declarableActions`,
-  `legalMoves`, `STAND_UP_COST`, `STAND_UP_TARGET`, `adjacentTargets`, `blockDice`, `pushbackSquares`, `foulAssists`, `foulTargets`,
+  `legalMoves`, `movePath`, `STAND_UP_COST`, `STAND_UP_TARGET`, `adjacentTargets`, `blockDice`, `pushbackSquares`, `foulAssists`, `foulTargets`,
   `RANGE_MODIFIER`, `evaluatePass`, `passRange`, `throwTargets`, `handOffTargets`, `interceptors`, `underRuler`,
   `neededRoll`, `injuryOutcome`, `casualtyFor`, `CASUALTY_DICE`, `LASTING_INJURY_DICE`, `hasSkill`, `skillName`, `skillValue`.
 - Skills: automatic skill re-rolls (Dodge, Sure Hands, Catch) live in `skillReroll` (`procedures/checks.ts`). The

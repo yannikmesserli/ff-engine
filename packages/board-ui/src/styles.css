@@ -80,12 +80,21 @@
 .bb-legend-bomb { background: rgb(229, 115, 115); }
 .bb-square.bb-target { background: rgba(76, 175, 80, 0.45); cursor: pointer; }
 .bb-square.bb-target-risky { background: rgba(255, 193, 7, 0.45); cursor: pointer; }
+/* The hovered move path: light yellow squares numbered with the square of movement each one uses. */
+.bb-square.bb-path { background: rgba(255, 245, 157, 0.55); cursor: pointer; }
+.bb-path-step {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff; text-shadow: 1px 1px 1px #000;
+}
 .bb-badge {
   position: absolute; right: 1px; bottom: 0; font-size: 9px; font-weight: 700; color: #111;
   text-shadow: 0 0 2px #fff;
 }
 .bb-on-square, .bb-ball { position: absolute; width: var(--bb-square); height: var(--bb-square); pointer-events: none; }
 .bb-on-square > * { pointer-events: auto; }
+/* A player walking a move of several squares glides from one square to the next (duration: WALK_GLIDE_MS in Board.tsx). */
+.bb-on-square.bb-walking { transition-property: left, top; transition-timing-function: ease-out; }
+@media (prefers-reduced-motion: reduce) { .bb-on-square.bb-walking { transition-property: none; } }
 .bb-ball { z-index: 3; }
 /* A loose ball about to be caught, bounce or be placed (ballUnsettled). */
 .bb-ball-unsettled { opacity: 0.5; animation: bb-ball-unsettled 0.8s ease-in-out infinite alternate; }

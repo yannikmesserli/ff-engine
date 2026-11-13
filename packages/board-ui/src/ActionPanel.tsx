@@ -72,7 +72,7 @@ const PROMPTS: Partial<Record<ActionTemplate["type"], string>> = {
   BRIBE: "use a bribe to keep the player (2+: no turnover)?",
   USE_APOTHECARY: "use the apothecary (once per game)?",
   APOTHECARY_CHOICE: "the apothecary re-rolled the casualty: keep which result?",
-  MOVE: "click a highlighted square to move (D: dodge, R: rush, J: jump over a prone player, P: pick-up)",
+  MOVE: "click a highlighted square to move (D: dodge, R: rush, J: jump over a prone player, P: pick-up), or a square further away to take the shortest path there that needs no roll",
   USE_REROLL: "use a team re-roll?",
   USE_SKILL: "use a skill?",
   MOVE_INSTEAD: "Bloodlust: take a Move action instead of the declared action?",

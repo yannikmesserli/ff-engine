@@ -13,6 +13,7 @@ import {
   injuryOutcome,
   isStalling,
   legalMoves,
+  movePath,
   starPlayerPoints,
   step,
   tackleZones,
@@ -259,6 +260,67 @@ describe("engine", () => {
       s = apply(s, startMove("home-4"), ...move({ x: 11, y: 4 }));
       expect(s.players["home-4"]!.at).toEqual({ x: 11, y: 4 });
       expect(top(s).type).toBe("MoveAction");
+    });
+
+    describe("move path", () => {
+      /** home-11 (MA 6) alone at (5,12) in a Move action, the ball out of the way at (0,0). */
+      const mover = (squares: Record<string, Square> = {}) =>
+        apply(
+          edit(place(toFirstTurn(), { "home-11": { x: 5, y: 12 }, ...squares }), (c) => void (c.ball = { square: { x: 0, y: 0 }, carried: false })),
+          startMove("home-11"),
+        );
+
+      it("the shortest path within MA, diagonals first; the steps need no roll", () => {
+        const s = mover();
+        expect(movePath(s, { x: 5, y: 8 })).toEqual([{ x: 5, y: 11 }, { x: 5, y: 10 }, { x: 5, y: 9 }, { x: 5, y: 8 }]);
+        expect(movePath(s, { x: 2, y: 8 })).toEqual([{ x: 4, y: 11 }, { x: 3, y: 10 }, { x: 2, y: 9 }, { x: 2, y: 8 }]);
+        const moved = apply(s, ...move(...movePath(s, { x: 5, y: 8 })!));
+        expect(moved.players["home-11"]).toMatchObject({ at: { x: 5, y: 8 }, movesUsed: 4 });
+        expect(types(moved)).toContain("MOVE");
+      });
+
+      it("none past the player's MA (no Rush), nor once some of it is spent", () => {
+        const s = mover();
+        expect(movePath(s, { x: 11, y: 12 })).toHaveLength(6);
+        expect(movePath(s, { x: 12, y: 12 })).toBeNull();
+        expect(movePath(apply(s, ...move({ x: 5, y: 11 })), { x: 11, y: 12 })).toBeNull();
+      });
+
+      it("goes around tackle zones and players, and may end in a tackle zone", () => {
+        // away-1 at (5,9) marks (4..6, 8..10): the path to (5,7) goes around it, and to (5,10) stops next to it.
+        const s = mover({ "away-1": { x: 5, y: 9 } });
+        const path = movePath(s, { x: 5, y: 7 })!;
+        expect(path).toHaveLength(6);
+        expect(path.slice(0, -1).every((sq) => tackleZones(s, "home", sq) === 0)).toBe(true);
+        expect(movePath(s, { x: 5, y: 10 })).toEqual([{ x: 5, y: 11 }, { x: 5, y: 10 }]);
+        expect(movePath(s, { x: 5, y: 9 })).toBeNull();
+      });
+
+      it("none in an action that does not move (Block, Throw Bomb), but in the moves of a Pass action", () => {
+        // home-11 holds the ball, has Bombardier, and stands next to a distracted away-1 (no tackle zone, but blockable).
+        const at = (action: PlayerActionType) =>
+          apply(
+            edit(place(toFirstTurn(), { "home-11": { x: 5, y: 12 }, "away-1": { x: 6, y: 13 } }), (c) => {
+              c.ball = { square: { x: 5, y: 12 }, carried: true };
+              c.players["home-11"]!.skills.push("Bombardier");
+              c.players["away-1"]!.distracted = true;
+            }),
+            declare("home-11", action),
+          );
+        expect(movePath(at("block"), { x: 5, y: 8 })).toBeNull();
+        expect(movePath(at("bomb"), { x: 5, y: 8 })).toBeNull();
+        expect(movePath(at("pass"), { x: 5, y: 8 })).toHaveLength(4);
+      });
+
+      it("none when the player starts in a tackle zone (the first step is a dodge)", () => {
+        expect(movePath(mover({ "away-1": { x: 5, y: 13 } }), { x: 5, y: 8 })).toBeNull();
+      });
+
+      it("the loose ball may only be the last square", () => {
+        const s = edit(mover(), (c) => void (c.ball = { square: { x: 5, y: 10 }, carried: false }));
+        expect(movePath(s, { x: 5, y: 10 })).toEqual([{ x: 5, y: 11 }, { x: 5, y: 10 }]);
+        expect(movePath(s, { x: 5, y: 9 })).not.toContainEqual({ x: 5, y: 10 });
+      });
     });
 
     it("dodges on AG with no +1 bonus: AG3+ fails on a 2, succeeds on a 3", () => {
