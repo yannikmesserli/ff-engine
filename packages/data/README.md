@@ -25,10 +25,11 @@ const actions = formationActions(state, "home", formations["def_spread"]!); // P
 | `formations` | Setups in a text format (`src/formations.json`: `def_boat`, `def_spread`, `def_zone`, `off_line`, `off_wedge`). |
 | `formationActions(state, side, formation)` | `PLACE_PLAYER` actions that clear a side's half and set up a formation. |
 | `INDUCEMENT_RULES` | BB2025 inducement limits, required special rules and costs, by inducement id. |
-| `resolveTeam(json, rosters?)` | Validates a team file against its roster and merges in position stats, the Current Team Value, treasury and the shop's prices. Throws `TeamError`. |
+| `resolveTeam(json, rosters?)` | Validates a team file (or FUMBBL team JSON, see below) against its roster and merges in position stats, the Current Team Value, treasury and the shop's prices. Throws `TeamError`. |
+| `fromFumbblTeam(json)`, `isFumbblTeam(json)`, `teamFile(json)` | FUMBBL team JSON as a team file (see "FUMBBL team JSON"); `teamFile` converts only what looks like FUMBBL's and passes a team file through. `resolveTeam`, `teamValue`, `teamAfterGame` and the team builder call it themselves. |
 | `teamValue(json, rosters?)` | The Current Team Value of a team file: players available and their advancements, journeymen, re-rolls and staff. |
 | `TEAM_CREATION`, `creationCost(json, roster)`, `creationErrors(json, budget?)`, `draftTeam(json, budget?)` | BB2025 team creation: a 1,000,000 gp budget, 11 to 16 players, the apothecary (50k), up to 6 assistant coaches and 6 cheerleaders (10k each), 1 free Dedicated Fan and up to 2 more (10k each), re-rolls at the roster's price. `creationErrors` lists what breaks these rules (and `resolveTeam`'s) for a new team, which has no advancements or hired players; `draftTeam` returns the team file with the gold left over as its treasury. |
-| `teamAfterGame(json, state, side)` | The team file after a finished game: Star Player Points, casualties, Getting Even, raised players, winnings, Dedicated Fans. |
+| `teamAfterGame(json, state, side)` | The team file (always in this package's format) after a finished game: Star Player Points, casualties, Getting Even, raised players, winnings, Dedicated Fans. |
 | `TeamFileSchema`, `RosterSchema` | zod schemas (and the `TeamFile`, `Roster` types). |
 | `SKILL_DESCRIPTIONS`, `skillDescription(skill)` | Short BB2025 descriptions of every skill and trait (our own wording), for tooltips; `skillDescription("Loner(4)")` fills in the value. |
 
@@ -106,6 +107,52 @@ roster (see `rosters`). Only `name`, `roster`, `rerolls` and the players' `numbe
   position quantities, the Big Guy limit and Insignificant (no more such players than others) are respected, and
   clamps characteristics to the BB2025 limits (MA 1-9, ST 1-8, AG/PA 1-6, AV 3-11). A team with a Plague Ridden player
   gets its roster's lineman position as `raisePosition`, the position a killed opponent joins the team as.
+
+## FUMBBL team JSON
+
+Wherever a team file is accepted, a team exported from FUMBBL (`https://fumbbl.com/api/team/get/<team id>`) is accepted
+as it is: `fromFumbblTeam` turns it into a team file first, and the result goes through the usual checks. A FUMBBL team
+is told apart by its `roster`, an object (`{ "id": 8584, "name": "Orc" }`) where a team file has a name. FUMBBL's
+rosters, position titles, skill and special rule names are the ones this package uses, so a team of a BB2025 ruleset
+loads as it is; a team of another edition fails on its first unknown position or roster.
+
+| Team file | FUMBBL team JSON |
+|---|---|
+| `name`, `rerolls`, `assistantCoaches`, `cheerleaders`, `treasury` | the same fields |
+| `coach`, `roster` | `coach.name`, `roster.name` |
+| `apothecary` | `apothecary`: `"Yes"` or `"No"` |
+| `dedicatedFans` | `fanFactor` (0, which some leagues leave it at, gives the default 1) |
+| `specialRules` | the keys of `specialRules` this package knows (`SPECIAL_RULES`); the values (FUMBBL's settings per rule) are not read |
+| `captain` | the player with the Team Captain skill |
+| player `number`, `name`, `position` | the same fields |
+| player `skills`, `improvements`, `hatred` | `skills`: `"+MA"`, `"+ST"`, `"+AG"`, `"+PA"`, `"+AV"` are improvements; `"Hatred (orc)"` (gained by Getting Even, at no cost on FUMBBL) is `hatred: ["orc"]`; the others are skills (`"Name (value)"` written `"Name(value)"`) |
+| player `injuries`, `missNextGame` | `injuries`, comma-separated: `n` a Niggling Injury, `-ma` ... `-av` a lasting -1, `m` misses the next game; other codes are not read |
+| player `spp` | `record.spp + record.extra_spp - record.spent_spp` |
+| (left out) | journeymen (`status` 6) and dead players (`d` in `injuryStatus`) |
+
+Everything else is ignored: ids, bio, division and league, records and form, team values, skill limits and costs,
+redrafting, portraits, fired players. What a team file has and FUMBBL's team JSON doesn't (`inducements`,
+`starPlayers`, `mercenaries`, `journeymen`) is chosen for each game, so a FUMBBL team
+starts without them.
+
+### Why not use FUMBBL's format as the team file format
+
+Reading FUMBBL's teams as they are is the useful part; writing them is not. This package keeps its own format, and
+everything it writes (`teamAfterGame`, `draftTeam`, the team builder, the example teams) is in it, because:
+
+- **It is an API response, not a file format.** It is not documented or versioned, belongs to FUMBBL and may change.
+  Several of its encodings can only be guessed from examples: the settings array of each special rule, the injury
+  codes, the player status numbers. A format this package writes has to be one it fully defines.
+- **Writing it means making data up.** A valid FUMBBL team has FUMBBL's ids (team, coach, roster, positions, players),
+  league, ruleset, records and skill costs. A team drafted here has none of them, and inventing them would produce
+  files that look like FUMBBL's without being FUMBBL teams.
+- **It cannot hold everything a team file does.** Inducements, star players, mercenaries and journeymen are not in
+  FUMBBL's team JSON, so this package would need its own extensions anyway: a file in neither
+  format.
+- **Its encodings are harder to check and use.** `"Yes"` for a boolean, characteristic increases mixed into the skill
+  list, injuries in a comma-separated string. A team file states each of them as its own typed field, and rejects
+  unknown fields, so a typo in a hand-edited file is an error rather than silently ignored. FUMBBL's teams are read
+  leniently instead (anything not listed above is ignored), which only applies to input that looks like FUMBBL's.
 
 ## Formations
 

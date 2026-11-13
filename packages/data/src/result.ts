@@ -1,5 +1,6 @@
 import { starPlayerPoints, type GameState, type Side } from "@ff-engine/engine";
 import { MAX_PLAYERS, TeamFileSchema, type TeamFile, type TeamPlayer } from "./schemas";
+import { teamFile } from "./fumbbl";
 
 /** BB2025 limits of Dedicated Fans. */
 const MIN_FANS = 1;
@@ -14,7 +15,7 @@ const MAX_FANS = 7;
  * inducements, star players and mercenaries bought for the game are gone.
  */
 export function teamAfterGame(input: unknown, state: GameState, side: Side): TeamFile {
-  const team = TeamFileSchema.parse(input);
+  const team = TeamFileSchema.parse(teamFile(input));
   const result = state.result;
   if (!state.finished || !result) throw new Error("The game is not over.");
   const players: TeamPlayer[] = team.players.flatMap((p) => {

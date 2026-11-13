@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { SPECIAL_RULES, TEAM_CREATION, TeamFileSchema, creationCost, creationErrors, draftTeam, rosters, skillDescription, type TeamFileInput } from "@ff-engine/data";
+import { SPECIAL_RULES, TEAM_CREATION, TeamFileSchema, creationCost, creationErrors, draftTeam, rosters, skillDescription, teamFile, type TeamFileInput } from "@ff-engine/data";
 import "./team-builder.css";
 
 export interface TeamBuilderProps {
@@ -18,9 +18,18 @@ type Draft = TeamFileInput & { players: Array<{ number: number; name: string; po
 
 const LEAGUES = 8; // the first SPECIAL_RULES are the leagues
 
+/** A team file, converted from FUMBBL team JSON; null when that JSON is broken (a new draft then). */
+function converted(initial: unknown): unknown {
+  try {
+    return teamFile(initial);
+  } catch {
+    return null;
+  }
+}
+
 /** The fields of a team file a new team has: no advancements, injuries, hired players or inducements. */
 function startingDraft(initial: unknown): Draft {
-  const parsed = TeamFileSchema.safeParse(initial);
+  const parsed = TeamFileSchema.safeParse(converted(initial));
   if (parsed.success && rosters.some((r) => r.name === parsed.data.roster)) {
     const t = parsed.data;
     return {

@@ -40,7 +40,10 @@ function BuilderDialog(props: { label: string; initial: unknown; onDone(team: un
   );
 }
 
-/** Pick an example team, build a new one, load a team JSON file, or paste one (format in packages/data/README.md). */
+/**
+ * Pick an example team, build a new one, load a team JSON file, or paste one: a team file or a team exported from
+ * FUMBBL (formats in packages/data/README.md).
+ */
 export function TeamPicker(props: { label: string; value: unknown; disabled?: boolean; onChange(team: unknown): void }) {
   const key = TEAM_KEYS.find((k) => exampleTeams[k] === props.value) ?? "";
   const [pasting, setPasting] = useState(false);
